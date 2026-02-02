@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.InntektspostEndringDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.transformers.behandling.finnRolle
 import no.nav.bidrag.behandling.transformers.behandling.mapTilInntektspostEndringer
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erHistorisk
@@ -171,11 +172,15 @@ fun Inntekt.tilInntektDtoV2() =
     )
 
 fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Inntekt {
+    val gjelderBarnRolle =
+        this.gjelderBarnId?.let { inntekt.behandling!!.roller.find { it.id == this.gjelderBarnId } }
+            ?: this.gjelderBarn?.let { inntekt.behandling!!.finnRolle(it.verdi) }
     inntekt.type = this.type
     inntekt.belop = this.beløp.tilÅrsbeløp(beløpType).avrundetTilToDesimaler
     inntekt.datoFom = this.datoFom
     inntekt.datoTom = this.datoTom ?: justerPeriodeTomOpphørsdato(inntekt.opphørsdato)
-    inntekt.gjelderBarn = this.gjelderBarn?.verdi
+    inntekt.gjelderBarn = this.gjelderBarn?.verdi ?: gjelderBarnRolle?.ident
+    inntekt.gjelderBarnRolle = gjelderBarnRolle
     inntekt.kilde = Kilde.MANUELL
     inntekt.taMed = this.taMed
     if (this.inntektstype != null) {
@@ -277,7 +282,12 @@ fun InntektPost.toInntektpost() =
     )
 
 fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
-    val rolle = behandling.roller.find { it.id == this.gjelderId }
+    val rolle =
+        behandling.roller.find { it.id == this.gjelderId }
+            ?: behandling.roller.find { it.ident == this.ident?.verdi }
+    val gjelderBarnRolle =
+        this.gjelderBarnId?.let { behandling.roller.find { it.id == this.gjelderBarnId } }
+            ?: this.gjelderBarn?.let { behandling.finnRolle(it.verdi) }
     val inntekt =
         Inntekt(
             type = this.type,
@@ -286,8 +296,8 @@ fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
             datoTom = this.datoTom,
             ident = this.ident?.verdi ?: rolle?.ident,
             rolle = rolle,
-            gjelderBarnRolle = behandling.roller.find { it.id == this.gjelderBarnId },
-            gjelderBarn = this.gjelderBarn?.verdi,
+            gjelderBarnRolle = gjelderBarnRolle,
+            gjelderBarn = this.gjelderBarn?.verdi ?: gjelderBarnRolle?.ident,
             kilde = Kilde.MANUELL,
             taMed = this.taMed,
             behandling = behandling,

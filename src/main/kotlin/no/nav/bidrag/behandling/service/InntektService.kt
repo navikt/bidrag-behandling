@@ -187,6 +187,21 @@ class InntektService(
         behandling.inntekter.removeAll(manuelleInntekterSomErFjernet)
     }
 
+    fun oppdaterInntektRolleOgGjelderBarnRolle(behandling: Behandling) {
+        behandling.inntekter
+            .filter { it.rolle == null }
+            .forEach {
+                secureLogger.info {
+                    "Inntekt med id ${it.id} mangler rolle, oppdaterer til korrekt rolle for behandling ${behandling.id}"
+                }
+                it.rolle = behandling.roller.find { rolle -> rolle.ident == it.gjelderIdent }
+                it.gjelderBarnRolle =
+                    it.gjelderBarnIdent?.takeIf { it.isNotEmpty() }?.let { barnIdent ->
+                        behandling.roller.find { rolle -> rolle.ident == barnIdent }
+                    }
+            }
+    }
+
     fun rekalkulerOffentligeInntektPerioder(behandling: Behandling) {
         secureLogger.info {
             "Oppdaterer status på offentlige inntekter (taMed, datoFom og datoTom) slik at de er i sync med offentlige perioder for behanlding ${behandling.id}"

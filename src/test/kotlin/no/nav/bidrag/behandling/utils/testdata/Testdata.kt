@@ -373,7 +373,7 @@ fun oppretteRequestForOppdateringAvManuellInntekt(idInntekt: Long? = null) =
     OppdatereManuellInntekt(
         id = idInntekt,
         type = Inntektsrapportering.KONTANTSTØTTE,
-        beløp = BigDecimal(305203),
+        beløp = BigDecimal("305203.00"),
         datoFom = LocalDate.now().minusYears(1).withDayOfYear(1),
         datoTom =
             LocalDate

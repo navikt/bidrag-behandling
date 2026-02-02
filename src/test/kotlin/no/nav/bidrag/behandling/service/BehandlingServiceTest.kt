@@ -407,7 +407,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     ),
                     Inntekt(
                         Inntektsrapportering.BARNETILLEGG,
-                        BigDecimal(555),
+                        BigDecimal("555.00"),
                         LocalDate.parse("2024-01-01"),
                         LocalDate.parse("2024-05-01"),
                         testdataBM.ident,

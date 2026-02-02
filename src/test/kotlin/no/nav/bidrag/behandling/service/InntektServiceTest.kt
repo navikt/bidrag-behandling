@@ -1164,7 +1164,7 @@ class InntektServiceTest : TestContainerRunner() {
                             id = lagretManuellInntekt.id!!,
                             taMed = true,
                             type = Inntektsrapportering.PERSONINNTEKT_EGNE_OPPLYSNINGER,
-                            beløp = BigDecimal(643000),
+                            beløp = BigDecimal("643000.00"),
                             datoFom =
                                 YearMonth
                                     .now()

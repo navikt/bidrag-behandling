@@ -73,14 +73,19 @@ data class InntektDtoV2(
     @get:Schema(description = "Avrundet månedsbeløp for barnetillegg")
     val månedsbeløp: BigDecimal?
         get() =
-            if (Inntektsrapportering.BARNETILLEGG == rapporteringstype &&
-                inntektsposter.firstOrNull()?.beløpstype == InntektBeløpType.MÅNEDSBELØP
-            ) {
-                inntektsposter.first().beløp
-            } else if (Inntektsrapportering.BARNETILLEGG == rapporteringstype && inntektsposter.firstOrNull()?.beløpstype == null) {
-                beløp.divide(BigDecimal(12), 0, RoundingMode.HALF_UP)
-            } else {
-                null
+            run {
+                val beløpstype = inntektsposter.firstOrNull()?.beløpstype
+                if (Inntektsrapportering.BARNETILLEGG == rapporteringstype &&
+                    beløpstype == InntektBeløpType.MÅNEDSBELØP
+                ) {
+                    inntektsposter.first().beløp
+                } else if (Inntektsrapportering.BARNETILLEGG == rapporteringstype &&
+                    (beløpstype == null || beløpstype == InntektBeløpType.ÅRSBELØP)
+                ) {
+                    beløp.divide(BigDecimal(12), 0, RoundingMode.HALF_UP)
+                } else {
+                    null
+                }
             }
 
     @get:Schema(description = "Avrundet dagsats for barnetillegg")

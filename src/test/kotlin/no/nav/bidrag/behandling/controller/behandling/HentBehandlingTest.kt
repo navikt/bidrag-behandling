@@ -392,7 +392,7 @@ class HentBehandlingTest : BehandlingControllerTest() {
             val inntekt3 =
                 Inntekt(
                     Inntektsrapportering.BARNETILLEGG,
-                    BigDecimal.valueOf(5000),
+                    BigDecimal("5000.00"),
                     LocalDate.parse("2022-01-01"),
                     LocalDate.parse("2022-12-31"),
                     gjelder.ident,

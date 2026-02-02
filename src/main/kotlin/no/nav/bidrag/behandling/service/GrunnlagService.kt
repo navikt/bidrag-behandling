@@ -328,6 +328,7 @@ class GrunnlagService(
             behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
             aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteresForAlleRoller(behandling)
             oppdaterVirkningstidspunktOgÅrsakForBarn(behandling)
+            inntektService.oppdaterInntektRolleOgGjelderBarnRolle(behandling)
         }
 
         behandling.metadata?.avsluttLastGrunnlagAsync()
