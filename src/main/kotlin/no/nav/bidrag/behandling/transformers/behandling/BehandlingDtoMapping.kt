@@ -78,6 +78,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregn
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
+import no.nav.bidrag.beregn.core.util.avrundetTilToDesimaler
 import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.service.forsendelse.bidragspliktig
@@ -1161,12 +1162,12 @@ fun Behandling.hentBeregnetInntekterForRolle(rolle: Rolle) =
                 summertInntektListe =
                     it.summertInntektListe.map { delberegning ->
                         delberegning.copy(
-                            barnetillegg = delberegning.barnetillegg?.nærmesteHeltall,
+                            barnetillegg = delberegning.barnetillegg?.avrundetTilToDesimaler,
                             småbarnstillegg = delberegning.småbarnstillegg?.nærmesteHeltall,
                             kontantstøtte = delberegning.kontantstøtte?.nærmesteHeltall,
                             utvidetBarnetrygd = delberegning.utvidetBarnetrygd?.nærmesteHeltall,
                             skattepliktigInntekt = delberegning.skattepliktigInntekt?.nærmesteHeltall,
-                            totalinntekt = delberegning.totalinntekt.nærmesteHeltall,
+                            totalinntekt = delberegning.totalinntekt.avrundetTilToDesimaler,
                         )
                     },
             )
