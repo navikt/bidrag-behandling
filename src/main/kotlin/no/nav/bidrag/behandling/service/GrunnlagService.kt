@@ -317,11 +317,9 @@ class GrunnlagService(
                     "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
             }
         }
-        if (UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled ||
-            foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())
-        ) {
+        if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())) {
             secureLogger.info {
-                "Aktiverer grunnlag automatisk hvis det ikke er noe endringer siden forrige grunnlagsinnhenting for behandling ${behandling.id} og saksnummer ${behandling.saksnummer}"
+                "Aktiverer grunnlag automatisk hvis det ikke er noe endringer siden forrige grunnlagsinnhenting for behandling ${behandling.id} og saksnummer ${behandling.saksnummer}."
             }
             aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
             aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)

@@ -146,6 +146,7 @@ fun Behandling.tilGrunnlagTilleggsstønad(): List<GrunnlagDto> =
                                 TilleggsstønadPeriode(
                                     periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
                                     beløpDagsats = it.dagsats,
+                                    beløpMåned = it.månedsbeløp,
                                     manueltRegistrert = true,
                                 ),
                             ),

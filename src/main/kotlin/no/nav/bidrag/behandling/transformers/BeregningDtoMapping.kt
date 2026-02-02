@@ -228,16 +228,19 @@ fun mapTilBeregningresultatBarn(
                     sistePeriode?.periode?.til ?: sistePeriode?.periode?.fom ?: søknadsbarn.virkningstidspunktRolle.toYearMonth()
                 BeregnetBarnebidragResultat(
                     beregnetBarnebidragPeriodeListe =
-                        endeligResultat.periodeListe +
-                            ResultatPeriodeBB(
-                                periode =
-                                    ÅrMånedsperiode(
-                                        periodeOpphør,
-                                        null,
-                                    ),
-                                ResultatBeregningBB(null),
-                                emptyList(),
-                            ),
+                        endeligResultat.periodeListe.ifEmpty {
+                            listOf(
+                                ResultatPeriodeBB(
+                                    periode =
+                                        ÅrMånedsperiode(
+                                            periodeOpphør,
+                                            null,
+                                        ),
+                                    ResultatBeregningBB(null),
+                                    emptyList(),
+                                ),
+                            )
+                        },
                     grunnlagListe = grunnlagBarn + grunnlagBeregning.grunnlagsliste,
                 )
             } else if (endeligResultat != null && !erAvvistRevurdering) {
@@ -371,7 +374,7 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                             ?.toList() ?: emptyList()
                     val grunnlagsListe =
                         (resultat.resultat.grunnlagListe.toSet() + grunnlagslisteDelvedtak).toList()
-                    val aldersjusteringDetaljer = grunnlagsListe.finnAldersjusteringDetaljerGrunnlag()
+                    val aldersjusteringDetaljer = grunnlagsListe.finnAldersjusteringDetaljerGrunnlag(resultat.barn.referanse)
 
                     ResultatBidragsberegningBarnDto(
                         barn = resultat.barn,
@@ -447,7 +450,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                 rv.resultat.grunnlagListe
                     .toSet()
                     .toList()
-            val aldersjusteringDetaljer = grunnlagslisteRV.finnAldersjusteringDetaljerGrunnlag()
+            val aldersjusteringDetaljer = grunnlagslisteRV.finnAldersjusteringDetaljerGrunnlag(resultat.barn.referanse)
             val resultatFraVedtak =
                 if (rv.delvedtak) {
                     grunnlagslisteRV.finnResultatFraAnnenVedtak(
@@ -515,10 +518,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                     } == true
 
                             val aldersjusteringsdetaljer =
-                                delvedtak
-                                    ?.resultat
-                                    ?.grunnlagListe
-                                    ?.finnAldersjusteringDetaljerGrunnlag()
+                                grunnlagslisteRV.finnAldersjusteringDetaljerGrunnlag(resultat.barn.referanse)
 
                             if (aldersjusteringsdetaljer != null && aldersjusteringsdetaljer.aldersjusteresManuelt) {
                                 ResultatBarnebidragsberegningPeriodeDto(
@@ -562,6 +562,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                                             resultat.opphørsdato,
                                                             it.vedtakstype,
                                                             erOpphør = p.resultat.beløp == null,
+                                                            it.omgjøringsvedtak,
                                                         )
                                                     } ?: false,
                                                 beregnTilDato = resultat.beregnTilDato,
@@ -638,7 +639,8 @@ fun kanOpprette35C(
     opphørsdato: YearMonth?,
     vedtakstype: Vedtakstype,
     erOpphør: Boolean,
-) = !vedtakstype.erIndeksEllerAldersjustering &&
+    omgjøringsvedtak: Boolean,
+) = !vedtakstype.erIndeksEllerAldersjustering && !omgjøringsvedtak &&
     periode.fom >= beregnTilDato && (opphørsdato == null || opphørsdato != periode.fom || (opphørsdato == periode.fom && !erOpphør))
 
 fun List<GrunnlagDto>.finnNesteIndeksårFraPrivatAvtale(grunnlagsreferanseListe: List<Grunnlagsreferanse>): Int? {
@@ -1128,10 +1130,11 @@ fun List<GrunnlagDto>.finnIndeksreguleringSluttberegning(
     return grunnlag.innholdTilObjekt<SluttberegningIndeksregulering>()
 }
 
-fun List<GrunnlagDto>.finnAldersjusteringDetaljerGrunnlag(): AldersjusteringDetaljerGrunnlag? {
+fun List<GrunnlagDto>.finnAldersjusteringDetaljerGrunnlag(søknadsbarnReferanse: String? = null): AldersjusteringDetaljerGrunnlag? {
     val grunnlag =
         find {
-            it.type == Grunnlagstype.ALDERSJUSTERING_DETALJER
+            it.type == Grunnlagstype.ALDERSJUSTERING_DETALJER &&
+                (søknadsbarnReferanse == null || it.gjelderBarnReferanse == søknadsbarnReferanse)
         } ?: return null
     return grunnlag.innholdTilObjekt<AldersjusteringDetaljerGrunnlag>()
 }

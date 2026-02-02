@@ -295,13 +295,14 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                                 beregnTilDato = orkestreringDetaljer?.beregnTilDato,
                                                 resultatFraVedtakVedtakstidspunkt = it.vedtakstidspunkt,
                                                 kanOpprette35c =
-                                                    orkestreringDetaljer?.let {
+                                                    orkestreringDetaljer?.let { od ->
                                                         kanOpprette35C(
                                                             periode.periode,
                                                             orkestreringDetaljer.beregnTilDato,
                                                             virkningstidspunkt?.opphørsdato?.toYearMonth(),
                                                             vedtak.type,
                                                             periode.beløp == null,
+                                                            it.omgjøringsvedtak,
                                                         )
                                                     } ?: false,
                                                 skalOpprette35c = it.opprettParagraf35c,
@@ -395,7 +396,7 @@ internal fun VedtakDto.hentBeregningsperioder(stønadsendring: StønadsendringDt
             )
         }
     } else {
-        stønadsendring.periodeListe.filter { Resultatkode.fraKode(it.resultatkode) != Resultatkode.OPPHØR }.map {
+        stønadsendring.periodeListe.filter { Resultatkode.fraKode(it.resultatkode) != Resultatkode.OPPHØR }.mapNotNull {
             grunnlagsliste.byggResultatBidragsberegning(
                 it.periode,
                 it.beløp,
@@ -1240,6 +1241,7 @@ private fun BaseGrunnlag.tilInntekt(
                     kode = it.kode,
                     inntektstype = it.inntektstype,
                     beløp = it.beløp,
+                    beløpstype = it.type,
                     inntekt = inntektBO,
                 )
             }.toMutableSet()

@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.behandling.transformers.hentGrunnlagBeløpshistorikkForRolle
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.maxOfNullable
+import no.nav.bidrag.behandling.transformers.minOfNullable
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.vedtakmappingFeilet
@@ -144,8 +145,8 @@ fun Behandling.finnBeregnTilDatoBehandling(
         when (søknadsbarnRolle?.beregnTil) {
             BeregnTil.INNEVÆRENDE_MÅNED -> {
                 utledBeregnTilDato(
-                    virkningstidspunkt!!,
-                    opphørsdato,
+                    søknadsbarnRolle.virkningstidspunkt ?: virkningstidspunkt!!,
+                    opphørsdato ?: globalOpphørsdatoYearMonth,
                     senesteBeregnTil = senesteBeregnTil,
                     søknadsbarnRolle = søknadsbarnRolle,
                 )
@@ -155,13 +156,18 @@ fun Behandling.finnBeregnTilDatoBehandling(
                 val nesteVirkningstidspunkt = hentNesteEtterfølgendeVedtak(søknadsbarnRolle)?.virkningstidspunkt?.atDay(1)
                 if (nesteVirkningstidspunkt == null || virkningstidspunkt!! >= nesteVirkningstidspunkt) {
                     utledBeregnTilDato(
-                        virkningstidspunkt!!,
+                        søknadsbarnRolle.virkningstidspunkt ?: virkningstidspunkt!!,
                         opphørsdato,
                         omgjortVedtakstidspunktBeregnTil,
                         søknadsbarnRolle = søknadsbarnRolle,
                     )
                 } else {
-                    utledBeregnTilDato(virkningstidspunkt!!, opphørsdato, nesteVirkningstidspunkt, søknadsbarnRolle = søknadsbarnRolle)
+                    utledBeregnTilDato(
+                        søknadsbarnRolle.virkningstidspunkt ?: virkningstidspunkt!!,
+                        opphørsdato,
+                        nesteVirkningstidspunkt,
+                        søknadsbarnRolle = søknadsbarnRolle,
+                    )
                 }
             }
 
@@ -209,10 +215,11 @@ private fun utledBeregnTilDato(
         val eksisterendeOpphør = søknadsbarnRolle.finnEksisterendeVedtakMedOpphørForRolle()
         // Hvis saksbehandler velger direkte avslag så skal beregn til være virkningstidspunkt fordi etter virkningstidspunkt så opphører bidraget
         // Men hvis det finnes opphør før virkningstidspunktet så skal det ikke være nødvendig å beregne etter det
-        maxOfNullable(eksisterendeOpphør?.opphørsdato, maxOf(søknadsbarnRolle.finnBeregnFra().toLocalDate(), virkningstidspunkt))!!
+        minOfNullable(eksisterendeOpphør?.opphørsdato, maxOf(søknadsbarnRolle.finnBeregnFra().toLocalDate(), virkningstidspunkt))!!
     } else if (avslagskode != null && avslagskode.erAvvisning()) {
+        // Avvisning kan bare velges hvis det allerede er et vedtak med opphør på rollen. Derfor hentes opphørsdato fra eksisterende vedtak
         val eksisterendeOpphør = søknadsbarnRolle.finnEksisterendeVedtakMedOpphørForRolle()
-        // Default til beregnTilUtenAvslag mtp at hvis avvisning ble valgt før endringer at opphørsdato ikke ble satt automatisk
+        // Default til beregnTilUtenAvslag. Grunnen til det er at hvis avvisning ble valgt ved opprettelse av behandling
         eksisterendeOpphør?.opphørsdato ?: opphørsdato?.atDay(1) ?: beregnTilUtenAvslag
     } else if (opphørsdato == null || opphørsdato.isAfter(YearMonth.now().plusMonths(1))) {
         beregnTilUtenAvslag
@@ -493,7 +500,8 @@ class VedtakGrunnlagMapper(
                             omgjørVedtakId = behandling.omgjøringsdetaljer?.opprinneligVedtakId!!,
                             gjelderKlage = behandling.vedtakstype == Vedtakstype.KLAGE,
                             skalInnkreves = skalInnkreves,
-                            erBeregningsperiodeLøpende = søknadsbarnRolle.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED,
+                            erBeregningsperiodeLøpende =
+                                søknadsbarnRolle.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED || søknadsbarnRolle.erDirekteAvslag,
                             gjelderParagraf35c =
                                 listOf(
                                     Behandlingstype.PARAGRAF_35_C,

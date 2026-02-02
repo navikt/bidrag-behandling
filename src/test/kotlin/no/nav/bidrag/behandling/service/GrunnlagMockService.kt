@@ -182,7 +182,7 @@ class GrunnlagMockService {
         stubSivilstandrepository(sivilstandRepository)
         stubVedtakConsumer(vedtakConsumer)
         mockAppContext(vedtakConsumer, personConsumer)
-        every { inntektService.justerOffentligePerioderEtterSisteGrunnlag(any()) } returns Unit
+        every { inntektService.justerInntektOffentligePerioderEtterSisteGrunnlag(any()) } returns Unit
         every {
             runBlocking {
                 grunnlagConsumer.henteGrunnlag(

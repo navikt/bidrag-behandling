@@ -530,7 +530,8 @@ class Dtomapper(
             id = this.id!!,
             periode = DatoperiodeDto(this.fom, this.tom),
             dagsats = this.dagsats,
-            total = beregnBarnebidragApi.beregnMånedsbeløpTilleggsstønad(this.dagsats),
+            månedsbeløp = this.månedsbeløp,
+            total = this.dagsats?.let { beregnBarnebidragApi.beregnMånedsbeløpTilleggsstønad(it) } ?: this.månedsbeløp ?: BigDecimal.ZERO,
         )
 
     fun Set<Tilleggsstønad>.tilTilleggsstønadDtos() = this.sortedBy { it.fom }.map { it.tilDto() }.toSet()

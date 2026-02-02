@@ -26,6 +26,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.util.InntektUtil
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektBeløpType
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
@@ -103,6 +104,7 @@ fun Set<Inntektspost>.tilInntektspostDtoV2() =
                 kode = inntekt.kode,
                 visningsnavn = finnVisningsnavn(inntekt.kode),
                 inntektstype = inntekt.inntektstype,
+                beløpstype = inntekt.beløpstype,
                 beløp =
                     inntekt.beløp.nærmesteHeltall *
                         if (inntekt.inntekt?.type ==
@@ -132,6 +134,7 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: Rolle) =
                         visningsnavn = finnVisningsnavn(it.kode),
                         inntektstype = it.inntekstype,
                         beløp = InntektUtil.kapitalinntektFaktor(it.kode) * it.beløp,
+                        beløpstype = InntektBeløpType.ÅRSBELØP,
                     )
                 }.sortedByDescending { it.beløp }
                 .toSet(),
@@ -216,6 +219,7 @@ fun Inntekt.tilIkkeAktivInntektDto(
                     finnVisningsnavn(it.kode),
                     it.inntektstype,
                     it.beløp.nærmesteHeltall,
+                    it.beløpstype,
                 )
             }.toSet(),
 )
@@ -269,6 +273,7 @@ fun InntektPost.toInntektpost() =
         finnVisningsnavn(kode),
         inntekstype,
         beløp.nærmesteHeltall,
+        InntektBeløpType.ÅRSBELØP,
     )
 
 fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {

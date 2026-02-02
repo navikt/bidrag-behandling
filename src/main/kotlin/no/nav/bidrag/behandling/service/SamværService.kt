@@ -118,10 +118,11 @@ class SamværService(
         if (erPerioderOppdatert) {
             val nyePerioder =
                 fraSamvær.perioder.map {
+                    val erSistePeriode = it == fraSamvær.perioder.maxByOrNull { periode -> periode.fom }
                     Samværsperiode(
                         oppdaterSamvær,
                         it.fom,
-                        it.tom,
+                        if (erSistePeriode) justerPeriodeTomOpphørsdato(oppdaterSamvær.rolle.opphørsdato) else it.tom,
                         it.samværsklasse,
                         beregningJson = it.beregningJson,
                     )
