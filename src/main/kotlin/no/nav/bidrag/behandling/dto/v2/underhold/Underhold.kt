@@ -203,13 +203,15 @@ data class UnderholdskostnadDto(
 data class OppdatereTilleggsstønadRequest(
     val id: Long? = null,
     val periode: DatoperiodeDto,
-    val dagsats: BigDecimal,
+    val dagsats: BigDecimal? = null,
+    val månedsbeløp: BigDecimal? = null,
 )
 
 data class TilleggsstønadDto(
     val id: Long? = null,
     val periode: DatoperiodeDto,
-    val dagsats: BigDecimal,
+    val dagsats: BigDecimal?,
+    val månedsbeløp: BigDecimal?,
     val total: BigDecimal,
 )
 

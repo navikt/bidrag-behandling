@@ -24,12 +24,14 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriodeDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektBeløpType
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
 import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.toYearMonth
 import java.math.BigDecimal
+import java.math.MathContext
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.Period
@@ -55,6 +57,22 @@ fun StønadsendringDto.tilStønadsid() =
         skyldner = skyldner,
         sak = sak,
     )
+
+fun BigDecimal.tilÅrsbeløp(beløpsType: InntektBeløpType? = null): BigDecimal =
+    when (beløpsType) {
+        InntektBeløpType.MÅNEDSBELØP -> {
+            multiply(BigDecimal(12), MathContext(0, RoundingMode.HALF_UP))
+        }
+
+        InntektBeløpType.DAGSATS -> {
+            multiply(BigDecimal(260), MathContext(10, RoundingMode.HALF_UP))
+                .divide(BigDecimal(12), MathContext(10, RoundingMode.HALF_UP))
+        }
+
+        else -> {
+            this
+        }
+    }
 
 val BigDecimal.nærmesteHeltall get() = this.setScale(0, RoundingMode.HALF_UP)
 val ainntekt12Og3Måneder =

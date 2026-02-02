@@ -96,6 +96,17 @@ fun Behandling.finnBeregnTilDato() =
         finnBeregnTilDatoBehandling()
     }
 
+fun Rolle.finnBeregnTil(): YearMonth =
+    if (rolletype == Rolletype.BARN) {
+        behandling.finnBeregnTilDatoBehandling(this).toYearMonth()
+    } else if (rolletype == Rolletype.BIDRAGSMOTTAKER) {
+        behandling.søknadsbarn.filter { it.bidragsmottaker != null && it.bidragsmottaker?.ident == ident }.maxOfOrNull {
+            behandling.finnBeregnTilDatoBehandling(it).toYearMonth()
+        } ?: behandling.finnBeregnTilDato().toYearMonth()
+    } else {
+        behandling.finnBeregnTilDato().toYearMonth()
+    }
+
 fun Rolle.finnBeregnFra(): YearMonth =
     if (behandling.erBidrag()) {
         if (behandling.erIForholdsmessigFordeling) {

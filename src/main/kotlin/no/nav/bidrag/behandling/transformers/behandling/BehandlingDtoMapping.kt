@@ -72,11 +72,13 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTil
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
+import no.nav.bidrag.beregn.core.util.avrundetTilToDesimaler
 import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.service.forsendelse.bidragspliktig
@@ -464,13 +466,8 @@ fun Rolle.tilDto() =
         erRevurdering = forholdsmessigFordeling?.erRevurdering == true,
         stønadstype = if (rolletype == Rolletype.BARN) stønadstype ?: behandling.stonadstype else null,
         saksnummer = forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
-        beregnFraDato = if (rolletype == Rolletype.BARN) finnBeregnFra() else null,
-        beregnTilDato =
-            if (rolletype == Rolletype.BARN) {
-                behandling.finnBeregnTilDatoBehandling(this).toYearMonth()
-            } else {
-                behandling.finnBeregnTilDato().toYearMonth()
-            },
+        beregnFraDato = finnBeregnFra(),
+        beregnTilDato = finnBeregnTil(),
         bidragsmottaker =
             if (rolletype == Rolletype.BARN) {
                 forholdsmessigFordeling?.bidragsmottaker ?: behandling.bidragsmottaker?.ident
@@ -1165,12 +1162,12 @@ fun Behandling.hentBeregnetInntekterForRolle(rolle: Rolle) =
                 summertInntektListe =
                     it.summertInntektListe.map { delberegning ->
                         delberegning.copy(
-                            barnetillegg = delberegning.barnetillegg?.nærmesteHeltall,
+                            barnetillegg = delberegning.barnetillegg?.avrundetTilToDesimaler,
                             småbarnstillegg = delberegning.småbarnstillegg?.nærmesteHeltall,
                             kontantstøtte = delberegning.kontantstøtte?.nærmesteHeltall,
                             utvidetBarnetrygd = delberegning.utvidetBarnetrygd?.nærmesteHeltall,
                             skattepliktigInntekt = delberegning.skattepliktigInntekt?.nærmesteHeltall,
-                            totalinntekt = delberegning.totalinntekt.nærmesteHeltall,
+                            totalinntekt = delberegning.totalinntekt.avrundetTilToDesimaler,
                         )
                     },
             )
