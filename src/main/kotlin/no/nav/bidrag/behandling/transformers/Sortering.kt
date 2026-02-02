@@ -23,13 +23,13 @@ fun Set<Rolle>.sorterForInntektsbildet() =
                 Rolletype.BARN -> 2
                 else -> 3
             }
-        }.then(sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.navn })),
+        }.then(sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator })),
     )
 
 fun <T> sorterPersonEtterEldsteFødselsdato(
     fødselsdato: (T) -> LocalDate,
-    navn: (T) -> String?,
-) = compareBy(fødselsdato, navn)
+    identifikator: (T) -> String?,
+) = compareBy(fødselsdato, identifikator)
 
 fun Set<Utgiftspost>.sorter() = sortedBy { it.dato }
 
