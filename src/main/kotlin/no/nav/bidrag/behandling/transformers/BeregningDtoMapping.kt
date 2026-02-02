@@ -1709,7 +1709,7 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                         beregnetBeløp = it.innhold.indeksregulertBeløp,
                         valutakode = periodeSomOverlapper.valutakode?.name ?: Valutakode.NOK.name,
                         reduksjonUnderholdskostnad = BigDecimal.ZERO,
-                        samværsfradrag = it.innhold.samværsfradrag,
+                        samværsfradrag = it.innhold.samværsfradrag ?: BigDecimal.ZERO,
                     ),
             )
         }
