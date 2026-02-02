@@ -30,6 +30,7 @@ import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
 import no.nav.bidrag.behandling.utils.testdata.oppretteRequestForOppdateringAvManuellInntekt
 import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
+import no.nav.bidrag.behandling.utils.testdata.synkSøknadsbarnVirkningstidspunkt
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.tilAinntektspostDto
@@ -292,6 +293,7 @@ class InntektServiceTest : TestContainerRunner() {
             // gitt
             val behandling = testdataManager.oppretteBehandling()
             behandling.virkningstidspunkt = LocalDate.now().withMonth(1).withDayOfMonth(1)
+            behandling.synkSøknadsbarnVirkningstidspunkt()
 
             val summerteInntekter =
                 SummerteInntekter(
@@ -307,7 +309,10 @@ class InntektServiceTest : TestContainerRunner() {
                                             .minusYears(1)
                                             .withMonth(1)
                                             .atDay(1),
-                                        YearMonth.now().withMonth(1).atDay(1),
+                                        YearMonth
+                                            .now()
+                                            .plusMonths(1)
+                                            .atDay(1),
                                     ),
                                 sumInntekt = BigDecimal(500),
                             ),
