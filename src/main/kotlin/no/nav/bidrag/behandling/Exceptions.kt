@@ -161,8 +161,30 @@ fun vedtakmappingFeilet(melding: String): Nothing =
 
 fun ingenTilgang(message: String): Nothing = throw HttpClientErrorException(HttpStatus.FORBIDDEN, message)
 
+fun bådeDagsatsOgMånedsbeløpAngittException(
+    behandlingsid: Long,
+    ressurstype: Ressurstype,
+): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        "Forespørselen om å oppdatere ${ressurstype.toString().lowercase()} for behandling $behandlingsid " +
+            "inneholdt ugyldige data. Både dagsats og måendsbeløp er angitt",
+    )
+
+fun hverkenDagsatsEllerMånedsbeløpAngittException(
+    behandlingsid: Long,
+    ressurstype: Ressurstype,
+): Nothing =
+    throw HttpClientErrorException(
+        HttpStatus.BAD_REQUEST,
+        "Forespørselen om å oppdatere ${ressurstype.toString().lowercase()} for behandling $behandlingsid " +
+            "inneholdt ugyldige data. Hverken dagsats eller måendsbeløp er angitt",
+    )
+
 enum class Ressurstype {
     BOFORHOLD,
     INNTEKT,
     SIVILSTAND,
+    BARNETILLEGG,
+    TILLEGGSSTØNAD,
 }
