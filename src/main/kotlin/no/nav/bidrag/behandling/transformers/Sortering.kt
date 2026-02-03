@@ -205,7 +205,7 @@ fun List<Inntekt>.sorterEtterDatoOgBarn() =
     sortedWith(
         compareBy({
             it.datoFom ?: it.opprinneligFom
-        }, { it.gjelderBarn }),
+        }, { it.gjelderBarnIdent }),
     )
 
 fun List<Inntekt>.sorterEtterDato() = sortedWith(compareBy { it.datoFom ?: it.opprinneligFom })
