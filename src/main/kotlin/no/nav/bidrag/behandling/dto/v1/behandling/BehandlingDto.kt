@@ -79,6 +79,8 @@ data class VirkningstidspunktDtoV3(
     val erLikForAlle: Boolean,
     val erVirkningstidspunktLiktForAlle: Boolean,
     val erAvslagForAlle: Boolean = false,
+    val beregnTil: BeregnTil?,
+    val etterfølgendeVedtak: EtterfølgendeVedtakDto? = null,
     val eldsteVirkningstidspunkt: YearMonth,
     val barn: List<VirkningstidspunktBarnDtoV2> = emptyList(),
 )

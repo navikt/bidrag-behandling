@@ -9,6 +9,8 @@ import no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple
 import no.nav.bidrag.behandling.dto.v1.behandling.EtterfølgendeVedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.EksisterendeOpphørsvedtakDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.service.hentNyesteIdent
+import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -37,6 +39,7 @@ import java.time.LocalDate
 import java.time.Period
 import java.time.Year
 import java.time.YearMonth
+import kotlin.collections.sorted
 
 val grunnlagsreferanseSimulert = "simulert_grunnlag"
 val vedtakstyperIkkeBeregning =
@@ -291,13 +294,26 @@ fun List<ÅrMånedsperiode>.mergePeriods(): List<ÅrMånedsperiode> {
 fun Behandling.hentEtterfølgendeVedtak(rolle: Rolle) =
     grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.ETTERFØLGENDE_VEDTAK)
 
+fun Behandling.hentNesteEtterfølgendeVedtakFelles(): EtterfølgendeVedtakDto? {
+    val grunnlag = søknadsbarn.mapNotNull { hentNesteEtterfølgendeVedtak(it) }
+    return grunnlag.sortedByDescending { it.virkningstidspunkt }.find {
+        val vedtak = hentVedtak(it.vedtaksid)
+        val kravhavere = vedtak?.stønadsendringListe?.map { hentNyesteIdent(it.kravhaver.verdi) } ?: emptyList()
+
+        val søknadsbarnIdenter = søknadsbarn.map { it.ident }
+        søknadsbarnIdenter.sortedBy { it }.toSet() == kravhavere.sortedBy { it }.toSet()
+    }
+}
+
 fun Behandling.hentNesteEtterfølgendeVedtak(rolle: Rolle): EtterfølgendeVedtakDto? {
     val grunnlag =
         hentEtterfølgendeVedtak(rolle)
     return grunnlag
         .konvertereData<List<VedtakForStønad>>()
+        ?.asSequence()
         ?.filter { it.virkningstidspunkt != null }
         ?.groupBy { it.virkningstidspunkt }
+        ?.asSequence()
         ?.mapNotNull { (_, group) -> group.maxByOrNull { it.vedtakstidspunkt } }
         ?.filter { !it.type.erIndeksEllerAldersjustering && it.stønadsendring.periodeListe.isNotEmpty() }
         ?.filter { it.virkningstidspunkt!!.isAfter(rolle.virkningstidspunkt!!.toYearMonth()) }

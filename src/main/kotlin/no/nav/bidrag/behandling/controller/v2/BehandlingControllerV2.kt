@@ -67,6 +67,7 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
+import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.behandling.HentÅpneBehandlingerRequest
@@ -431,7 +432,7 @@ class BehandlingControllerV2(
                 søktFomDato = LocalDate.now(),
                 mottattdato = LocalDate.now(),
                 behandlerenhet = "",
-                virkningstidspunktV3 = VirkningstidspunktDtoV3(false, false, false, YearMonth.now()),
+                virkningstidspunktV3 = VirkningstidspunktDtoV3(false, false, false, BeregnTil.INNEVÆRENDE_MÅNED, null, YearMonth.now()),
             )
         }
         val behandling = behandlingService.henteBehandling(behandlingsid, ikkeHentGrunnlag)
