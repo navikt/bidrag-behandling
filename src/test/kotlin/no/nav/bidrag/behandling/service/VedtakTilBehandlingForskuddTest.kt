@@ -344,7 +344,7 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             inntekt3Mnd.inntektsposter shouldHaveSize 1
             inntekt3Mnd.kilde shouldBe Kilde.OFFENTLIG
             inntekt3Mnd.belop shouldBe BigDecimal(5330000)
-            inntekt3Mnd.ident shouldBe testdataBM.ident
+            inntekt3Mnd.gjelderIdent shouldBe testdataBM.ident
             assertSoftly(inntekt3Mnd.inntektsposter.toList()) {
                 this shouldHaveSize 1
                 this[0].beløp shouldBe BigDecimal(5330000)
@@ -362,11 +362,11 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             saksbehandlersBeregnetInntekt.opprinneligTom shouldBe null
             saksbehandlersBeregnetInntekt.datoTom shouldBe LocalDate.parse("2024-05-31")
             saksbehandlersBeregnetInntekt.taMed shouldBe true
-            saksbehandlersBeregnetInntekt.ident shouldBe testdataBM.ident
+            saksbehandlersBeregnetInntekt.gjelderIdent shouldBe testdataBM.ident
 
             val barnetillegg = find { it.type == Inntektsrapportering.BARNETILLEGG }
-            barnetillegg!!.gjelderBarn shouldBe testdataBarn2.ident
-            barnetillegg.ident shouldBe testdataBM.ident
+            barnetillegg!!.gjelderBarnIdent shouldBe testdataBarn2.ident
+            barnetillegg.gjelderIdent shouldBe testdataBM.ident
             barnetillegg.kilde shouldBe Kilde.MANUELL
         }
 
@@ -493,9 +493,9 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             val barnetillegg = filter { it.type == Inntektsrapportering.BARNETILLEGG }
             assertSoftly(barnetillegg) {
                 shouldHaveSize(1)
-                it[0].ident shouldBe testdataBM.ident
+                it[0].gjelderIdent shouldBe testdataBM.ident
                 it[0].belop shouldBe BigDecimal(5000)
-                it[0].gjelderBarn shouldBe testdataBarn2.ident
+                it[0].gjelderBarnIdent shouldBe testdataBarn2.ident
                 it[0].taMed shouldBe false
                 it[0].datoFom shouldBe null
                 it[0].datoTom shouldBe null
@@ -505,9 +505,9 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
             val ainntekt = filter { it.type == Inntektsrapportering.AINNTEKT }
             assertSoftly(ainntekt) {
                 shouldHaveSize(2)
-                it[0].ident shouldBe testdataBM.ident
+                it[0].gjelderIdent shouldBe testdataBM.ident
                 it[0].belop shouldBe BigDecimal(2859987)
-                it[0].gjelderBarn shouldBe null
+                it[0].gjelderBarnIdent shouldBe null
                 it[0].taMed shouldBe true
                 it[0].kilde shouldBe Kilde.OFFENTLIG
                 it[0].datoFom shouldBe LocalDate.parse("2022-01-01")

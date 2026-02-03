@@ -407,7 +407,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     ),
                     Inntekt(
                         Inntektsrapportering.BARNETILLEGG,
-                        BigDecimal(555),
+                        BigDecimal("555.00"),
                         LocalDate.parse("2024-01-01"),
                         LocalDate.parse("2024-05-01"),
                         testdataBM.ident,
@@ -470,7 +470,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                 assertSoftly(inntekterBarn1) {
                     summertInntektListe shouldHaveSize 3
                     summertInntektListe[1].skattepliktigInntekt shouldBe BigDecimal(1234)
-                    summertInntektListe[1].barnetillegg shouldBe BigDecimal(555)
+                    summertInntektListe[1].barnetillegg shouldBe BigDecimal("555.00")
                     summertInntektListe[1].kontantstøtte shouldBe null
                 }
             }

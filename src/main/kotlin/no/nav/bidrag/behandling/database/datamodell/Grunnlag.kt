@@ -45,7 +45,7 @@ open class Grunnlag(
     open var aktiv: LocalDateTime? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rolle_id", nullable = false)
-    open val rolle: Rolle,
+    open var rolle: Rolle,
     open var gjelder: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -116,6 +116,30 @@ fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderBarn(
             if (grunnlagFraVedtakSomSkalOmgjøres == null) true else it.grunnlagFraVedtakSomSkalOmgjøres == grunnlagFraVedtakSomSkalOmgjøres
     }
 
+fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderRolle(
+    rolle: Rolle,
+    type: Grunnlagsdatatype,
+    grunnlagFraVedtakSomSkalOmgjøres: Boolean? = null,
+) = hentSisteAktiv(true)
+    .find {
+        it.rolle.erSammeRolle(rolle) && type == it.type &&
+            // Hvis det ikke er spesifikt valgt å hente grunnlag fra vedtak som omgjøres så hent det første som finnes. Kan hende siste grunnlag er grunnlag hentet fra vedtak som omgjøres
+            if (grunnlagFraVedtakSomSkalOmgjøres == null) {
+                true
+            } else {
+                it.grunnlagFraVedtakSomSkalOmgjøres == grunnlagFraVedtakSomSkalOmgjøres
+            }
+    } ?: hentSisteAktiv(true)
+    .find {
+        it.gjelder == rolle.ident && type == it.type &&
+            // Hvis det ikke er spesifikt valgt å hente grunnlag fra vedtak som omgjøres så hent det første som finnes. Kan hende siste grunnlag er grunnlag hentet fra vedtak som omgjøres
+            if (grunnlagFraVedtakSomSkalOmgjøres == null) {
+                true
+            } else {
+                it.grunnlagFraVedtakSomSkalOmgjøres == grunnlagFraVedtakSomSkalOmgjøres
+            }
+    }
+
 fun Set<Grunnlag>.henteSisteSivilstand(erBearbeidet: Boolean) =
     hentSisteAktiv()
         .find { it.erBearbeidet == erBearbeidet && Grunnlagsdatatype.SIVILSTAND == it.type }
@@ -149,9 +173,9 @@ fun List<Grunnlag>.hentGrunnlagForType(
 
 fun List<Grunnlag>.henteBearbeidaInntekterForType(
     type: Grunnlagsdatatype,
-    ident: String,
+    rolle: Rolle,
 ) = find {
-    it.type == type && it.erBearbeidet && it.rolle.ident == ident
+    it.type == type && it.erBearbeidet && it.rolle.erSammeRolle(rolle)
 }.konvertereData<SummerteInntekter<SummertÅrsinntekt>>()
 
 fun Behandling.hentNyesteGrunnlagForIkkeAktiv(

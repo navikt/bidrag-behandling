@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import org.hibernate.annotations.ColumnTransformer
 import java.time.LocalDate
 
@@ -55,6 +56,15 @@ open class Husstandsmedlem(
     @ColumnTransformer(write = "?::jsonb")
     open var forrigePerioder: String? = null,
 ) {
+    fun erSammePerson(
+        ident: String,
+        stønadstype: Stønadstype?,
+    ) = if (rolle == null) {
+        this.ident == ident
+    } else {
+        rolle!!.erSammeRolle(ident, stønadstype)
+    }
+
     val erSøknadsbarn get() = behandling.søknadsbarn.any { it.ident == ident }
 
     override fun toString(): String =

@@ -6,9 +6,12 @@ import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Notat
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
@@ -20,6 +23,7 @@ import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
+import no.nav.bidrag.behandling.service.LøpendeBidragSakPeriode
 import no.nav.bidrag.behandling.service.SakKravhaver
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
@@ -28,6 +32,7 @@ import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -140,7 +145,7 @@ fun opprettRolle(
     medInnkreving: Boolean? = null,
     opphørsdato: YearMonth? = null,
 ): Rolle {
-    behandling.roller.find { it.ident == fødselsnummer && it.stønadstype == stønadstype }?.let {
+    behandling.roller.find { it.erSammeRolle(fødselsnummer, stønadstype) }?.let {
         if (harGebyrSøknad != null) {
             val gebyr = it.hentEllerOpprettGebyr()
             it.harGebyrsøknad = true
@@ -215,7 +220,7 @@ fun opprettRolle(
 fun Grunnlag.kopierGrunnlag(hovedbehandling: Behandling): Grunnlag =
     Grunnlag(
         behandling = hovedbehandling,
-        rolle = hovedbehandling.roller.find { it.ident == rolle.ident }!!,
+        rolle = hovedbehandling.roller.find { it.erSammeRolle(rolle) }!!,
         erBearbeidet = erBearbeidet,
         grunnlagFraVedtakSomSkalOmgjøres = grunnlagFraVedtakSomSkalOmgjøres,
         type = type,
@@ -247,6 +252,8 @@ fun Rolle.kopierRolle(
     ident = ident,
     årsak = årsak ?: behandling.årsak,
     avslag = avslag ?: behandling.avslag,
+    behandlingstema = behandlingstema,
+    behandlingstatus = behandlingstatus,
     virkningstidspunkt = virkningstidspunkt ?: hovedbehandling.eldsteVirkningstidspunkt,
     grunnlagFraVedtakListe = grunnlagFraVedtakListe,
     opphørsdato = opphørsdato ?: hovedbehandling.globalOpphørsdato,
@@ -282,7 +289,7 @@ fun kopierInntekt(
     val eksisterndeInntekt =
         hovedbehandling.inntekter
             .filter {
-                it.taMed && it.ident == inntektOverført.ident &&
+                it.taMed && it.tilhørerSammePerson(inntektOverført) &&
                     it.type == inntektOverført.type
             }.find {
                 val periodeOverført = ÅrMånedsperiode(inntektOverført.datoFom!!, inntektOverført.datoTom)
@@ -295,11 +302,13 @@ fun kopierInntekt(
     val inntekt =
         Inntekt(
             behandling = hovedbehandling,
-            ident = inntektOverført.ident,
+            ident = inntektOverført.gjelderIdent,
+            rolle = inntektOverført.rolle,
             kilde = inntektOverført.kilde,
             taMed = inntektOverført.taMed,
             type = inntektOverført.type,
-            gjelderBarn = inntektOverført.gjelderBarn,
+            gjelderBarn = inntektOverført.gjelderBarnIdent,
+            gjelderBarnRolle = inntektOverført.gjelderBarnRolle,
             opprinneligFom = inntektOverført.opprinneligFom,
             opprinneligTom = inntektOverført.opprinneligTom,
             belop = inntektOverført.belop,
@@ -318,32 +327,32 @@ fun kopierInntekt(
             )
         }
 
-    val rolleInntekt = hovedbehandling.roller.find { it.ident == inntektOverført.ident }!!
+    val rolleInntekt = hovedbehandling.roller.find { it.erSammeRolle(inntekt.rolle!!) }!!
 
     hovedbehandling.inntekter.add(inntekt)
 
-    kopierOverBegrunnelseForBehandling(rolleInntekt.ident!!, inntektOverført.behandling!!, hovedbehandling, NotatGrunnlag.NotatType.INNTEKT)
+    kopierOverBegrunnelseForBehandling(rolleInntekt, inntektOverført.behandling!!, hovedbehandling, NotatGrunnlag.NotatType.INNTEKT)
 }
 
 fun kopierOverInntekterForRolleFraBehandling(
-    gjelderPerson: String,
+    gjelderPerson: Rolle,
     behandling: Behandling,
     behandlingOverført: Behandling,
 ) {
     behandlingOverført.inntekter
-        .filter { gjelderPerson == it.ident }
+        .filter { it.erSammeRolle(gjelderPerson) }
         .filter { it.taMed && it.type.kanLeggesInnManuelt }
         .forEach { inntektOverført ->
             kopierInntekt(behandling, inntektOverført)
         }
 
     behandlingOverført.inntekter
-        .filter { gjelderPerson == it.ident }
+        .filter { it.erSammeRolle(gjelderPerson) }
         .filter { it.taMed && !it.type.kanLeggesInnManuelt }
         .forEach { inntektOverført ->
             val tilsvarendeInntekt =
                 behandling.inntekter
-                    .filter { gjelderPerson == it.ident }
+                    .filter { it.erSammeRolle(gjelderPerson) }
                     .find {
                         it.type == inntektOverført.type && it.opprinneligFom == inntektOverført.opprinneligFom &&
                             it.opprinneligTom == inntektOverført.opprinneligTom
@@ -357,48 +366,151 @@ fun kopierOverInntekterForRolleFraBehandling(
 }
 
 fun kopierOverBegrunnelseForBehandling(
-    rolle: String,
+    rolle: Rolle,
     fraBehandling: Behandling,
     tilBehandling: Behandling,
     notatType: NotatGrunnlag.NotatType,
 ) {
-    val rolleInntekt = tilBehandling.roller.find { it.ident == rolle }!!
-    val begrunnelseInntektOverført =
+    val rolleHovedbehandling = tilBehandling.roller.find { it.erSammeRolle(rolle) }!!
+    val begrunnelseOverført =
         fraBehandling
             .notater
-            .find { it.type == notatType && it.rolle.ident == rolle }
+            .find { it.type == notatType && it.rolle.erSammeRolle(rolle) }
             ?.innhold ?: ""
-    val eksisterendeInntektBegrunnelse =
+    val eksisterendeBegrunnelse =
         tilBehandling.notater
             .find {
                 it.type == notatType &&
-                    it.rolle.ident == rolle
+                    it.rolle.erSammeRolle(rolle)
             }
-    if (eksisterendeInntektBegrunnelse == null) {
+    if (eksisterendeBegrunnelse == null) {
         tilBehandling.notater.add(
-            Notat(behandling = tilBehandling, innhold = begrunnelseInntektOverført, rolle = rolleInntekt, type = notatType),
+            Notat(behandling = tilBehandling, innhold = begrunnelseOverført, rolle = rolleHovedbehandling, type = notatType),
         )
         return
     }
     val endeligBegrunnelse =
-        if (begrunnelseInntektOverført.isNotEmpty() &&
-            !eksisterendeInntektBegrunnelse.innhold.contains(begrunnelseInntektOverført, ignoreCase = true)
+        if (begrunnelseOverført.isNotEmpty() &&
+            !eksisterendeBegrunnelse.innhold.contains(begrunnelseOverført, ignoreCase = true)
         ) {
-            """${eksisterendeInntektBegrunnelse.innhold} <br><u>Overført fra sak ${fraBehandling.saksnummer}</u><br> $begrunnelseInntektOverført"""
+            """${eksisterendeBegrunnelse.innhold} <br><u>Overført fra sak ${fraBehandling.saksnummer}</u><br> $begrunnelseOverført"""
         } else {
-            eksisterendeInntektBegrunnelse.innhold
+            eksisterendeBegrunnelse.innhold
         }
-    eksisterendeInntektBegrunnelse.innhold = endeligBegrunnelse
+    eksisterendeBegrunnelse.innhold = endeligBegrunnelse
+}
+
+fun kopierPrivatAvtale(
+    hovedbehandling: Behandling,
+    privatAvtaleOveført: PrivatAvtale,
+) {
+    if (privatAvtaleOveført.rolle == null ||
+        hovedbehandling.privatAvtale
+            .any { it.rolle != null && it.rolle!!.erSammeRolle(privatAvtaleOveført.rolle!!) }
+    ) {
+        // Ikke overfør hvis barnet er allerede lagt inn i privat avtale eller tilhører annen barn
+        return
+    }
+
+    val rolleBarn =
+        hovedbehandling.roller.find {
+            (privatAvtaleOveført.rolle != null && it.erSammeRolle(privatAvtaleOveført.rolle!!))
+        } ?: return
+    val eksisterendePrivatAvtale =
+        hovedbehandling.privatAvtale
+            .find {
+                (it.rolle == null && it.person?.ident == privatAvtaleOveført.rolle!!.ident) ||
+                    (it.rolle != null && it.rolle!!.erSammeRolle(privatAvtaleOveført.rolle!!))
+            }
+    val privatAvtaleNy =
+        eksisterendePrivatAvtale
+            ?: run {
+                val nyPrivatAvtale =
+                    PrivatAvtale(
+                        rolle = rolleBarn,
+                        behandling = hovedbehandling,
+                    )
+                hovedbehandling.privatAvtale.add(nyPrivatAvtale)
+                nyPrivatAvtale
+            }
+    privatAvtaleNy.rolle = rolleBarn
+
+    privatAvtaleNy.utenlandsk = privatAvtaleOveført.utenlandsk
+    privatAvtaleNy.avtaleDato = privatAvtaleOveført.avtaleDato
+    privatAvtaleNy.avtaleType = privatAvtaleOveført.avtaleType
+    privatAvtaleNy.skalIndeksreguleres = privatAvtaleOveført.skalIndeksreguleres
+    privatAvtaleNy.grunnlagFraVedtak = privatAvtaleOveført.grunnlagFraVedtak
+    privatAvtaleNy.perioder.clear()
+    privatAvtaleNy.perioder.addAll(
+        privatAvtaleOveført.perioder.map { p ->
+            PrivatAvtalePeriode(
+                fom = p.fom,
+                tom = p.tom,
+                beløp = p.beløp,
+                privatAvtale = privatAvtaleNy,
+            )
+        },
+    )
+}
+
+fun kopierHusstandsmedlem(
+    hovedbehandling: Behandling,
+    husstandsmedlemOverført: Husstandsmedlem,
+) {
+    if (hovedbehandling.husstandsmedlem
+            .any { it.rolle != null && husstandsmedlemOverført.rolle != null && it.rolle!!.erSammeRolle(husstandsmedlemOverført.rolle!!) }
+    ) {
+        // Ikke overfør hvis barnet er allerede lagt inn som husstandsmedlem
+        return
+    }
+
+    val rolleBarn =
+        hovedbehandling.roller.find {
+            (husstandsmedlemOverført.rolle != null && it.erSammeRolle(husstandsmedlemOverført.rolle!!)) ||
+                husstandsmedlemOverført.ident == it.ident
+        } ?: return // Bare overfør husstandsmedlem informasjon for søknadsbarn som overføres. Resten hentes inn via grunnlagsinnhenting
+    val eksisterendeHusstandsmedlem =
+        hovedbehandling.husstandsmedlem
+            .find { it.rolle == null && it.ident == husstandsmedlemOverført.ident }
+    val husstandsmedlemNy =
+        eksisterendeHusstandsmedlem
+            ?: run {
+                val nyHM =
+                    Husstandsmedlem(
+                        rolle = rolleBarn,
+                        behandling = hovedbehandling,
+                        kilde = Kilde.OFFENTLIG,
+                    )
+                hovedbehandling.husstandsmedlem.add(nyHM)
+                nyHM
+            }
+    husstandsmedlemNy.rolle = rolleBarn
+    husstandsmedlemNy.kilde = Kilde.OFFENTLIG
+
+    // TODO: Skal perioder overføres?
+//    husstandsmedlemNy.perioder.clear()
+//    husstandsmedlemNy.perioder.addAll(
+//        husstandsmedlemOverført.perioder
+//            .map { p ->
+//                Bostatusperiode(
+//                    kilde = p.kilde,
+//                    datoFom = p.datoFom,
+//                    datoTom = p.datoTom,
+//                    bostatus = p.bostatus,
+//                    husstandsmedlem = husstandsmedlemNy,
+//                )
+//            }.toMutableSet(),
+//    )
 }
 
 fun kopierSamvær(
     hovedbehandling: Behandling,
     samværOverført: Samvær,
 ) {
-    val rolle = hovedbehandling.roller.find { it.ident == samværOverført.rolle.ident }!!
+    val rolle = hovedbehandling.roller.find { it.erSammeRolle(samværOverført.rolle) }!!
     val samvær =
         Samvær(
-            rolle = hovedbehandling.roller.find { r -> r.ident == samværOverført.rolle.ident }!!,
+            rolle = rolle,
             behandling = hovedbehandling,
         )
     samvær.perioder =
@@ -406,21 +518,21 @@ fun kopierSamvær(
             .map { s ->
                 Samværsperiode(fom = s.fom, tom = s.tom, samværsklasse = s.samværsklasse, samvær = samvær)
             }.toMutableSet()
-    val notatSamævr =
+    val notatSamvær =
         samværOverført.rolle.notat
             .find { it.type == NotatGrunnlag.NotatType.SAMVÆR }
             ?.innhold ?: ""
     hovedbehandling.samvær.add(samvær)
     hovedbehandling.notater.add(
-        Notat(behandling = hovedbehandling, innhold = notatSamævr, rolle = rolle, type = NotatGrunnlag.NotatType.SAMVÆR),
+        Notat(behandling = hovedbehandling, innhold = notatSamvær, rolle = rolle, type = NotatGrunnlag.NotatType.SAMVÆR),
     )
 }
 
 fun Underholdskostnad.kopierUnderholdskostnad(hovedbehandling: Behandling) {
-    val rolle = hovedbehandling.roller.find { it.ident == rolle?.ident }
+    val rolle = hovedbehandling.roller.find { rolle != null && it.erSammeRolle(rolle!!) }
     val bmFraOverførtBehandling = behandling.bidragsmottaker
-    val bmFraHovedbehandling = hovedbehandling.roller.find { r -> r.ident == bmFraOverførtBehandling!!.ident }!!
-    val underholdskostnad =
+    val bmFraHovedbehandling = hovedbehandling.roller.find { r -> r.erSammeRolle(bmFraOverførtBehandling!!) }!!
+    val nyUnderholdskostnad =
         Underholdskostnad(
             rolle = rolle,
             person = person,
@@ -428,11 +540,11 @@ fun Underholdskostnad.kopierUnderholdskostnad(hovedbehandling: Behandling) {
             kilde = kilde,
             harTilsynsordning = harTilsynsordning,
         )
-    underholdskostnad.faktiskeTilsynsutgifter =
+    nyUnderholdskostnad.faktiskeTilsynsutgifter =
         faktiskeTilsynsutgifter
             .map {
                 FaktiskTilsynsutgift(
-                    underholdskostnad = underholdskostnad,
+                    underholdskostnad = nyUnderholdskostnad,
                     fom = it.fom,
                     tom = it.tom,
                     tilsynsutgift = it.tilsynsutgift,
@@ -440,11 +552,11 @@ fun Underholdskostnad.kopierUnderholdskostnad(hovedbehandling: Behandling) {
                     kommentar = it.kommentar,
                 )
             }.toMutableSet()
-    underholdskostnad.barnetilsyn =
+    nyUnderholdskostnad.barnetilsyn =
         barnetilsyn
             .map {
                 Barnetilsyn(
-                    underholdskostnad = underholdskostnad,
+                    underholdskostnad = nyUnderholdskostnad,
                     fom = it.fom,
                     tom = it.tom,
                     under_skolealder = it.under_skolealder,
@@ -452,23 +564,23 @@ fun Underholdskostnad.kopierUnderholdskostnad(hovedbehandling: Behandling) {
                     omfang = it.omfang,
                 )
             }.toMutableSet()
-    underholdskostnad.tilleggsstønad =
+    nyUnderholdskostnad.tilleggsstønad =
         tilleggsstønad
             .map {
                 Tilleggsstønad(
-                    underholdskostnad = underholdskostnad,
+                    underholdskostnad = nyUnderholdskostnad,
                     fom = it.fom,
                     tom = it.tom,
                     dagsats = it.dagsats,
                 )
             }.toMutableSet()
-    val rolleNotat = if (underholdskostnad.gjelderAndreBarn) bmFraOverførtBehandling else underholdskostnad.rolle
+    val rolleNotat = if (nyUnderholdskostnad.gjelderAndreBarn) bmFraOverførtBehandling else this.rolle
     val notatUnderhold =
         rolleNotat!!
             .notat
             .find { it.type == NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD }
             ?.innhold ?: ""
-    hovedbehandling.underholdskostnader.add(underholdskostnad)
+    hovedbehandling.underholdskostnader.add(nyUnderholdskostnad)
     hovedbehandling.notater.add(
         Notat(
             behandling = hovedbehandling,
@@ -479,7 +591,26 @@ fun Underholdskostnad.kopierUnderholdskostnad(hovedbehandling: Behandling) {
     )
 }
 
-fun Set<SakKravhaver>.hentForKravhaver(kravhaverIdent: String) = find { it.kravhaver == kravhaverIdent }
+fun Collection<LøpendeBidragSakPeriode>.hentBidragSakForKravhaver(
+    kravhaverIdent: String,
+    stønadstype: Stønadstype?,
+) = find {
+    it.kravhaver.verdi == kravhaverIdent &&
+        (stønadstype == null || it.type == stønadstype)
+}
+
+fun Collection<SakKravhaver>.hentForKravhaver(
+    kravhaverIdent: String,
+    type: Stønadstype?,
+) = find {
+    it.erLik(kravhaverIdent, type)
+}
+
+fun SakKravhaver.erLik(
+    kravhaverIdent: String,
+    type: Stønadstype?,
+) = kravhaver == kravhaverIdent &&
+    (type == null || type == stønadstype)
 
 fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
     sak: BidragssakDto?,

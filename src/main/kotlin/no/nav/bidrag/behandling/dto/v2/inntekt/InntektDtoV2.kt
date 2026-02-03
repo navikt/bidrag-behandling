@@ -13,10 +13,13 @@ import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilV2Dto
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
+import no.nav.bidrag.domene.enums.rolle.Rolle
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.InntektPerBarn
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumInntekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektBeløpType
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
@@ -41,10 +44,15 @@ data class InntektDtoV2(
     @Schema(type = "string", format = "date", example = "2024-12-31")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val opprinneligTom: LocalDate?,
+    @Schema(required = false, deprecated = true)
+    @Deprecated("Bruk gjelderRolleId")
+    val ident: Personident?,
     @Schema(required = true)
-    val ident: Personident,
-    @Schema(required = false)
+    val gjelderRolleId: Long?,
+    @Schema(required = false, deprecated = true)
+    @Deprecated("Bruk gjelderBarnId")
     val gjelderBarn: Personident?,
+    val gjelderBarnId: Long?,
     @Schema(required = true)
     val kilde: Kilde = Kilde.MANUELL,
     @Schema(required = true)
@@ -53,11 +61,40 @@ data class InntektDtoV2(
     val inntektstyper: Set<Inntektstype> = emptySet(),
     val historisk: Boolean? = false,
 ) {
+    fun gjelderRolle(rolle: no.nav.bidrag.behandling.database.datamodell.Rolle) =
+        if (gjelderRolleId !=
+            null
+        ) {
+            rolle.id == gjelderRolleId
+        } else {
+            ident?.verdi == rolle.ident
+        }
+
     @get:Schema(description = "Avrundet månedsbeløp for barnetillegg")
     val månedsbeløp: BigDecimal?
         get() =
-            if (Inntektsrapportering.BARNETILLEGG == rapporteringstype) {
-                beløp.divide(BigDecimal(12), 0, RoundingMode.HALF_UP)
+            run {
+                val beløpstype = inntektsposter.firstOrNull()?.beløpstype
+                if (Inntektsrapportering.BARNETILLEGG == rapporteringstype &&
+                    beløpstype == InntektBeløpType.MÅNEDSBELØP
+                ) {
+                    inntektsposter.first().beløp
+                } else if (Inntektsrapportering.BARNETILLEGG == rapporteringstype &&
+                    (beløpstype == null || beløpstype == InntektBeløpType.ÅRSBELØP)
+                ) {
+                    beløp.divide(BigDecimal(12), 0, RoundingMode.HALF_UP)
+                } else {
+                    null
+                }
+            }
+
+    @get:Schema(description = "Avrundet dagsats for barnetillegg")
+    val dagsats: BigDecimal?
+        get() =
+            if (Inntektsrapportering.BARNETILLEGG == rapporteringstype &&
+                inntektsposter.firstOrNull()?.beløpstype == InntektBeløpType.DAGSATS
+            ) {
+                inntektsposter.first().beløp
             } else {
                 null
             }
@@ -115,7 +152,13 @@ data class InntekterDtoV2(
 data class BeregnetInntekterDto(
     val ident: Personident,
     val rolle: Rolletype,
-    val inntekter: List<InntektPerBarn> = emptyList(),
+    val inntekter: List<InntektPerBarnDto> = emptyList(),
+)
+
+data class InntektPerBarnDto(
+    @Schema(description = "Referanse til barn", deprecated = true) val inntektGjelderBarnIdent: Personident? = null,
+    @Schema(description = "Referanse til barn", deprecated = true) val inntektGjelderBarn: Rolle? = null,
+    @Schema(description = "Liste over summerte inntektsperioder") var summertInntektListe: List<DelberegningSumInntekt> = emptyList(),
 )
 
 data class OppdatereInntektBegrunnelseRespons(
@@ -200,6 +243,7 @@ data class OppdatereManuellInntekt(
     val type: Inntektsrapportering,
     @Schema(description = "Inntektens beløp i norske kroner", required = true)
     val beløp: BigDecimal,
+    val beløpType: InntektBeløpType = InntektBeløpType.ÅRSBELØP,
     @Schema(type = "String", format = "date", example = "2024-01-01", nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoFom: LocalDate,
@@ -210,9 +254,19 @@ data class OppdatereManuellInntekt(
         description = "Ident til personen inntekten gjenlder for.",
         type = "String",
         example = "12345678910",
-        required = true,
+        required = false,
+        deprecated = true,
     )
-    val ident: Personident,
+    @Deprecated("Bruk gjelderId")
+    val ident: Personident?,
+    @Schema(
+        description = "Id til rollen til personen inntekten gjenlder for.",
+        type = "String",
+        example = "12345678910",
+        required = true,
+        deprecated = true,
+    )
+    val gjelderId: Long? = null,
     @Schema(
         description =
             "Ident til barnet en ytelse gjelder for. " +
@@ -220,8 +274,20 @@ data class OppdatereManuellInntekt(
         type = "String",
         example = "12345678910",
         required = false,
+        deprecated = true,
     )
+    @Deprecated("Bruk gjelderBarnId")
     val gjelderBarn: Personident? = null,
+    @Schema(
+        description =
+            "Id til rollen til barnet en ytelse gjelder for. " +
+                "sBenyttes kun for ytelser som er koblet til ett spesifikt barn, f.eks kontantstøtte",
+        type = "String",
+        example = "12345678910",
+        required = false,
+        deprecated = true,
+    )
+    val gjelderBarnId: Long? = null,
     @Schema(description = "Spesifisere inntektstype for detaljpost")
     val inntektstype: Inntektstype? = null,
 )

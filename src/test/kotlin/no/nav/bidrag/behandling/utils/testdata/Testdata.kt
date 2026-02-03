@@ -209,8 +209,8 @@ data class TestDataPerson(
 ) {
     fun tilRolle(
         behandling: Behandling = oppretteBehandling(),
-        id: Long = 1,
-    ) = Rolle(
+        id: Long? = null,
+    ) = behandling.roller.find { it.ident == ident } ?: Rolle(
         id = behandling.roller.find { it.ident == ident }?.id ?: id,
         ident = ident,
         navn = navn,
@@ -301,6 +301,7 @@ fun opprettInntekter(
         Kilde.OFFENTLIG,
         true,
         behandling = behandling,
+        rolle = data.tilRolle(behandling),
         id = if (medId) 1 else null,
     ),
     Inntekt(
@@ -312,6 +313,7 @@ fun opprettInntekter(
         Kilde.OFFENTLIG,
         true,
         behandling = behandling,
+        rolle = data.tilRolle(behandling),
         id = if (medId) 2 else null,
     ),
     Inntekt(
@@ -323,6 +325,7 @@ fun opprettInntekter(
         Kilde.MANUELL,
         true,
         behandling = behandling,
+        rolle = data.tilRolle(behandling),
         id = if (medId) 3 else null,
     ),
 )
@@ -370,7 +373,7 @@ fun oppretteRequestForOppdateringAvManuellInntekt(idInntekt: Long? = null) =
     OppdatereManuellInntekt(
         id = idInntekt,
         type = Inntektsrapportering.KONTANTSTØTTE,
-        beløp = BigDecimal(305203),
+        beløp = BigDecimal("305203.00"),
         datoFom = LocalDate.now().minusYears(1).withDayOfYear(1),
         datoTom =
             LocalDate
@@ -394,7 +397,7 @@ fun oppretteHusstandsmedlem(
             behandling = behandling,
             fødselsdato = data.fødselsdato,
         )
-    husstandsmedlem.perioder =
+    husstandsmedlem.perioder.addAll(
         mutableSetOf(
             Bostatusperiode(
                 datoFom = LocalDate.parse("2022-01-01"),
@@ -417,7 +420,8 @@ fun oppretteHusstandsmedlem(
                 kilde = Kilde.OFFENTLIG,
                 husstandsmedlem = husstandsmedlem,
             ),
-        )
+        ),
+    )
     return husstandsmedlem
 }
 
@@ -625,7 +629,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                         belop = BigDecimal(50000),
                         datoFom = LocalDate.parse("2022-01-01"),
                         datoTom = LocalDate.parse("2022-06-30"),
-                        ident = behandling.bidragsmottaker!!.ident!!,
+                        rolle = behandling.bidragsmottaker!!,
                         taMed = true,
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
@@ -636,7 +640,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                         belop = BigDecimal(60000),
                         datoFom = LocalDate.parse("2022-07-01"),
                         datoTom = LocalDate.parse("2022-09-30"),
-                        ident = behandling.bidragsmottaker!!.ident!!,
+                        rolle = behandling.bidragsmottaker!!,
                         taMed = true,
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
@@ -652,7 +656,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                     datoTom = null,
                     opprinneligFom = LocalDate.parse("2023-02-01"),
                     opprinneligTom = LocalDate.parse("2024-01-01"),
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    rolle = behandling.bidragsmottaker!!,
                     taMed = true,
                     kilde = Kilde.OFFENTLIG,
                     behandling = behandling,
@@ -667,7 +671,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                     datoTom = null,
                     opprinneligFom = LocalDate.parse("2023-01-01"),
                     opprinneligTom = LocalDate.parse("2023-12-31"),
-                    ident = behandling.bidragsmottaker!!.ident!!,
+                    rolle = behandling.bidragsmottaker!!,
                     taMed = true,
                     gjelderBarn = testdataBarn1.ident,
                     kilde = Kilde.OFFENTLIG,
@@ -720,7 +724,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                         belop = BigDecimal(500000),
                         datoFom = behandling.virkningstidspunkt,
                         datoTom = null,
-                        ident = behandling.bidragspliktig!!.ident!!,
+                        rolle = behandling.bidragspliktig!!,
                         taMed = true,
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
@@ -734,7 +738,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                         belop = BigDecimal(50000),
                         datoFom = behandling.virkningstidspunkt,
                         datoTom = null,
-                        ident = behandling.bidragsmottaker!!.ident!!,
+                        rolle = behandling.bidragsmottaker!!,
                         taMed = true,
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
@@ -788,7 +792,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                         belop = BigDecimal(500000),
                         datoFom = behandling.virkningstidspunkt,
                         datoTom = null,
-                        ident = behandling.bidragspliktig!!.ident!!,
+                        rolle = behandling.bidragspliktig!!,
                         taMed = true,
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
@@ -802,7 +806,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                         belop = BigDecimal(50000),
                         datoFom = behandling.virkningstidspunkt,
                         datoTom = null,
-                        ident = behandling.bidragsmottaker!!.ident!!,
+                        rolle = behandling.bidragsmottaker!!,
                         taMed = true,
                         kilde = Kilde.MANUELL,
                         behandling = behandling,
@@ -1182,13 +1186,14 @@ fun opprettInntekt(
     type: Inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
     inntektstyper: List<Pair<Inntektstype, BigDecimal>> = emptyList(),
     inntektstyperKode: List<Pair<String, BigDecimal>> = emptyList(),
-    ident: String = "",
     gjelderBarn: String? = null,
     taMed: Boolean = true,
     kilde: Kilde = Kilde.OFFENTLIG,
     beløp: BigDecimal = BigDecimal.ONE,
     behandling: Behandling = oppretteBehandling(),
     medId: Boolean = true,
+    gjelderRolle: Rolle = opprettRolle(behandling, testdataBM),
+    gjelderBarnRolle: Rolle? = null,
 ): Inntekt {
     val inntekt =
         Inntekt(
@@ -1198,7 +1203,9 @@ fun opprettInntekt(
             opprinneligFom = opprinneligFom?.atDay(1),
             opprinneligTom = opprinneligTom?.atEndOfMonth(),
             belop = beløp,
-            ident = ident,
+            ident = "",
+            rolle = gjelderRolle,
+            gjelderBarnRolle = gjelderBarnRolle,
             gjelderBarn = gjelderBarn,
             id = if (medId) Random.nextLong(1000) else null,
             kilde = kilde,
@@ -1364,7 +1371,7 @@ fun oppretteTestbehandling(
             )
 
             val inntekt =
-                bearbeidaGrunnlag.inntekter.tilInntekt(behandling, Personident(behandling.bidragsmottaker!!.ident!!))
+                bearbeidaGrunnlag.inntekter.tilInntekt(behandling, behandling.bidragsmottaker!!)
             val ytelser =
                 setOf(
                     Inntektsrapportering.KONTANTSTØTTE,
@@ -1845,7 +1852,7 @@ fun Behandling.taMedInntekt(
     rolle: Rolle,
     type: Inntektsrapportering,
 ) {
-    val inntekt = inntekter.find { it.ident == rolle.ident && type == it.type }!!
+    val inntekt = inntekter.find { it.erSammeRolle(rolle) && type == it.type }!!
     inntekt.taMed = true
     inntekt.datoFom = virkningstidspunkt
 }

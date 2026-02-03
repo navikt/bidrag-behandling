@@ -49,6 +49,6 @@ class VedtakController(
         @RequestBody(required = false) request: FatteVedtakRequestDto? = null,
     ): Int {
         LOGGER.info { "Fatter vedtak for $behandlingsid" }
-        return vedtakService.fatteVedtak(behandlingsid, request)
+        return vedtakService.fatteVedtak(behandlingsid, request).vedtaksidHovedVedtak
     }
 }

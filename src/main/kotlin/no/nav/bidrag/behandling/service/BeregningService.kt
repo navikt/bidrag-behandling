@@ -50,6 +50,7 @@ import no.nav.bidrag.beregn.core.bo.SjablonPeriode
 import no.nav.bidrag.beregn.core.dto.SjablonPeriodeCore
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLikEllerLavereEnnLøpendeBidragException
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLøpendeForskuddManglerException
+import no.nav.bidrag.beregn.core.exception.BidragsberegningFeiletTekniskException
 import no.nav.bidrag.beregn.core.exception.IkkeFullBidragsevneOgUfullstendigeGrunnlagException
 import no.nav.bidrag.beregn.core.service.mapper.CoreMapper
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
@@ -188,7 +189,8 @@ class BeregningService(
         }
 
         val skalBeregneForFFV2 =
-            UnleashFeatures.BIDRAG_BEREGNING_V2.isEnabled &&
+            (!behandling.erKlageEllerOmgjøring || UnleashFeatures.BIDRAG_BEREGNING_V2_KLAGE.isEnabled) &&
+                UnleashFeatures.BIDRAG_BEREGNING_V2.isEnabled &&
                 (behandling.søknadsbarn.size > 1 || UnleashFeatures.BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG.isEnabled)
 
         return if (behandling.erInnkreving) {
@@ -335,9 +337,11 @@ class BeregningService(
         simulerBeregning: Boolean = false,
     ): BidragsberegningOrkestratorRequestV2 {
         val grunnlagslisteBarn =
-            behandling.søknadsbarn.filter { it.kreverGrunnlagForBeregning }.map { søknasdbarn ->
-                mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning, simulerBeregning = simulerBeregning)
-            }
+            behandling.søknadsbarn
+                .filter { it.kreverGrunnlagForBeregning }
+                .map { søknasdbarn ->
+                    mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning, simulerBeregning = simulerBeregning)
+                }
         val beregnFraDato = behandling.eldsteVirkningstidspunkt
         val beregningTilDato = behandling.finnBeregnTilDato()
 
@@ -383,6 +387,8 @@ class BeregningService(
                             søknadsbarn!!.finnBeregnFra(),
                             behandling.finnBeregnTilDatoBehandling(søknadsbarn, beregningTilDato).toYearMonth(),
                         )
+                    // Avvisning - opphørsdato = opphør fra historikk
+                    // Avslag - opphørsdato = beregn til
                     val virkningstidspunktBeregning =
                         minOfNullable(
                             søknadsbarn.virkningstidspunkt?.toYearMonth(),
@@ -509,6 +515,12 @@ class BeregningService(
             ResultatUtførBidragsberegning(
                 feilmelding = e.melding,
                 feiltype = UgyldigBeregningDto.UgyldigBeregningType.UFULSTENDING_GRUNNLAG_FF,
+                resultat = e.data,
+            )
+        } catch (e: BidragsberegningFeiletTekniskException) {
+            ResultatUtførBidragsberegning(
+                feilmelding = e.melding,
+                feiltype = UgyldigBeregningDto.UgyldigBeregningType.BEREGNING_FEILET_TEKNISK,
                 resultat = e.data,
             )
         }
@@ -692,6 +704,7 @@ class BeregningService(
                         UgyldigBeregningDto(
                             tittel = "Ugyldig perioder",
                             vedtaksliste = feil.vedtak,
+                            feiltype = UgyldigBeregningDto.UgyldigBeregningType.`OMGJØRING_ETTERFØLGENDE_VEDTAK`,
                             begrunnelse =
                                 "En eller flere etterfølgende vedtak har virkningstidpunkt " +
                                     "som starter før beregningsperioden ${søknadsbarn.virkningstidspunkt.tilVisningsnavn()} - ${beregnTilDato.tilVisningsnavn()}",
@@ -728,6 +741,7 @@ class BeregningService(
                         UgyldigBeregningDto(
                             tittel = "Ugyldig beregning",
                             begrunnelse = feil.message ?: "Ukjent feil",
+                            feiltype = UgyldigBeregningDto.UgyldigBeregningType.BEREGNING_FEILET_TEKNISK,
                         ),
                     barn = søknadsbarn.mapTilResultatBarn(),
                     omgjøringsdetaljer = behandling.omgjøringsdetaljer,

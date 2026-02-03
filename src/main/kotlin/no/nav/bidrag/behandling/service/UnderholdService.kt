@@ -142,13 +142,11 @@ class UnderholdService(
             behandling.underholdskostnader
                 .filter { !it.gjelderAndreBarn }
                 .find {
-                    it.personIdent == gjelderRolle.ident!!.verdi &&
-                        (gjelderRolle.stønadstype == null || it.rolle!!.stønadstype == gjelderRolle.stønadstype)
+                    it.tilhørerPerson(gjelderRolle.ident!!.verdi, gjelderRolle.stønadstype)
                 }
         val rolleBarn =
             behandling.roller.find {
-                it.ident == gjelderRolle.ident!!.verdi &&
-                    (gjelderRolle.stønadstype == null || it.stønadstype == gjelderRolle.stønadstype)
+                it.erSammeRolle(gjelderRolle.ident!!.verdi, gjelderRolle.stønadstype)
             }
 
         if (eksisterendeUnderholdskostnad != null && rolleBarn != null) {
@@ -185,8 +183,7 @@ class UnderholdService(
         val rolleBarn =
             if (gjelderBarn.personident != null) {
                 behandling.søknadsbarn.find {
-                    it.ident == gjelderBarn.personident.verdi &&
-                        (gjelderBarn.stønadstype == null || it.stønadstype == gjelderBarn.stønadstype)
+                    it.erSammeRolle(gjelderBarn.personident.verdi, gjelderBarn.stønadstype)
                 }
             } else {
                 null
@@ -202,8 +199,7 @@ class UnderholdService(
         return gjelderBarn.personident?.let { personidentBarn ->
             val rolleSøknadsbarn =
                 behandling.søknadsbarn.find {
-                    it.ident == personidentBarn.verdi &&
-                        (gjelderBarn.stønadstype == null || it.stønadstype == gjelderBarn.stønadstype)
+                    it.erSammeRolle(gjelderBarn.personident.verdi, gjelderBarn.stønadstype)
                 }
             if (rolleSøknadsbarn != null) {
                 lagreUnderholdskostnad(behandling, null, rolleSøknadsbarn, null)
@@ -443,7 +439,14 @@ class UnderholdService(
             val tilleggsstønad = underholdskostnad.tilleggsstønad.find { id == it.id }!!
             tilleggsstønad.fom = request.periode.fom
             tilleggsstønad.tom = request.periode.tom ?: justerPeriodeTomOpphørsdato(underholdskostnad.opphørsdato)
-            tilleggsstønad.dagsats = request.dagsats
+            if (request.månedsbeløp == null) {
+                tilleggsstønad.dagsats = request.dagsats
+                tilleggsstønad.månedsbeløp = null
+            } else {
+                tilleggsstønad.månedsbeløp = request.månedsbeløp
+                tilleggsstønad.dagsats = null
+            }
+
             tilleggsstønad.underholdskostnad = underholdskostnad
             tilleggsstønad
         } ?: run {
@@ -456,6 +459,7 @@ class UnderholdService(
                     fom = request.periode.fom,
                     tom = underholdskostnad.begrensTomDatoForTolvÅr(periodeJustert),
                     dagsats = request.dagsats,
+                    månedsbeløp = request.månedsbeløp,
                     underholdskostnad = underholdskostnad,
                 ),
             )
@@ -469,6 +473,7 @@ class UnderholdService(
                         fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.personFødselsdato)),
                         tom = periodeJustert.tom,
                         dagsats = request.dagsats,
+                        månedsbeløp = request.månedsbeløp,
                         underholdskostnad = underholdskostnad,
                     ),
                 )

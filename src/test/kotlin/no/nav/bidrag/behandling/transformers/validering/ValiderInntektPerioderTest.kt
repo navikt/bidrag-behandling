@@ -12,7 +12,9 @@ import no.nav.bidrag.behandling.transformers.behandling.mapValideringsfeilForYte
 import no.nav.bidrag.behandling.transformers.behandling.mapValideringsfeilForÅrsinntekter
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioderInntekt
+import no.nav.bidrag.behandling.utils.testdata.opprettRolle
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
+import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -41,40 +43,41 @@ class ValiderInntektPerioderTest {
                     opprettRolle(barnIdent, Rolletype.BARN),
                     opprettRolle(barn2Ident, Rolletype.BARN),
                 )
+            val behandling = oppretteBehandling()
             val inntekter =
                 setOf(
                     opprettInntekt(
                         YearMonth.parse("2022-01"),
                         YearMonth.parse("2022-03"),
-                        ident = bmIdent,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                         taMed = true,
                         type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                     ),
                     opprettInntekt(
                         YearMonth.parse("2022-01"),
                         YearMonth.parse("2022-03"),
-                        ident = bmIdent,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                         taMed = true,
                         type = Inntektsrapportering.KAPITALINNTEKT,
                     ),
                     opprettInntekt(
                         YearMonth.parse("2022-04"),
                         YearMonth.parse("2022-06"),
-                        ident = bmIdent,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                         taMed = false,
                     ),
                     opprettInntekt(
                         YearMonth.parse("2022-04"),
                         null,
-                        ident = bmIdent,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                         taMed = true,
                         type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                     ),
                     opprettInntekt(
                         YearMonth.parse("2022-01"),
                         null,
-                        ident = bmIdent,
-                        gjelderBarn = barn2Ident,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
+                        gjelderBarn = opprettRolle(barn2Ident, Rolletype.BARN, behandling = behandling),
                         taMed = true,
                         type = Inntektsrapportering.BARNETILLEGG,
                         inntektstyper = listOf(Inntektstype.BARNETILLEGG_PENSJON),
@@ -96,19 +99,20 @@ class ValiderInntektPerioderTest {
                     opprettRolle(barnIdent, Rolletype.BARN),
                     opprettRolle(barn2Ident, Rolletype.BARN),
                 )
+            val behandling = oppretteBehandling()
             val inntekter =
                 setOf(
                     opprettInntekt(
                         YearMonth.now().plusMonths(1),
                         null,
-                        ident = bmIdent,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                         taMed = true,
                         type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                     ),
                     opprettInntekt(
                         YearMonth.parse("2022-01"),
                         null,
-                        ident = bmIdent,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                         taMed = true,
                         type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                     ),
@@ -139,12 +143,13 @@ class ValiderInntektPerioderTest {
                     opprettRolle(barnIdent, Rolletype.BARN),
                     opprettRolle(barn2Ident, Rolletype.BARN),
                 )
+            val behandling = oppretteBehandling()
             val inntekter =
                 setOf(
                     opprettInntekt(
                         YearMonth.now().plusMonths(3),
                         null,
-                        ident = bmIdent,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                         taMed = true,
                         type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                     ),
@@ -175,19 +180,20 @@ class ValiderInntektPerioderTest {
                     opprettRolle(barnIdent, Rolletype.BARN),
                     opprettRolle(barn2Ident, Rolletype.BARN),
                 )
+            val behandling = oppretteBehandling()
             val inntekter =
                 setOf(
                     opprettInntekt(
                         YearMonth.now().plusMonths(1),
                         YearMonth.now().plusYears(1).minusMonths(1),
-                        ident = bmIdent,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                         taMed = true,
                         type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                     ),
                     opprettInntekt(
                         YearMonth.now().plusYears(1),
                         null,
-                        ident = bmIdent,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                         taMed = true,
                         type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                     ),
@@ -208,24 +214,26 @@ class ValiderInntektPerioderTest {
                     opprettRolle(barnIdent, Rolletype.BARN),
                     opprettRolle(barn2Ident, Rolletype.BARN),
                 )
+            val behandling = oppretteBehandling()
+
             val inntekter =
                 setOf(
                     opprettInntekt(
                         YearMonth.parse("2022-02"),
                         YearMonth.parse("2022-03"),
-                        ident = bmIdent,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                         taMed = false,
                     ),
                     opprettInntekt(
                         YearMonth.parse("2022-04"),
                         YearMonth.parse("2022-06"),
-                        ident = bmIdent,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                         taMed = false,
                     ),
                     opprettInntekt(
                         YearMonth.parse("2022-08"),
                         YearMonth.parse("2022-09"),
-                        ident = bmIdent,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                         taMed = false,
                     ),
                 )
@@ -257,27 +265,29 @@ class ValiderInntektPerioderTest {
                     opprettRolle(bpIdent, Rolletype.BIDRAGSPLIKTIG),
                     opprettRolle(barnIdent, Rolletype.BARN),
                 )
+            val behandling = oppretteBehandling()
+
             val inntekter =
                 setOf(
                     opprettInntekt(
                         virkningstidspunkt,
                         null,
                         Inntektsrapportering.INNTEKTSOPPLYSNINGER_FRA_ARBEIDSGIVER,
-                        ident = bmIdent,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                         taMed = true,
                     ),
                     opprettInntekt(
                         virkningstidspunkt,
                         null,
                         Inntektsrapportering.AINNTEKT,
-                        ident = bmIdent,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                         taMed = false,
                     ),
                     opprettInntekt(
                         virkningstidspunkt,
                         null,
                         Inntektsrapportering.AINNTEKT,
-                        ident = bpIdent,
+                        rolle = opprettRolle(bpIdent, Rolletype.BIDRAGSPLIKTIG, behandling = behandling),
                         taMed = false,
                     ),
                 )
@@ -315,22 +325,23 @@ class ValiderInntektPerioderTest {
                     opprettRolle(bpIdent, Rolletype.BIDRAGSPLIKTIG),
                     opprettRolle(barnIdent, Rolletype.BARN),
                 )
+            val behandling = oppretteBehandling()
             val inntekter =
                 setOf(
-                    opprettInntekt(virkningstidspunkt, null, ident = bmIdent, taMed = true),
-                    opprettInntekt(virkningstidspunkt, null, ident = bpIdent, taMed = true),
+                    opprettInntekt(virkningstidspunkt, null, rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling), taMed = true),
+                    opprettInntekt(virkningstidspunkt, null, rolle = opprettRolle(bpIdent, Rolletype.BIDRAGSPLIKTIG, behandling = behandling), taMed = true),
                     opprettInntekt(
                         virkningstidspunkt,
                         null,
                         Inntektsrapportering.AINNTEKT,
-                        ident = barnIdent,
+                        rolle = opprettRolle(barnIdent, Rolletype.BARN, behandling = behandling),
                         taMed = true,
                     ),
                     opprettInntekt(
                         virkningstidspunkt,
                         null,
                         Inntektsrapportering.AINNTEKT,
-                        ident = barnIdent,
+                        rolle = opprettRolle(barnIdent, Rolletype.BARN, behandling = behandling),
                         taMed = true,
                     ),
                 )
@@ -371,19 +382,20 @@ class ValiderInntektPerioderTest {
                     opprettRolle(barnIdent, Rolletype.BARN),
                     opprettRolle(barn2Ident, Rolletype.BARN),
                 )
+            val behandling = oppretteBehandling()
             val inntekter =
                 setOf(
-                    opprettInntekt(YearMonth.parse("2022-01"), null, ident = bmIdent, taMed = true),
+                    opprettInntekt(YearMonth.parse("2022-01"), null, rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling), taMed = true),
                     opprettInntekt(
                         YearMonth.parse("2022-01"),
                         YearMonth.parse("2022-06"),
-                        ident = barnIdent,
+                        rolle = opprettRolle(barnIdent, Rolletype.BARN, behandling = behandling),
                         taMed = true,
                     ),
                     opprettInntekt(
                         YearMonth.parse("2022-08"),
                         YearMonth.parse("2022-09"),
-                        ident = bmIdent,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                         taMed = false,
                     ),
                 )
@@ -409,13 +421,14 @@ class ValiderInntektPerioderTest {
                     opprettRolle(barnIdent, Rolletype.BARN),
                     opprettRolle(barn2Ident, Rolletype.BARN),
                 )
+            val behandling = oppretteBehandling()
             val inntekter =
                 setOf(
                     opprettInntekt(
                         YearMonth.parse("2022-01"),
                         null,
-                        ident = bmIdent,
-                        gjelderBarn = barnIdent,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
+                        gjelderBarn = opprettRolle(barnIdent, Rolletype.BARN, behandling = behandling),
                         taMed = true,
                         type = Inntektsrapportering.BARNETILLEGG,
                         inntektstyper = listOf(Inntektstype.BARNETILLEGG_PENSJON),
@@ -423,8 +436,8 @@ class ValiderInntektPerioderTest {
                     opprettInntekt(
                         YearMonth.parse("2022-01"),
                         null,
-                        ident = bmIdent,
-                        gjelderBarn = barn2Ident,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
+                        gjelderBarn = opprettRolle(barn2Ident, Rolletype.BARN, behandling = behandling),
                         taMed = true,
                         type = Inntektsrapportering.BARNETILLEGG,
                         inntektstyper = listOf(Inntektstype.BARNETILLEGG_PENSJON),
@@ -432,8 +445,8 @@ class ValiderInntektPerioderTest {
                     opprettInntekt(
                         YearMonth.parse("2022-05"),
                         null,
-                        ident = bmIdent,
-                        gjelderBarn = barn2Ident,
+                        rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
+                        gjelderBarn = opprettRolle(barn2Ident, Rolletype.BARN, behandling = behandling),
                         taMed = true,
                         type = Inntektsrapportering.BARNETILLEGG,
                         inntektstyper = listOf(Inntektstype.BARNETILLEGG_PENSJON),
@@ -1018,14 +1031,14 @@ class ValiderInntektPerioderTest {
                 opprettInntekt(
                     YearMonth.now().minusMonths(5),
                     YearMonth.now().minusMonths(4),
-                    ident = bmIdent,
+                    rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                     taMed = true,
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                 ),
                 opprettInntekt(
                     YearMonth.now().minusMonths(3),
                     null,
-                    ident = bmIdent,
+                    rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                     taMed = true,
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                 ),
@@ -1062,14 +1075,14 @@ class ValiderInntektPerioderTest {
                 opprettInntekt(
                     YearMonth.now().minusMonths(5),
                     YearMonth.now().minusMonths(4),
-                    ident = bmIdent,
+                    rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                     taMed = true,
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                 ),
                 opprettInntekt(
                     YearMonth.now().minusMonths(3),
                     YearMonth.now(),
-                    ident = bmIdent,
+                    rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                     taMed = true,
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                 ),
@@ -1106,14 +1119,14 @@ class ValiderInntektPerioderTest {
                 opprettInntekt(
                     YearMonth.now().minusMonths(6),
                     YearMonth.now().minusMonths(5),
-                    ident = bmIdent,
+                    rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                     taMed = true,
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                 ),
                 opprettInntekt(
                     YearMonth.now().minusMonths(4),
                     YearMonth.now().minusMonths(3),
-                    ident = bmIdent,
+                    rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                     taMed = true,
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                 ),
@@ -1140,14 +1153,14 @@ class ValiderInntektPerioderTest {
                 opprettInntekt(
                     YearMonth.now().minusMonths(5),
                     YearMonth.now().minusMonths(4),
-                    ident = bmIdent,
+                    rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                     taMed = true,
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                 ),
                 opprettInntekt(
                     YearMonth.now().minusMonths(3),
                     null,
-                    ident = bmIdent,
+                    rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                     taMed = true,
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                 ),
@@ -1175,14 +1188,14 @@ class ValiderInntektPerioderTest {
                 opprettInntekt(
                     YearMonth.now().minusMonths(5),
                     YearMonth.now().minusMonths(4),
-                    ident = bmIdent,
+                    rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                     taMed = true,
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                 ),
                 opprettInntekt(
                     YearMonth.now().minusMonths(3),
                     null,
-                    ident = bmIdent,
+                    rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
                     taMed = true,
                     type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
                 ),
@@ -1212,8 +1225,8 @@ class ValiderInntektPerioderTest {
                 opprettInntekt(
                     YearMonth.now().minusMonths(5),
                     YearMonth.now().minusMonths(4),
-                    ident = bmIdent,
-                    gjelderBarn = barn3Ident,
+                    rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
+                    gjelderBarn = opprettRolle(barn3Ident, Rolletype.BARN, behandling = behandling),
                     taMed = true,
                     type = Inntektsrapportering.BARNETILLEGG,
                     behandling = behandling,
@@ -1221,8 +1234,8 @@ class ValiderInntektPerioderTest {
                 opprettInntekt(
                     YearMonth.now().minusMonths(3),
                     YearMonth.now().minusMonths(2),
-                    ident = bmIdent,
-                    gjelderBarn = barn3Ident,
+                    rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
+                    gjelderBarn = opprettRolle(barn3Ident, Rolletype.BARN, behandling = behandling),
                     taMed = true,
                     type = Inntektsrapportering.BARNETILLEGG,
                     behandling = behandling,
@@ -1230,8 +1243,8 @@ class ValiderInntektPerioderTest {
                 opprettInntekt(
                     YearMonth.now().minusMonths(5),
                     YearMonth.now().minusMonths(4),
-                    ident = bmIdent,
-                    gjelderBarn = barnIdent,
+                    rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
+                    gjelderBarn = opprettRolle(barnIdent, Rolletype.BARN, behandling = behandling),
                     taMed = true,
                     type = Inntektsrapportering.BARNETILLEGG,
                     behandling = behandling,
@@ -1239,8 +1252,8 @@ class ValiderInntektPerioderTest {
                 opprettInntekt(
                     YearMonth.now().minusMonths(3),
                     null,
-                    ident = bmIdent,
-                    gjelderBarn = barnIdent,
+                    rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
+                    gjelderBarn = opprettRolle(barnIdent, Rolletype.BARN, behandling = behandling),
                     taMed = true,
                     type = Inntektsrapportering.BARNETILLEGG,
                     behandling = behandling,
@@ -1248,8 +1261,8 @@ class ValiderInntektPerioderTest {
                 opprettInntekt(
                     YearMonth.now().minusMonths(5),
                     YearMonth.now().minusMonths(4),
-                    ident = bmIdent,
-                    gjelderBarn = barn2Ident,
+                    rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
+                    gjelderBarn = opprettRolle(barn2Ident, Rolletype.BARN, behandling = behandling),
                     taMed = true,
                     type = Inntektsrapportering.BARNETILLEGG,
                     behandling = behandling,
@@ -1257,8 +1270,8 @@ class ValiderInntektPerioderTest {
                 opprettInntekt(
                     YearMonth.now().minusMonths(3),
                     null,
-                    ident = bmIdent,
-                    gjelderBarn = barn2Ident,
+                    rolle = opprettRolle(bmIdent, Rolletype.BIDRAGSMOTTAKER, behandling = behandling),
+                    gjelderBarn = opprettRolle(barn2Ident, Rolletype.BARN, behandling = behandling),
                     taMed = true,
                     type = Inntektsrapportering.BARNETILLEGG,
                     behandling = behandling,
@@ -1280,7 +1293,7 @@ fun opprettRolle(
     rolletype: Rolletype,
     opphørsdato: LocalDate? = null,
     behandling: Behandling = oppretteBehandling(),
-) = Rolle(
+) = behandling.roller.find { it.ident == ident } ?: Rolle(
     id = Random.nextLong(1000),
     navn = "Test 1",
     ident = ident,
@@ -1296,17 +1309,17 @@ fun opprettInntekt(
     datoTom: YearMonth?,
     type: Inntektsrapportering = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
     inntektstyper: List<Inntektstype> = emptyList(),
-    ident: String = "",
-    gjelderBarn: String? = null,
+    rolle: Rolle = opprettRolle(behandling = oppretteBehandling(), data = testdataBM),
+    gjelderBarn: Rolle? = null,
     taMed: Boolean = true,
     behandling: Behandling = oppretteBehandling(),
 ) = Inntekt(
     datoFom = datoFom.atDay(1),
     datoTom = datoTom?.atEndOfMonth(),
     belop = BigDecimal.ONE,
-    ident = ident,
+    rolle = rolle,
     behandling = behandling,
-    gjelderBarn = gjelderBarn,
+    gjelderBarnRolle = gjelderBarn,
     id = Random.nextLong(1000),
     kilde = Kilde.OFFENTLIG,
     taMed = taMed,

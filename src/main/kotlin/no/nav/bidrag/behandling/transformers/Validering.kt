@@ -324,9 +324,6 @@ fun OppdatereVirkningstidspunktBegrunnelseDto.valider(behandling: Behandling) {
     if (oppdaterBegrunnelseVurderingAvSkolegang != null && !behandling.kanSkriveVurderingAvSkolegangAlle()) {
         feilliste.add("Oppdatering av begrunnelse for vurdering av skolegang kan kun gjøres for behandlinger av typen BIDRAG18AAR")
     }
-    if (rolleId == null && settLikVerdierForAlleBarn && !behandling.erVirkningstidspunktLiktForAlle) {
-        feilliste.add("Kan kun sette lik begrunnelse for alle barn hvis virkningstidspunkt lik for alle barn")
-    }
 
     if (feilliste.isNotEmpty()) {
         throw HttpClientErrorException(
@@ -368,12 +365,12 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
             }
         }
     } else {
-        if (behandling.omgjøringsdetaljer?.opprinneligVirkningstidspunkt != null &&
-            avslag == null &&
-            virkningstidspunkt?.isAfter(behandling.omgjøringsdetaljer!!.opprinneligVirkningstidspunkt) == true
-        ) {
-            feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
-        }
+//        if (behandling.omgjøringsdetaljer?.opprinneligVirkningstidspunkt != null &&
+//            avslag == null &&
+//            virkningstidspunkt?.isAfter(behandling.omgjøringsdetaljer!!.opprinneligVirkningstidspunkt) == true
+//        ) {
+//            feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
+//        }
 
         if (behandling.globalOpphørsdato != null && virkningstidspunkt!! >= behandling.globalOpphørsdato) {
             feilliste.add("Virkningstidspunkt kan ikke lik eller senere enn opphørsdato")
@@ -957,7 +954,7 @@ fun OppdatereSivilstand.validere(behandling: Behandling) {
 }
 
 fun OppdatereManuellInntekt.validerHarGjelderBarn(feilliste: MutableList<String>) {
-    if (gjelderBarn == null || gjelderBarn.verdi.isEmpty()) {
+    if (((gjelderBarnId == null && gjelderBarn == null) || (gjelderBarn != null && gjelderBarn.verdi.isEmpty()))) {
         feilliste.add("$type må ha gyldig ident for gjelder barn")
     }
 }

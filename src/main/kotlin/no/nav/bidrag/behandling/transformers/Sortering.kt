@@ -23,13 +23,13 @@ fun Set<Rolle>.sorterForInntektsbildet() =
                 Rolletype.BARN -> 2
                 else -> 3
             }
-        }.then(sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.navn })),
+        }.then(sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator })),
     )
 
 fun <T> sorterPersonEtterEldsteFødselsdato(
     fødselsdato: (T) -> LocalDate,
-    navn: (T) -> String?,
-) = compareBy(fødselsdato, navn)
+    identifikator: (T) -> String?,
+) = compareBy(fødselsdato, identifikator)
 
 fun Set<Utgiftspost>.sorter() = sortedBy { it.dato }
 
@@ -102,10 +102,9 @@ fun Inntekt.erYtelseHistorisk(): Boolean {
 
 fun Inntekt.erLigningsinntektHistorisk(inntekter: Collection<Inntekt>): Boolean {
     if (!ligningsinntekter.contains(type) || opprinneligFom == null) return false
-    val gjelderIdent = ident
     val sisteLigningsår =
         inntekter
-            .filter { gjelderIdent == it.ident }
+            .filter { this.tilhørerSammePerson(it) }
             .sortedBy { it.opprinneligFom }
             .lastOrNull { it.type == type }
             ?.opprinneligFom
@@ -206,7 +205,7 @@ fun List<Inntekt>.sorterEtterDatoOgBarn() =
     sortedWith(
         compareBy({
             it.datoFom ?: it.opprinneligFom
-        }, { it.gjelderBarn }),
+        }, { it.gjelderBarnIdent }),
     )
 
 fun List<Inntekt>.sorterEtterDato() = sortedWith(compareBy { it.datoFom ?: it.opprinneligFom })

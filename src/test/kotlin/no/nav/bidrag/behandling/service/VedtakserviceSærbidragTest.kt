@@ -890,7 +890,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             opprettInntekt(
                 datoFom = virkningstidspunkt,
                 type = Inntektsrapportering.SAKSBEHANDLER_BEREGNET_INNTEKT,
-                ident = behandling.bidragspliktig!!.ident!!,
+                gjelderRolle = behandling.bidragspliktig!!,
                 beløp = BigDecimal(100000),
                 kilde = Kilde.MANUELL,
                 taMed = true,

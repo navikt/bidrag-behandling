@@ -160,7 +160,7 @@ class TestdataManager(
         gjelderIdent: String,
         søktFomDato: LocalDate,
     ) = when (grunnlagsdatatype) {
-        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER ->
+        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER -> {
             tilJson(
                 SkattepliktigeInntekter(
                     listOf(
@@ -180,8 +180,11 @@ class TestdataManager(
                     ),
                 ),
             )
+        }
 
-        else -> ""
+        else -> {
+            ""
+        }
     }
 
     fun hentBehandling(id: Long): Behandling? =

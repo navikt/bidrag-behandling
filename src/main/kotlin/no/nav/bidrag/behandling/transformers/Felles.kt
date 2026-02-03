@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderRolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple
 import no.nav.bidrag.behandling.dto.v1.behandling.EtterfølgendeVedtakDto
@@ -10,7 +11,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.Eksis
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
-import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvvisning
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -24,12 +24,14 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriodeDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektBeløpType
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
 import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.toYearMonth
 import java.math.BigDecimal
+import java.math.MathContext
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.Period
@@ -55,6 +57,22 @@ fun StønadsendringDto.tilStønadsid() =
         skyldner = skyldner,
         sak = sak,
     )
+
+fun BigDecimal.tilÅrsbeløp(beløpsType: InntektBeløpType? = null): BigDecimal =
+    when (beløpsType) {
+        InntektBeløpType.MÅNEDSBELØP -> {
+            multiply(BigDecimal(12), MathContext(0, RoundingMode.HALF_UP))
+        }
+
+        InntektBeløpType.DAGSATS -> {
+            multiply(BigDecimal(260), MathContext(10, RoundingMode.HALF_UP))
+                .divide(BigDecimal(12), MathContext(10, RoundingMode.HALF_UP))
+        }
+
+        else -> {
+            this
+        }
+    }
 
 val BigDecimal.nærmesteHeltall get() = this.setScale(0, RoundingMode.HALF_UP)
 val ainntekt12Og3Måneder =
@@ -235,14 +253,7 @@ fun Behandling.finnPeriodeLøperBidrag(rolle: Rolle): ÅrMånedsperiode? {
 }
 
 fun Behandling.finnPerioderHvorDetLøperBidrag(rolle: Rolle): List<ÅrMånedsperiode> {
-    val eksisterendeVedtak =
-        grunnlag.hentSisteGrunnlagSomGjelderBarn(
-            rolle.ident!!,
-            Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR,
-            erKlageEllerOmgjøring,
-        )
-            ?: grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, erKlageEllerOmgjøring)
-            ?: return emptyList()
+    val eksisterendeVedtak = hentGrunnlagBeløpshistorikkForRolle(rolle, erKlageEllerOmgjøring) ?: return emptyList()
     val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return emptyList()
     return stønad.periodeListe
         .filter {
@@ -305,19 +316,32 @@ fun Behandling.hentNesteEtterfølgendeVedtak(rolle: Rolle): EtterfølgendeVedtak
         }?.minByOrNull { it.virkningstidspunkt }
 }
 
-fun Behandling.hentBeløpshistorikk(
+fun Behandling.hentGrunnlagBeløpshistorikkForRolle(
     rolle: Rolle,
     grunnlagFraVedtakSomSkalOmgjøres: Boolean? = null,
-) = grunnlag.hentSisteGrunnlagSomGjelderBarn(
-    rolle.ident!!,
-    Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR,
-    grunnlagFraVedtakSomSkalOmgjøres,
-)
-    ?: grunnlag.hentSisteGrunnlagSomGjelderBarn(
-        rolle.ident!!,
+) = if (rolle.stønadstype == Stønadstype.BIDRAG18AAR) {
+    grunnlag.hentSisteGrunnlagSomGjelderRolle(
+        rolle,
+        Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR,
+        grunnlagFraVedtakSomSkalOmgjøres,
+    )
+} else if (rolle.stønadstype == Stønadstype.BIDRAG) {
+    grunnlag.hentSisteGrunnlagSomGjelderRolle(
+        rolle,
         Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
         grunnlagFraVedtakSomSkalOmgjøres,
     )
+} else {
+    grunnlag.hentSisteGrunnlagSomGjelderRolle(
+        rolle,
+        Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR,
+        grunnlagFraVedtakSomSkalOmgjøres,
+    ) ?: grunnlag.hentSisteGrunnlagSomGjelderRolle(
+        rolle,
+        Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+        grunnlagFraVedtakSomSkalOmgjøres,
+    )
+}
 
 fun Behandling.finnSistePeriodeLøpendeForskuddPeriodeInnenforSøktFomDato(rolle: Rolle): StønadPeriodeDto? {
     val eksisterendeVedtak =
@@ -333,17 +357,8 @@ fun Behandling.finnSistePeriodeLøpendeForskuddPeriodeInnenforSøktFomDato(rolle
 }
 
 fun Behandling.finnPeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): ÅrMånedsperiode? {
-    val eksisterendeVedtak =
-        // TODO sjekke opphør fra opprinnelig eller nåværende historikk?
-        grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, false)
-            ?: grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, false)
-            ?: return null
+    val eksisterendeVedtak = hentGrunnlagBeløpshistorikkForRolle(rolle, false)
     val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
-//    val perioder =
-//        stønad.periodeListe
-//            .filter {
-//                it.periode.til == null || it.periode.til!! > YearMonth.from(søktFomDato)
-//            }
     if (stønad.periodeListe.isEmpty()) {
         return null
     }
@@ -357,11 +372,7 @@ fun Behandling.finnPeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): År
 }
 
 fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): StønadPeriodeDto? {
-    val eksisterendeVedtak =
-        // TODO sjekke opphør fra opprinnelig eller nåværende historikk?
-        grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR, false)
-            ?: grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG, false)
-            ?: return null
+    val eksisterendeVedtak = hentGrunnlagBeløpshistorikkForRolle(rolle, false)
     val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
     val sistePeriode = stønad.periodeListe.maxByOrNull { it.periode.fom } ?: return null
     return if (sistePeriode.periode.til == null || sistePeriode.periode.til!! > YearMonth.from(eldsteSøktFomDato)) {

@@ -316,8 +316,10 @@ fun List<BoforholdResponseV2>.tilHusstandsmedlem(behandling: Behandling): Set<Hu
                     behandling = behandling,
                     kilde = it.value.first().kilde,
                     ident = it.key,
+                    rolle = behandling.søknadsbarn.find { sb -> sb.ident == it.key },
                     fødselsdato = finnFødselsdato(it.key, fødselsdatoFraRespons) ?: fødselsdatoFraRespons,
                 )
+            // TODO: Hva skjer hvis søknadsbarn finnes to ganger (18 år og ordinær bidrag)?
             husstandsmedlem.overskriveMedBearbeidaPerioder(it.value)
             husstandsmedlem
         }.toSet()

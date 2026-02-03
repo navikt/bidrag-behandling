@@ -227,7 +227,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 }
 
                 val alleInntekterBm =
-                    behandling.inntekter.filter { behandling.bidragsmottaker!!.ident == it.ident }
+                    behandling.inntekter.filter { it.erSammeRolle(behandling.bidragsmottaker!!) }
 
                 assertSoftly {
                     alleInntekterBm.size shouldBe 8
@@ -810,7 +810,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 }
 
                 val alleInntekterBm =
-                    oppdatertBehandling.get().inntekter.filter { behandling.bidragsmottaker!!.ident == it.ident }
+                    oppdatertBehandling.get().inntekter.filter { it.erSammeRolle(behandling.bidragsmottaker!!) }
 
                 assertSoftly {
                     alleInntekterBm.size shouldBe 8
@@ -2065,7 +2065,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
         @Nested
         open inner class Særbidrag {
             @Test
-            fun `skal lagre innhentede inntekter selv om innhenting feiler for enkelte år i en periode`() {
+            @Transactional
+            open fun `skal lagre innhentede inntekter selv om innhenting feiler for enkelte år i en periode`() {
                 // gitt
                 val behandling =
                     testdataManager.oppretteBehandling(true, false, false, true, TypeBehandling.SÆRBIDRAG)
@@ -2311,13 +2312,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
             @Transactional
             open fun `skal aktivere grunnlag av type inntekt for bp i behandling av bidrag`() {
                 // gitt
-                val behandling =
+                var behandling =
                     oppretteTestbehandling(
                         false,
                         inkludereBp = true,
                         behandlingstype = TypeBehandling.BIDRAG,
                     )
-                testdataManager.lagreBehandlingNewTransaction(behandling)
+                behandling = testdataManager.lagreBehandling(behandling)
 
                 stubUtils.stubHentePersoninfo(personident = behandling.bidragspliktig!!.ident!!)
                 stubUtils.stubKodeverkSpesifisertSummertSkattegrunnlag()
@@ -2346,7 +2347,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         Personident(behandling.bidragspliktig?.ident!!),
                         Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                     )
-
                 // hvis
                 grunnlagService.aktivereGrunnlag(behandling, aktivereGrunnlagRequest)
 
@@ -2358,7 +2358,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter.size shouldBe 5
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
-                        .filter { it.ident == behandling.bidragspliktig!!.ident }
+                        .filter { it.erSammeRolle(behandling.bidragspliktig!!) }
                         .size shouldBe 5
                     behandling.inntekter
                         .filter { Inntektsrapportering.KAPITALINNTEKT == it.type }
@@ -2608,7 +2608,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter.size shouldBe 5
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
-                        .filter { it.ident == behandling.bidragspliktig!!.ident }
+                        .filter { it.erSammeRolle(behandling.bidragspliktig!!) }
                         .size shouldBe 5
                     behandling.inntekter
                         .filter { Inntektsrapportering.KAPITALINNTEKT == it.type }
@@ -2731,7 +2731,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter.size shouldBe 1
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
-                        .filter { it.ident == behandling.bidragspliktig!!.ident }
+                        .filter { it.erSammeRolle(behandling.bidragspliktig!!) }
                         .size shouldBe 1
                 }
             }
@@ -3634,7 +3634,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter.size shouldBe 5
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
-                        .filter { it.ident == behandling.bidragsmottaker!!.ident }
+                        .filter { it.erSammeRolle(behandling.bidragsmottaker!!) }
                         .size shouldBe 5
                     behandling.inntekter
                         .filter { Inntektsrapportering.KAPITALINNTEKT == it.type }
@@ -3718,7 +3718,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter.size shouldBe 1
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
-                        .filter { it.ident == behandling.bidragsmottaker!!.ident }
+                        .filter { it.erSammeRolle(behandling.bidragsmottaker!!) }
                         .size shouldBe 1
                 }
             }
@@ -3785,7 +3785,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter.size shouldBe 1
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
-                        .filter { it.ident == behandling.bidragsmottaker!!.ident }
+                        .filter { it.erSammeRolle(behandling.bidragsmottaker!!) }
                         .size shouldBe 1
                     behandling.inntekter
                         .filter { Inntektsrapportering.KONTANTSTØTTE == it.type }
@@ -3856,7 +3856,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter.size shouldBe 1
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
-                        .filter { it.ident == behandling.bidragsmottaker!!.ident }
+                        .filter { it.erSammeRolle(behandling.bidragsmottaker!!) }
                         .size shouldBe 1
                 }
             }
@@ -3922,7 +3922,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                     behandling.inntekter.size shouldBe 1
                     behandling.inntekter
                         .filter { Kilde.OFFENTLIG == it.kilde }
-                        .filter { it.ident == behandling.bidragsmottaker!!.ident }
+                        .filter { it.erSammeRolle(behandling.bidragsmottaker!!) }
                         .size shouldBe 1
                 }
             }

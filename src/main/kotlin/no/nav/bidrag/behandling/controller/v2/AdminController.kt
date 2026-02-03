@@ -90,10 +90,7 @@ class AdminController(
     @Transactional
     fun opprettFatteVedtakRequest(
         @PathVariable behandlingId: Long,
-    ): List<OpprettVedtakRequestDto> {
-        val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
-        return vedtakService.opprettFatteVedtakRequestForBidrag(behandling, null)
-    }
+    ): List<OpprettVedtakRequestDto> = vedtakService.fatteVedtak(behandlingId, null, true).requests.map { it.second }
 
     @PostMapping("/admin/reset/fattevedtak/{behandlingId}")
     @Operation(

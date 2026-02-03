@@ -10,12 +10,16 @@ import no.nav.bidrag.behandling.dto.v2.behandling.InntektspostEndringDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
+import no.nav.bidrag.behandling.transformers.behandling.finnRolle
 import no.nav.bidrag.behandling.transformers.behandling.mapTilInntektspostEndringer
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
+import no.nav.bidrag.behandling.transformers.tilÅrsbeløp
 import no.nav.bidrag.behandling.transformers.validerPerioder
+import no.nav.bidrag.beregn.core.util.avrundetTilToDesimaler
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
+import no.nav.bidrag.beregn.core.util.nærmesteTier
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -23,6 +27,7 @@ import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.util.InntektUtil
+import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektBeløpType
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
@@ -100,6 +105,7 @@ fun Set<Inntektspost>.tilInntektspostDtoV2() =
                 kode = inntekt.kode,
                 visningsnavn = finnVisningsnavn(inntekt.kode),
                 inntektstype = inntekt.inntektstype,
+                beløpstype = inntekt.beløpstype,
                 beløp =
                     inntekt.beløp.nærmesteHeltall *
                         if (inntekt.inntekt?.type ==
@@ -112,13 +118,14 @@ fun Set<Inntektspost>.tilInntektspostDtoV2() =
             )
         }.sortedByDescending { it.beløp }
 
-fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
+fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: Rolle) =
     InntektDtoV2(
         id = -1,
         taMed = false,
         rapporteringstype = Inntektsrapportering.AINNTEKT,
         beløp = sumInntekt,
-        ident = Personident(gjelder),
+        ident = Personident(gjelder.ident!!),
+        gjelderRolleId = gjelder.id ?: -1,
         kilde = Kilde.OFFENTLIG,
         inntektsposter =
             inntektPostListe
@@ -128,6 +135,7 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
                         visningsnavn = finnVisningsnavn(it.kode),
                         inntektstype = it.inntekstype,
                         beløp = InntektUtil.kapitalinntektFaktor(it.kode) * it.beløp,
+                        beløpstype = InntektBeløpType.ÅRSBELØP,
                     )
                 }.sortedByDescending { it.beløp }
                 .toSet(),
@@ -137,6 +145,7 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: String) =
         opprinneligFom = gjelderÅrMåned.atDay(1),
         opprinneligTom = gjelderÅrMåned.atEndOfMonth(),
         gjelderBarn = null,
+        gjelderBarnId = null,
     )
 
 fun List<Inntekt>.tilInntektDtoV2() = this.map { it.tilInntektDtoV2() }
@@ -150,8 +159,10 @@ fun Inntekt.tilInntektDtoV2() =
         // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
         datoFom = this.datoFom,
         datoTom = this.datoTom,
-        ident = Personident(this.ident),
-        gjelderBarn = this.gjelderBarn?.let { it1 -> Personident(it1) },
+        ident = Personident(this.gjelderIdent),
+        gjelderRolleId = this.gjelderRolle?.id,
+        gjelderBarn = this.gjelderBarnIdent?.let { it1 -> Personident(it1) },
+        gjelderBarnId = this.gjelderSøknadsbarn?.id,
         kilde = this.kilde,
         inntektsposter = this.inntektsposter.tilInntektspostDtoV2().toSet(),
         inntektstyper = this.inntektsposter.mapNotNull { it.inntektstype }.toSet(),
@@ -161,11 +172,15 @@ fun Inntekt.tilInntektDtoV2() =
     )
 
 fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Inntekt {
+    val gjelderBarnRolle =
+        this.gjelderBarnId?.let { inntekt.behandling!!.roller.find { it.id == this.gjelderBarnId } }
+            ?: this.gjelderBarn?.let { inntekt.behandling!!.finnRolle(it.verdi) }
     inntekt.type = this.type
-    inntekt.belop = this.beløp.nærmesteHeltall
+    inntekt.belop = this.beløp.tilÅrsbeløp(beløpType).avrundetTilToDesimaler
     inntekt.datoFom = this.datoFom
     inntekt.datoTom = this.datoTom ?: justerPeriodeTomOpphørsdato(inntekt.opphørsdato)
-    inntekt.gjelderBarn = this.gjelderBarn?.verdi
+    inntekt.gjelderBarn = this.gjelderBarn?.verdi ?: gjelderBarnRolle?.ident
+    inntekt.gjelderBarnRolle = gjelderBarnRolle
     inntekt.kilde = Kilde.MANUELL
     inntekt.taMed = this.taMed
     if (this.inntektstype != null) {
@@ -175,6 +190,7 @@ fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Innt
                 inntekt = inntekt,
                 beløp = this.beløp.nærmesteHeltall,
                 inntektstype = this.inntektstype,
+                beløpstype = beløpType,
                 kode = this.type.toString(),
             ),
         )
@@ -195,8 +211,8 @@ fun Inntekt.tilIkkeAktivInntektDto(
         ),
     // Kapitalinntekt kan ha negativ verdi. Dette skal ikke vises i frontend
     periode = this.opprinneligPeriode!!,
-    ident = Personident(this.ident),
-    gjelderBarn = gjelderBarn?.let { Personident(it) },
+    ident = Personident(this.gjelderIdent),
+    gjelderBarn = gjelderBarnIdent?.let { Personident(it) },
     endringstype = endringstype,
     innhentetTidspunkt = innhentetTidspunkt,
     originalId = id,
@@ -208,6 +224,7 @@ fun Inntekt.tilIkkeAktivInntektDto(
                     finnVisningsnavn(it.kode),
                     it.inntektstype,
                     it.beløp.nærmesteHeltall,
+                    it.beløpstype,
                 )
             }.toSet(),
 )
@@ -261,17 +278,26 @@ fun InntektPost.toInntektpost() =
         finnVisningsnavn(kode),
         inntekstype,
         beløp.nærmesteHeltall,
+        InntektBeløpType.ÅRSBELØP,
     )
 
 fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
+    val rolle =
+        behandling.roller.find { it.id == this.gjelderId }
+            ?: behandling.roller.find { it.ident == this.ident?.verdi }
+    val gjelderBarnRolle =
+        this.gjelderBarnId?.let { behandling.roller.find { it.id == this.gjelderBarnId } }
+            ?: this.gjelderBarn?.let { behandling.finnRolle(it.verdi) }
     val inntekt =
         Inntekt(
             type = this.type,
             belop = this.beløp.nærmesteHeltall,
             datoFom = this.datoFom,
             datoTom = this.datoTom,
-            ident = this.ident.verdi,
-            gjelderBarn = this.gjelderBarn?.verdi,
+            ident = this.ident?.verdi ?: rolle?.ident,
+            rolle = rolle,
+            gjelderBarnRolle = gjelderBarnRolle,
+            gjelderBarn = this.gjelderBarn?.verdi ?: gjelderBarnRolle?.ident,
             kilde = Kilde.MANUELL,
             taMed = this.taMed,
             behandling = behandling,

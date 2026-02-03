@@ -108,7 +108,7 @@ class HentBehandlingTest : BehandlingControllerTest() {
             assertSoftly(inntekterBarn1) {
                 summertInntektListe shouldHaveSize 5
                 summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
-                summertInntektListe[0].barnetillegg shouldBe BigDecimal(5000)
+                summertInntektListe[0].barnetillegg shouldBe BigDecimal("5000.00")
                 summertInntektListe[0].kontantstøtte shouldBe null
             }
         }
@@ -324,7 +324,7 @@ class HentBehandlingTest : BehandlingControllerTest() {
                 LocalDate.parse("2023-12-31"),
                 opprinneligFom = LocalDate.parse("2023-01-01"),
                 opprinneligTom = LocalDate.parse("2023-07-01"),
-                ident = gjelder.ident,
+                rolle = gjelder.tilRolle(behandling),
                 kilde = Kilde.OFFENTLIG,
                 taMed = false,
                 behandling = behandling,
@@ -354,7 +354,7 @@ class HentBehandlingTest : BehandlingControllerTest() {
                 LocalDate.parse("2023-12-31"),
                 opprinneligFom = LocalDate.parse("2023-01-01"),
                 opprinneligTom = LocalDate.parse("2024-01-01"),
-                ident = gjelder.ident,
+                rolle = gjelder.tilRolle(behandling),
                 kilde = Kilde.OFFENTLIG,
                 taMed = true,
                 behandling = behandling,
@@ -382,9 +382,9 @@ class HentBehandlingTest : BehandlingControllerTest() {
                 BigDecimal.valueOf(55000),
                 LocalDate.parse("2022-01-01"),
                 LocalDate.parse("2022-12-31"),
-                gjelder.ident,
-                Kilde.MANUELL,
-                true,
+                kilde = Kilde.MANUELL,
+                taMed = true,
+                rolle = gjelder.tilRolle(behandling),
                 behandling = behandling,
             ),
         )
@@ -392,7 +392,7 @@ class HentBehandlingTest : BehandlingControllerTest() {
             val inntekt3 =
                 Inntekt(
                     Inntektsrapportering.BARNETILLEGG,
-                    BigDecimal.valueOf(5000),
+                    BigDecimal("5000.00"),
                     LocalDate.parse("2022-01-01"),
                     LocalDate.parse("2022-12-31"),
                     gjelder.ident,

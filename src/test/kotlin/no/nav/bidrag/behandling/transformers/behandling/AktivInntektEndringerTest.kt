@@ -17,7 +17,6 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
-import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import org.junit.jupiter.api.Nested
@@ -247,7 +246,7 @@ class AktivInntektEndringerTest : AktivGrunnlagTestFelles() {
             val endretInntekt =
                 ligningsinntekt
                     ?.copy(sumInntekt = BigDecimal(800000))
-                    ?.tilInntekt(behandling, Personident(behandling.bidragsmottaker!!.ident!!))
+                    ?.tilInntekt(behandling, behandling.bidragsmottaker!!)
 
             // hvis
             val resultat =

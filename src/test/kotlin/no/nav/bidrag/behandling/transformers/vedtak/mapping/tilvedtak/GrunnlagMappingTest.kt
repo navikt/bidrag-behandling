@@ -259,7 +259,7 @@ class GrunnlagMappingTest {
                             belop = BigDecimal(50000),
                             datoTom = LocalDate.parse("2022-06-30"),
                             datoFom = LocalDate.parse("2022-01-01"),
-                            ident = behandling.bidragsmottaker!!.ident!!,
+                            rolle = behandling.bidragsmottaker!!,
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,
@@ -270,7 +270,7 @@ class GrunnlagMappingTest {
                             belop = BigDecimal(60000),
                             datoTom = LocalDate.parse("2022-09-01"),
                             datoFom = LocalDate.parse("2022-07-01"),
-                            ident = behandling.bidragsmottaker!!.ident!!,
+                            rolle = behandling.bidragsmottaker!!,
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,
@@ -281,11 +281,11 @@ class GrunnlagMappingTest {
                             belop = BigDecimal(60000),
                             datoTom = LocalDate.parse("2022-09-01"),
                             datoFom = LocalDate.parse("2022-07-01"),
-                            ident = behandling.bidragsmottaker!!.ident!!,
+                            rolle = behandling.bidragsmottaker!!,
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,
-                            gjelderBarn = testdataBarn1.ident,
+                            gjelderBarnRolle = testdataBarn1.tilRolle(behandling),
                             type = Inntektsrapportering.KONTANTSTØTTE,
                             id = 22,
                         ),
@@ -293,11 +293,11 @@ class GrunnlagMappingTest {
                             belop = BigDecimal(60000),
                             datoTom = LocalDate.parse("2022-09-01"),
                             datoFom = LocalDate.parse("2022-07-01"),
-                            ident = behandling.bidragsmottaker!!.ident!!,
+                            rolle = behandling.bidragsmottaker!!,
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,
-                            gjelderBarn = testdataBarn2.ident,
+                            gjelderBarnRolle = testdataBarn2.tilRolle(behandling),
                             type = Inntektsrapportering.KONTANTSTØTTE,
                             id = 33,
                         ),
@@ -305,7 +305,7 @@ class GrunnlagMappingTest {
                             belop = BigDecimal(60000),
                             datoTom = LocalDate.parse("2022-09-01"),
                             datoFom = LocalDate.parse("2022-07-01"),
-                            ident = testdataBarn1.ident,
+                            rolle = testdataBarn1.tilRolle(behandling),
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,
@@ -316,7 +316,7 @@ class GrunnlagMappingTest {
                             belop = BigDecimal(60000),
                             datoTom = LocalDate.parse("2022-09-01"),
                             datoFom = LocalDate.parse("2022-07-01"),
-                            ident = testdataBarn2.ident,
+                            rolle = testdataBarn2.tilRolle(behandling),
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,
@@ -358,7 +358,7 @@ class GrunnlagMappingTest {
                             belop = BigDecimal(50000),
                             datoTom = LocalDate.parse("2022-06-30"),
                             datoFom = LocalDate.parse("2022-01-01"),
-                            ident = behandling.bidragsmottaker!!.ident!!,
+                            rolle = behandling.bidragsmottaker!!,
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,
@@ -369,7 +369,7 @@ class GrunnlagMappingTest {
                             belop = BigDecimal(60000),
                             datoTom = LocalDate.parse("2022-09-01"),
                             datoFom = LocalDate.parse("2022-07-01"),
-                            ident = behandling.bidragsmottaker!!.ident!!,
+                            rolle = behandling.bidragsmottaker!!,
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,
@@ -380,7 +380,7 @@ class GrunnlagMappingTest {
                             belop = BigDecimal(60000),
                             datoTom = LocalDate.parse("2022-09-01"),
                             datoFom = LocalDate.parse("2022-07-01"),
-                            ident = behandling.bidragsmottaker!!.ident!!,
+                            rolle = behandling.bidragsmottaker!!,
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,
@@ -392,7 +392,7 @@ class GrunnlagMappingTest {
                             belop = BigDecimal(60000),
                             datoTom = LocalDate.parse("2022-09-01"),
                             datoFom = LocalDate.parse("2022-07-01"),
-                            ident = behandling.bidragsmottaker!!.ident!!,
+                            rolle = behandling.bidragsmottaker!!,
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,
@@ -961,7 +961,7 @@ class GrunnlagMappingTest {
                             belop = BigDecimal(50000),
                             datoTom = LocalDate.parse("2022-06-30"),
                             datoFom = LocalDate.parse("2022-01-01"),
-                            ident = behandling.bidragsmottaker!!.ident!!,
+                            rolle = behandling.bidragsmottaker!!,
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,
@@ -972,7 +972,7 @@ class GrunnlagMappingTest {
                             belop = BigDecimal(60000),
                             datoTom = LocalDate.parse("2022-09-01"),
                             datoFom = LocalDate.parse("2022-07-01"),
-                            ident = behandling.bidragsmottaker!!.ident!!,
+                            rolle = behandling.bidragsmottaker!!,
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,
@@ -983,7 +983,7 @@ class GrunnlagMappingTest {
                             belop = BigDecimal(60000),
                             datoTom = LocalDate.parse("2022-09-01"),
                             datoFom = LocalDate.parse("2022-07-01"),
-                            ident = behandling.bidragsmottaker!!.ident!!,
+                            rolle = behandling.bidragsmottaker!!,
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,
@@ -995,11 +995,11 @@ class GrunnlagMappingTest {
                             belop = BigDecimal(60000),
                             datoTom = LocalDate.parse("2022-09-01"),
                             datoFom = LocalDate.parse("2022-07-01"),
-                            ident = behandling.bidragsmottaker!!.ident!!,
+                            rolle = behandling.bidragsmottaker!!,
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,
-                            gjelderBarn = testdataBarn2.ident,
+                            gjelderBarnRolle = testdataBarn2.tilRolle(behandling),
                             type = Inntektsrapportering.BARNETILLEGG,
                             id = 22,
                         ),
@@ -1007,7 +1007,7 @@ class GrunnlagMappingTest {
                             belop = BigDecimal(60000),
                             datoTom = LocalDate.parse("2022-09-01"),
                             datoFom = LocalDate.parse("2022-07-01"),
-                            ident = behandling.bidragsmottaker!!.ident!!,
+                            rolle = behandling.bidragsmottaker!!,
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,
@@ -1019,7 +1019,7 @@ class GrunnlagMappingTest {
                             belop = BigDecimal(60000),
                             datoTom = LocalDate.parse("2022-09-01"),
                             datoFom = LocalDate.parse("2022-07-01"),
-                            ident = behandling.bidragsmottaker!!.ident!!,
+                            rolle = behandling.bidragsmottaker!!,
                             taMed = true,
                             kilde = Kilde.MANUELL,
                             behandling = behandling,
@@ -1064,7 +1064,7 @@ class GrunnlagMappingTest {
                 behandling.inntekter = opprettInntekter(behandling, testdataBM, testdataBarn1)
                 behandling.inntekter.forEach {
                     if (it.type == Inntektsrapportering.BARNETILLEGG) {
-                        it.gjelderBarn = null
+                        it.gjelderBarnRolle = null
                     }
                 }
                 val exception =
@@ -1091,6 +1091,10 @@ class GrunnlagMappingTest {
                             opprettInntekterBearbeidetGrunnlag(
                                 behandling,
                                 testdataBarn1,
+                            ) +
+                            opprettInntekterBearbeidetGrunnlag(
+                                behandling,
+                                testdataBarn2,
                             )
                     ).toMutableSet()
 
@@ -1107,13 +1111,13 @@ class GrunnlagMappingTest {
 
                     ).toSet(),
                 )
-                val personobjektersøknadsbarn = setOf(grunnlagBm, grunnlagBp, søknadsbarnGrunnlag1)
+                val personobjektersøknadsbarn = setOf(grunnlagBm, grunnlagBp, søknadsbarnGrunnlag1, søknadsbarnGrunnlag2)
                 assertSoftly(
                     behandling
                         .tilGrunnlagInntekt(personobjektersøknadsbarn, søknadsbarnGrunnlag1)
                         .toList(),
                 ) {
-                    it shouldHaveSize 11
+                    it shouldHaveSize 14
                     val bpInntekter =
                         it.filtrerBasertPåFremmedReferanse(referanse = grunnlagBp.referanse)
                     bpInntekter.shouldHaveSize(3)
@@ -1128,7 +1132,7 @@ class GrunnlagMappingTest {
 
                     val barn2Inntekter =
                         it.filtrerBasertPåFremmedReferanse(referanse = søknadsbarnGrunnlag2.referanse)
-                    barn2Inntekter.shouldHaveSize(0)
+                    barn2Inntekter.shouldHaveSize(3)
                 }
             }
 
@@ -1296,7 +1300,7 @@ class GrunnlagMappingTest {
                 LocalDate.parse("2023-12-31"),
                 opprinneligFom = LocalDate.parse("2023-01-01"),
                 opprinneligTom = LocalDate.parse("2023-07-01"),
-                ident = gjelder.ident,
+                rolle = gjelder.tilRolle(behandling),
                 kilde = Kilde.OFFENTLIG,
                 taMed = false,
                 behandling = behandling,
@@ -1321,7 +1325,7 @@ class GrunnlagMappingTest {
                 LocalDate.parse("2023-12-31"),
                 opprinneligFom = LocalDate.parse("2023-01-01"),
                 opprinneligTom = LocalDate.parse("2024-01-01"),
-                ident = gjelder.ident,
+                rolle = gjelder.tilRolle(behandling),
                 kilde = Kilde.OFFENTLIG,
                 taMed = true,
                 behandling = behandling,
@@ -1348,6 +1352,7 @@ class GrunnlagMappingTest {
                 Kilde.MANUELL,
                 true,
                 behandling = behandling,
+                rolle = gjelder.tilRolle(behandling),
             ),
             barn?.let {
                 Inntekt(
@@ -1358,9 +1363,10 @@ class GrunnlagMappingTest {
                     gjelder.ident,
                     Kilde.OFFENTLIG,
                     true,
+                    rolle = gjelder.tilRolle(behandling),
                     opprinneligFom = LocalDate.parse("2023-01-01"),
                     opprinneligTom = LocalDate.parse("2024-01-01"),
-                    gjelderBarn = barn.ident,
+                    gjelderBarnRolle = barn.tilRolle(behandling),
                     behandling = behandling,
                     inntektsposter =
                         mutableSetOf(
@@ -1378,12 +1384,12 @@ class GrunnlagMappingTest {
                     BigDecimal.valueOf(5000),
                     LocalDate.parse("2023-01-01"),
                     LocalDate.parse("2023-12-31"),
-                    gjelder.ident,
-                    Kilde.OFFENTLIG,
-                    true,
+                    kilde = Kilde.OFFENTLIG,
+                    taMed = true,
+                    rolle = gjelder.tilRolle(behandling),
                     opprinneligFom = LocalDate.parse("2023-01-01"),
                     opprinneligTom = LocalDate.parse("2024-01-01"),
-                    gjelderBarn = testdataBarn1.ident,
+                    gjelderBarnRolle = testdataBarn1.tilRolle(behandling),
                     behandling = behandling,
                     inntektsposter =
                         mutableSetOf(
@@ -1957,8 +1963,8 @@ class GrunnlagMappingTest {
             behandling.privatAvtale.add(privatAvtale2)
             val resultat =
                 behandlingTilGrunnlagMapping.run {
-                    behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter(), privatAvtale.rolle!!.ident!!) +
-                        behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter(), privatAvtale2.rolle!!.ident!!)
+                    behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter(), privatAvtale.rolle!!) +
+                        behandling.tilPrivatAvtaleGrunnlag(behandling.tilPersonobjekter(), privatAvtale2.rolle!!)
                 }
 
             resultat.shouldHaveSize(6)

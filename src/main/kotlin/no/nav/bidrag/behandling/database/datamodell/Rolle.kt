@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.løperBidragEtterEldsteVirkning
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
@@ -89,13 +90,6 @@ open class Rolle(
         orphanRemoval = true,
     )
     open var notat: MutableSet<Notat> = mutableSetOf(),
-    @OneToOne(
-        fetch = FetchType.LAZY,
-        mappedBy = "rolle",
-        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
-        orphanRemoval = true,
-    )
-    open val husstandsmedlem: Husstandsmedlem? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
         name = "person_id",
@@ -129,6 +123,23 @@ open class Rolle(
     @Column(columnDefinition = "jsonb", name = "forholdsmessig_fordeling")
     open var forholdsmessigFordeling: ForholdsmessigFordelingRolle? = null,
 ) {
+    fun erSammeRolle(annenRolle: Rolle) =
+        if (rolletype == Rolletype.BARN) {
+            erSammeRolle(annenRolle.ident!!, annenRolle.stønadstype)
+        } else {
+            erSammeRolle(annenRolle.ident!!, null)
+        }
+
+    fun erSammeRolle(
+        ident: String,
+        stønadstype: Stønadstype?,
+    ) = this.ident == ident &&
+        // Bare sjekk for stønadstype hvis det er barn. Skal ikke sjekkes for BM/BP
+        (this.rolletype != Rolletype.BARN || this.stønadstype == null || stønadstype == null || this.stønadstype == stønadstype)
+
+    // Brukes ved blant annet sortering og filtrering for å finne unik rolle.
+    // Det kan hende samme rolle er i samme behandling flere ganger (18 år og ordinær bidrag samtidig ved FF)
+    val identifikator get() = "${ident}_${navn}_$stønadstype"
     val erDirekteAvslag get() = avslag != null
     val erAvvisning get() = avslag != null && avslag!!.erAvvisning()
     val erDirekteAvslagIkkeAvvisning get() = avslag != null && avslag!!.erDirekteAvslag() && !avslag!!.erAvvisning()
@@ -142,13 +153,8 @@ open class Rolle(
             rolletype == Rolletype.BIDRAGSPLIKTIG ||
                 (rolletype == Rolletype.BIDRAGSMOTTAKER && it.bidragsmottaker?.ident == this.ident)
         }
+    val stønadstypeBarnEllerBehandling get() = stønadstype ?: behandling.stonadstype
     val virkningstidspunktRolle get() = virkningstidspunkt ?: behandling.virkningstidspunktEllerSøktFomDato
-    val virkningstidspunktBeregnet get() =
-        if (behandling.erIForholdsmessigFordeling) {
-            behandling.eldsteVirkningstidspunkt
-        } else {
-            virkningstidspunktRolle
-        }
 
     fun sakForSøknad(søknadsid: Long) =
         forholdsmessigFordeling
@@ -273,7 +279,7 @@ open class Rolle(
     val opphørSistePeriode get() = opphørTilDato != null
 
     override fun toString(): String =
-        "Rolle(id=$id, behandling=${behandling.id}, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
+        "Rolle(id=$id, behandling=${behandling.id}, stønadstype=$stønadstype, behandlingstema=$behandlingstema, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

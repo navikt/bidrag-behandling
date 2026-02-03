@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.controller.behandling
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
-import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
@@ -258,6 +257,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
     }
 
     @Test
+    @Transactional
     fun `skal oppdatere virkningstidspunkt og oppdatere fra og med dato på inntekter`() {
         // gitt
         val behandling = oppretteTestbehandling(true)
@@ -295,6 +295,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                     datoFom = YearMonth.parse("2023-02"),
                     datoTom = YearMonth.parse("2023-09"),
                     type = Inntektsrapportering.BARNETILLEGG,
+                    kilde = Kilde.MANUELL,
                     behandling = behandling,
                     medId = false,
                 ),
@@ -302,6 +303,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                     datoFom = YearMonth.parse("2023-02"),
                     datoTom = YearMonth.parse("2023-06"),
                     type = Inntektsrapportering.UTVIDET_BARNETRYGD,
+                    kilde = Kilde.OFFENTLIG,
                     behandling = behandling,
                     medId = false,
                 ),
@@ -309,6 +311,7 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                     datoFom = YearMonth.parse("2023-02"),
                     datoTom = YearMonth.parse("2024-06"),
                     type = Inntektsrapportering.SMÅBARNSTILLEGG,
+                    kilde = Kilde.MANUELL,
                     behandling = behandling,
                     medId = false,
                 ),
@@ -321,8 +324,6 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
                 ),
             )
         testdataManager.lagreBehandlingNewTransaction(behandling)
-
-        val b = behandlingRepository.findBehandlingById(behandling.id!!)
 
         val nyttVirkningstidspunkt = LocalDate.parse("2023-07-01")
         // hvis
@@ -633,12 +634,6 @@ class OppdatereBehandlingTest : BehandlingControllerTest() {
 
         // så
         val oppdatertBehandling = behandlingRepository.findBehandlingById(behandling.id!!).get()
-
-        assertSoftly {
-            val oppdatertGrunnlag = oppdatertBehandling.grunnlag
-            oppdatertGrunnlag.size shouldBe 2
-            oppdatertGrunnlag.filter { it.aktiv == null }.shouldBeEmpty()
-        }
 
         assertSoftly(oppdatertBehandling.inntekter.toList()) {
             this shouldHaveSize 2

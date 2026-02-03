@@ -12,9 +12,14 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
+import no.nav.bidrag.behandling.transformers.vedtak.nullIfEmpty
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.felles.toYearMonth
 import java.math.BigDecimal
@@ -28,7 +33,8 @@ open class Inntekt(
     open var belop: BigDecimal,
     open var datoFom: LocalDate?,
     open var datoTom: LocalDate?,
-    open var ident: String,
+    @Deprecated("Bruk heller rolle")
+    open var ident: String? = null,
     @Enumerated(EnumType.STRING)
     open var kilde: Kilde,
     open var taMed: Boolean,
@@ -45,11 +51,103 @@ open class Inntekt(
         orphanRemoval = true,
     )
     open var inntektsposter: MutableSet<Inntektspost> = mutableSetOf(),
+    @Deprecated("Bruk heller gjelderBarnRolle")
     open var gjelderBarn: String? = null,
     open var opprinneligFom: LocalDate? = null,
     open var opprinneligTom: LocalDate? = null,
+    @OneToOne(
+        fetch = FetchType.LAZY,
+        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
+        orphanRemoval = true,
+    )
+    @JoinColumn(name = "rolle_id", nullable = true)
+    open var rolle: Rolle? = null,
+    @OneToOne(
+        fetch = FetchType.LAZY,
+        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
+        orphanRemoval = true,
+    )
+    @JoinColumn(name = "gjelder_barn_rolle_id", nullable = true)
+    open var gjelderBarnRolle: Rolle? = null,
 ) {
-    val gjelderSøknadsbarn get() = behandling?.søknadsbarn?.find { it.ident == gjelderBarn }
+    val gjelderIdent get() = (rolle?.ident ?: ident)!!
+    val gjelderBarnIdent get() = gjelderBarnRolle?.ident ?: gjelderBarn
+
+    val virkningstidspunktGjelderEllerBarn get() =
+        if (gjelderSøknadsbarn != null) {
+            gjelderSøknadsbarn!!.finnBeregnFra()
+        } else if (gjelderRolle != null) {
+            gjelderRolle!!.finnBeregnFra()
+        } else {
+            behandling!!.eldsteVirkningstidspunkt.toYearMonth()
+        }
+
+    // TODO: Bytt dette til å bruke rolle etter migrering
+    val gjelderRolle get() =
+        if (rolle != null) {
+            rolle
+        } else {
+            behandling?.roller?.find { it.ident == gjelderIdent }
+        }
+
+    // TODO: Bytt dette til gjelderRolle etter migrering
+    val gjelderSøknadsbarn get() =
+        if (gjelderBarnRolle != null) {
+            gjelderBarnRolle
+        } else {
+            behandling?.søknadsbarn?.find { it.ident == gjelderBarnIdent }
+        }
+
+    fun tilhørerSammePerson(
+        ident: String?,
+        rolleId: Long?,
+    ) = if (rolleId != null && rolle != null) {
+        rolle!!.id == rolleId
+    } else {
+        this.gjelderIdent.nullIfEmpty() == ident.nullIfEmpty()
+    }
+
+    fun tilhørerSammePerson(annenInntekt: Inntekt) =
+        if (annenInntekt.rolle == null || this.rolle == null) {
+            this.gjelderIdent.nullIfEmpty() == annenInntekt.gjelderIdent.nullIfEmpty()
+        } else {
+            erSammeRolle(annenInntekt.rolle!!)
+        }
+
+    fun tilhørerSammeBarn(annenInntekt: Inntekt) =
+        if (annenInntekt.gjelderBarnRolle == null || this.gjelderBarnRolle == null) {
+            this.gjelderBarnIdent.nullIfEmpty() == annenInntekt.gjelderBarnIdent.nullIfEmpty()
+        } else {
+            inntektGjelderBarn(annenInntekt.rolle!!)
+        }
+
+    fun tilhørerSammeBarn(
+        ident: String?,
+        rolleId: Long?,
+    ) = if (rolleId != null && gjelderBarnRolle != null) {
+        gjelderBarnRolle!!.id == rolleId
+    } else {
+        this.gjelderBarn.nullIfEmpty() == ident.nullIfEmpty()
+    }
+
+    fun erSammeRolle(rolle: Rolle) = if (this.rolle != null) this.rolle!!.erSammeRolle(rolle) else this.gjelderIdent == rolle.ident
+
+    fun erSammeRolle(
+        ident: String,
+        stønadstype: Stønadstype?,
+    ) = if (this.rolle != null) {
+        this.rolle!!.erSammeRolle(ident, stønadstype)
+    } else {
+        this.gjelderIdent == ident
+    }
+
+    fun inntektGjelderBarn(rolle: Rolle) =
+        if (gjelderBarnRolle != null) {
+            gjelderBarnRolle!!.erSammeRolle(rolle)
+        } else {
+            gjelderBarnIdent == rolle.ident
+        }
+
     val opphørsdato get() = if (gjelderSøknadsbarn != null) gjelderSøknadsbarn!!.opphørsdato else behandling?.globalOpphørsdato
     val beregnTilDato get() =
         if (gjelderSøknadsbarn != null) {

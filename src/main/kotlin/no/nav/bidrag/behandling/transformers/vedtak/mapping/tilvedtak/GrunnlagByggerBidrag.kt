@@ -19,6 +19,7 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.sak.Sakskategori
+import no.nav.bidrag.domene.enums.samhandler.Valutakode
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
@@ -145,6 +146,7 @@ fun Behandling.tilGrunnlagTilleggsstønad(): List<GrunnlagDto> =
                                 TilleggsstønadPeriode(
                                     periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
                                     beløpDagsats = it.dagsats,
+                                    beløpMåned = it.månedsbeløp,
                                     manueltRegistrert = true,
                                 ),
                             ),
@@ -170,8 +172,8 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
             søknadsbarnRolle.opphørsdato != null && resultatPeriode.periode.fom == søknadsbarnRolle.opphørsdato?.toYearMonth()
         val vedtak =
             resultatDelvedtak.find { rv ->
-                rv.resultat.beregnetBarnebidragPeriodeListe.any { vp ->
-                    resultatPeriode.periode.fom == vp.periode.fom ||
+                rv.resultatBarn(søknadsbarn).beregnetBarnebidragPeriodeListe.any { vp ->
+                    (resultatPeriode.periode.fom == vp.periode.fom) ||
                         erOpphørsperiode && vp.periode.til == søknadsbarnRolle.opphørsdato?.toYearMonth()
                 }
             }!!
@@ -326,7 +328,7 @@ fun PrivatAvtale.mapTilGrunnlag(
                     PrivatAvtalePeriodeGrunnlag(
                         periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
                         beløp = it.beløp,
-                        valutakode = it.valutakode,
+                        valutakode = it.valutakode ?: Valutakode.NOK,
                         samværsklasse = it.samværsklasse,
                     ),
                 ),

@@ -274,7 +274,7 @@ class Dtomapper(
                 compareByDescending<UnderholdDto> { it.gjelderBarn.kilde == Kilde.OFFENTLIG }
                     .thenByDescending { it.gjelderBarn.kilde == Kilde.MANUELL }
                     .thenBy { it.gjelderBarn.fødselsdato }
-                    .thenBy { it.gjelderBarn.navn },
+                    .thenBy { it.gjelderBarn.sortKey },
             ).toSet()
 
     private fun Underholdskostnad.tilDto(): UnderholdDto {
@@ -448,7 +448,7 @@ class Dtomapper(
             samvær
                 .filter { it.rolle.kreverGrunnlagForBeregning }
                 .sortedWith(
-                    sorterPersonEtterEldsteFødselsdato({ it.rolle.fødselsdato }, { it.rolle.navn }),
+                    sorterPersonEtterEldsteFødselsdato({ it.rolle.fødselsdato }, { it.rolle.identifikator }),
                 ).map { it.tilDto() }
         } else {
             null
@@ -530,7 +530,8 @@ class Dtomapper(
             id = this.id!!,
             periode = DatoperiodeDto(this.fom, this.tom),
             dagsats = this.dagsats,
-            total = beregnBarnebidragApi.beregnMånedsbeløpTilleggsstønad(this.dagsats),
+            månedsbeløp = this.månedsbeløp,
+            total = this.dagsats?.let { beregnBarnebidragApi.beregnMånedsbeløpTilleggsstønad(it) } ?: this.månedsbeløp ?: BigDecimal.ZERO,
         )
 
     fun Set<Tilleggsstønad>.tilTilleggsstønadDtos() = this.sortedBy { it.fom }.map { it.tilDto() }.toSet()
@@ -879,7 +880,7 @@ class Dtomapper(
                 roller =
                     roller
                         .sortedWith(
-                            sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.navn }),
+                            sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
                         ).map { it.tilDto() }
                         .toSet(),
                 bpsBarnUtenLøpendeBidrag = bpsBarnUtenLøpendeBidrag(),
@@ -983,9 +984,9 @@ class Dtomapper(
         val søknadsbarnPA =
             søknadsbarn
                 .sortedWith(
-                    sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.navn }),
+                    sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
                 ).map { barn ->
-                    val privatAvtale = privatAvtale.find { it.rolle?.ident == barn.ident }
+                    val privatAvtale = privatAvtale.find { it.rolle?.erSammeRolle(barn) == true }
                     PrivatAvtaleBarnInfoDto(
                         gjelderBarn = barn.tilPersoninfoDto(Kilde.OFFENTLIG),
                         privatAvtale = privatAvtale?.tilDtoV2(),
@@ -1074,7 +1075,7 @@ class Dtomapper(
         if (tilType() == TypeBehandling.BIDRAG) {
             søknadsbarn
                 .sortedWith(
-                    sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.navn }),
+                    sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
                 ).map {
                     val eldsteSøknad = it.forholdsmessigFordeling?.eldsteSøknad
                     val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
@@ -1107,7 +1108,7 @@ class Dtomapper(
                                 BegrunnelseDto(notat)
                             },
                         begrunnelseVurderingAvSkolegang =
-                            if (stonadstype == Stønadstype.BIDRAG18AAR) {
+                            if (it.stønadstypeBarnEllerBehandling == Stønadstype.BIDRAG18AAR) {
                                 BegrunnelseDto(
                                     henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it),
                                 )
@@ -1115,7 +1116,7 @@ class Dtomapper(
                                 null
                             },
                         begrunnelseVurderingAvSkolegangFraOpprinneligVedtak =
-                            if (stonadstype == Stønadstype.BIDRAG18AAR) {
+                            if (it.stønadstypeBarnEllerBehandling == Stønadstype.BIDRAG18AAR) {
                                 BegrunnelseDto(
                                     henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it, false),
                                 )
@@ -1163,104 +1164,6 @@ class Dtomapper(
                     årsak = årsak,
                     avslag = avslag,
                     begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
-                    harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
-                    harLøpendeForskudd = finnesLøpendeForskuddForRolle(søknadsbarn.first()),
-                    opphørsdato = globalOpphørsdato,
-                    valideringsfeil = hentVirkningstidspunktValideringsfeil(),
-                    mottattdato = mottattdato,
-                    søktAv = soknadFra,
-                    søktFomDato = søktFomDato,
-                    vedtakstype = vedtakstype,
-                    begrunnelseFraOpprinneligVedtak =
-                        if (erKlageEllerOmgjøring) {
-                            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, null, false)
-                                .takeIfNotNullOrEmpty { BegrunnelseDto(it) }
-                        } else {
-                            null
-                        },
-                ),
-            )
-        }
-
-    private fun Behandling.mapVirkningstidspunktAlleBarn(): List<VirkningstidspunktBarnDtoV2> =
-        if (tilType() == TypeBehandling.BIDRAG) {
-            søknadsbarn.sortedBy { it.fødselsdato }.map {
-                val eldsteSøknad = it.forholdsmessigFordeling?.eldsteSøknad
-                val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
-                VirkningstidspunktBarnDtoV2(
-                    rolle = it.tilDto(),
-                    beregnTil = it.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED,
-                    beregnTilDato = finnBeregnTilDatoBehandling(it),
-                    virkningstidspunkt = it.virkningstidspunkt ?: virkningstidspunkt,
-                    opprinneligVedtakstidspunkt =
-                        omgjøringsdetaljer?.sisteVedtakstidspunktBeregnetUtNåværendeMåned?.toLocalDate()
-                            ?: omgjøringsdetaljer?.omgjortVedtakstidspunktListe?.minOrNull()?.toLocalDate(),
-                    omgjortVedtakVedtakstidspunkt = omgjøringsdetaljer?.omgjortVedtakVedtakstidspunkt?.toLocalDate(),
-                    opprinneligVirkningstidspunkt =
-                        it.opprinneligVirkningstidspunkt
-                            ?: omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
-                    manuelleVedtak = hentManuelleVedtakForBehandling(this, it.ident!!, it),
-                    etterfølgendeVedtak = hentNesteEtterfølgendeVedtak(it),
-                    årsak = if (it.årsak == null && it.avslag == null) årsak else it.årsak,
-                    avslag = if (it.årsak == null && it.avslag == null) avslag else it.avslag,
-                    grunnlagFraVedtak =
-                        it.grunnlagFraVedtak ?: it.grunnlagFraVedtakForInnkreving?.vedtak,
-                    kanSkriveVurderingAvSkolegang = kanSkriveVurderingAvSkolegang(it),
-                    begrunnelse =
-                        if (notat.isEmpty()) {
-                            BegrunnelseDto(
-                                henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT),
-                            )
-                        } else {
-                            BegrunnelseDto(notat)
-                        },
-                    begrunnelseVurderingAvSkolegang =
-                        if (stonadstype == Stønadstype.BIDRAG18AAR) {
-                            BegrunnelseDto(
-                                henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it),
-                            )
-                        } else {
-                            null
-                        },
-                    begrunnelseVurderingAvSkolegangFraOpprinneligVedtak =
-                        if (stonadstype == Stønadstype.BIDRAG18AAR) {
-                            BegrunnelseDto(
-                                henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, it, false),
-                            )
-                        } else {
-                            null
-                        },
-                    harLøpendeForskudd = finnesLøpendeForskuddForRolle(it),
-                    harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
-                    eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
-                    opphørsdato = it.opphørsdato,
-                    globalOpphørsdato = globalOpphørsdato,
-                    valideringsfeil = hentVirkningstidspunktValideringsfeil(),
-                    valideringsfeilV2 = it.hentVirkningstidspunktValideringsfeilRolle(),
-                    mottattdato = eldsteSøknad?.mottattDato ?: it.behandling.mottattdato,
-                    søktAv = eldsteSøknad?.søktAvType ?: it.behandling.soknadFra,
-                    søktFomDato = eldsteSøknad?.søknadFomDato ?: it.behandling.søktFomDato,
-                    vedtakstype = eldsteSøknad?.behandlingstype?.tilVedtakstype() ?: it.behandling.vedtakstype,
-                    begrunnelseFraOpprinneligVedtak =
-                        if (erKlageEllerOmgjøring) {
-                            henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it, false)
-                                .takeIfNotNullOrEmpty { BegrunnelseDto(it) }
-                        } else {
-                            null
-                        },
-                )
-            }
-        } else {
-            listOf(
-                VirkningstidspunktBarnDtoV2(
-                    rolle = bidragsmottaker!!.tilDto(),
-                    virkningstidspunkt = virkningstidspunkt,
-                    opprinneligVirkningstidspunkt = omgjøringsdetaljer?.opprinneligVirkningstidspunkt,
-                    opprinneligVedtakstidspunkt = omgjøringsdetaljer?.omgjortVedtakstidspunktListe?.minOrNull()?.toLocalDate(),
-                    årsak = årsak,
-                    avslag = avslag,
-                    begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
-                    løpendeBidragPeriode = null,
                     harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
                     harLøpendeForskudd = finnesLøpendeForskuddForRolle(søknadsbarn.first()),
                     opphørsdato = globalOpphørsdato,
@@ -1411,23 +1314,6 @@ class Dtomapper(
             )
         }
 
-    fun Behandling.beregnetInntekterGrunnlagForRolle(rolle: Rolle) =
-        BeregnApi()
-            .beregnInntekt(tilInntektberegningDto(rolle))
-            .inntektPerBarnListe
-            .filter { it.inntektGjelderBarnIdent != null }
-            .flatMap { beregningBarn ->
-                beregningBarn.summertInntektListe.map {
-                    GrunnlagDto(
-                        referanse = "${Grunnlagstype.DELBEREGNING_SUM_INNTEKT}_${rolle.tilGrunnlagsreferanse()}",
-                        type = Grunnlagstype.DELBEREGNING_SUM_INNTEKT,
-                        innhold = POJONode(it),
-                        gjelderReferanse = rolle.tilGrunnlagsreferanse(),
-                        gjelderBarnReferanse = beregningBarn.inntektGjelderBarnIdent!!.verdi,
-                    )
-                }
-            }
-
     private fun Behandling.bpsBarnUtenLøpendeBidrag(): Set<BpsBarnUtenLøpendeBidragDto> =
         grunnlag
             .hentSisteGrunnlagBpsBarnUtenBidragsak()
@@ -1548,6 +1434,7 @@ class Dtomapper(
                 (rolle?.rolletype != Rolletype.BIDRAGSPLIKTIG).ifTrue {
                     tilBostatusperiode()
                 },
+            begrunnelse = henteNotatinnhold(this.behandling, NotatType.BOFORHOLD),
             egetBarnErEnesteVoksenIHusstanden = behandling.egetBarnErEnesteVoksenIHusstanden,
             valideringsfeil =
                 BoforholdValideringsfeil(

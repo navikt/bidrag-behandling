@@ -768,6 +768,7 @@ class VedtakTilBehandlingMapping(
                         ?.minusMonths(1)
                         ?.atEndOfMonth(),
                 dagsats = it.beløpDagsats,
+                månedsbeløp = it.beløpMåned,
             )
         }
 

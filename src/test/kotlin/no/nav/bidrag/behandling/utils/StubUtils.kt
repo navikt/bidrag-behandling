@@ -240,6 +240,16 @@ fun stubPersonConsumer(bidragPersonConsumer: BidragPersonConsumer? = null): Bidr
     return personConsumerMock
 }
 
+fun mockAppContext(vararg consumers: Any) {
+    mockkObject(AppContext)
+
+    consumers.forEach {
+        every {
+            AppContext.getBean(eq(it::class.java))
+        } returns it
+    }
+}
+
 fun stubVedtakConsumer(
     vedtakConsumer: BidragVedtakConsumer = mockkClass(BidragVedtakConsumer::class, relaxed = true),
 ): BidragVedtakConsumer {

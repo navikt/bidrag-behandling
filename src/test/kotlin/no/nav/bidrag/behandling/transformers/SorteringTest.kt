@@ -27,49 +27,49 @@ class SorteringTest {
                     opprinneligFom = YearMonth.parse("2022-01"),
                     opprinneligTom = YearMonth.parse("2022-12"),
                     type = Inntektsrapportering.AINNTEKT,
-                    ident = testdataBM.ident,
+                    gjelderRolle = testdataBM.tilRolle(),
                     taMed = false,
                 ),
                 opprettInntekt(
                     opprinneligFom = YearMonth.parse("2023-01"),
                     opprinneligTom = YearMonth.parse("2023-12"),
                     type = Inntektsrapportering.AINNTEKT,
-                    ident = testdataBM.ident,
+                    gjelderRolle = testdataBM.tilRolle(),
                     taMed = false,
                 ),
                 opprettInntekt(
                     opprinneligFom = YearMonth.parse("2022-01"),
                     opprinneligTom = YearMonth.parse("2022-12"),
                     type = Inntektsrapportering.LIGNINGSINNTEKT,
-                    ident = testdataBM.ident,
+                    gjelderRolle = testdataBM.tilRolle(),
                     taMed = false,
                 ),
                 opprettInntekt(
                     opprinneligFom = YearMonth.parse("2023-01"),
                     opprinneligTom = YearMonth.parse("2023-12"),
                     type = Inntektsrapportering.LIGNINGSINNTEKT,
-                    ident = testdataBM.ident,
+                    gjelderRolle = testdataBM.tilRolle(),
                     taMed = false,
                 ),
                 opprettInntekt(
                     opprinneligFom = YearMonth.parse("2021-01"),
                     opprinneligTom = YearMonth.parse("2021-12"),
                     type = Inntektsrapportering.LIGNINGSINNTEKT,
-                    ident = testdataBM.ident,
+                    gjelderRolle = testdataBM.tilRolle(),
                     taMed = true,
                 ),
                 opprettInntekt(
                     opprinneligFom = YearMonth.parse("2022-01"),
                     opprinneligTom = YearMonth.parse("2022-12"),
                     type = Inntektsrapportering.KAPITALINNTEKT,
-                    ident = testdataBM.ident,
+                    gjelderRolle = testdataBM.tilRolle(),
                     taMed = false,
                 ),
                 opprettInntekt(
                     opprinneligFom = YearMonth.parse("2022-01"),
                     opprinneligTom = YearMonth.parse("2022-12"),
                     type = Inntektsrapportering.LIGNINGSINNTEKT,
-                    ident = testdataBarn1.ident,
+                    gjelderRolle = testdataBarn1.tilRolle(),
                     taMed = false,
                 ),
             )
@@ -77,7 +77,7 @@ class SorteringTest {
         val filtrertInntekter = inntekter.filtrerUtHistoriskeInntekter()
 
         filtrertInntekter shouldHaveSize 5
-        val filtrertInntekterBm = filtrertInntekter.filter { it.ident == testdataBM.ident }
+        val filtrertInntekterBm = filtrertInntekter.filter { it.gjelderIdent == testdataBM.ident }
         assertSoftly(filtrertInntekterBm.filter { it.type == Inntektsrapportering.LIGNINGSINNTEKT }) {
             this shouldHaveSize 2
             this[0].opprinneligFom shouldBe LocalDate.parse("2023-01-01")
@@ -96,7 +96,7 @@ class SorteringTest {
             this[0].opprinneligFom shouldBe LocalDate.parse("2022-01-01")
             this[0].opprinneligTom shouldBe LocalDate.parse("2022-12-31")
         }
-        assertSoftly(filtrertInntekter.filter { it.ident == testdataBarn1.ident }) {
+        assertSoftly(filtrertInntekter.filter { it.gjelderIdent == testdataBarn1.ident }) {
             shouldHaveSize(1)
             this[0].opprinneligFom shouldBe LocalDate.parse("2022-01-01")
             this[0].opprinneligTom shouldBe LocalDate.parse("2022-12-31")
@@ -494,7 +494,7 @@ class SorteringTest {
 
         val filtrertInntekter = inntekter.toList().ekskluderYtelserFørVirkningstidspunkt()
 
-        filtrertInntekter shouldHaveSize 5
+        filtrertInntekter shouldHaveSize 8
         filtrertInntekter
             .map { it.type }
             .shouldContainAll(
@@ -574,7 +574,7 @@ class SorteringTest {
 
         val filtrertInntekter = inntekter.toList().ekskluderYtelserFørVirkningstidspunkt()
 
-        filtrertInntekter shouldHaveSize 5
+        filtrertInntekter shouldHaveSize 8
         filtrertInntekter
             .map { it.type }
             .shouldContainAll(
@@ -587,12 +587,12 @@ class SorteringTest {
                 ),
             )
         assertSoftly(filtrertInntekter.filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }) {
-            shouldHaveSize(1)
-            this[0].opprinneligFom shouldBe YearMonth.parse("2024-01").atDay(1)
+            shouldHaveSize(2)
+            this[0].opprinneligFom shouldBe YearMonth.parse("2021-01").atDay(1)
         }
         assertSoftly(filtrertInntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }) {
             shouldHaveSize(1)
-            this[0].opprinneligFom shouldBe YearMonth.parse("2024-01").atDay(1)
+            this[0].opprinneligFom shouldBe YearMonth.parse("2021-01").atDay(1)
         }
     }
 }
