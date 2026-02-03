@@ -501,7 +501,7 @@ class VedtakGrunnlagMapper(
                             gjelderKlage = behandling.vedtakstype == Vedtakstype.KLAGE,
                             skalInnkreves = skalInnkreves,
                             erBeregningsperiodeLøpende =
-                                søknadsbarnRolle.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED || søknadsbarnRolle.erDirekteAvslag,
+                                søknadsbarnRolle.beregnTil == BeregnTil.INNEVÆRENDE_MÅNED,
                             gjelderParagraf35c =
                                 listOf(
                                     Behandlingstype.PARAGRAF_35_C,
