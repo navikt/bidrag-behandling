@@ -312,6 +312,7 @@ fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
                     inntekt = inntekt,
                     beløp = this.beløp.nærmesteHeltall,
                     inntektstype = this.inntektstype,
+                    beløpstype = this.beløpType,
                     kode = this.type.toString(),
                 ),
             )
