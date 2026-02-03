@@ -348,6 +348,11 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
         return null
     }
 
+    // Skal kunne fatte opphørsvedtak
+    if (vedtakstype == Vedtakstype.OPPHØR) {
+        return null
+    }
+
     if (søknadsbarn.size > 1 && !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled) {
         return "Kan ikke fatte vedtak for bidrag med flere barn"
     }
