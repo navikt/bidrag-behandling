@@ -304,7 +304,7 @@ class BehandlingControllerV2(
                 henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT, behandling.søknadsbarn.first())
             }
         return OppdatereVirkningstidspunktBegrunnelseResponseDto(
-            erLikForAlle = behandling.erVirkningstidspunktLiktForAlle,
+            erLikForAlle = behandling.sammeVirkningstidspunktForAlle,
             rolleId = request.rolleId,
             oppdatertBegrunnelse =
                 if (notat.isEmpty()) {
