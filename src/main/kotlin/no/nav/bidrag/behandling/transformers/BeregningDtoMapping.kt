@@ -518,7 +518,10 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                     } == true
 
                             val aldersjusteringsdetaljer =
-                                grunnlagslisteRV.finnAldersjusteringDetaljerGrunnlag(resultat.barn.referanse)
+                                delvedtak
+                                    ?.resultat
+                                    ?.grunnlagListe
+                                    ?.finnAldersjusteringDetaljerGrunnlag(resultat.barn.referanse)
 
                             if (aldersjusteringsdetaljer != null && aldersjusteringsdetaljer.aldersjusteresManuelt) {
                                 ResultatBarnebidragsberegningPeriodeDto(
