@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.transformers
 
 import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
@@ -107,7 +106,6 @@ import no.nav.bidrag.behandling.transformers.behandling.tilSøknadsdetaljerDto
 import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
-import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.samvær.tilDto
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDtos
 import no.nav.bidrag.behandling.transformers.underhold.valider
@@ -127,7 +125,6 @@ import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
-import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
@@ -529,9 +526,10 @@ class Dtomapper(
         TilleggsstønadDto(
             id = this.id!!,
             periode = DatoperiodeDto(this.fom, this.tom),
-            dagsats = this.dagsats,
-            månedsbeløp = this.månedsbeløp,
-            total = this.dagsats?.let { beregnBarnebidragApi.beregnMånedsbeløpTilleggsstønad(it) } ?: this.månedsbeløp ?: BigDecimal.ZERO,
+            dagsats = this.beløp,
+            beløp = beløp,
+            beløpstype = beløpstype,
+            total = beregnBarnebidragApi.beregnMånedsbeløpTilleggsstønad(beløp ?: BigDecimal.ZERO, this.beløpstype),
         )
 
     fun Set<Tilleggsstønad>.tilTilleggsstønadDtos() = this.sortedBy { it.fom }.map { it.tilDto() }.toSet()

@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.PersoninfoDto
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
+import no.nav.bidrag.domene.enums.diverse.InntektBeløpstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
@@ -193,9 +194,12 @@ data class UnderholdskostnadDto(
     data class TilsynsutgiftBarn(
         val gjelderBarn: PersoninfoDto,
         val totalTilsynsutgift: BigDecimal,
+        val faktiskUtgiftBeregnet: BigDecimal,
         val beløp: BigDecimal,
         val kostpenger: BigDecimal? = null,
         val tilleggsstønadDagsats: BigDecimal? = null,
+        val tilleggsstønadBeløp: BigDecimal? = null,
+        val beløpstype: InntektBeløpstype? = null,
         val tilleggsstønad: BigDecimal? = null,
     )
 }
@@ -204,14 +208,16 @@ data class OppdatereTilleggsstønadRequest(
     val id: Long? = null,
     val periode: DatoperiodeDto,
     val dagsats: BigDecimal? = null,
-    val månedsbeløp: BigDecimal? = null,
+    val beløp: BigDecimal? = null,
+    val beløpstype: InntektBeløpstype = InntektBeløpstype.DAGSATS,
 )
 
 data class TilleggsstønadDto(
     val id: Long? = null,
     val periode: DatoperiodeDto,
     val dagsats: BigDecimal?,
-    val månedsbeløp: BigDecimal?,
+    val beløp: BigDecimal?,
+    val beløpstype: InntektBeløpstype = InntektBeløpstype.DAGSATS,
     val total: BigDecimal,
 )
 

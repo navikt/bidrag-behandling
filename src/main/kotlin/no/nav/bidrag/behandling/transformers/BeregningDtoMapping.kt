@@ -55,6 +55,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvslag
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvvisning
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
+import no.nav.bidrag.domene.enums.diverse.InntektBeløpstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -92,6 +93,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspli
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragspliktigesBeregnedeTotalbidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEndringSjekkGrensePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningEvne25ProsentAvInntekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningFaktiskTilsynsutgift
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningIndeksreguleringPrivatAvtale
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningNettoBarnetillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningNettoTilsynsutgift
@@ -1398,6 +1400,12 @@ fun List<GrunnlagDto>.tilsynsutgifterBarn(
             grunnlagsreferanseListe,
         ).find { it.gjelderBarnReferanse == tilsynsutgiftBarn.gjelderBarn } ?: return null
 
+    val delberegningFaktiskUtgiftPeriode =
+        finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<DelberegningFaktiskTilsynsutgift>(
+            Grunnlagstype.DELBEREGNING_FAKTISK_UTGIFT,
+            grunnlagsreferanseListe,
+        ).find { it.gjelderBarnReferanse == tilsynsutgiftBarn.gjelderBarn } ?: return null
+
     val delberegningTilleggsstønad =
         finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<DelberegningTilleggsstønad>(
             Grunnlagstype.DELBEREGNING_TILLEGGSSTØNAD,
@@ -1423,9 +1431,12 @@ fun List<GrunnlagDto>.tilsynsutgifterBarn(
                     personGrunnlag?.type == Grunnlagstype.PERSON_SØKNADSBARN,
             ),
         totalTilsynsutgift = faktiskUtgiftPeriode.innhold.faktiskUtgiftBeløp,
+        faktiskUtgiftBeregnet = delberegningFaktiskUtgiftPeriode.innhold.beregnetBeløp,
         beløp = tilsynsutgiftBarn.sumTilsynsutgifter,
         kostpenger = faktiskUtgiftPeriode.innhold.kostpengerBeløp,
         tilleggsstønadDagsats = tilleggsstønadPeriode?.innhold?.beløpDagsats,
+        tilleggsstønadBeløp = tilleggsstønadPeriode?.innhold?.beløp,
+        beløpstype = tilleggsstønadPeriode?.innhold?.beløpstype ?: InntektBeløpstype.DAGSATS,
         tilleggsstønad = delberegningTilleggsstønad?.innhold?.beregnetBeløp,
     )
 }

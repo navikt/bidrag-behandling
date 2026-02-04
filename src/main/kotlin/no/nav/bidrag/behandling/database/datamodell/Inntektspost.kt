@@ -11,8 +11,8 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import no.nav.bidrag.domene.enums.diverse.InntektBeløpstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
-import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektBeløpType
 import java.math.BigDecimal
 
 @Entity(name = "inntektspost")
@@ -29,5 +29,5 @@ open class Inntektspost(
     @Enumerated(EnumType.STRING)
     open val inntektstype: Inntektstype?,
     @Enumerated(EnumType.STRING)
-    open val beløpstype: InntektBeløpType? = InntektBeløpType.ÅRSBELØP,
+    open val beløpstype: InntektBeløpstype? = InntektBeløpstype.ÅRSBELØP,
 )

@@ -171,14 +171,14 @@ fun bådeDagsatsOgMånedsbeløpAngittException(
             "inneholdt ugyldige data. Både dagsats og måendsbeløp er angitt",
     )
 
-fun hverkenDagsatsEllerMånedsbeløpAngittException(
+fun tilleggstønadBeløpIkkeAngittException(
     behandlingsid: Long,
     ressurstype: Ressurstype,
 ): Nothing =
     throw HttpClientErrorException(
         HttpStatus.BAD_REQUEST,
         "Forespørselen om å oppdatere ${ressurstype.toString().lowercase()} for behandling $behandlingsid " +
-            "inneholdt ugyldige data. Hverken dagsats eller måendsbeløp er angitt",
+            "inneholdt ugyldige data. Beløp er ikke angitt",
     )
 
 enum class Ressurstype {

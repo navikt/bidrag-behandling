@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.GebyrDtoV3
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilV2Dto
+import no.nav.bidrag.domene.enums.diverse.InntektBeløpstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
@@ -17,9 +18,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolle
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
-import no.nav.bidrag.transport.behandling.beregning.felles.InntektPerBarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumInntekt
-import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektBeløpType
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
@@ -70,17 +69,30 @@ data class InntektDtoV2(
             ident?.verdi == rolle.ident
         }
 
+    val beløpstype get() =
+        inntektsposter.firstOrNull()?.beløpstype
+            ?: if (rapporteringstype == Inntektsrapportering.BARNETILLEGG) InntektBeløpstype.MÅNEDSBELØP else InntektBeløpstype.ÅRSBELØP
+
+    @get:Schema(description = "Avrundet månedsbeløp for barnetillegg")
+    val beløpMånedDagsats: BigDecimal?
+        get() =
+            when (beløpstype) {
+                InntektBeløpstype.MÅNEDSBELØP -> månedsbeløp
+                InntektBeløpstype.DAGSATS -> dagsats
+                else -> null
+            }
+
     @get:Schema(description = "Avrundet månedsbeløp for barnetillegg")
     val månedsbeløp: BigDecimal?
         get() =
             run {
                 val beløpstype = inntektsposter.firstOrNull()?.beløpstype
                 if (Inntektsrapportering.BARNETILLEGG == rapporteringstype &&
-                    beløpstype == InntektBeløpType.MÅNEDSBELØP
+                    beløpstype == InntektBeløpstype.MÅNEDSBELØP
                 ) {
                     inntektsposter.first().beløp
                 } else if (Inntektsrapportering.BARNETILLEGG == rapporteringstype &&
-                    (beløpstype == null || beløpstype == InntektBeløpType.ÅRSBELØP)
+                    (beløpstype == null || beløpstype == InntektBeløpstype.ÅRSBELØP)
                 ) {
                     beløp.divide(BigDecimal(12), 0, RoundingMode.HALF_UP)
                 } else {
@@ -92,7 +104,7 @@ data class InntektDtoV2(
     val dagsats: BigDecimal?
         get() =
             if (Inntektsrapportering.BARNETILLEGG == rapporteringstype &&
-                inntektsposter.firstOrNull()?.beløpstype == InntektBeløpType.DAGSATS
+                inntektsposter.firstOrNull()?.beløpstype == InntektBeløpstype.DAGSATS
             ) {
                 inntektsposter.first().beløp
             } else {
@@ -243,7 +255,7 @@ data class OppdatereManuellInntekt(
     val type: Inntektsrapportering,
     @Schema(description = "Inntektens beløp i norske kroner", required = true)
     val beløp: BigDecimal,
-    val beløpType: InntektBeløpType = InntektBeløpType.ÅRSBELØP,
+    val beløpstype: InntektBeløpstype = InntektBeløpstype.ÅRSBELØP,
     @Schema(type = "String", format = "date", example = "2024-01-01", nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoFom: LocalDate,
