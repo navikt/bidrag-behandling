@@ -59,6 +59,7 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.diverse.InntektBeløpstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -1192,6 +1193,7 @@ private fun Inntekt.tilNotatInntektDto() =
                         it.kode,
                         it.inntektstype,
                         InntektUtil.kapitalinntektFaktor(it.kode) * it.beløp.nærmesteHeltall,
+                        beløpstype = it.beløpstype ?: InntektBeløpstype.ÅRSBELØP,
                         visningsnavn = it.inntektstype?.visningsnavn?.intern ?: finnVisningsnavn(it.kode),
                     )
                 }.sortedByDescending { it.beløp },
