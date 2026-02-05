@@ -69,7 +69,6 @@ fun BigDecimal.tilÅrsbeløp(beløpsType: InntektBeløpstype? = null): BigDecima
 
         InntektBeløpstype.DAGSATS -> {
             multiply(BigDecimal(260), MathContext(10, RoundingMode.HALF_UP))
-                .divide(BigDecimal(12), MathContext(10, RoundingMode.HALF_UP))
         }
 
         else -> {

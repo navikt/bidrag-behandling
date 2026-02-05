@@ -175,7 +175,7 @@ fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Innt
         this.gjelderBarnId?.let { inntekt.behandling!!.roller.find { it.id == this.gjelderBarnId } }
             ?: this.gjelderBarn?.let { inntekt.behandling!!.finnRolle(it.verdi) }
     inntekt.type = this.type
-    inntekt.belop = this.beløp.tilÅrsbeløp(`beløpstype`).avrundetTilToDesimaler
+    inntekt.belop = this.beløp.tilÅrsbeløp(beløpstype).avrundetTilToDesimaler
     inntekt.datoFom = this.datoFom
     inntekt.datoTom = this.datoTom ?: justerPeriodeTomOpphørsdato(inntekt.opphørsdato)
     inntekt.gjelderBarn = this.gjelderBarn?.verdi ?: gjelderBarnRolle?.ident
@@ -287,10 +287,11 @@ fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
     val gjelderBarnRolle =
         this.gjelderBarnId?.let { behandling.roller.find { it.id == this.gjelderBarnId } }
             ?: this.gjelderBarn?.let { behandling.finnRolle(it.verdi) }
+
     val inntekt =
         Inntekt(
             type = this.type,
-            belop = this.beløp.nærmesteHeltall,
+            belop = this.beløp.tilÅrsbeløp(beløpstype).avrundetTilToDesimaler,
             datoFom = this.datoFom,
             datoTom = this.datoTom,
             ident = this.ident?.verdi ?: rolle?.ident,

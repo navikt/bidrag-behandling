@@ -310,7 +310,6 @@ class NotatOpplysningerService(
                                         NotatTilleggsstønadDto(
                                             periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
                                             dagsats = it.dagsats,
-                                            måndesbeløp = it.dagsats,
                                             beløp = it.beløp,
                                             beløpstype = it.beløpstype,
                                             total = it.total,
@@ -337,6 +336,10 @@ class NotatOpplysningerService(
                                                                     beløp = it.beløp,
                                                                     kostpenger = it.kostpenger,
                                                                     tilleggsstønad = it.tilleggsstønad,
+                                                                    beløpstype = it.beløpstype,
+                                                                    tilleggsstønadBeløp = it.tilleggsstønadBeløp,
+                                                                    tilleggsstønadDagsats = it.tilleggsstønadDagsats,
+                                                                    faktiskUtgiftBeregnet = it.faktiskUtgiftBeregnet,
                                                                 )
                                                             },
                                                         justertBruttoTilsynsutgift = it.justertBruttoTilsynsutgift,
