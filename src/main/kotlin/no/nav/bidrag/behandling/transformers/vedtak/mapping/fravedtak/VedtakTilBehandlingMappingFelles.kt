@@ -1241,7 +1241,7 @@ private fun BaseGrunnlag.tilInntekt(
                     kode = it.kode,
                     inntektstype = it.inntektstype,
                     beløp = it.beløp,
-                    beløpstype = it.type,
+                    beløpstype = it.beløpstype,
                     inntekt = inntektBO,
                 )
             }.toMutableSet()
