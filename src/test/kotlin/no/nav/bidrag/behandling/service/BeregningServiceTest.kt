@@ -13,6 +13,7 @@ import io.mockk.mockkConstructor
 import io.mockk.verify
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
+import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto.UgyldigBeregningType
@@ -93,6 +94,9 @@ class BeregningServiceTest {
     lateinit var personConsumer: BidragPersonConsumer
 
     @MockkBean
+    lateinit var sakConsumer: BidragSakConsumer
+
+    @MockkBean
     lateinit var aldersjusteringOrchestrator: AldersjusteringOrchestrator
 
     @MockkBean
@@ -121,7 +125,7 @@ class BeregningServiceTest {
         stubPersonConsumer()
         mockkConstructor(BeregnBarnebidragApi::class)
         every { BeregnBarnebidragApi().beregn(capture(beregnCapture)) } answers { callOriginal() }
-        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator, klageOrkestratorV2, hentLøpendeBidragService, personConsumer)
+        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator, klageOrkestratorV2, hentLøpendeBidragService, personConsumer, sakConsumer)
         barnebidragGrunnlagInnhenting = BarnebidragGrunnlagInnhenting(bidragStønadConsumer)
         every { bidragStønadConsumer.hentHistoriskeStønader(any()) } returns null
         every { evnevurderingService.hentLøpendeBidragForBehandling(any()) } returns
