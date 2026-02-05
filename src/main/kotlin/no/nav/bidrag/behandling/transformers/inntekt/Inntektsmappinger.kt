@@ -15,8 +15,8 @@ import no.nav.bidrag.behandling.transformers.behandling.mapTilInntektspostEndrin
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
-import no.nav.bidrag.behandling.transformers.tilÅrsbeløp
 import no.nav.bidrag.behandling.transformers.validerPerioder
+import no.nav.bidrag.beregn.core.util.InntektUtil.beløpTilÅrsbeløp
 import no.nav.bidrag.beregn.core.util.avrundetTilToDesimaler
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.commons.service.finnVisningsnavn
@@ -175,7 +175,7 @@ fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Innt
         this.gjelderBarnId?.let { inntekt.behandling!!.roller.find { it.id == this.gjelderBarnId } }
             ?: this.gjelderBarn?.let { inntekt.behandling!!.finnRolle(it.verdi) }
     inntekt.type = this.type
-    inntekt.belop = this.beløp.tilÅrsbeløp(beløpstype).avrundetTilToDesimaler
+    inntekt.belop = this.beløp.beløpTilÅrsbeløp(beløpstype).avrundetTilToDesimaler
     inntekt.datoFom = this.datoFom
     inntekt.datoTom = this.datoTom ?: justerPeriodeTomOpphørsdato(inntekt.opphørsdato)
     inntekt.gjelderBarn = this.gjelderBarn?.verdi ?: gjelderBarnRolle?.ident
@@ -291,7 +291,7 @@ fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
     val inntekt =
         Inntekt(
             type = this.type,
-            belop = this.beløp.tilÅrsbeløp(beløpstype).avrundetTilToDesimaler,
+            belop = this.beløp.beløpTilÅrsbeløp(beløpstype).avrundetTilToDesimaler,
             datoFom = this.datoFom,
             datoTom = this.datoTom,
             ident = this.ident?.verdi ?: rolle?.ident,

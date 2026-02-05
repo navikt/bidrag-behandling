@@ -68,6 +68,7 @@ import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
+import no.nav.bidrag.behandling.transformers.sorterPersonEtterEldsteFødselsdato
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
@@ -571,19 +572,23 @@ fun Behandling.tilInntektDtoV3(
     rolle: Rolle,
 ) = InntekterDtoV3(
     barnetillegg =
-        rolle.barn.filter { it.kreverGrunnlagForBeregning }.map { barn ->
-            InntektBarn(
-                gjelderBarn = barn.tilDto(),
-                inntekter =
-                    inntekter
-                        .filter { it.type == Inntektsrapportering.BARNETILLEGG }
-                        .filter { it.inntektGjelderBarn(barn) && it.erSammeRolle(rolle) }
-                        .sorterEtterDatoOgBarn()
-                        .ekskluderYtelserFørVirkningstidspunkt()
-                        .tilInntektDtoV2()
-                        .toSet(),
-            )
-        },
+        rolle.barn
+            .sortedWith(
+                sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
+            ).filter { it.kreverGrunnlagForBeregning }
+            .map { barn ->
+                InntektBarn(
+                    gjelderBarn = barn.tilDto(),
+                    inntekter =
+                        inntekter
+                            .filter { it.type == Inntektsrapportering.BARNETILLEGG }
+                            .filter { it.inntektGjelderBarn(barn) && it.erSammeRolle(rolle) }
+                            .sorterEtterDatoOgBarn()
+                            .ekskluderYtelserFørVirkningstidspunkt()
+                            .tilInntektDtoV2()
+                            .toSet(),
+                )
+            },
     utvidetBarnetrygd =
         inntekter
             .filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
@@ -593,19 +598,23 @@ fun Behandling.tilInntektDtoV3(
             .tilInntektDtoV2()
             .toSet(),
     kontantstøtte =
-        rolle.barn.filter { it.kreverGrunnlagForBeregning }.map { barn ->
-            InntektBarn(
-                gjelderBarn = barn.tilDto(),
-                inntekter =
-                    inntekter
-                        .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
-                        .filter { it.inntektGjelderBarn(barn) && it.erSammeRolle(rolle) }
-                        .sorterEtterDatoOgBarn()
-                        .ekskluderYtelserFørVirkningstidspunkt()
-                        .tilInntektDtoV2()
-                        .toSet(),
-            )
-        },
+        rolle.barn
+            .sortedWith(
+                sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
+            ).filter { it.kreverGrunnlagForBeregning }
+            .map { barn ->
+                InntektBarn(
+                    gjelderBarn = barn.tilDto(),
+                    inntekter =
+                        inntekter
+                            .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
+                            .filter { it.inntektGjelderBarn(barn) && it.erSammeRolle(rolle) }
+                            .sorterEtterDatoOgBarn()
+                            .ekskluderYtelserFørVirkningstidspunkt()
+                            .tilInntektDtoV2()
+                            .toSet(),
+                )
+            },
     småbarnstillegg =
         inntekter
             .filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }

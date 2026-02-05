@@ -39,7 +39,6 @@ import java.time.LocalDate
 import java.time.Period
 import java.time.Year
 import java.time.YearMonth
-import kotlin.collections.sorted
 
 val grunnlagsreferanseSimulert = "simulert_grunnlag"
 val vedtakstyperIkkeBeregning =
@@ -60,21 +59,6 @@ fun StønadsendringDto.tilStønadsid() =
         skyldner = skyldner,
         sak = sak,
     )
-
-fun BigDecimal.tilÅrsbeløp(beløpsType: InntektBeløpstype? = null): BigDecimal =
-    when (beløpsType) {
-        InntektBeløpstype.MÅNEDSBELØP -> {
-            multiply(BigDecimal(12), MathContext(0, RoundingMode.HALF_UP))
-        }
-
-        InntektBeløpstype.DAGSATS -> {
-            multiply(BigDecimal(260), MathContext(10, RoundingMode.HALF_UP))
-        }
-
-        else -> {
-            this
-        }
-    }
 
 val BigDecimal.nærmesteHeltall get() = this.setScale(0, RoundingMode.HALF_UP)
 val ainntekt12Og3Måneder =
