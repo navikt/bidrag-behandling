@@ -483,7 +483,7 @@ class UnderholdServiceTest {
                         underholdskostnad,
                         fom = request.periode.fom,
                         tom = request.periode.tom,
-                        request.dagsats,
+                        request.dagsats ?: request.beløp!!,
                     ),
                 )
 

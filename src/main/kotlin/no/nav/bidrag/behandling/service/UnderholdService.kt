@@ -440,7 +440,7 @@ class UnderholdService(
             val tilleggsstønad = underholdskostnad.tilleggsstønad.find { id == it.id }!!
             tilleggsstønad.fom = request.periode.fom
             tilleggsstønad.tom = request.periode.tom ?: justerPeriodeTomOpphørsdato(underholdskostnad.opphørsdato)
-            tilleggsstønad.beløp = request.dagsats ?: request.beløp
+            tilleggsstønad.beløp = request.dagsats ?: request.beløp!!
             tilleggsstønad.beløpstype = request.beløpstype
 
             tilleggsstønad.underholdskostnad = underholdskostnad
@@ -454,7 +454,7 @@ class UnderholdService(
                 Tilleggsstønad(
                     fom = request.periode.fom,
                     tom = underholdskostnad.begrensTomDatoForTolvÅr(periodeJustert),
-                    beløp = request.dagsats ?: request.beløp,
+                    beløp = request.dagsats ?: request.beløp!!,
                     beløpstype = request.beløpstype,
                     underholdskostnad = underholdskostnad,
                 ),
@@ -468,7 +468,7 @@ class UnderholdService(
                     Tilleggsstønad(
                         fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.personFødselsdato)),
                         tom = periodeJustert.tom,
-                        beløp = request.dagsats ?: request.beløp,
+                        beløp = request.dagsats ?: request.beløp!!,
                         beløpstype = request.beløpstype,
                         underholdskostnad = underholdskostnad,
                     ),

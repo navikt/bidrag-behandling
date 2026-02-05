@@ -70,8 +70,17 @@ data class InntektDtoV2(
         }
 
     val beløpstype get() =
-        inntektsposter.firstOrNull()?.beløpstype
-            ?: if (rapporteringstype == Inntektsrapportering.BARNETILLEGG) InntektBeløpstype.MÅNEDSBELØP else InntektBeløpstype.ÅRSBELØP
+        if (rapporteringstype == Inntektsrapportering.BARNETILLEGG) {
+            if (inntektsposter.firstOrNull()?.beløpstype == null ||
+                inntektsposter.firstOrNull()?.beløpstype == InntektBeløpstype.ÅRSBELØP
+            ) {
+                InntektBeløpstype.MÅNEDSBELØP
+            } else {
+                inntektsposter.firstOrNull()?.beløpstype
+            }
+        } else {
+            InntektBeløpstype.ÅRSBELØP
+        }
 
     @get:Schema(description = "Avrundet månedsbeløp for barnetillegg")
     val beløpMånedDagsats: BigDecimal?

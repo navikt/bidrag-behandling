@@ -25,9 +25,9 @@ class Tilleggsstønad(
     open var fom: LocalDate,
     open var tom: LocalDate? = null,
     @Column(name = "dagsats")
-    open var beløp: BigDecimal? = null,
+    open var beløp: BigDecimal,
     @Enumerated(EnumType.STRING)
-    open var beløpstype: InntektBeløpstype = if (beløp != null) InntektBeløpstype.DAGSATS else InntektBeløpstype.MÅNEDSBELØP_11_MÅNEDER,
+    open var beløpstype: InntektBeløpstype = InntektBeløpstype.DAGSATS,
 ) {
     override fun toString(): String =
         "Tilleggsstønad(id=$id, underholdskostnad=${underholdskostnad.id}, fom=$fom, tom=$tom, dagsats=$`beløp`, beløpstype=$beløpstype)"
