@@ -88,6 +88,9 @@ class BeregningServiceTest {
     lateinit var behandlingService: BehandlingService
 
     @MockkBean
+    lateinit var sakConsumer: BidragSakConsumer
+
+    @MockkBean
     lateinit var hentLøpendeBidragService: HentLøpendeBidragService
 
     @MockkBean
