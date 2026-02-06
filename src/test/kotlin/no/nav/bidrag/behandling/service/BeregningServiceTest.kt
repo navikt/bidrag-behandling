@@ -97,9 +97,6 @@ class BeregningServiceTest {
     lateinit var personConsumer: BidragPersonConsumer
 
     @MockkBean
-    lateinit var sakConsumer: BidragSakConsumer
-
-    @MockkBean
     lateinit var aldersjusteringOrchestrator: AldersjusteringOrchestrator
 
     @MockkBean
