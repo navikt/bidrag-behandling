@@ -335,7 +335,7 @@ class NotatOpplysningerService(
                                                                     tilleggsstønad = it.tilleggsstønad,
                                                                     faktiskUtgiftBeregnet = it.beløp,
                                                                     tilleggsstønadBeløp = it.tilleggsstønad,
-                                                                    tilleggsstønadDagsats = it.tilleggsstønad,
+                                                                    tilleggsstønadDagsats = it.tilleggsstønadDagsats,
                                                                 )
                                                             },
                                                         justertBruttoTilsynsutgift = it.justertBruttoTilsynsutgift,
