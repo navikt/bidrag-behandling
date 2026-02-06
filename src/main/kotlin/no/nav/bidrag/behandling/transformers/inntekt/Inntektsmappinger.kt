@@ -21,13 +21,13 @@ import no.nav.bidrag.beregn.core.util.avrundetTilToDesimaler
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.beregn.core.util.nærmesteTier
 import no.nav.bidrag.commons.service.finnVisningsnavn
+import no.nav.bidrag.domene.enums.diverse.InntektBeløpstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.inntekt.Inntektstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.inntekt.util.InntektUtil
-import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektBeløpType
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.request.TransformerInntekterRequest
 import no.nav.bidrag.transport.behandling.inntekt.response.InntektPost
@@ -135,7 +135,7 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: Rolle) =
                         visningsnavn = finnVisningsnavn(it.kode),
                         inntektstype = it.inntekstype,
                         beløp = InntektUtil.kapitalinntektFaktor(it.kode) * it.beløp,
-                        beløpstype = InntektBeløpType.ÅRSBELØP,
+                        beløpstype = InntektBeløpstype.ÅRSBELØP,
                     )
                 }.sortedByDescending { it.beløp }
                 .toSet(),
@@ -278,7 +278,7 @@ fun InntektPost.toInntektpost() =
         finnVisningsnavn(kode),
         inntekstype,
         beløp.nærmesteHeltall,
-        InntektBeløpType.ÅRSBELØP,
+        InntektBeløpstype.ÅRSBELØP,
     )
 
 fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {

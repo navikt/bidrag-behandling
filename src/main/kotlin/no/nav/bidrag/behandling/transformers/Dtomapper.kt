@@ -126,6 +126,7 @@ import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.diverse.InntektBeløpstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Familierelasjon
@@ -531,7 +532,7 @@ class Dtomapper(
             periode = DatoperiodeDto(this.fom, this.tom),
             dagsats = this.dagsats,
             månedsbeløp = this.månedsbeløp,
-            total = this.dagsats?.let { beregnBarnebidragApi.beregnMånedsbeløpTilleggsstønad(it) } ?: this.månedsbeløp ?: BigDecimal.ZERO,
+            total = beregnBarnebidragApi.beregnMånedsbeløpTilleggsstønad(this.dagsats!!, InntektBeløpstype.DAGSATS),
         )
 
     fun Set<Tilleggsstønad>.tilTilleggsstønadDtos() = this.sortedBy { it.fom }.map { it.tilDto() }.toSet()

@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.Eksis
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.diverse.InntektBeløpstype
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -24,7 +25,6 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriodeDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektBeløpType
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
@@ -58,13 +58,13 @@ fun StønadsendringDto.tilStønadsid() =
         sak = sak,
     )
 
-fun BigDecimal.tilÅrsbeløp(beløpsType: InntektBeløpType? = null): BigDecimal =
+fun BigDecimal.tilÅrsbeløp(beløpsType: InntektBeløpstype? = null): BigDecimal =
     when (beløpsType) {
-        InntektBeløpType.MÅNEDSBELØP -> {
+        InntektBeløpstype.MÅNEDSBELØP -> {
             multiply(BigDecimal(12), MathContext(0, RoundingMode.HALF_UP))
         }
 
-        InntektBeløpType.DAGSATS -> {
+        InntektBeløpstype.DAGSATS -> {
             multiply(BigDecimal(260), MathContext(10, RoundingMode.HALF_UP))
                 .divide(BigDecimal(12), MathContext(10, RoundingMode.HALF_UP))
         }

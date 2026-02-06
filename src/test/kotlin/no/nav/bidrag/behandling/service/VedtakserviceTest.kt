@@ -193,7 +193,7 @@ class VedtakserviceTest : TestContainerRunner() {
         enableUnleashFeature(UnleashFeatures.BEGRENSET_REVURDERING)
         disableUnleashFeature(UnleashFeatures.VEDTAKSSPERRE)
         bidragPersonConsumer = stubPersonConsumer()
-        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator, klageOrkestratorV2, hentLøpendeBidragService, bidragPersonConsumer)
+        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator, klageOrkestratorV2, hentLøpendeBidragService, bidragPersonConsumer, sakConsumer)
         every { barnebidragGrunnlagInnhenting.hentBeløpshistorikk(any(), any(), any(), any()) } returns null
         every { barnebidragGrunnlagInnhenting.byggGrunnlagBeløpshistorikk(any(), any()) } returns emptySet()
         val personService = PersonService(bidragPersonConsumer)
