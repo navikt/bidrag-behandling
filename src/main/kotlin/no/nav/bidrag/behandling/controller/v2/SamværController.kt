@@ -83,11 +83,7 @@ class SamværController(
         return OppdaterSamværResponsDto(
             oppdatertSamvær = respons.oppdatertSamvær,
             erSammeForAlle = behandling.sammeSamværForAlle,
-            samværBarn =
-                behandling.samvær
-                    .sortedWith(
-                        sorterPersonEtterEldsteFødselsdato({ it.rolle.fødselsdato }, { it.rolle.navn }),
-                    ).map { it.tilDto() },
+            samværBarn = dtomapper.run { behandling.tilSamværDto() ?: emptyList() },
         )
     }
 
