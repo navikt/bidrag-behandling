@@ -27,6 +27,7 @@ data class OppdatereUnderholdResponse(
     val tilleggsstønad: Set<TilleggsstønadDto> = emptySet(),
     val valideringsfeil: Set<UnderholdskostnadValideringsfeil>? = null,
     val beregnetUnderholdskostnader: Set<BeregnetUnderholdskostnad>,
+    val underholdId: Long,
 )
 
 data class SletteUnderholdselement(
