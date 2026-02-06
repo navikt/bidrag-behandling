@@ -1149,7 +1149,7 @@ fun List<Inntekt>.mapValideringsfeilForYtelse(
             ident = gjelderRolle?.ident,
             rolle = gjelderRolle?.tilDto(),
             gjelderBarn = gjelderBarn?.ident,
-            gjelderBarnRolle = gjelderRolle?.tilDto(),
+            gjelderBarnRolle = gjelderBarn?.tilDto(),
             erYtelse = true,
         ).takeIf { it.harFeil }
     }
