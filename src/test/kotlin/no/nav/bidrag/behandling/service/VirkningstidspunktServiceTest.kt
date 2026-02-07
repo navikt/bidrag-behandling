@@ -1229,14 +1229,14 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                         underholdskostnad = underholdskostnadBarn1,
                         fom = behandling.virkningstidspunkt!!,
                         tom = YearMonth.now().minusMonths(7).atEndOfMonth(),
-                        dagsats = BigDecimal(1000),
+                        `beløp` = BigDecimal(1000),
                     ),
                     Tilleggsstønad(
                         id = 2,
                         underholdskostnad = underholdskostnadBarn1,
                         fom = YearMonth.now().minusMonths(6).atDay(1),
                         tom = YearMonth.now().minusMonths(2).atEndOfMonth(),
-                        dagsats = BigDecimal(1000),
+                        `beløp` = BigDecimal(1000),
                     ),
                 )
             val opphørsdato = LocalDate.now().minusMonths(3)
@@ -1336,14 +1336,14 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                         underholdskostnad = underholdskostnadBarn1,
                         fom = behandling.virkningstidspunkt!!,
                         tom = YearMonth.now().minusMonths(7).atEndOfMonth(),
-                        dagsats = BigDecimal(1000),
+                        `beløp` = BigDecimal(1000),
                     ),
                     Tilleggsstønad(
                         id = 2,
                         underholdskostnad = underholdskostnadBarn1,
                         fom = YearMonth.now().minusMonths(6).atDay(1),
                         tom = YearMonth.now().minusMonths(2).atEndOfMonth(),
-                        dagsats = BigDecimal(1000),
+                        `beløp` = BigDecimal(1000),
                     ),
                 )
             val opphørsdato = LocalDate.now().plusMonths(3)
@@ -1427,7 +1427,7 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                         underholdskostnad = underholdskostnadBarn1,
                         fom = behandling.virkningstidspunkt!!,
                         tom = null,
-                        dagsats = BigDecimal(1000),
+                        `beløp` = BigDecimal(1000),
                     ),
                 )
             val opphørsdato = LocalDate.now().plusMonths(10)

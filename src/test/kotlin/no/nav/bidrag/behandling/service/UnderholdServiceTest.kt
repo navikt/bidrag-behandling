@@ -172,7 +172,7 @@ class UnderholdServiceTest {
                 Tilleggsstønad(
                     id = universalid,
                     underholdskostnad = underholdskostnad,
-                    dagsats =
+                    `beløp` =
                         BigDecimal(
                             350,
                         ),
@@ -483,7 +483,7 @@ class UnderholdServiceTest {
                         underholdskostnad,
                         fom = request.periode.fom,
                         tom = request.periode.tom,
-                        request.dagsats,
+                        request.dagsats ?: request.beløp!!,
                     ),
                 )
 
@@ -496,7 +496,7 @@ class UnderholdServiceTest {
                 u.tilleggsstønad.shouldNotBeEmpty()
 
                 assertSoftly(u.tilleggsstønad.first()) {
-                    dagsats shouldBe request.dagsats
+                    `beløp` shouldBe request.dagsats
                     fom shouldBe request.periode.fom
                     tom shouldBe request.periode.tom
                 }
@@ -525,7 +525,7 @@ class UnderholdServiceTest {
                     Tilleggsstønad(
                         id = 1,
                         underholdskostnad = underholdskostnad,
-                        dagsats = BigDecimal(390),
+                        `beløp` = BigDecimal(390),
                         fom = LocalDate.now().minusMonths(4).withDayOfMonth(1),
                     ),
                 )
@@ -552,7 +552,7 @@ class UnderholdServiceTest {
 
                 assertSoftly(u.tilleggsstønad.first()) {
                     id shouldBe 1
-                    dagsats shouldBe request.dagsats
+                    `beløp` shouldBe request.dagsats
                     fom shouldBe request.periode.fom
                     tom shouldBe request.periode.tom
                 }
@@ -1220,7 +1220,7 @@ class UnderholdServiceTest {
             u.tilleggsstønad.add(
                 Tilleggsstønad(
                     underholdskostnad = u,
-                    dagsats = BigDecimal(120),
+                    `beløp` = BigDecimal(120),
                     fom = b.virkningstidspunktEllerSøktFomDato.minusMonths(2),
                 ),
             )

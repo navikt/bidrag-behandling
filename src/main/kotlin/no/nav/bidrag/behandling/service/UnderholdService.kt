@@ -43,6 +43,7 @@ import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
+import no.nav.bidrag.domene.enums.diverse.InntektBeløpstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.Datoperiode
@@ -439,13 +440,8 @@ class UnderholdService(
             val tilleggsstønad = underholdskostnad.tilleggsstønad.find { id == it.id }!!
             tilleggsstønad.fom = request.periode.fom
             tilleggsstønad.tom = request.periode.tom ?: justerPeriodeTomOpphørsdato(underholdskostnad.opphørsdato)
-            if (request.månedsbeløp == null) {
-                tilleggsstønad.dagsats = request.dagsats
-                tilleggsstønad.månedsbeløp = null
-            } else {
-                tilleggsstønad.månedsbeløp = request.månedsbeløp
-                tilleggsstønad.dagsats = null
-            }
+            tilleggsstønad.beløp = request.dagsats ?: request.beløp!!
+            tilleggsstønad.beløpstype = request.beløpstype
 
             tilleggsstønad.underholdskostnad = underholdskostnad
             tilleggsstønad
@@ -458,8 +454,8 @@ class UnderholdService(
                 Tilleggsstønad(
                     fom = request.periode.fom,
                     tom = underholdskostnad.begrensTomDatoForTolvÅr(periodeJustert),
-                    dagsats = request.dagsats,
-                    månedsbeløp = request.månedsbeløp,
+                    beløp = request.dagsats ?: request.beløp!!,
+                    beløpstype = request.beløpstype,
                     underholdskostnad = underholdskostnad,
                 ),
             )
@@ -472,8 +468,8 @@ class UnderholdService(
                     Tilleggsstønad(
                         fom = periodeFomJuli(årstallNårBarnFyllerTolvÅr(underholdskostnad.personFødselsdato)),
                         tom = periodeJustert.tom,
-                        dagsats = request.dagsats,
-                        månedsbeløp = request.månedsbeløp,
+                        beløp = request.dagsats ?: request.beløp!!,
+                        beløpstype = request.beløpstype,
                         underholdskostnad = underholdskostnad,
                     ),
                 )

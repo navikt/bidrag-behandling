@@ -31,6 +31,7 @@ import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.diverse.InntektBeløpstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -168,7 +169,7 @@ fun Behandling.byggGrunnlagManueltOverstyrtGebyr() =
         }.toSet()
 
 fun Behandling.byggGrunnlagSøknad(søknadsbarn: List<Rolle> = this.søknadsbarn) =
-    if (erIForholdsmessigFordeling || erBisysVedtak) {
+    if (erIForholdsmessigFordeling) {
         søknadsbarn.flatMap {
             it.forholdsmessigFordeling!!.søknaderUnderBehandling.map { søknad ->
                 GrunnlagDto(
@@ -783,6 +784,7 @@ internal fun Inntekt.tilInntektsrapporteringPeriode(
                         InntektsrapporteringPeriode.Inntektspost(
                             beløp = it.beløp,
                             inntektstype = it.inntektstype,
+                            beløpstype = it.beløpstype ?: InntektBeløpstype.ÅRSBELØP,
                             kode = it.kode,
                         )
                     },

@@ -46,6 +46,7 @@ data class SletteSamværsperiodeElementDto(
     val gjelderBarn: String,
     val gjelderBarnId: Long? = null,
     val samværsperiodeId: Long,
+    val sammeForAlle: Boolean = false,
 )
 
 data class SamværDtoV2(

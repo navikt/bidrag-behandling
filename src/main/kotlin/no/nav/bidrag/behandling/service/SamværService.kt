@@ -32,7 +32,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
-import kotlin.text.compareTo
 
 private val log = KotlinLogging.logger {}
 
@@ -127,7 +126,6 @@ class SamværService(
                         beregningJson = it.beregningJson,
                     )
                 }
-
             oppdaterSamvær.perioder.clear()
             oppdaterSamvær.perioder.addAll(nyePerioder)
         }
@@ -195,25 +193,31 @@ class SamværService(
         }
     }
 
+    @Transactional
     fun slettPeriode(
         behandlingsid: Long,
         request: SletteSamværsperiodeElementDto,
     ): OppdaterSamværResponsDto {
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
-        val oppdaterSamvær =
+        val oppdatertSamvar =
             behandling.samvær.finnSamværForBarn(request.gjelderBarnId, request.gjelderBarn)
         val slettPeriode =
-            oppdaterSamvær.hentPeriode(request.samværsperiodeId)
+            oppdatertSamvar.hentPeriode(request.samværsperiodeId)
 
-        oppdaterSamvær.perioder.remove(slettPeriode)
-        // Find the previous period and set tom to null if it exists and is not null
-//        oppdaterSamvær.perioder
-//            .filter { it.fom < slettPeriode.fom }
-//            .maxByOrNull { it.fom }
-//            ?.takeIf { it.tom != null }
-//            ?.let { it.tom = null }
-        secureLogger.debug { "Slettet samværsperiode ${slettPeriode.id} fra samvær ${oppdaterSamvær.id} i behandling $behandlingsid" }
-        return samværRepository.save(oppdaterSamvær).tilOppdaterSamværResponseDto()
+        oppdatertSamvar.perioder.remove(slettPeriode)
+
+        if (request.sammeForAlle) {
+            behandling.samvær.filter { it.id != oppdatertSamvar.id }.forEach { oppdaterSamvær ->
+                kopierSamværPerioderOgBegrunnelse(
+                    oppdatertSamvar,
+                    oppdaterSamvær,
+                    erPerioderOppdatert = true,
+                    erBegrunnelseOppdatert = false,
+                )
+            }
+        }
+        secureLogger.debug { "Slettet samværsperiode ${slettPeriode.id} fra samvær ${oppdatertSamvar.id} i behandling $behandlingsid" }
+        return oppdatertSamvar.tilOppdaterSamværResponseDto()
     }
 
     fun beregnSamværsklasse(kalkulator: SamværskalkulatorDetaljer): DelberegningSamværsklasse =

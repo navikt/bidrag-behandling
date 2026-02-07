@@ -19,11 +19,11 @@ import no.nav.bidrag.behandling.dto.v2.underhold.StønadTilBarnetilsynDto
 import no.nav.bidrag.behandling.dto.v2.underhold.Underholdselement
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadValideringsfeilTabell
-import no.nav.bidrag.behandling.hverkenDagsatsEllerMånedsbeløpAngittException
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.service.hentPerson
+import no.nav.bidrag.behandling.tilleggstønadBeløpIkkeAngittException
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -306,12 +306,8 @@ fun OppdatereTilleggsstønadRequest.validere(underholdskostnad: Underholdskostna
     }
 
     this.id?.let {
-        if (this.dagsats == null && this.månedsbeløp == null) {
-            hverkenDagsatsEllerMånedsbeløpAngittException(this.id, Ressurstype.TILLEGGSSTØNAD)
-        } else {
-            if (this.dagsats != null && this.månedsbeløp != null) {
-                bådeDagsatsOgMånedsbeløpAngittException(this.id, Ressurstype.TILLEGGSSTØNAD)
-            }
+        if (this.beløp == null && this.dagsats == null) {
+            tilleggstønadBeløpIkkeAngittException(this.id, Ressurstype.TILLEGGSSTØNAD)
         }
     }
 }

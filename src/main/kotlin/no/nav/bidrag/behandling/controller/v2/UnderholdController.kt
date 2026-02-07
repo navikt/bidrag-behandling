@@ -76,6 +76,7 @@ class UnderholdController(
             OppdatereUnderholdResponse(
                 beregnetUnderholdskostnader = dtomapper.run { behandling.tilBeregnetUnderholdskostnad() },
                 valideringsfeil = behandling.underholdskostnader.valider(),
+                underholdId = request.idUnderhold,
             )
         } else {
             underholdskostnad.tilRespons()
@@ -231,7 +232,7 @@ class UnderholdController(
         @PathVariable behandlingsid: Long,
         @PathVariable underholdsid: Long,
         @RequestParam(required = true) harTilsynsordning: Boolean,
-    ) {
+    ): OppdatereUnderholdResponse {
         val behandling =
             behandlingRepository
                 .findBehandlingById(behandlingsid)
@@ -240,6 +241,7 @@ class UnderholdController(
         val underholdskostnad = henteOgValidereUnderholdskostnad(behandling, underholdsid)
 
         underholdService.oppdatereTilsynsordning(underholdskostnad, harTilsynsordning)
+        return underholdskostnad.tilRespons()
     }
 
     @PostMapping("/behandling/{behandlingsid}/underhold/opprette")
@@ -279,6 +281,7 @@ class UnderholdController(
                 tilleggsstønad = tilleggsstønad.tilTilleggsstønadDtos(),
                 beregnetUnderholdskostnader = dtomapper.run { behandling.tilBeregnetUnderholdskostnad() },
                 valideringsfeil = behandling.underholdskostnader.valider(),
+                underholdId = id!!,
             )
         }
 }

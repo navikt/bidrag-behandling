@@ -4,7 +4,6 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -399,7 +398,7 @@ class ValideringTest {
                         underholdskostnad = underholdskostnad,
                         fom = LocalDate.now().minusMonths(6).withDayOfMonth(1),
                         tom = null,
-                        dagsats = BigDecimal(365),
+                        `beløp` = BigDecimal(365),
                     ),
                 )
 
@@ -474,7 +473,7 @@ class ValideringTest {
                             .minusMonths(6)
                             .withDayOfMonth(1)
                             .minusDays(1),
-                    dagsats = BigDecimal(64),
+                    `beløp` = BigDecimal(64),
                 ),
             )
 
@@ -489,7 +488,7 @@ class ValideringTest {
                             .minusMonths(4)
                             .withDayOfMonth(1)
                             .minusDays(1),
-                    dagsats = BigDecimal(64),
+                    `beløp` = BigDecimal(64),
                 ),
             )
 
@@ -499,7 +498,7 @@ class ValideringTest {
                     u,
                     fom = LocalDate.now().minusMonths(4).withDayOfMonth(1),
                     tom = fomdatoAndrePeriodeUtenTilsynsutgift.minusDays(1),
-                    dagsats = BigDecimal(64),
+                    `beløp` = BigDecimal(64),
                 ),
             )
 
@@ -509,7 +508,7 @@ class ValideringTest {
                     u,
                     fom = fomdatoAndrePeriodeUtenTilsynsutgift,
                     tom = null,
-                    dagsats = BigDecimal(365),
+                    `beløp` = BigDecimal(365),
                 ),
             )
 
@@ -554,7 +553,7 @@ class ValideringTest {
                         u,
                         fom = LocalDate.now().withDayOfMonth(2),
                         tom = null,
-                        dagsats = BigDecimal(365),
+                        `beløp` = BigDecimal(365),
                     ),
                 )
 
@@ -645,7 +644,7 @@ class ValideringTest {
                     underholdskostnad = u,
                     fom = LocalDate.now().minusMonths(6).withDayOfMonth(1),
                     tom = LocalDate.now().withDayOfMonth(1),
-                    dagsats = BigDecimal(365),
+                    `beløp` = BigDecimal(365),
                 ),
             )
 
@@ -696,7 +695,7 @@ class ValideringTest {
                             .minusMonths(4)
                             .withDayOfMonth(1)
                             .minusDays(1),
-                    dagsats = BigDecimal(64),
+                    `beløp` = BigDecimal(64),
                 ),
             )
 
@@ -706,7 +705,7 @@ class ValideringTest {
                     u,
                     fom = fomHøyesteTilOverlappendePeriode,
                     tom = null,
-                    dagsats = BigDecimal(64),
+                    `beløp` = BigDecimal(64),
                 ),
             )
 

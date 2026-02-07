@@ -15,11 +15,10 @@ import no.nav.bidrag.behandling.transformers.behandling.mapTilInntektspostEndrin
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
-import no.nav.bidrag.behandling.transformers.tilÅrsbeløp
 import no.nav.bidrag.behandling.transformers.validerPerioder
+import no.nav.bidrag.beregn.core.util.InntektUtil.beløpTilÅrsbeløp
 import no.nav.bidrag.beregn.core.util.avrundetTilToDesimaler
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
-import no.nav.bidrag.beregn.core.util.nærmesteTier
 import no.nav.bidrag.commons.service.finnVisningsnavn
 import no.nav.bidrag.domene.enums.diverse.InntektBeløpstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -176,7 +175,7 @@ fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Innt
         this.gjelderBarnId?.let { inntekt.behandling!!.roller.find { it.id == this.gjelderBarnId } }
             ?: this.gjelderBarn?.let { inntekt.behandling!!.finnRolle(it.verdi) }
     inntekt.type = this.type
-    inntekt.belop = this.beløp.tilÅrsbeløp(beløpType).avrundetTilToDesimaler
+    inntekt.belop = this.beløp.beløpTilÅrsbeløp(beløpstype).avrundetTilToDesimaler
     inntekt.datoFom = this.datoFom
     inntekt.datoTom = this.datoTom ?: justerPeriodeTomOpphørsdato(inntekt.opphørsdato)
     inntekt.gjelderBarn = this.gjelderBarn?.verdi ?: gjelderBarnRolle?.ident
@@ -190,7 +189,7 @@ fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Innt
                 inntekt = inntekt,
                 beløp = this.beløp.nærmesteHeltall,
                 inntektstype = this.inntektstype,
-                beløpstype = beløpType,
+                beløpstype = beløpstype,
                 kode = this.type.toString(),
             ),
         )
@@ -288,10 +287,11 @@ fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
     val gjelderBarnRolle =
         this.gjelderBarnId?.let { behandling.roller.find { it.id == this.gjelderBarnId } }
             ?: this.gjelderBarn?.let { behandling.finnRolle(it.verdi) }
+
     val inntekt =
         Inntekt(
             type = this.type,
-            belop = this.beløp.nærmesteHeltall,
+            belop = this.beløp.beløpTilÅrsbeløp(beløpstype).avrundetTilToDesimaler,
             datoFom = this.datoFom,
             datoTom = this.datoTom,
             ident = this.ident?.verdi ?: rolle?.ident,
@@ -312,6 +312,7 @@ fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
                     inntekt = inntekt,
                     beløp = this.beløp.nærmesteHeltall,
                     inntektstype = this.inntektstype,
+                    beløpstype = this.beløpstype,
                     kode = this.type.toString(),
                 ),
             )
