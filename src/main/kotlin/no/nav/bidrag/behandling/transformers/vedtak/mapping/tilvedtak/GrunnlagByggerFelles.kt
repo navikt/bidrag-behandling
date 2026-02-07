@@ -169,7 +169,7 @@ fun Behandling.byggGrunnlagManueltOverstyrtGebyr() =
         }.toSet()
 
 fun Behandling.byggGrunnlagSøknad(søknadsbarn: List<Rolle> = this.søknadsbarn) =
-    if (erIForholdsmessigFordeling || erBisysVedtak) {
+    if (erIForholdsmessigFordeling) {
         søknadsbarn.flatMap {
             it.forholdsmessigFordeling!!.søknaderUnderBehandling.map { søknad ->
                 GrunnlagDto(
