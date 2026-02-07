@@ -106,10 +106,15 @@ class VirkningstidspunktController(
         val beregning = hentBeregning(behandling)
         behandling.grunnlagslisteFraVedtak = beregning.grunnlagslisteList
         return OppdaterManuellVedtakResponse(
-            beregning.resultatBarn.all {
-                it.resultat.beregnetBarnebidragPeriodeListe.isEmpty()
+            if (behandling.erInnkreving) {
+                beregning.resultatBarn.all {
+                    it.resultat.beregnetBarnebidragPeriodeListe.isEmpty()
+                }
+            } else {
+                false
             },
             dtomapper.tilUnderholdskostnadDto(behandling, beregning.resultatBarn),
+            dtomapper.run { behandling.tilPrivatAvtaleDtoV3() },
         )
     }
 
