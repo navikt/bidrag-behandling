@@ -1709,7 +1709,7 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                         faktiskBeløp = løpendeBidrag.faktiskBeløp,
                         beregnetBidrag = it.innhold.bidragTilFordeling,
                         beregnetBeløp = løpendeBidrag.beregnetBeløp,
-                        valutakode = løpendeBidrag.valutakode,
+                        valutakode = løpendeBidrag.valutakode.name,
                         reduksjonUnderholdskostnad = it.innhold.reduksjonUnderholdskostnad,
                         samværsfradrag = grunnlagSamværsfradrag?.innhold?.beløp ?: BigDecimal.ZERO,
                     ),

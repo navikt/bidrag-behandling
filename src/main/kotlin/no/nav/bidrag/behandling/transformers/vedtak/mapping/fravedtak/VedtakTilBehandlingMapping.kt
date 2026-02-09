@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
+import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
@@ -16,6 +17,7 @@ import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.LesemodusVedtak
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
@@ -53,24 +55,31 @@ import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.sak.Stønadsid
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.FaktiskUtgiftPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAndreBarnTilBidragsmottaker
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlagV2
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtalePeriodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.særbidragskategori
@@ -78,7 +87,9 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftDirekteBetalt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftMaksGodkjentBeløp
 import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftsposter
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
+import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
+import no.nav.bidrag.transport.behandling.vedtak.response.finnStønadsendring
 import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.behandling.vedtak.response.typeBehandling
@@ -455,13 +466,40 @@ class VedtakTilBehandlingMapping(
             .groupBy { if (it.gjelderBarnReferanse.isNullOrEmpty()) it.gjelderReferanse else it.gjelderBarnReferanse }
             .map {
                 val privatAvtaleGrunnlag =
-                    filtrerOgKonverterBasertPåFremmedReferanse<PrivatAvtaleGrunnlag>(
+                    filtrerOgKonverterBasertPåFremmedReferanse<PrivatAvtaleGrunnlagV2>(
                         Grunnlagstype.PRIVAT_AVTALE_GRUNNLAG,
                         gjelderBarnReferanse = it.key,
                     ).firstOrNull()
                 val personGrunnlag = hentPersonMedReferanse(it.key)!!
                 val personFraVedtak = personGrunnlag.personObjekt
                 val rolleSøknadsbarn = behandling.søknadsbarn.find { it.ident == personFraVedtak.ident?.verdi }
+                if (rolleSøknadsbarn != null && privatAvtaleGrunnlag?.innhold?.avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV) {
+                    val manuelleVedtak =
+                        (this as List<BaseGrunnlag>)
+                            .filtrerBasertPåFremmedReferanse(
+                                grunnlagType = Grunnlagstype.MANUELLE_VEDTAK,
+                                gjelderBarnReferanse = it.key,
+                            ).firstOrNull()
+                            ?.innholdTilObjektListe<List<ManuellVedtakGrunnlag>>()
+                    val manuellVedtak = manuelleVedtak?.find { it.vedtaksid == privatAvtaleGrunnlag.innhold.vedtaksid }
+
+                    val vedtaksid = privatAvtaleGrunnlag.innhold.vedtaksid
+                    val vedtakPeriodeliste =
+                        vedtaksid?.let {
+                            val vedtak = hentVedtak(privatAvtaleGrunnlag.innhold.vedtaksid) ?: return@let null
+                            val stønadsendring = vedtak.finnStønadsendring(behandling.tilStønadsid(rolleSøknadsbarn))
+                            stønadsendring!!.periodeListe
+                        } ?: emptyList()
+
+                    rolleSøknadsbarn.grunnlagFraVedtakListe =
+                        listOf(
+                            GrunnlagFraVedtak(
+                                vedtak = privatAvtaleGrunnlag.innhold.vedtaksid,
+                                vedtakstidspunkt = manuellVedtak?.fattetTidspunkt,
+                                perioder = vedtakPeriodeliste,
+                            ),
+                        )
+                }
                 val privatAvtale =
                     if (lesemodus) {
                         PrivatAvtale(
