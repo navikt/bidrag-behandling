@@ -9,6 +9,8 @@ import no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple
 import no.nav.bidrag.behandling.dto.v1.behandling.EtterfølgendeVedtakDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.EksisterendeOpphørsvedtakDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.service.hentNyesteIdent
+import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.InntektBeløpstype
@@ -57,22 +59,6 @@ fun StønadsendringDto.tilStønadsid() =
         skyldner = skyldner,
         sak = sak,
     )
-
-fun BigDecimal.tilÅrsbeløp(beløpsType: InntektBeløpstype? = null): BigDecimal =
-    when (beløpsType) {
-        InntektBeløpstype.MÅNEDSBELØP -> {
-            multiply(BigDecimal(12), MathContext(0, RoundingMode.HALF_UP))
-        }
-
-        InntektBeløpstype.DAGSATS -> {
-            multiply(BigDecimal(260), MathContext(10, RoundingMode.HALF_UP))
-                .divide(BigDecimal(12), MathContext(10, RoundingMode.HALF_UP))
-        }
-
-        else -> {
-            this
-        }
-    }
 
 val BigDecimal.nærmesteHeltall get() = this.setScale(0, RoundingMode.HALF_UP)
 val ainntekt12Og3Måneder =
@@ -291,13 +277,26 @@ fun List<ÅrMånedsperiode>.mergePeriods(): List<ÅrMånedsperiode> {
 fun Behandling.hentEtterfølgendeVedtak(rolle: Rolle) =
     grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.ETTERFØLGENDE_VEDTAK)
 
+fun Behandling.hentNesteEtterfølgendeVedtakFelles(): EtterfølgendeVedtakDto? {
+    val grunnlag = søknadsbarn.mapNotNull { hentNesteEtterfølgendeVedtak(it) }
+    return grunnlag.sortedByDescending { it.virkningstidspunkt }.find {
+        val vedtak = hentVedtak(it.vedtaksid)
+        val kravhavere = vedtak?.stønadsendringListe?.map { hentNyesteIdent(it.kravhaver.verdi) } ?: emptyList()
+
+        val søknadsbarnIdenter = søknadsbarn.map { it.ident }
+        søknadsbarnIdenter.sortedBy { it }.toSet() == kravhavere.sortedBy { it }.toSet()
+    }
+}
+
 fun Behandling.hentNesteEtterfølgendeVedtak(rolle: Rolle): EtterfølgendeVedtakDto? {
     val grunnlag =
         hentEtterfølgendeVedtak(rolle)
     return grunnlag
         .konvertereData<List<VedtakForStønad>>()
+        ?.asSequence()
         ?.filter { it.virkningstidspunkt != null }
         ?.groupBy { it.virkningstidspunkt }
+        ?.asSequence()
         ?.mapNotNull { (_, group) -> group.maxByOrNull { it.vedtakstidspunkt } }
         ?.filter { !it.type.erIndeksEllerAldersjustering && it.stønadsendring.periodeListe.isNotEmpty() }
         ?.filter { it.virkningstidspunkt!!.isAfter(rolle.virkningstidspunkt!!.toYearMonth()) }

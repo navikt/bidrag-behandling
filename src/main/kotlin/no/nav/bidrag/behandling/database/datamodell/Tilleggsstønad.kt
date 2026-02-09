@@ -1,12 +1,16 @@
 package no.nav.bidrag.behandling.database.datamodell
 
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import no.nav.bidrag.domene.enums.diverse.InntektBeløpstype
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -20,9 +24,11 @@ class Tilleggsstønad(
     open var underholdskostnad: Underholdskostnad,
     open var fom: LocalDate,
     open var tom: LocalDate? = null,
-    open var dagsats: BigDecimal? = null,
-    open var månedsbeløp: BigDecimal? = null,
+    @Column(name = "dagsats")
+    open var beløp: BigDecimal,
+    @Enumerated(EnumType.STRING)
+    open var beløpstype: InntektBeløpstype = InntektBeløpstype.DAGSATS,
 ) {
     override fun toString(): String =
-        "Tilleggsstønad(id=$id, underholdskostnad=${underholdskostnad.id}, fom=$fom, tom=$tom, dagsats=$dagsats, månedsbeløp=$månedsbeløp)"
+        "Tilleggsstønad(id=$id, underholdskostnad=${underholdskostnad.id}, fom=$fom, tom=$tom, dagsats=$`beløp`, beløpstype=$beløpstype)"
 }

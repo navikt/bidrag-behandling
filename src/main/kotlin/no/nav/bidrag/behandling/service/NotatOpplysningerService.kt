@@ -59,6 +59,7 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.diverse.InntektBeløpstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -309,6 +310,8 @@ class NotatOpplysningerService(
                                         NotatTilleggsstønadDto(
                                             periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
                                             dagsats = it.dagsats,
+                                            beløp = it.beløp,
+                                            beløpstype = it.beløpstype,
                                             total = it.total,
                                         )
                                     },
@@ -333,9 +336,10 @@ class NotatOpplysningerService(
                                                                     beløp = it.beløp,
                                                                     kostpenger = it.kostpenger,
                                                                     tilleggsstønad = it.tilleggsstønad,
-                                                                    faktiskUtgiftBeregnet = it.beløp,
-                                                                    tilleggsstønadBeløp = it.tilleggsstønad,
+                                                                    beløpstype = it.beløpstype,
+                                                                    tilleggsstønadBeløp = it.tilleggsstønadBeløp,
                                                                     tilleggsstønadDagsats = it.tilleggsstønadDagsats,
+                                                                    faktiskUtgiftBeregnet = it.faktiskUtgiftBeregnet,
                                                                 )
                                                             },
                                                         justertBruttoTilsynsutgift = it.justertBruttoTilsynsutgift,
@@ -1192,6 +1196,7 @@ private fun Inntekt.tilNotatInntektDto() =
                         it.kode,
                         it.inntektstype,
                         InntektUtil.kapitalinntektFaktor(it.kode) * it.beløp.nærmesteHeltall,
+                        beløpstype = it.beløpstype ?: InntektBeløpstype.ÅRSBELØP,
                         visningsnavn = it.inntektstype?.visningsnavn?.intern ?: finnVisningsnavn(it.kode),
                     )
                 }.sortedByDescending { it.beløp },

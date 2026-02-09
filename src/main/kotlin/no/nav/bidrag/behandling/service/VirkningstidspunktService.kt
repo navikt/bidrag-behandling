@@ -126,14 +126,10 @@ class VirkningstidspunktService(
                                 aldersjusteringForÅr = request.aldersjusteringForÅr,
                                 vedtak = request.vedtaksid,
                                 grunnlagFraOmgjøringsvedtak = request.grunnlagFraOmgjøringsvedtak ?: false,
-                                perioder = if (behandling.erInnkreving) hentPerioderVedtak(behandling, request) else emptyList(),
+                                perioder = hentPerioderVedtak(behandling, request),
                                 vedtakstidspunkt =
-                                    if (behandling.erInnkreving) {
-                                        request.vedtaksid?.let {
-                                            hentVedtak(it)?.vedtakstidspunkt
-                                        }
-                                    } else {
-                                        null
+                                    request.vedtaksid?.let {
+                                        hentVedtak(it)?.vedtakstidspunkt
                                     },
                             ),
                         )

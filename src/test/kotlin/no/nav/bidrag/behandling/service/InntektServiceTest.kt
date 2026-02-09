@@ -1317,7 +1317,7 @@ class InntektServiceTest : TestContainerRunner() {
                         OppdatereManuellInntekt(
                             taMed = true,
                             type = Inntektsrapportering.UTVIDET_BARNETRYGD,
-                            beløp = BigDecimal(643000),
+                            beløp = BigDecimal("643000.00"),
                             datoFom =
                                 YearMonth
                                     .now()

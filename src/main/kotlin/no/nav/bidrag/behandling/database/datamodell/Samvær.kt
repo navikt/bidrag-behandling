@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTil
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 
 @Entity
@@ -38,6 +39,7 @@ open class Samvær(
 ) {
     fun erLik(other: Samvær): Boolean {
         if (rolle.finnBeregnFra() != other.rolle.finnBeregnFra()) return false
+        if (rolle.finnBeregnTil() != other.rolle.finnBeregnTil()) return false
         if (perioder.size != other.perioder.size) return false
         if (!perioder.all { periode -> other.perioder.any { otherPeriode -> periode.erLik(otherPeriode) } }) return false
         if (rolle.notat

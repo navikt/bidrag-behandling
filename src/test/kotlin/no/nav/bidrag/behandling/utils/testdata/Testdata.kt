@@ -1918,7 +1918,7 @@ fun Behandling.leggTilTillegsstønad(
             underholdskostnad = underholdskostnad,
             fom = periode.fom.atDay(1),
             tom = periode.til?.minusMonths(1)?.atEndOfMonth(),
-            dagsats = BigDecimal(50),
+            `beløp` = BigDecimal(50),
         ),
     )
 }

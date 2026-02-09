@@ -378,7 +378,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
                 tilleggsstønad shouldHaveSize 1
                 tilleggsstønad.first().fom shouldBe LocalDate.parse("2024-02-01")
                 tilleggsstønad.first().tom shouldBe LocalDate.parse("2024-09-30")
-                tilleggsstønad.first().dagsats shouldBe BigDecimal(20)
+                tilleggsstønad.first().`beløp` shouldBe BigDecimal(20)
 
                 faktiskeTilsynsutgifter shouldHaveSize 2
                 faktiskeTilsynsutgifter.first().fom shouldBe LocalDate.parse("2024-02-01")

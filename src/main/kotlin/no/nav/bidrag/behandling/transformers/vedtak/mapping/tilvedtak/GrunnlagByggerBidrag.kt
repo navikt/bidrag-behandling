@@ -26,7 +26,6 @@ import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebid
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
-import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlagV2
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtalePeriodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
@@ -45,6 +44,7 @@ import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDt
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.felles.toCompactString
 import no.nav.bidrag.transport.felles.toYearMonth
+import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.collections.plus
 
@@ -145,7 +145,9 @@ fun Behandling.tilGrunnlagTilleggsstønad(): List<GrunnlagDto> =
                             POJONode(
                                 TilleggsstønadPeriode(
                                     periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
-                                    beløpDagsats = it.dagsats,
+                                    beløpDagsats = it.beløp,
+                                    beløp = it.beløp ?: BigDecimal.ZERO,
+                                    beløpstype = it.beløpstype,
                                     manueltRegistrert = true,
                                 ),
                             ),
