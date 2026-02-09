@@ -572,6 +572,9 @@ class VedtakGrunnlagMapper(
 
                 TypeBehandling.BIDRAG -> {
                     grunnlagListe.addAll(tilGrunnlagBarnetilsyn(true))
+                    grunnlagListe.addAll(
+                        byggGrunnlagManuelleVedtak(personobjekter.map { it.tilDto() }),
+                    )
                 }
 
                 else -> {}

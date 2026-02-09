@@ -431,9 +431,13 @@ fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
         måVelgeVedtakHvisAvtaletypeErVedtakFraNav =
             behandling.erInnkreving && avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV && valgtVedtakFraNav == null,
         overlappendePerioder =
-            perioder
-                .map { Pair(it.id!!, it.tilDatoperiode()) }
-                .finnOverlappendePerioder(),
+            if (avtaleType != PrivatAvtaleType.VEDTAK_FRA_NAV) {
+                perioder
+                    .map { Pair(it.id!!, it.tilDatoperiode()) }
+                    .finnOverlappendePerioder()
+            } else {
+                emptySet()
+            },
     )
 }
 

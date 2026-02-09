@@ -129,6 +129,8 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebid
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.resultatSluttberegning
+import no.nav.bidrag.transport.behandling.felles.grunnlag.tilResultatVisningsnavn
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
@@ -498,11 +500,10 @@ class GrunnlagService(
                         ).firstOrNull()
                         ?.innholdTilObjekt<SøknadGrunnlag>()
                 val virkningstidspunkt = stønadsendring.periodeListe.minBy { it.periode.fom }
-                val sluttberegningSistePeriode =
-                    vedtak
-                        .grunnlagListe
-                        .finnSluttberegningIReferanser(sistePeriode.grunnlagReferanseListe)
-                        ?.innholdTilObjekt<SluttberegningBarnebidrag>()
+                val sluttberegningSistePeriodeVisningsnavn =
+                    vedtak.grunnlagListe.tilResultatVisningsnavn(
+                        sistePeriode.grunnlagReferanseListe,
+                    )
                 val resultatSistePeriode =
                     when (Resultatkode.fraKode(sistePeriode.resultatkode)) {
                         Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
@@ -521,7 +522,7 @@ class GrunnlagService(
                         }
 
                         else -> {
-                            sluttberegningSistePeriode?.resultatVisningsnavn?.intern
+                            sluttberegningSistePeriodeVisningsnavn?.intern
                                 ?: Resultatkode.fraKode(sistePeriode.resultatkode)?.visningsnavn?.intern
                                 ?: sistePeriode.resultatkode
                         }
