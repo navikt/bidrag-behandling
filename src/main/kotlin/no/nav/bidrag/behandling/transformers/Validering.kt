@@ -358,7 +358,7 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
 
         if (gjelderBarn.opprinneligVirkningstidspunkt != null &&
             avslag == null &&
-            virkningstidspunkt?.isAfter(gjelderBarn.opprinneligVirkningstidspunkt) == true
+            behandling.eldsteVirkningstidspunkt.isAfter(gjelderBarn.opprinneligVirkningstidspunkt) == true
         ) {
             if (!(behandling.erBidrag() && behandling.erKlageEllerOmgjøring)) {
                 feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
@@ -372,7 +372,7 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
 //            feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
 //        }
 
-        if (behandling.globalOpphørsdato != null && virkningstidspunkt!! >= behandling.globalOpphørsdato) {
+        if (behandling.globalOpphørsdato != null && behandling.eldsteVirkningstidspunkt >= behandling.globalOpphørsdato) {
             feilliste.add("Virkningstidspunkt kan ikke lik eller senere enn opphørsdato")
         }
     }
