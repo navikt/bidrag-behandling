@@ -420,7 +420,7 @@ data class ResultatBarnebidragsberegningPeriodeDto(
             }
 
             else -> {
-                beregningsdetaljer?.sluttberegning?.resultatVisningsnavn?.intern
+                beregningsdetaljer?.sluttberegning?.resultatVisningsnavn?.intern ?: resultatKode?.visningsnavn?.intern
             }
         }
 }
