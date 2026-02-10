@@ -352,13 +352,15 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
     if (gjelderBarn != null) {
         // Revurderingsbarn kan ha opphør før virkning mtp at det kan være case hvor bidraget har opphørt i løpet av beregningsperioden men før revurderingen ble opprettet
         // En hack for å unngå at beregninge beregner videre etter opphøret
-        if (!gjelderBarn.erRevurderingsbarn && gjelderBarn.opphørsdato != null && virkningstidspunkt!! >= gjelderBarn.opphørsdato) {
+        if (!gjelderBarn.erRevurderingsbarn && gjelderBarn.opphørsdato != null &&
+            behandling.eldsteVirkningstidspunkt >= gjelderBarn.opphørsdato
+        ) {
             feilliste.add("Virkningstidspunkt kan ikke være lik eller senere enn opphørsdato")
         }
 
         if (gjelderBarn.opprinneligVirkningstidspunkt != null &&
             avslag == null &&
-            virkningstidspunkt?.isAfter(gjelderBarn.opprinneligVirkningstidspunkt) == true
+            behandling.eldsteVirkningstidspunkt.isAfter(gjelderBarn.opprinneligVirkningstidspunkt) == true
         ) {
             if (!(behandling.erBidrag() && behandling.erKlageEllerOmgjøring)) {
                 feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
@@ -372,7 +374,7 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
 //            feilliste.add("Virkningstidspunkt kan ikke være senere enn opprinnelig virkningstidspunkt")
 //        }
 
-        if (behandling.globalOpphørsdato != null && virkningstidspunkt!! >= behandling.globalOpphørsdato) {
+        if (behandling.globalOpphørsdato != null && behandling.eldsteVirkningstidspunkt >= behandling.globalOpphørsdato) {
             feilliste.add("Virkningstidspunkt kan ikke lik eller senere enn opphørsdato")
         }
     }
