@@ -985,6 +985,7 @@ class Dtomapper(
     fun Behandling.tilPrivatAvtaleDtoV3(): PrivatAvtaleDtoV3 {
         val søknadsbarnPA =
             søknadsbarn
+                .filter { it.kreverGrunnlagForBeregning }
                 .sortedWith(
                     sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
                 ).map { barn ->
