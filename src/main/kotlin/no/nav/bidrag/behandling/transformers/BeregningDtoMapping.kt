@@ -1704,7 +1704,7 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                 beregnetBidrag =
                     ForholdsmessigFordelingBidragTilFordelingBarn.BeregnetBidragBarnDto(
                         saksnummer = løpendeBidrag.saksnummer,
-                        samværsklasse = løpendeBidrag.samværsklasse,
+                        samværsklasse = løpendeBidrag.samværsklasse ?: Samværsklasse.SAMVÆRSKLASSE_0,
                         løpendeBeløp = løpendeBidrag.løpendeBeløp,
                         faktiskBeløp = løpendeBidrag.faktiskBeløp,
                         beregnetBidrag = it.innhold.bidragTilFordeling,
