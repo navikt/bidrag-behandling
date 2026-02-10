@@ -56,6 +56,7 @@ import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
 import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeil
+import no.nav.bidrag.behandling.transformers.behandling.hentVirkningstidspunktValideringsfeilRolle
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV3
@@ -307,7 +308,7 @@ class BehandlingControllerV2(
             erLikForAlle = behandling.sammeVirkningstidspunktForAlle,
             rolleId = request.rolleId,
             oppdatertBegrunnelse =
-                if (notat.isEmpty()) {
+                if (notat.isEmpty() && behandling.erVirkningstidspunktLiktForAlle) {
                     henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT)
                 } else {
                     notat
@@ -318,6 +319,7 @@ class BehandlingControllerV2(
                 } else {
                     null
                 },
+            valideringsfeil = dtomapper.run { behandling.søknadsbarn.map { it.hentVirkningstidspunktValideringsfeilRolle() } },
         )
     }
 

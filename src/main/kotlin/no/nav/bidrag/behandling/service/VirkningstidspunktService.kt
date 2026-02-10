@@ -225,6 +225,12 @@ class VirkningstidspunktService(
                         notat.nyBegrunnelse,
                         gjelderBarnRolle,
                     )
+                    notatService.oppdatereNotat(
+                        it,
+                        NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
+                        "",
+                        it.bidragsmottaker!!,
+                    )
                 } else {
                     it.søknadsbarn.forEach { barn ->
                         notatService.oppdatereNotat(
