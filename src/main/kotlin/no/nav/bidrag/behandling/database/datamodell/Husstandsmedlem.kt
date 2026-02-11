@@ -33,11 +33,11 @@ open class Husstandsmedlem(
     open var ident: String? = null,
     // TODO: Migere persondata til Person-tabellen
     @Deprecated("Migrere til Person.navn")
-    open val navn: String? = null,
+    open var navn: String? = null,
     // TODO: Migere persondata til Person-tabellen
     @Deprecated("Migrere til Person.fødselsdato")
     // kan bare være null dersom koblingen mot rolle er satt
-    open val fødselsdato: LocalDate? = null,
+    open var fødselsdato: LocalDate? = null,
     @OneToOne(
         fetch = FetchType.LAZY,
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
