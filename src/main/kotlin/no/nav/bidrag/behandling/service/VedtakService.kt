@@ -100,6 +100,7 @@ class VedtakService(
                     omgjørVedtaksliste = påklagetVedtakListe,
                     erOrkestrertVedtak = vedtak.erOrkestrertVedtak,
                     innkrevingstype = vedtak.vedtak.innkrevingstype,
+                    påklagetVedtak = vedtak.vedtak,
                 )
             }
         } catch (e: Exception) {

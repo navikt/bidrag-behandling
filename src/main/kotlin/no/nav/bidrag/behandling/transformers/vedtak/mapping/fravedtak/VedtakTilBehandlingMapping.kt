@@ -124,6 +124,7 @@ class VedtakTilBehandlingMapping(
         erOrkestrertVedtak: Boolean = false,
         omgjørVedtaksliste: Set<PåklagetVedtak> = emptySet(),
         innkrevingstype: Innkrevingstype,
+        påklagetVedtak: VedtakDto? = null,
     ): Behandling {
         val opprinneligVedtak = omgjørVedtaksliste.minByOrNull { it.vedtakstidspunkt }?.vedtaksid ?: omgjørVedtakId
         val vedtakstidspunktListe = omgjørVedtaksliste.map { it.vedtakstidspunkt }.toSet()
@@ -182,7 +183,7 @@ class VedtakTilBehandlingMapping(
                 soknadsid = søknadId ?: this.søknadId,
             )
 
-        behandling.roller = grunnlagListe.mapRoller(this, behandling, lesemodus, omgjortVedtakVirkningstidspunkt)
+        behandling.roller = grunnlagListe.mapRoller(påklagetVedtak ?: this, behandling, lesemodus, omgjortVedtakVirkningstidspunkt)
 
         behandling.omgjøringsdetaljer =
             if (!lesemodus || opprinneligVedtak != omgjørVedtakId) {
