@@ -58,6 +58,7 @@ open class PrivatAvtale(
     )
     open var perioder: MutableSet<PrivatAvtalePeriode> = mutableSetOf(),
 ) {
+    val erAllePerioderNorsk get() = perioderInnkreving.all { it.valutakode == null || it.valutakode == Valutakode.NOK }
     val personIdent get() = person?.ident ?: rolle!!.ident
     val personFødselsdato get() = person?.fødselsdato ?: rolle!!.fødselsdato
     val utledetAvtaledato get() =

@@ -85,8 +85,8 @@ class PrivatAvtaleService(
                 ?: ugyldigForespørsel("Fant ikke privat avtale med id $privatavtaleId i behandling $behandlingsid")
         privatAvtale.avtaleDato = request.avtaleDato ?: privatAvtale.avtaleDato
         privatAvtale.avtaleType = request.avtaleType ?: privatAvtale.avtaleType
-        privatAvtale.skalIndeksreguleres = request.skalIndeksreguleres ?: privatAvtale.skalIndeksreguleres
         privatAvtale.utenlandsk = request.gjelderUtland ?: privatAvtale.utenlandsk
+
         request.oppdaterPeriode?.let {
             oppdaterPrivatAvtaleAvtalePeriode(behandlingsid, privatavtaleId, it)
         }
@@ -98,6 +98,15 @@ class PrivatAvtaleService(
         request.begrunnelse?.let {
             oppdaterPrivatAvtaleBegrunnelse(behandlingsid, privatavtaleId, null, null, it)
         }
+
+        privatAvtale.skalIndeksreguleres =
+            if (privatAvtale.utenlandsk &&
+                privatAvtale.erAllePerioderNorsk
+            ) {
+                false
+            } else {
+                request.skalIndeksreguleres ?: privatAvtale.skalIndeksreguleres
+            }
     }
 
     @Transactional
