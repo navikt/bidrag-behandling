@@ -234,6 +234,22 @@ class UnderholdService(
         }
     }
 
+    fun fjernRolleFraUnderholdskostnad(underholdskostnad: Underholdskostnad) {
+        if (underholdskostnad.rolle == null) return
+        val rolle = underholdskostnad.rolle
+        underholdskostnad.person = personRepository.findFirstByIdent(rolle!!.ident!!) ?: run {
+            Person(
+                ident = rolle!!.ident,
+                fødselsdato =
+                    hentPersonFødselsdato(rolle.ident!!)
+                        ?: fantIkkeFødselsdatoTilPerson(underholdskostnad.behandling.id!!),
+            )
+        }
+        underholdskostnad.tilleggsstønad.clear()
+        underholdskostnad.barnetilsyn.clear()
+        underholdskostnad.rolle = underholdskostnad.behandling.bidragsmottaker
+    }
+
     fun oppdatereAutomatiskInnhentaStønadTilBarnetilsyn(
         behandling: Behandling,
         gjelderSøknadsbarn: Personident,
