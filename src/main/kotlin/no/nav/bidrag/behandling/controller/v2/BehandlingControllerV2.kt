@@ -185,9 +185,9 @@ class BehandlingControllerV2(
         @Valid @RequestBody(required = true) request: OppdatereInntektRequest,
     ): OppdatereInntektResponse {
         log.info { "Oppdatere inntekter for behandling $behandlingsid" }
+        val oppdatertInntekt = inntektService.oppdatereInntektManuelt(behandlingsid, request)
         val behandling =
             behandlingService.hentBehandlingById(behandlingsid)
-        val oppdatertInntekt = inntektService.oppdatereInntektManuelt(behandlingsid, request)
         val beregnetGebyrErEndret = gebyrService.rekalkulerGebyr(behandling)
         return OppdatereInntektResponse(
             inntekter =
