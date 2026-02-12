@@ -145,7 +145,7 @@ open class Rolle(
     val erDirekteAvslagIkkeAvvisning get() = avslag != null && avslag!!.erDirekteAvslag() && !avslag!!.erAvvisning()
     val løperBidragEtterEldsteVirkning get() = behandling.løperBidragEtterEldsteVirkning(this)
     val kreverGrunnlagForBeregning get() =
-        avslag == null || løperBidragEtterEldsteVirkning
+        avslag == null || (behandling.erIForholdsmessigFordeling && løperBidragEtterEldsteVirkning)
     val harSøknadMedInnkreving get() = forholdsmessigFordeling?.søknaderUnderBehandling?.any { it.innkreving } == true
     val erRevurderingsbarn get() = rolletype == Rolletype.BARN && forholdsmessigFordeling != null && forholdsmessigFordeling!!.erRevurdering
     val barn get() =

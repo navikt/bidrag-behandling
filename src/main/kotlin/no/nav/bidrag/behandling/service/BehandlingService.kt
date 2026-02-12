@@ -7,7 +7,9 @@ import no.nav.bidrag.behandling.async.dto.BehandlingOppdateringBestilling
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Samvær
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
@@ -674,6 +676,7 @@ class BehandlingService(
             behandling.roller.removeIf { r ->
                 if (identerSomSkalSlettes.contains(r.ident)) {
                     log.debug { "Sletter rolle ${r.id} fra behandling $behandlingId" }
+                    slettRolleFraBehandling(behandling, r)
                     true
                 } else {
                     false
@@ -690,6 +693,39 @@ class BehandlingService(
         }
 
         return OppdaterRollerResponse(OppdaterRollerStatus.ROLLER_OPPDATERT)
+    }
+
+    private fun slettRolleFraBehandling(
+        behandling: Behandling,
+        rolle: Rolle,
+    ) {
+        behandling.notater.removeIf {
+            it.rolle.id == rolle.id
+        }
+        behandling.grunnlag.removeIf {
+            it.rolle.id == rolle.id
+        }
+        behandling.inntekter.removeIf {
+            it.rolle?.id == rolle.id || it.gjelderBarnRolle?.id == rolle.id
+        }
+
+        behandling.samvær.removeIf {
+            it.rolle?.id == rolle.id
+        }
+        behandling.underholdskostnader
+            .filter {
+                it.rolle?.id == rolle.id
+            }.forEach {
+                underholdService.fjernRolleFraUnderholdskostnad(it)
+            }
+        behandling.privatAvtale.removeIf { it.rolle?.id == rolle.id }
+        behandling.husstandsmedlem.find { it.rolle?.id == rolle.id }?.let {
+            it.rolle = null
+            it.ident = rolle.ident
+            it.navn = rolle.navn
+            it.fødselsdato = rolle.fødselsdato
+        }
+        rolle.deleted = true
     }
 
     private fun oppdaterTilNyesteIdent(
