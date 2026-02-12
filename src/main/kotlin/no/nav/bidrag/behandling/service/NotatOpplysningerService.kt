@@ -1098,6 +1098,7 @@ private fun Behandling.tilNotatBehandlingDetaljer() =
     NotatBehandlingDetaljerDto(
         søknadstype = vedtakstype.name,
         vedtakstype = vedtakstype,
+        innkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
         opprinneligVedtakstype = omgjøringsdetaljer?.opprinneligVedtakstype,
         søktAv = soknadFra,
         mottattDato = mottattdato,
@@ -1110,6 +1111,7 @@ private fun Behandling.tilNotatBehandlingDetaljer() =
 
 private fun Behandling.tilVirkningstidspunktBarn() =
     søknadsbarn.sortedBy { it.fødselsdato }.map {
+        val innkrevingstype = it.innkrevingstype ?: innkrevingstype
         val eldsteSøknad = it.forholdsmessigFordeling?.eldsteSøknad
         NotatVirkningstidspunktBarnDto(
             rolle = it.tilNotatRolle(),
@@ -1127,6 +1129,7 @@ private fun Behandling.tilVirkningstidspunktBarn() =
             begrunnelseVurderingAvSkolegang = if (kanSkriveVurderingAvSkolegang(it)) tilNotatVurderingAvSkolegang(it) else null,
             beregnTilDato = YearMonth.from(finnBeregnTilDatoBehandling(it)),
             beregnTil = it.beregnTil,
+            innkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
             etterfølgendeVedtakVirkningstidspunkt = hentNesteEtterfølgendeVedtak(it)?.virkningstidspunkt,
         )
     }
