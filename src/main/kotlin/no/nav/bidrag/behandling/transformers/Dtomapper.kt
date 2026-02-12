@@ -1083,6 +1083,7 @@ class Dtomapper(
                     val eldsteSøknad = it.forholdsmessigFordeling?.eldsteSøknad
                     val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)
                     val bidragetHarOpphørt = finnEksisterendeVedtakMedOpphør(it) != null && it.virkningstidspunkt == it.opphørsdato
+                    val innkrevingstype = it.innkrevingstype ?: it.behandling.innkrevingstype
                     VirkningstidspunktBarnDtoV2(
                         rolle = it.tilDto(),
                         beregnTil = it.beregnTil ?: BeregnTil.INNEVÆRENDE_MÅNED,
@@ -1129,7 +1130,7 @@ class Dtomapper(
                         løpendeBidragPeriode = finnPeriodeLøpendePeriodeInnenforSøktFomDato(it),
                         harLøpendeForskudd = finnesLøpendeForskuddForRolle(it),
                         harLøpendeBidrag = finnesLøpendeBidragForRolle(it),
-                        medInnkreving = it.innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                        medInnkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
                         eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
                         opphørsdato = it.opphørsdato,
                         globalOpphørsdato = globalOpphørsdato,

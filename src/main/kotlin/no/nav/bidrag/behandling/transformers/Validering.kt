@@ -352,7 +352,9 @@ fun OppdatereVirkningstidspunkt.valider(behandling: Behandling) {
     if (gjelderBarn != null) {
         // Revurderingsbarn kan ha opphør før virkning mtp at det kan være case hvor bidraget har opphørt i løpet av beregningsperioden men før revurderingen ble opprettet
         // En hack for å unngå at beregninge beregner videre etter opphøret
-        if (!gjelderBarn.erRevurderingsbarn && gjelderBarn.opphørsdato != null && virkningstidspunkt!! >= gjelderBarn.opphørsdato) {
+        if (!gjelderBarn.erRevurderingsbarn && gjelderBarn.opphørsdato != null &&
+            behandling.eldsteVirkningstidspunkt >= gjelderBarn.opphørsdato
+        ) {
             feilliste.add("Virkningstidspunkt kan ikke være lik eller senere enn opphørsdato")
         }
 
