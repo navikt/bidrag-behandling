@@ -449,7 +449,7 @@ data class ForholdsmessigFordelingBeregningsdetaljer(
 )
 
 data class ForholdsmessigFordelingBidragTilFordelingBarn(
-    val utlandskbidrag: Boolean = false,
+    val utenlandskbidrag: Boolean = false,
     val oppfostringsbidrag: Boolean = false,
     val privatAvtale: Boolean,
     val erSøknadsbarn: Boolean,
@@ -457,7 +457,7 @@ data class ForholdsmessigFordelingBidragTilFordelingBarn(
     val bidragTilFordeling: BigDecimal,
     val barn: PersoninfoDto,
 ) {
-    val erBidragSomIkkeKanFordeles get() = utlandskbidrag || oppfostringsbidrag
+    val erBidragSomIkkeKanFordeles get() = utenlandskbidrag || oppfostringsbidrag
 
     data class BeregnetBidragBarnDto(
         val saksnummer: Saksnummer,

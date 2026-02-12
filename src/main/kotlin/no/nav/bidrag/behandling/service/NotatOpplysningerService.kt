@@ -815,7 +815,6 @@ private fun no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegn
                         it.forholdsmessigFordeling?.let {
                             DokumentmalForholdsmessigFordelingBeregningsdetaljer(
                                 sumBidragTilFordeling = it.sumBidragTilFordeling,
-                                sumPrioriterteBidragTilFordeling = it.sumPrioriterteBidragTilFordeling,
                                 bidragTilFordelingForBarnet = it.bidragTilFordelingForBarnet,
                                 andelAvSumBidragTilFordelingFaktor = it.andelAvSumBidragTilFordelingFaktor,
                                 andelAvEvneBeløp = it.andelAvEvneBeløp,
@@ -826,12 +825,14 @@ private fun no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegn
                                 sumBidragTilFordelingSøknadsbarn = it.sumBidragTilFordelingSøknadsbarn,
                                 sumBidragTilFordelingIkkeSøknadsbarn = it.sumBidragTilFordelingIkkeSøknadsbarn,
                                 sumBidragTilFordelingPrivatAvtale = it.sumBidragTilFordelingPrivatAvtale,
-                                sumBidragTilFordelingSPrioritertBidrag = BigDecimal.ZERO,
+                                sumBidragSomIkkeKanFordeles = it.sumBidragSomIkkeKanFordeles,
                                 finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn = it.finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn,
+                                sumPrioriterteBidragTilFordeling = it.sumPrioriterteBidragTilFordeling,
                                 bidragTilFordelingAlle =
                                     it.bidragTilFordelingAlle.map {
                                         DokumentmalForholdsmessigFordelingBidragTilFordelingBarn(
-                                            prioritertBidrag = it.utlandskbidrag,
+                                            utenlandskbidrag = it.utenlandskbidrag,
+                                            oppfostringsbidrag = it.oppfostringsbidrag,
                                             privatAvtale = it.privatAvtale,
                                             erSøknadsbarn = it.erSøknadsbarn,
                                             bidragTilFordeling = it.bidragTilFordeling,
@@ -841,8 +842,10 @@ private fun no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegn
                                                         saksnummer = it.saksnummer,
                                                         samværsfradrag = it.samværsfradrag,
                                                         samværsklasse = it.samværsklasse,
-                                                        valutakode = it.valutakode.name,
+                                                        valutakode = it.valutakode,
+                                                        valutakurs = it.valutakurs,
                                                         reduksjonUnderholdskostnad = it.reduksjonUnderholdskostnad,
+                                                        indeksreguleringFaktor = it.indeksreguleringFaktor,
                                                         beregnetBidrag = it.beregnetBidrag,
                                                         beregnetBeløp = it.beregnetBeløp,
                                                         faktiskBeløp = it.faktiskBeløp,

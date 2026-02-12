@@ -1618,7 +1618,7 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
         bidragTilFordelingSøknadsbarnGrunnlag.map {
             val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
             ForholdsmessigFordelingBidragTilFordelingBarn(
-                utlandskbidrag = false,
+                utenlandskbidrag = false,
                 privatAvtale = false,
                 erSøknadsbarn = true,
                 beregnetBidrag =
@@ -1716,7 +1716,7 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                     ?.find { vl -> vl.valutakode1 == it.innhold.valutakode && vl.valutakode2 == Valutakode.NOK }
                     ?.valutakurs ?: BigDecimal.ONE
             ForholdsmessigFordelingBidragTilFordelingBarn(
-                utlandskbidrag = !it.innhold.erNorskBidrag,
+                utenlandskbidrag = !it.innhold.erNorskBidrag,
                 oppfostringsbidrag = it.innhold.erOppfostringsbidrag,
                 privatAvtale = false,
                 erSøknadsbarn = false,
@@ -1779,7 +1779,7 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                     ?.find { vl -> vl.valutakode1 == it.innhold.valutakode && vl.valutakode2 == Valutakode.NOK }
                     ?.valutakurs ?: BigDecimal.ONE
             ForholdsmessigFordelingBidragTilFordelingBarn(
-                utlandskbidrag = !it.innhold.erNorskBidrag,
+                utenlandskbidrag = !it.innhold.erNorskBidrag,
                 privatAvtale = true,
                 erSøknadsbarn = false,
                 bidragTilFordeling = it.innhold.bidragTilFordelingNOK,
@@ -1824,7 +1824,7 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                     .maxBy { it.periode.fom }
 
             ForholdsmessigFordelingBidragTilFordelingBarn(
-                utlandskbidrag = false,
+                utenlandskbidrag = false,
                 privatAvtale = true,
                 erSøknadsbarn = false,
                 bidragTilFordeling = periodeBeregnet.beløp,

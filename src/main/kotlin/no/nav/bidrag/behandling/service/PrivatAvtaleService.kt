@@ -101,7 +101,7 @@ class PrivatAvtaleService(
 
         privatAvtale.skalIndeksreguleres =
             if (privatAvtale.utenlandsk &&
-                privatAvtale.erAllePerioderNorsk
+                !privatAvtale.erAllePerioderNorsk
             ) {
                 false
             } else {
