@@ -304,6 +304,14 @@ class BehandlingControllerV2(
                 // Hvis rolle er lik null så betyr det at begrunnelsen er satt lik for alle
                 henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT, behandling.søknadsbarn.first())
             }
+        val valideringsfeil =
+            dtomapper
+                .run { behandling.søknadsbarn.map { it.hentVirkningstidspunktValideringsfeilRolle() } }
+                .toMutableSet()
+
+        if (rolle?.rolletype == Rolletype.BIDRAGSMOTTAKER) {
+            valideringsfeil.add(dtomapper.run { rolle.hentVirkningstidspunktValideringsfeilRolle() })
+        }
         return OppdatereVirkningstidspunktBegrunnelseResponseDto(
             erLikForAlle = behandling.sammeVirkningstidspunktForAlle,
             rolleId = request.rolleId,
@@ -319,7 +327,7 @@ class BehandlingControllerV2(
                 } else {
                     null
                 },
-            valideringsfeil = dtomapper.run { behandling.søknadsbarn.map { it.hentVirkningstidspunktValideringsfeilRolle() } },
+            valideringsfeil = valideringsfeil.toList(),
         )
     }
 
