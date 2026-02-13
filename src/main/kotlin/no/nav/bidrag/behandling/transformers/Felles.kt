@@ -27,6 +27,7 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriodeDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
+import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
@@ -36,6 +37,7 @@ import java.math.BigDecimal
 import java.math.MathContext
 import java.math.RoundingMode
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.Period
 import java.time.Year
 import java.time.YearMonth
@@ -92,7 +94,13 @@ val eksplisitteYtelser =
         Inntektsrapportering.SMÅBARNSTILLEGG,
         Inntektsrapportering.UTVIDET_BARNETRYGD,
     )
-
+val eksplisitteYtelserGrunnlagsdatatype =
+    setOf(
+        Grunnlagsdatatype.BARNETILLEGG,
+        Grunnlagsdatatype.KONTANTSTØTTE,
+        Grunnlagsdatatype.SMÅBARNSTILLEGG,
+        Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+    )
 val inntekterSomKanHaHullIPerioder = eksplisitteYtelser
 
 fun Behandling.tilType() = bestemTypeBehandling(stonadstype, engangsbeloptype)
@@ -432,3 +440,20 @@ fun Behandling.opprettStønadDto(
             )
         } ?: emptyList(),
 )
+
+fun opprettHentGrunnlagDto() =
+    HentGrunnlagDto(
+        ainntektListe = emptyList(),
+        skattegrunnlagListe = emptyList(),
+        arbeidsforholdListe = emptyList(),
+        barnetilsynListe = emptyList(),
+        barnetilleggListe = emptyList(),
+        kontantstøtteListe = emptyList(),
+        utvidetBarnetrygdListe = emptyList(),
+        småbarnstilleggListe = emptyList(),
+        sivilstandListe = emptyList(),
+        husstandsmedlemmerOgEgneBarnListe = emptyList(),
+        feilrapporteringListe = emptyList(),
+        hentetTidspunkt = LocalDateTime.now(),
+        tilleggsstønadBarnetilsynListe = emptyList(),
+    )
