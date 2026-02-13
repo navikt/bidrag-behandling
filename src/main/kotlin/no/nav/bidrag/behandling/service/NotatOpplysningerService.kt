@@ -828,6 +828,8 @@ private fun no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegn
                                 sumBidragSomIkkeKanFordeles = it.sumBidragSomIkkeKanFordeles,
                                 finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn = it.finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn,
                                 sumPrioriterteBidragTilFordeling = it.sumPrioriterteBidragTilFordeling,
+                                sumBidragTilFordelingJustertForPrioriterteBidrag = it.sumBidragTilFordelingJustertForPrioriterteBidrag,
+                                evneJustertForPrioriterteBidrag = it.evneJustertForPrioriterteBidrag,
                                 bidragTilFordelingAlle =
                                     it.bidragTilFordelingAlle.map {
                                         DokumentmalForholdsmessigFordelingBidragTilFordelingBarn(

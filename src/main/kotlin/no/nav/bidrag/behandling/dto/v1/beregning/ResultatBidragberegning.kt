@@ -442,6 +442,8 @@ data class ForholdsmessigFordelingBeregningsdetaljer(
     val andelAvSumBidragTilFordelingFaktor: BigDecimal,
     val andelAvEvneBeløp: BigDecimal,
     val bidragEtterFordeling: BigDecimal,
+    val sumBidragTilFordelingJustertForPrioriterteBidrag: BigDecimal,
+    val evneJustertForPrioriterteBidrag: BigDecimal,
     val harBPFullEvne: Boolean,
     val erKompletteGrunnlagForAlleLøpendeBidrag: Boolean,
     val erForholdsmessigFordelt: Boolean,

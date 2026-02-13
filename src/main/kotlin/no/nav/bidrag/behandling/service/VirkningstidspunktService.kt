@@ -482,6 +482,7 @@ class VirkningstidspunktService(
 
         fun oppdaterInntekter() {
             log.info { "Virkningstidspunkt er endret. Oppdaterer perioder på inntekter for behandling ${behandling.id}" }
+            grunnlagService.oppdatereIkkeAktiveInntekterEtterEndretVirkningstidspunkt(behandling)
             inntektService.rekalkulerPerioderInntekter(behandling, forrigeVirkningstidspunkt = forrigeVirkningstidspunkt)
         }
 

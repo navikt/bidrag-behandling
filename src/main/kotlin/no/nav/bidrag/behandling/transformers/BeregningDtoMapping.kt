@@ -323,6 +323,45 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
                 },
     )
 
+fun opprettIndeksreguleringsperioder(
+    resultat: ResultatBidragsberegningBarn,
+    perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
+): List<ResultatBarnebidragsberegningPeriodeDto> {
+    if (resultat.resultatVedtak == null) return perioder
+    val beregnetIndeksregulering =
+        resultat.resultatVedtak.resultatVedtakListe.filter {
+            it.beregnet &&
+                it.vedtakstype == Vedtakstype.INDEKSREGULERING
+        }
+    val perioderSomOverlapper =
+        beregnetIndeksregulering.filter { pi ->
+            perioder.any {
+                pi.beregnetFraDato.toYearMonth() == it.periode.fom &&
+                    !it.vedtakstype.erIndeksEllerAldersjustering
+            }
+        }
+    if (perioderSomOverlapper.isEmpty()) return perioder
+    return (
+        perioderSomOverlapper.map { gv ->
+            ResultatBarnebidragsberegningPeriodeDto(
+                periode = ÅrMånedsperiode(gv.beregnetFraDato, null),
+                vedtakstype = gv.vedtakstype,
+                resultatKode = Resultatkode.INDEKSREGULERING,
+                faktiskBidrag =
+                    gv.resultat.beregnetBarnebidragPeriodeListe
+                        .first()
+                        .resultat.beløp ?: BigDecimal.ZERO,
+                aldersjusteringDetaljer = null,
+                klageOmgjøringDetaljer =
+                    KlageOmgjøringDetaljer(
+                        manuellAldersjustering = false,
+                        delAvVedtaket = false,
+                    ),
+            )
+        } + perioder
+    ).sortedBy { it.periode.fom }
+}
+
 fun opprettAldersjusteringPerioder(resultat: ResultatBidragsberegningBarn): List<ResultatBarnebidragsberegningPeriodeDto> {
     if (resultat.resultatVedtak == null) return emptyList()
     return resultat.barn.grunnlagFraVedtak
@@ -600,6 +639,11 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                     sistePeriode?.grunnlagsreferanseListe ?: emptyList(),
                 )
 
+            val perioder =
+                (
+                    opprettPerioder() +
+                        opprettAldersjusteringPerioder(resultat)
+                ).sortedBy { it.periode.fom }
             DelvedtakDto(
                 type = rv.vedtakstype,
                 delvedtak = rv.delvedtak,
@@ -609,11 +653,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                 vedtaksid = resultatFraVedtak?.vedtaksid,
                 indeksår = indeksår,
                 grunnlagFraVedtak = if (rv.delvedtak) resultat.barn.grunnlagFraVedtak else emptyList(),
-                perioder =
-                    (
-                        opprettPerioder() +
-                            opprettAldersjusteringPerioder(resultat)
-                    ).sortedBy { it.periode.fom },
+                perioder = if (erEndeligVedtak) opprettIndeksreguleringsperioder(resultat, perioder) else perioder,
             )
         }?.toList() ?: emptyList()
 
@@ -1648,11 +1688,13 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
         bidragTilFordelingForBarnet = bidragTilFordeling.innhold.bidragTilFordeling,
         andelAvEvneBeløp = andelAvBidragsevne.innhold.andelAvEvneBeløp,
         andelAvSumBidragTilFordelingFaktor = andelAvBidragsevne.innhold.andelAvSumBidragTilFordelingFaktor,
+        sumBidragTilFordelingJustertForPrioriterteBidrag = andelAvBidragsevne.innhold.sumBidragTilFordelingJustertForPrioriterteBidrag,
         bidragEtterFordeling = andelAvBidragsevne.innhold.bidragEtterFordeling,
+        evneJustertForPrioriterteBidrag = andelAvBidragsevne.innhold.evneJustertForPrioriterteBidrag,
         harBPFullEvne = andelAvBidragsevne.innhold.harBPFullEvne,
         erForholdsmessigFordelt = periodeHarSlåttUtTilFF(sluttberegning.sluttberegningPeriode()),
         bidragTilFordelingAlle = bidragTilFordelingAlle,
-        finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn = bidragTilFordelingAlle.any { !it.erSøknadsbarn },
+        finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn = bidragTilFordelingAlle.any { !it.erSøknadsbarn && !it.erBidragSomIkkeKanFordeles },
         sumBidragTilFordelingSøknadsbarn =
             bidragTilFordelingAlle
                 .filter {
