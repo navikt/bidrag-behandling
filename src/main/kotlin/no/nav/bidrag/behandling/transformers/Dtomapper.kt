@@ -985,6 +985,7 @@ class Dtomapper(
     fun Behandling.tilPrivatAvtaleDtoV3(): PrivatAvtaleDtoV3 {
         val søknadsbarnPA =
             søknadsbarn
+                .filter { it.kreverGrunnlagForBeregning }
                 .sortedWith(
                     sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
                 ).map { barn ->
@@ -1103,7 +1104,7 @@ class Dtomapper(
                             it.grunnlagFraVedtak ?: it.grunnlagFraVedtakForInnkreving?.vedtak,
                         kanSkriveVurderingAvSkolegang = kanSkriveVurderingAvSkolegang(it),
                         begrunnelse =
-                            if (notat.isEmpty()) {
+                            if (notat.isEmpty() && erVirkningstidspunktLiktForAlle) {
                                 BegrunnelseDto(
                                     henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT),
                                 )

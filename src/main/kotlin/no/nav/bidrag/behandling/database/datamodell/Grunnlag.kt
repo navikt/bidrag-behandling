@@ -178,6 +178,15 @@ fun List<Grunnlag>.henteBearbeidaInntekterForType(
     it.type == type && it.erBearbeidet && it.rolle.erSammeRolle(rolle)
 }.konvertereData<SummerteInntekter<SummertÅrsinntekt>>()
 
+fun Behandling.hentNyesteGrunnlagForAktiv(
+    grunnlagsdatatype: Grunnlagsdatatype,
+    hentesForRolle: Rolle? = null,
+): Grunnlag? =
+    henteNyesteAktiveGrunnlag(
+        Grunnlagstype(grunnlagsdatatype, false),
+        hentesForRolle ?: grunnlagsdatatype.innhentesForRolle(this)!!,
+    )
+
 fun Behandling.hentNyesteGrunnlagForIkkeAktiv(
     grunnlagsdatatype: Grunnlagsdatatype,
     hentesForRolle: Rolle? = null,

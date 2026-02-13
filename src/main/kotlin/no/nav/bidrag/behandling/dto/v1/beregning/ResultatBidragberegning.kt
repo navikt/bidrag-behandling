@@ -12,9 +12,9 @@ import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLikEllerLavereEnn
 import no.nav.bidrag.beregn.core.exception.BegrensetRevurderingLøpendeForskuddManglerException
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
-import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erDirekteAvslag
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.samhandler.Valutakode
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.sak.Saksnummer
@@ -420,7 +420,7 @@ data class ResultatBarnebidragsberegningPeriodeDto(
             }
 
             else -> {
-                beregningsdetaljer?.sluttberegning?.resultatVisningsnavn?.intern
+                beregningsdetaljer?.sluttberegning?.resultatVisningsnavn?.intern ?: resultatKode?.visningsnavn?.intern
             }
         }
 }
@@ -436,11 +436,14 @@ data class ForholdsmessigFordelingBeregningsdetaljer(
     val sumBidragTilFordelingSøknadsbarn: BigDecimal,
     val sumBidragTilFordelingIkkeSøknadsbarn: BigDecimal,
     val sumBidragTilFordelingPrivatAvtale: BigDecimal,
+    val sumBidragSomIkkeKanFordeles: BigDecimal,
     val sumPrioriterteBidragTilFordeling: BigDecimal,
     val bidragTilFordelingForBarnet: BigDecimal,
     val andelAvSumBidragTilFordelingFaktor: BigDecimal,
     val andelAvEvneBeløp: BigDecimal,
     val bidragEtterFordeling: BigDecimal,
+    val sumBidragTilFordelingJustertForPrioriterteBidrag: BigDecimal,
+    val evneJustertForPrioriterteBidrag: BigDecimal,
     val harBPFullEvne: Boolean,
     val erKompletteGrunnlagForAlleLøpendeBidrag: Boolean,
     val erForholdsmessigFordelt: Boolean,
@@ -448,18 +451,22 @@ data class ForholdsmessigFordelingBeregningsdetaljer(
 )
 
 data class ForholdsmessigFordelingBidragTilFordelingBarn(
-    val prioritertBidrag: Boolean,
+    val utenlandskbidrag: Boolean = false,
+    val oppfostringsbidrag: Boolean = false,
     val privatAvtale: Boolean,
     val erSøknadsbarn: Boolean,
     val beregnetBidrag: BeregnetBidragBarnDto? = null,
     val bidragTilFordeling: BigDecimal,
     val barn: PersoninfoDto,
 ) {
+    val erBidragSomIkkeKanFordeles get() = utenlandskbidrag || oppfostringsbidrag
+
     data class BeregnetBidragBarnDto(
         val saksnummer: Saksnummer,
         val løpendeBeløp: BigDecimal,
         val indeksreguleringFaktor: BigDecimal? = null,
-        val valutakode: String = "NOK",
+        val valutakode: Valutakode = Valutakode.NOK,
+        val valutakurs: BigDecimal = BigDecimal.ONE,
         val samværsklasse: Samværsklasse,
         val samværsfradrag: BigDecimal,
         val beregnetBeløp: BigDecimal,

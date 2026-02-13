@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonSetter
 import com.fasterxml.jackson.annotation.Nulls
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v2.behandling.OppdatereBegrunnelse
+import no.nav.bidrag.behandling.dto.v2.validering.VirkningstidspunktFeilV2Dto
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import java.time.LocalDate
@@ -20,6 +21,7 @@ data class OppdatereVirkningstidspunktBegrunnelseResponseDto(
     )
     var oppdatertBegrunnelseVurderingAvSkolegang: String? = null,
     val erLikForAlle: Boolean = false,
+    val valideringsfeil: List<VirkningstidspunktFeilV2Dto> = emptyList(),
 )
 
 data class OppdatereVirkningstidspunktBegrunnelseDto(

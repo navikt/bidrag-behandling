@@ -27,13 +27,13 @@ open class Underholdskostnad(
     )
     open val behandling: Behandling,
     @ManyToOne(
-        fetch = FetchType.LAZY,
+        fetch = FetchType.EAGER,
         cascade = [CascadeType.PERSIST],
     )
     @JoinColumn(name = "person_id", nullable = false)
     open var person: Person? = null,
     @ManyToOne(
-        fetch = FetchType.LAZY,
+        fetch = FetchType.EAGER,
     )
     @JoinColumn(name = "rolle_id", nullable = false)
     open var rolle: Rolle? = null,

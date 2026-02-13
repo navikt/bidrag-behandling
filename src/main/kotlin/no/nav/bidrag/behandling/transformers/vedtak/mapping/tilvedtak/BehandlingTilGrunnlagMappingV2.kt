@@ -231,7 +231,12 @@ class BehandlingTilGrunnlagMappingV2(
                             grunnlagslistePersoner.add(it)
                         } ?: personobjekter.hentPerson(pa.personIdent) ?: pa.opprettPersonGrunnlag()
                     val gjelderBarnReferanse = gjelderBarn.referanse
-                    pa.mapTilGrunnlag(gjelderBarnReferanse, personobjekter.bidragspliktig!!.referanse, eldsteVirkningstidspunkt).toSet()
+                    pa
+                        .mapTilGrunnlag(
+                            gjelderBarnReferanse,
+                            personobjekter.bidragspliktig!!.referanse,
+                            eldsteVirkningstidspunkt,
+                        ).toSet()
                 } ?: emptySet()
         }
     }

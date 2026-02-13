@@ -697,7 +697,7 @@ class BehandlingTilVedtakMapping(
                                 stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
                             periodeListe = it.perioder,
                             førsteIndeksreguleringsår =
-                                grunnlagsliste.toList().finnIndeksår(
+                                resultatVedtak.resultat.grunnlagListe.toList().finnIndeksår(
                                     søknadsbarnReferanse,
                                     sistePeriode.periode,
                                     sistePeriode.grunnlagReferanseListe,

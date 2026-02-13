@@ -128,6 +128,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebid
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningIndeksregulering
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilsynsutgiftBarn
+import no.nav.bidrag.transport.behandling.felles.grunnlag.ValutakursGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottakerReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
@@ -155,7 +156,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjustering
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnSøknadGrunnlag
-import no.nav.bidrag.transport.dokumentmaler.DokumentmalSluttberegningBarnebidragDetaljer
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toLocalDate
 import no.nav.bidrag.transport.felles.toYearMonth
@@ -322,6 +322,45 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
                     )
                 },
     )
+
+fun opprettIndeksreguleringsperioder(
+    resultat: ResultatBidragsberegningBarn,
+    perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
+): List<ResultatBarnebidragsberegningPeriodeDto> {
+    if (resultat.resultatVedtak == null) return perioder
+    val beregnetIndeksregulering =
+        resultat.resultatVedtak.resultatVedtakListe.filter {
+            it.beregnet &&
+                it.vedtakstype == Vedtakstype.INDEKSREGULERING
+        }
+    val perioderSomOverlapper =
+        beregnetIndeksregulering.filter { pi ->
+            perioder.any {
+                pi.beregnetFraDato.toYearMonth() == it.periode.fom &&
+                    !it.vedtakstype.erIndeksEllerAldersjustering
+            }
+        }
+    if (perioderSomOverlapper.isEmpty()) return perioder
+    return (
+        perioderSomOverlapper.map { gv ->
+            ResultatBarnebidragsberegningPeriodeDto(
+                periode = ÅrMånedsperiode(gv.beregnetFraDato, null),
+                vedtakstype = gv.vedtakstype,
+                resultatKode = Resultatkode.INDEKSREGULERING,
+                faktiskBidrag =
+                    gv.resultat.beregnetBarnebidragPeriodeListe
+                        .first()
+                        .resultat.beløp ?: BigDecimal.ZERO,
+                aldersjusteringDetaljer = null,
+                klageOmgjøringDetaljer =
+                    KlageOmgjøringDetaljer(
+                        manuellAldersjustering = false,
+                        delAvVedtaket = false,
+                    ),
+            )
+        } + perioder
+    ).sortedBy { it.periode.fom }
+}
 
 fun opprettAldersjusteringPerioder(resultat: ResultatBidragsberegningBarn): List<ResultatBarnebidragsberegningPeriodeDto> {
     if (resultat.resultatVedtak == null) return emptyList()
@@ -600,6 +639,11 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                     sistePeriode?.grunnlagsreferanseListe ?: emptyList(),
                 )
 
+            val perioder =
+                (
+                    opprettPerioder() +
+                        opprettAldersjusteringPerioder(resultat)
+                ).sortedBy { it.periode.fom }
             DelvedtakDto(
                 type = rv.vedtakstype,
                 delvedtak = rv.delvedtak,
@@ -609,11 +653,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                 vedtaksid = resultatFraVedtak?.vedtaksid,
                 indeksår = indeksår,
                 grunnlagFraVedtak = if (rv.delvedtak) resultat.barn.grunnlagFraVedtak else emptyList(),
-                perioder =
-                    (
-                        opprettPerioder() +
-                            opprettAldersjusteringPerioder(resultat)
-                    ).sortedBy { it.periode.fom },
+                perioder = if (erEndeligVedtak) opprettIndeksreguleringsperioder(resultat, perioder) else perioder,
             )
         }?.toList() ?: emptyList()
 
@@ -1618,7 +1658,7 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
         bidragTilFordelingSøknadsbarnGrunnlag.map {
             val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
             ForholdsmessigFordelingBidragTilFordelingBarn(
-                prioritertBidrag = false,
+                utenlandskbidrag = false,
                 privatAvtale = false,
                 erSøknadsbarn = true,
                 beregnetBidrag =
@@ -1648,11 +1688,13 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
         bidragTilFordelingForBarnet = bidragTilFordeling.innhold.bidragTilFordeling,
         andelAvEvneBeløp = andelAvBidragsevne.innhold.andelAvEvneBeløp,
         andelAvSumBidragTilFordelingFaktor = andelAvBidragsevne.innhold.andelAvSumBidragTilFordelingFaktor,
+        sumBidragTilFordelingJustertForPrioriterteBidrag = andelAvBidragsevne.innhold.sumBidragTilFordelingJustertForPrioriterteBidrag,
         bidragEtterFordeling = andelAvBidragsevne.innhold.bidragEtterFordeling,
+        evneJustertForPrioriterteBidrag = andelAvBidragsevne.innhold.evneJustertForPrioriterteBidrag,
         harBPFullEvne = andelAvBidragsevne.innhold.harBPFullEvne,
         erForholdsmessigFordelt = periodeHarSlåttUtTilFF(sluttberegning.sluttberegningPeriode()),
         bidragTilFordelingAlle = bidragTilFordelingAlle,
-        finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn = bidragTilFordelingAlle.any { !it.erSøknadsbarn },
+        finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn = bidragTilFordelingAlle.any { !it.erSøknadsbarn && !it.erBidragSomIkkeKanFordeles },
         sumBidragTilFordelingSøknadsbarn =
             bidragTilFordelingAlle
                 .filter {
@@ -1666,7 +1708,12 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
         sumBidragTilFordelingPrivatAvtale =
             bidragTilFordelingAlle
                 .filter {
-                    !it.erSøknadsbarn && it.beregnetBidrag != null && it.privatAvtale
+                    !it.erSøknadsbarn && it.beregnetBidrag != null && it.privatAvtale && !it.erBidragSomIkkeKanFordeles
+                }.sumOf { it.beregnetBidrag!!.beregnetBidrag },
+        sumBidragSomIkkeKanFordeles =
+            bidragTilFordelingAlle
+                .filter {
+                    !it.erSøknadsbarn && it.beregnetBidrag != null && it.erBidragSomIkkeKanFordeles
                 }.sumOf { it.beregnetBidrag!!.beregnetBidrag },
     )
 }
@@ -1694,24 +1741,42 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                     Grunnlagstype.LØPENDE_BIDRAG_PERIODE,
                     it.grunnlag,
                 ).firstOrNull()?.innhold ?: return@mapNotNull null
+            val valutakurser =
+                finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<ValutakursGrunnlag>(
+                    Grunnlagstype.VALUTAKURS_GRUNNLAG,
+                    it.grunnlag.grunnlagsreferanseListe,
+                ).firstOrNull()
+                    ?.innhold
+            val valutakursNOKTilValuta =
+                valutakurser
+                    ?.valutakursListe
+                    ?.find { vl -> vl.valutakode1 == it.innhold.valutakode && vl.valutakode2 == Valutakode.NOK }
+                    ?.valutakurs ?: BigDecimal.ONE
+            val valutakursValutaTilNOK =
+                valutakurser
+                    ?.valutakursListe
+                    ?.find { vl -> vl.valutakode1 == it.innhold.valutakode && vl.valutakode2 == Valutakode.NOK }
+                    ?.valutakurs ?: BigDecimal.ONE
             ForholdsmessigFordelingBidragTilFordelingBarn(
-                prioritertBidrag = false,
+                utenlandskbidrag = !it.innhold.erNorskBidrag,
+                oppfostringsbidrag = it.innhold.erOppfostringsbidrag,
                 privatAvtale = false,
                 erSøknadsbarn = false,
-                bidragTilFordeling = it.innhold.bidragTilFordeling,
+                bidragTilFordeling = it.innhold.bidragTilFordelingNOK,
                 barn =
                     PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
                 beregnetBidrag =
                     ForholdsmessigFordelingBidragTilFordelingBarn.BeregnetBidragBarnDto(
                         saksnummer = løpendeBidrag.saksnummer,
-                        samværsklasse = løpendeBidrag.samværsklasse,
+                        samværsklasse = løpendeBidrag.samværsklasse ?: Samværsklasse.SAMVÆRSKLASSE_0,
                         løpendeBeløp = løpendeBidrag.løpendeBeløp,
                         faktiskBeløp = løpendeBidrag.faktiskBeløp,
-                        beregnetBidrag = it.innhold.bidragTilFordeling,
+                        beregnetBidrag = it.innhold.bidragTilFordelingNOK,
                         beregnetBeløp = løpendeBidrag.beregnetBeløp,
-                        valutakode = løpendeBidrag.valutakode.name,
+                        valutakode = løpendeBidrag.valutakode,
+                        valutakurs = valutakursNOKTilValuta ?: BigDecimal.ONE,
                         reduksjonUnderholdskostnad = it.innhold.reduksjonUnderholdskostnad,
-                        samværsfradrag = grunnlagSamværsfradrag?.innhold?.beløp ?: BigDecimal.ZERO,
+                        samværsfradrag = grunnlagSamværsfradrag?.innhold?.beløp?.multiply(valutakursValutaTilNOK) ?: BigDecimal.ZERO,
                     ),
             )
         }
@@ -1738,11 +1803,28 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                     Grunnlagstype.DELBEREGNING_INDEKSREGULERING_PRIVAT_AVTALE,
                     it.grunnlag,
                 ).firstOrNull()
+
+            val valutakurser =
+                finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<ValutakursGrunnlag>(
+                    Grunnlagstype.VALUTAKURS_GRUNNLAG,
+                    it.grunnlag.grunnlagsreferanseListe,
+                ).firstOrNull()
+                    ?.innhold
+            val valutakursNOKTilValuta =
+                valutakurser
+                    ?.valutakursListe
+                    ?.find { vl -> vl.valutakode1 == it.innhold.valutakode && vl.valutakode2 == Valutakode.NOK }
+                    ?.valutakurs ?: BigDecimal.ONE
+            val valutakursValutaTilNOK =
+                valutakurser
+                    ?.valutakursListe
+                    ?.find { vl -> vl.valutakode1 == it.innhold.valutakode && vl.valutakode2 == Valutakode.NOK }
+                    ?.valutakurs ?: BigDecimal.ONE
             ForholdsmessigFordelingBidragTilFordelingBarn(
-                prioritertBidrag = false,
+                utenlandskbidrag = !it.innhold.erNorskBidrag,
                 privatAvtale = true,
                 erSøknadsbarn = false,
-                bidragTilFordeling = it.innhold.bidragTilFordeling,
+                bidragTilFordeling = it.innhold.bidragTilFordelingNOK,
                 barn =
                     PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
                 beregnetBidrag =
@@ -1752,11 +1834,12 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                         løpendeBeløp = periodeSomOverlapper.beløp,
                         indeksreguleringFaktor = indeksregulertGrunnalg?.innhold?.indeksreguleringFaktor,
                         faktiskBeløp = periodeSomOverlapper.beløp,
-                        beregnetBidrag = it.innhold.bidragTilFordeling,
-                        beregnetBeløp = it.innhold.indeksregulertBeløp,
-                        valutakode = periodeSomOverlapper.valutakode?.name ?: Valutakode.NOK.name,
+                        beregnetBidrag = it.innhold.bidragTilFordelingNOK,
+                        beregnetBeløp = it.innhold.indeksregulertBeløp.multiply(valutakursValutaTilNOK),
+                        valutakode = it.innhold.valutakode,
+                        valutakurs = valutakursNOKTilValuta ?: BigDecimal.ONE,
                         reduksjonUnderholdskostnad = BigDecimal.ZERO,
-                        samværsfradrag = it.innhold.samværsfradrag ?: BigDecimal.ZERO,
+                        samværsfradrag = it.innhold.samværsfradrag?.multiply(valutakursValutaTilNOK) ?: BigDecimal.ZERO,
                     ),
             )
         }
@@ -1783,7 +1866,7 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                     .maxBy { it.periode.fom }
 
             ForholdsmessigFordelingBidragTilFordelingBarn(
-                prioritertBidrag = false,
+                utenlandskbidrag = false,
                 privatAvtale = true,
                 erSøknadsbarn = false,
                 bidragTilFordeling = periodeBeregnet.beløp,
@@ -1798,7 +1881,7 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                         faktiskBeløp = periodeSomOverlapper.beløp,
                         beregnetBidrag = periodeBeregnet.beløp,
                         beregnetBeløp = periodeBeregnet.beløp,
-                        valutakode = periodeSomOverlapper.valutakode?.name ?: Valutakode.NOK.name,
+                        valutakode = periodeSomOverlapper.valutakode ?: Valutakode.NOK,
                         reduksjonUnderholdskostnad = BigDecimal.ZERO,
                         samværsfradrag = BigDecimal.ZERO,
                     ),

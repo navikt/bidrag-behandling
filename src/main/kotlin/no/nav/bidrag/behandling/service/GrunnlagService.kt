@@ -27,6 +27,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentGrunnlagForType
 import no.nav.bidrag.behandling.database.datamodell.hentIdenterForEgneBarnIHusstandFraGrunnlagForRolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
+import no.nav.bidrag.behandling.database.datamodell.hentNyesteGrunnlagForAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentNyesteGrunnlagForIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagBpsBarnUtenBidragsak
@@ -42,13 +43,13 @@ import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
-import no.nav.bidrag.behandling.dto.v1.beregning.finnSluttberegningIReferanser
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype.Companion.skalInnhentesForBehandling
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.tilGrunnlagFeilDto
@@ -73,6 +74,8 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.cuttoffBidrag18ÅrAlder
+import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.eksplisitteYtelserGrunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erOverAntallÅrGammel
 import no.nav.bidrag.behandling.transformers.filtrerSakerHvorPersonErBP
@@ -84,11 +87,14 @@ import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
 import no.nav.bidrag.behandling.transformers.inntekt.opprettTransformerInntekterRequest
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
+import no.nav.bidrag.behandling.transformers.opprettHentGrunnlagDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.underhold.aktivereBarnetilsynHvisIngenEndringerMåAksepteres
 import no.nav.bidrag.behandling.transformers.underhold.justerBarnetilsynPeriodeTil
 import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTil
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.behandling.transformers.vedtakstyperIkkeBeregning
@@ -125,18 +131,20 @@ import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
-import no.nav.bidrag.transport.behandling.felles.grunnlag.resultatSluttberegning
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilResultatVisningsnavn
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.KontantstøtteGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.SmåbarnstilleggGrunnlagDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.UtvidetBarnetrygdGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.TransformerInntekterResponse
@@ -1058,6 +1066,59 @@ class GrunnlagService(
     }
 
     @Transactional
+    fun oppdatereIkkeAktiveInntekterEtterEndretVirkningstidspunkt(behandling: Behandling) {
+        eksplisitteYtelserGrunnlagsdatatype.forEach { grunnlagsdatatype ->
+            behandling.roller
+                .filter { grunnlagsdatatype.innhentesForRolle2(behandling)?.contains(it.rolletype) == true }
+                .forEach {
+                    val sisteGrunnlag =
+                        behandling.hentNyesteGrunnlagForIkkeAktiv(
+                            grunnlagsdatatype,
+                            it,
+                        ) ?: behandling.hentNyesteGrunnlagForAktiv(
+                            grunnlagsdatatype,
+                            it,
+                        ) ?: run {
+                            log.debug { "Fant ingen ikke-aktive utvidet barnetrygd. Gjør ingen endringer" }
+                            return@forEach
+                        }
+                    sammenstilleOgLagreInntekter(
+                        behandling,
+                        opprettHentGrunnlagDto().copy(
+                            barnetilleggListe =
+                                if (grunnlagsdatatype == Grunnlagsdatatype.BARNETILLEGG) {
+                                    sisteGrunnlag.konvertereData<List<BarnetilleggGrunnlagDto>>()!!
+                                } else {
+                                    emptyList()
+                                },
+                            utvidetBarnetrygdListe =
+                                if (grunnlagsdatatype == Grunnlagsdatatype.UTVIDET_BARNETRYGD) {
+                                    sisteGrunnlag.konvertereData<List<UtvidetBarnetrygdGrunnlagDto>>()!!
+                                } else {
+                                    emptyList()
+                                },
+                            småbarnstilleggListe =
+                                if (grunnlagsdatatype == Grunnlagsdatatype.SMÅBARNSTILLEGG) {
+                                    sisteGrunnlag.konvertereData<List<SmåbarnstilleggGrunnlagDto>>()!!
+                                } else {
+                                    emptyList()
+                                },
+                            kontantstøtteListe =
+                                if (grunnlagsdatatype == Grunnlagsdatatype.KONTANTSTØTTE) {
+                                    sisteGrunnlag.konvertereData<List<KontantstøtteGrunnlagDto>>()!!
+                                } else {
+                                    emptyList()
+                                },
+                        ),
+                        behandling.roller.find { it.erSammeRolle(sisteGrunnlag.rolle) }!!,
+                        emptyMap(),
+                        false,
+                    )
+                }
+        }
+    }
+
+    @Transactional
     fun oppdatereIkkeAktiveBoforholdAndreVoksneIHusstandenEtterEndretVirkningstidspunkt(behandling: Behandling) {
         val grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN
         val sisteIkkeAktiveGrunnlag =
@@ -1961,7 +2022,7 @@ class GrunnlagService(
 
         grunnlagstyper.forEach { type ->
             val årsbaserteInntekterEllerYtelser: SummerteInntekter<*>? =
-                tilSummerteInntekter(sammenstilteInntekter, type)
+                tilSummerteInntekter(sammenstilteInntekter, type, behandling)
 
             val feilrapportering = feilliste[type]
 
@@ -2088,6 +2149,7 @@ class GrunnlagService(
     private fun tilSummerteInntekter(
         sammenstilteInntekter: TransformerInntekterResponse,
         type: Grunnlagsdatatype,
+        behandling: Behandling,
     ): SummerteInntekter<*>? =
         when (type) {
             Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER -> {
@@ -2111,28 +2173,52 @@ class GrunnlagService(
             Grunnlagsdatatype.BARNETILLEGG -> {
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
-                    inntekter = sammenstilteInntekter.summertÅrsinntektListe.filter { BARNETILLEGG == it.inntektRapportering },
+                    inntekter =
+                        sammenstilteInntekter.summertÅrsinntektListe
+                            .filter { BARNETILLEGG == it.inntektRapportering }
+                            .filter {
+                                val barn = it.gjelderBarnPersonId
+                                val søknadsbarnRolle = behandling.søknadsbarn.find { it.ident == barn }
+                                it.periode.fom < søknadsbarnRolle!!.finnBeregnTil()
+                            },
                 )
             }
 
             Grunnlagsdatatype.KONTANTSTØTTE -> {
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
-                    inntekter = sammenstilteInntekter.summertÅrsinntektListe.filter { KONTANTSTØTTE == it.inntektRapportering },
+                    inntekter =
+                        sammenstilteInntekter.summertÅrsinntektListe
+                            .filter { KONTANTSTØTTE == it.inntektRapportering }
+                            .filter {
+                                val barn = it.gjelderBarnPersonId
+                                val søknadsbarnRolle = behandling.søknadsbarn.find { it.ident == barn }
+                                it.periode.fom < søknadsbarnRolle!!.finnBeregnTil()
+                            },
                 )
             }
 
             Grunnlagsdatatype.SMÅBARNSTILLEGG -> {
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
-                    inntekter = sammenstilteInntekter.summertÅrsinntektListe.filter { SMÅBARNSTILLEGG == it.inntektRapportering },
+                    inntekter =
+                        sammenstilteInntekter.summertÅrsinntektListe
+                            .filter { SMÅBARNSTILLEGG == it.inntektRapportering }
+                            .filter {
+                                it.periode.fom < behandling.finnBeregnTilDato().toYearMonth()
+                            },
                 )
             }
 
             Grunnlagsdatatype.UTVIDET_BARNETRYGD -> {
                 SummerteInntekter(
                     versjon = sammenstilteInntekter.versjon,
-                    inntekter = sammenstilteInntekter.summertÅrsinntektListe.filter { UTVIDET_BARNETRYGD == it.inntektRapportering },
+                    inntekter =
+                        sammenstilteInntekter.summertÅrsinntektListe
+                            .filter { UTVIDET_BARNETRYGD == it.inntektRapportering }
+                            .filter {
+                                it.periode.fom < behandling.finnBeregnTilDato().toYearMonth()
+                            },
                 )
             }
 
