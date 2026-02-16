@@ -34,6 +34,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilPerson
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
@@ -212,7 +213,7 @@ class BehandlingService(
             !behandlingstyperSomIkkeSkalInkluderesIFF.contains(opprettBehandling.behandlingstype)
         ) {
             val bp = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
-            behandlingRepository.finnHovedbehandlingForBpVedFF(bp!!.ident!!.verdi)?.let { behandling ->
+            behandlingRepository.finnHovedbehandlingForBpVedFF(bp!!.ident!!.verdi, opprettBehandling.vedtakstype.name)?.let { behandling ->
                 val bm = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
                 val søknadsdetaljer =
                     ForholdsmessigFordelingSøknadBarn(
@@ -602,7 +603,7 @@ class BehandlingService(
         val behandling =
             behandlingRepository.findBehandlingById(behandlingId).get().let {
                 if (it.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
-                    behandlingRepository.finnHovedbehandlingForBpVedFF(it.bidragspliktig!!.ident!!)!!
+                    behandlingRepository.finnHovedbehandlingForBpVedFF(it.bidragspliktig!!.ident!!, it.vedtakstype.name)!!
                 } else {
                     it
                 }

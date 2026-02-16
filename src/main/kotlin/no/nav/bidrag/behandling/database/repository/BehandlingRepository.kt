@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple
 import no.nav.bidrag.behandling.database.datamodell.minified.RolleSimple
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
@@ -167,6 +168,7 @@ interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandl
         JOIN rolle br ON br.behandling_id = b.id
         WHERE br.rolletype = 'BIDRAGSPLIKTIG'
           AND br.ident = :bpIdent
+          and (('KLAGE' = :vedtakstype  and b.vedtakstype = 'KLAGE' and b.klagedetaljer is not null) or b.vedtakstype != 'KLAGE')
           AND b.deleted = false
           AND b.vedtakstidspunkt IS NULL
           AND b.forholdsmessig_fordeling IS not NULL AND (b.forholdsmessig_fordeling->>'erHovedbehandling') = 'true'
@@ -176,6 +178,7 @@ interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandl
     )
     fun finnHovedbehandlingForBpVedFF(
         @Param("bpIdent") bpIdent: String,
+        @Param("vedtakstype") vedtakstype: String
     ): Behandling?
 
     @Query(

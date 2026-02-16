@@ -329,7 +329,7 @@ fun PrivatAvtale.mapTilGrunnlag(
                     PrivatAvtalePeriodeGrunnlag(
                         periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
                         beløp = it.beløp,
-                        valutakode = it.valutakode ?: Valutakode.NOK,
+                        valutakode = if (this.utenlandsk) it.valutakode ?: Valutakode.NOK else Valutakode.NOK,
                         samværsklasse = it.samværsklasse,
                     ),
                 ),

@@ -81,6 +81,7 @@ class VedtakService(
     private val vedtakValiderBehandlingService: ValiderBehandlingService,
     private val forsendelseService: ForsendelseService,
     private val virkningstidspunktService: VirkningstidspunktService,
+    private val forholdsmessigFordelingService: ForholdsmessigFordelingService? = null,
 //    private val vedtakLocalConsumer: BidragVedtakConsumerLocal? = null,
 ) {
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Int): Behandling? {
@@ -220,6 +221,10 @@ class VedtakService(
             val konvertertBehandling =
                 konverterVedtakTilBehandling(request, refVedtaksid)
                     ?: throw RuntimeException("Fant ikke vedtak for vedtakid $refVedtaksid")
+
+            if (konvertertBehandling.erIForholdsmessigFordeling) {
+                forholdsmessigFordelingService!!.opprettRevurderingssøknaderForKlageEllerOmgjøring(konvertertBehandling)
+            }
 
             tilgangskontrollService.sjekkTilgangBehandling(konvertertBehandling)
             val behandlingDo = behandlingService.lagreBehandling(konvertertBehandling, true)

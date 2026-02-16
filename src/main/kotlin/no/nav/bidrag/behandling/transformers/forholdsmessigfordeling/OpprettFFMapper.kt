@@ -155,6 +155,7 @@ fun opprettRolle(
                     it
                 }
         }
+        it.forholdsmessigFordeling = ffDetaljer
 
         return it
     }

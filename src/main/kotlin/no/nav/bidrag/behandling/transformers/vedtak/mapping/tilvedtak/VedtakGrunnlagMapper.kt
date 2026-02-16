@@ -215,7 +215,7 @@ private fun utledBeregnTilDato(
         val eksisterendeOpphør = søknadsbarnRolle.finnEksisterendeVedtakMedOpphørForRolle()
         // Hvis saksbehandler velger direkte avslag så skal beregn til være virkningstidspunkt fordi etter virkningstidspunkt så opphører bidraget
         // Men hvis det finnes opphør før virkningstidspunktet så skal det ikke være nødvendig å beregne etter det
-        minOfNullable(eksisterendeOpphør?.opphørsdato, maxOf(søknadsbarnRolle.finnBeregnFra().toLocalDate(), virkningstidspunkt))!!
+        maxOfNullable(eksisterendeOpphør?.opphørsdato, maxOf(søknadsbarnRolle.finnBeregnFra().toLocalDate(), virkningstidspunkt))!!
     } else if (avslagskode != null && avslagskode.erAvvisning()) {
         // Avvisning kan bare velges hvis det allerede er et vedtak med opphør på rollen. Derfor hentes opphørsdato fra eksisterende vedtak
         val eksisterendeOpphør = søknadsbarnRolle.finnEksisterendeVedtakMedOpphørForRolle()
