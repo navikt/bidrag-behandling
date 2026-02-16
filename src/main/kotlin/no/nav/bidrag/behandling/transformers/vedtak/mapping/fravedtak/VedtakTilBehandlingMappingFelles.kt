@@ -1324,22 +1324,17 @@ private fun GrunnlagDto.tilRolle(
                     erRevurdering = erRevurdering,
                     bidragsmottaker = stønadsendring?.mottaker?.verdi,
                     søknader =
-                        if (lesemodus) {
-                            søknader
-                                .map { søknadGrunnlag ->
-                                    ForholdsmessigFordelingSøknadBarn(
-                                        søknadsid = søknadGrunnlag.søknadsid,
-                                        søknadFomDato = søknadGrunnlag.søktFraDato,
-                                        mottattDato = søknadGrunnlag.mottattDato,
-                                        søktAvType = søknadGrunnlag.søktAv,
-                                        behandlingstype = søknadGrunnlag.behandlingstype,
-                                        behandlingstema = stønadsendring?.type?.tilBehandlingstema() ?: søknadGrunnlag.behandlingstema,
-                                    )
-                                }.toMutableSet()
-                        } else {
-                            // TODO: Hva skjer ved FF når det er klage?
-                            mutableSetOf()
-                        },
+                        søknader
+                            .map { søknadGrunnlag ->
+                                ForholdsmessigFordelingSøknadBarn(
+                                    søknadsid = søknadGrunnlag.søknadsid,
+                                    søknadFomDato = søknadGrunnlag.søktFraDato,
+                                    mottattDato = søknadGrunnlag.mottattDato,
+                                    søktAvType = søknadGrunnlag.søktAv,
+                                    behandlingstype = søknadGrunnlag.behandlingstype,
+                                    behandlingstema = stønadsendring?.type?.tilBehandlingstema() ?: søknadGrunnlag.behandlingstema,
+                                )
+                            }.toMutableSet(),
                 )
             } else {
                 null

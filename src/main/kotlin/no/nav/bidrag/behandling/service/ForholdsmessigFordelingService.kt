@@ -178,6 +178,102 @@ class ForholdsmessigFordelingService(
     }
 
     @Transactional
+    fun opprettRevurderingssøknaderForKlageEllerOmgjøring(behandling: Behandling) {
+        if (!UnleashFeatures.TILGANG_OPPRETTE_FF.isEnabled) {
+            LOGGER.info { "Opprettelse av forholdsmessig fordeling er deaktivert" }
+            ugyldigForespørsel("Opprettelse av forholdsmessig fordeling er deaktivert")
+        }
+
+        val behandlerEnhet = finnEnhetForBarnIBehandling(behandling)
+        val relevanteKravhavere = hentAlleRelevanteKravhavere(behandling)
+        val revurderingsbarn = behandling.søknadsbarn.filter { it.erRevurderingsbarn }.map { it.ident to it.stønadstype }
+        behandling.søknadsbarn.filter { !it.erRevurderingsbarn }.forEach {
+            it.forholdsmessigFordeling!!.søknader.add(
+                ForholdsmessigFordelingSøknadBarn(
+                    søknadsid = behandling.soknadsid,
+                    behandlingstema = behandling.behandlingstema,
+                    behandlingstype = behandling.søknadstype,
+                    omgjørSøknadsid = behandling.omgjøringsdetaljer?.soknadRefId,
+                    omgjørVedtaksid = behandling.omgjøringsdetaljer?.omgjørVedtakId,
+                    innkreving = behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                    mottattDato = behandling.mottattdato,
+                    søktAvType = behandling.soknadFra,
+                    søknadFomDato = behandling.søktFomDato,
+                ),
+            )
+        }
+        val relevanteKravhavereRevurderingsbarnMedLøpendeEllerPrivatAvtale =
+            relevanteKravhavere
+                .filter { rk ->
+                    revurderingsbarn.any {
+                        it.first == rk.kravhaver && it.second == rk.stønadstype
+                    }
+                }.toSet()
+        val relevanteKravhavereRevurderisnbarnUtenPrivatAvtale =
+            revurderingsbarn
+                .filter { rb ->
+                    relevanteKravhavereRevurderingsbarnMedLøpendeEllerPrivatAvtale.none {
+                        it.kravhaver == rb.first &&
+                            it.stønadstype == rb.second
+                    }
+                }.map { rb ->
+                    val revurderingsbarnRolle = behandling.roller.find { it.ident == rb.first && it.stønadstype == rb.second }!!
+                    // Caser hvor revurderingsbarn ikke har privat avtale eller løpende bidrag
+                    SakKravhaver(
+                        saksnummer = revurderingsbarnRolle.saksnummer,
+                        stønadstype = revurderingsbarnRolle.stønadstype,
+                        kravhaver = revurderingsbarnRolle.ident!!,
+                        eierfogd = sakConsumer.hentSak(revurderingsbarnRolle.saksnummer).eierfogd.verdi,
+                        bidragsmottaker = revurderingsbarnRolle.bidragsmottaker!!.ident,
+                    )
+                }
+
+        val relevanteKravhavereRevurderingsbarn =
+            relevanteKravhavereRevurderingsbarnMedLøpendeEllerPrivatAvtale + relevanteKravhavereRevurderisnbarnUtenPrivatAvtale
+        relevanteKravhavereRevurderingsbarn
+            .filter { !it.saksnummer.isNullOrEmpty() }
+            // 18 års bidrag først
+            .sortedByDescending { it.stønadstype }
+            .groupBy {
+                Pair(it.saksnummer!!, it.stønadstype)
+            }.forEach { (saksnummerLøpendeBidrag, løpendebidragssaker) ->
+                val saksnummer = saksnummerLøpendeBidrag.first
+                val revurderingsbarnRoller =
+                    behandling.søknadsbarn.filter {
+                        it.erRevurderingsbarn &&
+                            løpendebidragssaker.any { lb -> lb.kravhaver == it.ident && lb.stønadstype == it.stønadstype }
+                    }
+
+                val søktFomDatoOpprinneligRevurderingssøknad =
+                    revurderingsbarnRoller
+                        .first()
+                        .forholdsmessigFordeling
+                        ?.søknader
+                        ?.find { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }
+                        ?.søknadFomDato ?: relevanteKravhavereRevurderingsbarn.finnSøktFomRevurderingSøknad(behandling)
+
+                revurderingsbarnRoller.forEach {
+                    // Slett forholdsmessig fordeling info. Dette er fra påklaget vedtak. Oppretter nye søknader
+                    it.forholdsmessigFordeling!!.søknader.clear()
+                }
+                opprettRollerOgRevurderingssøknadForSak(
+                    behandling,
+                    saksnummer,
+                    løpendebidragssaker,
+                    behandlerEnhet,
+                    saksnummerLøpendeBidrag.second,
+                    søktFomDatoOpprinneligRevurderingssøknad,
+                )
+            }
+        behandling.forholdsmessigFordeling =
+            ForholdsmessigFordeling(
+                erHovedbehandling = true,
+            )
+
+        giSakTilgangTilEnhet(behandling, behandlerEnhet)
+    }
+
+    @Transactional
     fun opprettEllerOppdaterForholdsmessigFordeling(behandlingId: Long) {
         if (!UnleashFeatures.TILGANG_OPPRETTE_FF.isEnabled) {
             LOGGER.info { "Opprettelse av forholdsmessig fordeling er deaktivert" }
@@ -897,7 +993,7 @@ class ForholdsmessigFordelingService(
         )
     }
 
-    private fun hentAlleRelevanteKravhavere(behandling: Behandling): Set<SakKravhaver> {
+    fun hentAlleRelevanteKravhavere(behandling: Behandling): Set<SakKravhaver> {
         val åpneEllerLøpendeSakerBp = hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling)
         val sakerUtenLøpendeBidrag =
             hentBarnUtenLøpendeBidrag(behandling, åpneEllerLøpendeSakerBp)
@@ -1280,7 +1376,8 @@ class ForholdsmessigFordelingService(
         val barnUtenSøknader =
             løpendeBidragssak.filter { ls ->
                 behandling.søknadsbarn.none {
-                    it.erSammeRolle(ls.kravhaver, ls.stønadstype)
+                    it.erSammeRolle(ls.kravhaver, ls.stønadstype) &&
+                        (it.forholdsmessigFordeling?.søknader?.isNotEmpty() == true)
                 }
             }
         if (barnUtenSøknader.isEmpty()) return
