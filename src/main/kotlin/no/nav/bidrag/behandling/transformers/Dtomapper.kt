@@ -228,6 +228,7 @@ class Dtomapper(
         AktivereGrunnlagResponseV2(
             boforhold = behandling.tilBoforholdV2(),
             inntekter = behandling.tilInntektDtoV2(behandling.grunnlagListe.toSet().hentSisteAktiv(), true),
+            inntekterV2 = behandling.mapInntekterV2(),
             aktiveGrunnlagsdata =
                 behandling.grunnlagListe
                     .toSet()

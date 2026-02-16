@@ -396,7 +396,7 @@ internal fun VedtakDto.hentBeregningsperioder(stønadsendring: StønadsendringDt
             )
         }
     } else {
-        stønadsendring.periodeListe.filter { Resultatkode.fraKode(it.resultatkode) != Resultatkode.OPPHØR }.mapNotNull {
+        stønadsendring.periodeListe.filter { Resultatkode.fraKode(it.resultatkode) != Resultatkode.OPPHØR }.map {
             grunnlagsliste.byggResultatBidragsberegning(
                 it.periode,
                 it.beløp,
