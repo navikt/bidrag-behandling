@@ -96,7 +96,7 @@ class VedtakHendelseListener(
         stønadsendringerBidrag.forEach { stønadsendring ->
 
             val bp = stønadsendring.skyldner
-            behandlingRepository.finnHovedbehandlingForBpVedFF(bp.verdi, type)?.let { behandling ->
+            behandlingRepository.finnHovedbehandlingForBpVedFF(bp.verdi, type.name)?.let { behandling ->
                 if (type == Vedtakstype.OPPHØR) {
                     val opphørsperiode =
                         stønadsendring.periodeListe
