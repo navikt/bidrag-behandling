@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
@@ -332,7 +333,7 @@ class AdminController(
         grunnlagService.oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling)
     }
 
-    @PostMapping("/admin/feilfiks/underhold/rolle/{behandlingId}")
+    @PostMapping("/admin/feilfiks/klage/innkreving/{behandlingId}")
     @Operation(
         description =
             "Fiks manglende virkningstidspunkt/årsak/avslag i rolle tabellen for barn",
@@ -344,6 +345,22 @@ class AdminController(
     ) {
         log.info { "Setter rolle til behandling $behandlingId til null hvis det ikke tilhører samme behandling" }
         behandlingRepository.settUnderholdskostnadRolleTilNull(behandlingId)
+    }
+
+    @PostMapping("/admin/feilfiks/oppdaterInntekter/{behandlingId}")
+    @Operation(
+        description =
+            "Fiks manglende virkningstidspunkt/årsak/avslag i rolle tabellen for barn",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @Transactional
+    fun fiksOppdaterInntekterBasertPåSisteGrunnlag(
+        @PathVariable behandlingId: Long,
+    ) {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).getOrNull() ?: behandlingNotFoundException(behandlingId)
+
+        log.info { "DEBUG: Oppdaterer inntekter basert på siste innhentet grunnlag for behandling $behandlingId" }
+        grunnlagService.oppdatereIkkeAktiveInntekterEtterEndretVirkningstidspunkt(behandling)
     }
 
     fun getAge(birthDate: LocalDate): Int = Period.between(birthDate.withMonth(1).withDayOfMonth(1), LocalDate.now()).years
