@@ -100,6 +100,7 @@ val eksplisitteYtelserGrunnlagsdatatype =
         Grunnlagsdatatype.KONTANTSTØTTE,
         Grunnlagsdatatype.SMÅBARNSTILLEGG,
         Grunnlagsdatatype.UTVIDET_BARNETRYGD,
+        Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
     )
 val inntekterSomKanHaHullIPerioder = eksplisitteYtelser
 
