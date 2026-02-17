@@ -12,6 +12,22 @@ import java.time.LocalDate
 
 data class OppdatereVirkningstidspunktBegrunnelseResponseDto(
     val rolleId: Long? = null,
+    @Schema(description = "Oppdatere saksbehandlers begrunnelse", deprecated = true)
+    var oppdatertBegrunnelse: String? = null,
+    @Schema(
+        description =
+            "Oppdatere saksbehandlers begrunnelse for vurdering av skolegang." +
+                " Dette kan bare settes hvis det er 18 års bidrag",
+        deprecated = true,
+    )
+    var oppdatertBegrunnelseVurderingAvSkolegang: String? = null,
+    val barn: List<OppdaterVirkningstidspunktBegrunnelseBarnResponse>,
+    val erLikForAlle: Boolean = false,
+    val valideringsfeil: List<VirkningstidspunktFeilV2Dto> = emptyList(),
+)
+
+data class OppdaterVirkningstidspunktBegrunnelseBarnResponse(
+    val rolleId: Long? = null,
     @Schema(description = "Oppdatere saksbehandlers begrunnelse")
     var oppdatertBegrunnelse: String? = null,
     @Schema(
@@ -20,8 +36,6 @@ data class OppdatereVirkningstidspunktBegrunnelseResponseDto(
                 " Dette kan bare settes hvis det er 18 års bidrag",
     )
     var oppdatertBegrunnelseVurderingAvSkolegang: String? = null,
-    val erLikForAlle: Boolean = false,
-    val valideringsfeil: List<VirkningstidspunktFeilV2Dto> = emptyList(),
 )
 
 data class OppdatereVirkningstidspunktBegrunnelseDto(
