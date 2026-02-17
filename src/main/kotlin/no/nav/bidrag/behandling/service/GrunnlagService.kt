@@ -86,6 +86,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
 import no.nav.bidrag.behandling.transformers.inntekt.opprettTransformerInntekterRequest
+import no.nav.bidrag.behandling.transformers.inntekt.tilAinntektsposter
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.opprettHentGrunnlagDto
 import no.nav.bidrag.behandling.transformers.tilType
@@ -136,6 +137,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenRe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilResultatVisningsnavn
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
+import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
@@ -1067,54 +1069,69 @@ class GrunnlagService(
 
     @Transactional
     fun oppdatereIkkeAktiveInntekterEtterEndretVirkningstidspunkt(behandling: Behandling) {
-        eksplisitteYtelserGrunnlagsdatatype.forEach { grunnlagsdatatype ->
-            behandling.roller
-                .filter { grunnlagsdatatype.innhentesForRolle2(behandling)?.contains(it.rolletype) == true }
-                .forEach {
-                    val sisteGrunnlag =
-                        behandling.hentNyesteGrunnlagForIkkeAktiv(
-                            grunnlagsdatatype,
-                            it,
-                        ) ?: behandling.hentNyesteGrunnlagForAktiv(
-                            grunnlagsdatatype,
-                            it,
-                        ) ?: run {
-                            log.debug { "Fant ingen ikke-aktive utvidet barnetrygd. Gjør ingen endringer" }
-                            return@forEach
-                        }
-                    sammenstilleOgLagreInntekter(
-                        behandling,
-                        opprettHentGrunnlagDto().copy(
-                            barnetilleggListe =
-                                if (grunnlagsdatatype == Grunnlagsdatatype.BARNETILLEGG) {
-                                    sisteGrunnlag.konvertereData<List<BarnetilleggGrunnlagDto>>()!!
-                                } else {
-                                    emptyList()
-                                },
-                            utvidetBarnetrygdListe =
-                                if (grunnlagsdatatype == Grunnlagsdatatype.UTVIDET_BARNETRYGD) {
-                                    sisteGrunnlag.konvertereData<List<UtvidetBarnetrygdGrunnlagDto>>()!!
-                                } else {
-                                    emptyList()
-                                },
-                            småbarnstilleggListe =
-                                if (grunnlagsdatatype == Grunnlagsdatatype.SMÅBARNSTILLEGG) {
-                                    sisteGrunnlag.konvertereData<List<SmåbarnstilleggGrunnlagDto>>()!!
-                                } else {
-                                    emptyList()
-                                },
-                            kontantstøtteListe =
-                                if (grunnlagsdatatype == Grunnlagsdatatype.KONTANTSTØTTE) {
-                                    sisteGrunnlag.konvertereData<List<KontantstøtteGrunnlagDto>>()!!
-                                } else {
-                                    emptyList()
-                                },
-                        ),
-                        behandling.roller.find { it.erSammeRolle(sisteGrunnlag.rolle) }!!,
-                        emptyMap(),
-                        false,
+        behandling.roller.forEach { rolle ->
+            var request = opprettHentGrunnlagDto()
+            eksplisitteYtelserGrunnlagsdatatype.forEach { grunnlagsdatatype ->
+                val sisteGrunnlag =
+                    behandling.hentNyesteGrunnlagForIkkeAktiv(
+                        grunnlagsdatatype,
+                        rolle,
+                    ) ?: behandling.hentNyesteGrunnlagForAktiv(
+                        grunnlagsdatatype,
+                        rolle,
+                    ) ?: run {
+                        log.debug { "Fant ingen grunnlag for ${grunnlagsdatatype.name}. Gjør ingen endringer" }
+                        return@forEach
+                    }
+                request =
+                    request.copy(
+                        hentetTidspunkt = sisteGrunnlag.innhentet,
+                        ainntektListe =
+                            if (grunnlagsdatatype == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER) {
+                                sisteGrunnlag.konvertereData<SkattepliktigeInntekter>()?.ainntekter ?: emptyList()
+                            } else {
+                                request.ainntektListe
+                            },
+                        skattegrunnlagListe =
+                            if (grunnlagsdatatype == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER) {
+                                sisteGrunnlag.konvertereData<SkattepliktigeInntekter>()?.skattegrunnlag ?: emptyList()
+                            } else {
+                                request.skattegrunnlagListe
+                            },
+                        barnetilleggListe =
+                            if (grunnlagsdatatype == Grunnlagsdatatype.BARNETILLEGG) {
+                                sisteGrunnlag.konvertereData<List<BarnetilleggGrunnlagDto>>()!!
+                            } else {
+                                request.barnetilleggListe
+                            },
+                        utvidetBarnetrygdListe =
+                            if (grunnlagsdatatype == Grunnlagsdatatype.UTVIDET_BARNETRYGD) {
+                                sisteGrunnlag.konvertereData<List<UtvidetBarnetrygdGrunnlagDto>>()!!
+                            } else {
+                                request.utvidetBarnetrygdListe
+                            },
+                        småbarnstilleggListe =
+                            if (grunnlagsdatatype == Grunnlagsdatatype.SMÅBARNSTILLEGG) {
+                                sisteGrunnlag.konvertereData<List<SmåbarnstilleggGrunnlagDto>>()!!
+                            } else {
+                                request.småbarnstilleggListe
+                            },
+                        kontantstøtteListe =
+                            if (grunnlagsdatatype == Grunnlagsdatatype.KONTANTSTØTTE) {
+                                sisteGrunnlag.konvertereData<List<KontantstøtteGrunnlagDto>>()!!
+                            } else {
+                                request.kontantstøtteListe
+                            },
                     )
-                }
+            }
+
+            sammenstilleOgLagreInntekter(
+                behandling,
+                request,
+                rolle,
+                emptyMap(),
+                false,
+            )
         }
     }
 
