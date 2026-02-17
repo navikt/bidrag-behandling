@@ -51,6 +51,7 @@ fun OpprettRolleDto.toRolle(
         rolletype = rolletype,
         stønadstype = stønadstype ?: behandling.stonadstype,
         ident = ident?.verdi,
+        opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
         fødselsdato = fødselsdatoPerson,
         navn = navn,
         beregnTil =
@@ -59,7 +60,7 @@ fun OpprettRolleDto.toRolle(
             } else {
                 BeregnTil.INNEVÆRENDE_MÅNED
             },
-        opphørsdato = null,
+        opphørsdato = opphørsdato,
         virkningstidspunkt =
             if (rolletype == Rolletype.BARN) {
                 maxOf(fødselsdatoPerson.withDayOfMonth(1), behandling.eldsteVirkningstidspunkt)

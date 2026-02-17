@@ -56,7 +56,7 @@ import java.time.YearMonth
 open class Rolle(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "behandling_id", nullable = false)
-    open val behandling: Behandling,
+    open var behandling: Behandling,
     @Enumerated(EnumType.STRING)
     open val rolletype: Rolletype,
     open var ident: String?,
@@ -288,6 +288,39 @@ open class Rolle(
     }
 
     override fun hashCode(): Int = (ident?.hashCode() ?: 0) * 31 + rolletype.hashCode() + stønadstype.hashCode()
+
+    fun copy(behandling: Behandling): Rolle =
+        Rolle(
+            behandling = behandling,
+            rolletype = this.rolletype,
+            ident = this.ident,
+            fødselsdato = this.fødselsdato,
+            opprettet = this.opprettet,
+            id = null, // Reset ID for new entity
+            navn = this.navn,
+            deleted = this.deleted,
+            harGebyrsøknad = this.harGebyrsøknad,
+            gebyr = this.gebyr?.copy(gebyrSøknader = this.gebyr!!.gebyrSøknader.toMutableSet()),
+            innbetaltBeløp = this.innbetaltBeløp,
+            forrigeSivilstandshistorikk = this.forrigeSivilstandshistorikk,
+            grunnlag = this.grunnlag.toMutableSet(),
+            notat = this.notat.toMutableSet(),
+            person = this.person,
+            opphørsdato = this.opphørsdato,
+            behandlingstema = this.behandlingstema,
+            behandlingstatus = this.behandlingstatus,
+            beregnTil = this.beregnTil,
+            virkningstidspunkt = this.virkningstidspunkt,
+            opprinneligVirkningstidspunkt = this.opprinneligVirkningstidspunkt,
+            årsak = this.årsak,
+            avslag = this.avslag,
+            grunnlagFraVedtak = this.grunnlagFraVedtak,
+            grunnlagFraVedtakListe = this.grunnlagFraVedtakListe.toList(),
+            innkrevingstype = this.innkrevingstype,
+            innkrevesFraDato = this.innkrevesFraDato,
+            stønadstype = this.stønadstype,
+            forholdsmessigFordeling = this.forholdsmessigFordeling,
+        )
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)

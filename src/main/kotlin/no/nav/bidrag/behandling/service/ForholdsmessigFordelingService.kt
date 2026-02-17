@@ -265,6 +265,14 @@ class ForholdsmessigFordelingService(
                     søktFomDatoOpprinneligRevurderingssøknad,
                 )
             }
+        val søknadsdetaljer = behandling.tilFFBarnDetaljer()
+        behandling.søknadsbarn
+            .filter { !it.erRevurderingsbarn }
+            .forEach {
+                // Fjern søknadsreferanser som ikke gjelder klagesøknad
+                it.forholdsmessigFordeling!!.søknader.removeIf { it.omgjørSøknadsid == null }
+                it.forholdsmessigFordeling!!.søknader.add(søknadsdetaljer)
+            }
         behandling.forholdsmessigFordeling =
             ForholdsmessigFordeling(
                 erHovedbehandling = true,
