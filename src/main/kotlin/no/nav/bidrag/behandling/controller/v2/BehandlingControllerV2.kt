@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.database.datamodell.tilPersonident
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterVirkningstidspunktBegrunnelseBarnResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunktBegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunktBegrunnelseResponseDto
@@ -62,6 +63,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV3
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.behandling.toSimple
+import no.nav.bidrag.behandling.transformers.erForskudd
 import no.nav.bidrag.behandling.transformers.sorterForInntektsbildet
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -327,6 +329,40 @@ class BehandlingControllerV2(
                 } else {
                     null
                 },
+            barn =
+                behandling.roller
+                    .filter {
+                        if (behandling.erForskudd()) {
+                            it.rolletype in listOf(Rolletype.BIDRAGSMOTTAKER, Rolletype.BARN)
+                        } else {
+                            it.rolletype == Rolletype.BARN
+                        }
+                    }.map {
+                        OppdaterVirkningstidspunktBegrunnelseBarnResponse(
+                            rolleId = it.id,
+                            oppdatertBegrunnelse =
+                                henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT, it).ifEmpty {
+                                    if (behandling.erVirkningstidspunktLiktForAlle) {
+                                        henteNotatinnhold(
+                                            behandling,
+                                            NotatType.VIRKNINGSTIDSPUNKT,
+                                        )
+                                    } else {
+                                        ""
+                                    }
+                                },
+                            oppdatertBegrunnelseVurderingAvSkolegang =
+                                if (it.stønadstype == Stønadstype.BIDRAG18AAR) {
+                                    henteNotatinnhold(
+                                        behandling,
+                                        NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
+                                        it,
+                                    )
+                                } else {
+                                    null
+                                },
+                        )
+                    },
             valideringsfeil = valideringsfeil.toList(),
         )
     }
