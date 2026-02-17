@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningResponse
 import no.nav.bidrag.behandling.dto.v2.behandling.tilType
 import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtak
+import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtakBegrunnelse
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.tilType
@@ -130,13 +131,14 @@ class ValiderBehandlingService(
         ) {
             return "Behandlingen er registrert med søkt fra dato før mars 2023"
         }
+
         return null
     }
 
     fun validerKanBehandlesIBisys(behandling: BehandlingSimple) {
         if (!behandling.erBidrag()) return
 
-        if (behandling.forholdsmessigFordeling != null) {
+        if (behandling.forholdsmessigFordeling != null && behandling.kanFatteVedtak()) {
             log.debug {
                 "Behandling ${behandling.id} kan ikke behandles i Bisys fordi det har blitt opprettet forholdsmessig fordeling"
             }
