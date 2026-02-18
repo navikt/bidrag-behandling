@@ -20,6 +20,7 @@ import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.sak.Sakskategori
 import no.nav.bidrag.domene.enums.samhandler.Valutakode
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
@@ -346,6 +347,7 @@ fun PrivatAvtale.mapTilGrunnlag(
                         avtaleInngåttDato = utledetAvtaledato ?: virkningstidspunkt!!,
                         avtaleType = avtaleType ?: PrivatAvtaleType.PRIVAT_AVTALE,
                         skalIndeksreguleres = skalIndeksreguleres,
+                        stønadstype = stønadstype ?: Stønadstype.BIDRAG,
                         sakskategori = if (utenlandsk) Sakskategori.U else Sakskategori.N,
                         vedtaksid = if (avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV) valgtVedtakFraNav?.vedtak else null,
                     ),

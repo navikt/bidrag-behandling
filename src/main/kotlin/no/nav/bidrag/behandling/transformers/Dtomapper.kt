@@ -1032,20 +1032,27 @@ class Dtomapper(
                         barn.fødselsdato,
                         medIBehandlingen = false,
                         kilde = Kilde.OFFENTLIG,
+                        stønadstype = privatAvtale?.stønadstype,
                     ),
                     privatAvtale?.tilDtoV2(),
                     saksnummer = barn.saksnummer,
                     enhet = barn.enhet,
                 )
             }
-        val identerAndreBarn = andreBarnUtenLøpendeBidrag.mapNotNull { it.gjelderBarn.ident?.verdi }
+        val identerAndreBarn = andreBarnUtenLøpendeBidrag.map { it.gjelderBarn.ident?.verdi + it.privatAvtale?.stønadstype?.name }
         val barnManueltLagtInn =
             privatAvtale
-                .filter { it.rolle == null && !identerAndreBarn.contains(it.person!!.ident!!) }
-                .map {
+                .filter { it.rolle == null && !identerAndreBarn.contains(it.person!!.ident!! + it.stønadstype?.name) }
+                .map { pa ->
+                    val eksisterendeBarn = bpsBarnUtenLøpendeBidrag().find { it.ident == pa.personIdent }
                     PrivatAvtaleAndreBarnDtoV2(
-                        gjelderBarn = it.person!!.tilPersoninfoDto(kilde = Kilde.MANUELL),
-                        privatAvtale = it.tilDtoV2(),
+                        gjelderBarn =
+                            pa.person!!.tilPersoninfoDto(kilde = Kilde.MANUELL).copy(
+                                stønadstype = pa.stønadstype,
+                            ),
+                        privatAvtale = pa.tilDtoV2(),
+                        saksnummer = eksisterendeBarn?.saksnummer,
+                        enhet = eksisterendeBarn?.enhet,
                     )
                 }
         val andreBarn =
@@ -1338,6 +1345,7 @@ class Dtomapper(
             skalIndeksreguleres = skalIndeksreguleres,
             avtaleDato = utledetAvtaledato,
             avtaleType = avtaleType,
+            stønadstype = stønadstype ?: Stønadstype.BIDRAG,
             erSøknadsbarn = rolle != null,
             gjelderUtland = utenlandsk,
             manuelleVedtakUtenInnkreving =

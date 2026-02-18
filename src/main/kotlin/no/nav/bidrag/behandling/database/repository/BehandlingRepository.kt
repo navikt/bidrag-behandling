@@ -171,6 +171,7 @@ interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandl
           and (('KLAGE' = :vedtakstype  and b.vedtakstype = 'KLAGE' and b.klagedetaljer is not null) or b.vedtakstype != 'KLAGE')
           AND b.deleted = false
           AND b.vedtakstidspunkt IS NULL
+          and (:opprinneligVedtakId is null or b.klagedetaljer ->> 'opprinneligVedtakId' = :opprinneligVedtakId)
           AND b.forholdsmessig_fordeling IS not NULL AND (b.forholdsmessig_fordeling->>'erHovedbehandling') = 'true'
        limit 1
     """,
@@ -178,7 +179,8 @@ interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandl
     )
     fun finnHovedbehandlingForBpVedFF(
         @Param("bpIdent") bpIdent: String,
-        @Param("vedtakstype") vedtakstype: String
+        @Param("vedtakstype") vedtakstype: String,
+        @Param("opprinneligVedtakId") opprinneligVedtakId: Int? = null
     ): Behandling?
 
     @Query(

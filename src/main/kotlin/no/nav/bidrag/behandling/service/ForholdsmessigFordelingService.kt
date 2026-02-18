@@ -51,6 +51,7 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilForholds
 import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.løperBidragFørOpphør
+import no.nav.bidrag.behandling.transformers.tilDato18årsBidrag
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
@@ -1029,13 +1030,13 @@ class ForholdsmessigFordelingService(
                     it.rolle == null && !barneSomHarBidragssak.contains(it.personIdent!!)
                 }.map {
                     val barnFødselsdato = hentPersonFødselsdato(it.personIdent!!)
-                    val dato18ÅrsBidrag = barnFødselsdato!!.plusYears(18).plusMonths(1).withDayOfMonth(1)
+                    val dato18ÅrsBidrag = barnFødselsdato!!.tilDato18årsBidrag()
                     val er18EtterSøktFom = søktFomDatoRevurdering > dato18ÅrsBidrag
                     SakKravhaver(
                         kravhaver = it.personIdent!!,
                         saksnummer = null,
                         løperBidragFra = null,
-                        stønadstype = if (er18EtterSøktFom) Stønadstype.BIDRAG18AAR else Stønadstype.BIDRAG,
+                        stønadstype = it.stønadstype ?: if (er18EtterSøktFom) Stønadstype.BIDRAG18AAR else Stønadstype.BIDRAG,
                         eierfogd = null,
                         bidragsmottaker = null,
                         privatAvtale = it,
@@ -1048,56 +1049,61 @@ class ForholdsmessigFordelingService(
                         sak.roller
                             .filter { it.type == Rolletype.BARN }
                             .filter { it.fødselsnummer != null }
-                    barn.mapNotNull { b ->
-                        val stønaderMedÅpenBehandling =
-                            søknadsbarnIdentStønadstypeMap
-                                .filter {
-                                    it.first == b.fødselsnummer!!.verdi
-                                }.map { it.second }
-                                .distinct()
-                        val løpendeBidrag =
-                            kravhavereSomHarÅpenBehandling.find { lb ->
-                                lb.kravhaver == b.fødselsnummer!!.verdi &&
-                                    !stønaderMedÅpenBehandling.contains(lb.stønadstype)
-                            }
-                        val barnFødselsdato = hentPersonFødselsdato(b.fødselsnummer!!.verdi)
-                        val dato18ÅrsBidrag = barnFødselsdato!!.plusYears(18).plusMonths(1).withDayOfMonth(1)
-                        val er18EtterSøktFom = søktFomDatoRevurdering > dato18ÅrsBidrag
-                        val privatAvtale =
-                            behandling.privatAvtale.find { pa ->
-                                pa.rolle == null &&
-                                    pa.personIdent == b.fødselsnummer?.verdi
-                            }
-                        val privatAvtalePerioder = privatAvtale?.perioder ?: emptySet()
-                        val førstePeriodePrivatAvtale = privatAvtalePerioder.minByOrNull { it.fom }
+                    barn
+                        .flatMap { b ->
+                            behandling.privatAvtale
+                                .filter { pa ->
+                                    pa.rolle == null &&
+                                        pa.personIdent == b.fødselsnummer?.verdi
+                                }.map { privatAvtale ->
+                                    val stønaderMedÅpenBehandling =
+                                        søknadsbarnIdentStønadstypeMap
+                                            .filter {
+                                                it.first == b.fødselsnummer!!.verdi
+                                            }.map { it.second }
+                                            .distinct()
+                                    val løpendeBidrag =
+                                        kravhavereSomHarÅpenBehandling.find { lb ->
+                                            lb.kravhaver == b.fødselsnummer!!.verdi &&
+                                                !stønaderMedÅpenBehandling.contains(lb.stønadstype)
+                                        }
+                                    val barnFødselsdato = hentPersonFødselsdato(b.fødselsnummer!!.verdi)
+                                    val dato18ÅrsBidrag = barnFødselsdato!!.plusYears(18).plusMonths(1).withDayOfMonth(1)
+                                    val er18EtterSøktFom = søktFomDatoRevurdering > dato18ÅrsBidrag
+                                    val privatAvtalePerioder = privatAvtale?.perioder ?: emptySet()
+                                    val førstePeriodePrivatAvtale = privatAvtalePerioder.minByOrNull { it.fom }
 
-                        // Hvis privat avtalen er før 18 års dagen så antas det at det er en ordniær bidrag ellers 18 års bidrag
-                        val stønadstypeBeregnet =
-                            when {
-                                førstePeriodePrivatAvtale != null && førstePeriodePrivatAvtale.fom < dato18ÅrsBidrag -> Stønadstype.BIDRAG
+                                    // Hvis privat avtalen er før 18 års dagen så antas det at det er en ordniær bidrag ellers 18 års bidrag
+                                    val stønadstypeBeregnet =
+                                        when {
+                                            privatAvtale.stønadstype != null -> privatAvtale.stønadstype
 
-                                førstePeriodePrivatAvtale != null &&
-                                    førstePeriodePrivatAvtale.fom >= dato18ÅrsBidrag -> Stønadstype.BIDRAG18AAR
+                                            førstePeriodePrivatAvtale != null && førstePeriodePrivatAvtale.fom < dato18ÅrsBidrag
+                                            -> Stønadstype.BIDRAG
 
-                                er18EtterSøktFom -> Stønadstype.BIDRAG18AAR
+                                            førstePeriodePrivatAvtale != null &&
+                                                førstePeriodePrivatAvtale.fom >= dato18ÅrsBidrag -> Stønadstype.BIDRAG18AAR
 
-                                else -> Stønadstype.BIDRAG
-                            }
+                                            er18EtterSøktFom -> Stønadstype.BIDRAG18AAR
 
-                        // Hvis barnet har åpen søknad med samme stønadstype fra før så unngå å lage en ny FF søknad
-                        if (stønaderMedÅpenBehandling.contains(stønadstypeBeregnet)) return@mapNotNull null
+                                            else -> Stønadstype.BIDRAG
+                                        }
 
-                        SakKravhaver(
-                            kravhaver = b.fødselsnummer!!.verdi,
-                            saksnummer = sak.saksnummer.verdi,
-                            løperBidragFra = løpendeBidrag?.løperBidragFra,
-                            løperBidragTil = løpendeBidrag?.løperBidragTil,
-                            stønadstype = stønadstypeBeregnet,
-                            eierfogd = sak.eierfogd.verdi,
-                            bidragsmottaker = sak.bidragsmottaker?.fødselsnummer?.verdi,
-                            privatAvtale = privatAvtale,
-                        )
-                    }
+                                    // Hvis barnet har åpen søknad med samme stønadstype fra før så unngå å lage en ny FF søknad
+                                    if (stønaderMedÅpenBehandling.contains(stønadstypeBeregnet)) return@map null
+
+                                    SakKravhaver(
+                                        kravhaver = b.fødselsnummer!!.verdi,
+                                        saksnummer = sak.saksnummer.verdi,
+                                        løperBidragFra = løpendeBidrag?.løperBidragFra,
+                                        løperBidragTil = løpendeBidrag?.løperBidragTil,
+                                        stønadstype = stønadstypeBeregnet,
+                                        eierfogd = sak.eierfogd.verdi,
+                                        bidragsmottaker = sak.bidragsmottaker?.fødselsnummer?.verdi,
+                                        privatAvtale = privatAvtale,
+                                    )
+                                }
+                        }.filterNotNull()
                 }.filter { barn -> barn.privatAvtale != null }
 
         return privatAvtalerUtenBidragssak + barnMedBidragssakSomHarPrivatAvtale

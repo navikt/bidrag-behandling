@@ -230,13 +230,14 @@ class VedtakService(
                 konverterVedtakTilBehandling(request, refVedtaksid, true)
                     ?: throw RuntimeException("Fant ikke vedtak for vedtakid $refVedtaksid")
 
+            val påklagetVedtak = konvertertBehandlingLesemodus.omgjøringsdetaljer?.opprinneligVedtakId
             if (konvertertBehandlingLesemodus.erBidrag() && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled &&
                 konvertertBehandlingLesemodus.søknadstype != null &&
                 !behandlingstyperSomIkkeSkalInkluderesIFF.contains(konvertertBehandlingLesemodus.søknadstype)
             ) {
                 val bp = konvertertBehandlingLesemodus.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
                 behandlingRepository!!
-                    .finnHovedbehandlingForBpVedFF(bp!!.ident!!, konvertertBehandlingLesemodus.vedtakstype.name)
+                    .finnHovedbehandlingForBpVedFF(bp!!.ident!!, konvertertBehandlingLesemodus.vedtakstype.name, påklagetVedtak)
                     ?.let { behandling ->
                         val bm = konvertertBehandlingLesemodus.roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
                         val søknadsdetaljer = konvertertBehandlingLesemodus.tilFFBarnDetaljer()
