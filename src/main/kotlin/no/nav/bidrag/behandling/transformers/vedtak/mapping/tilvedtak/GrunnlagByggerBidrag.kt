@@ -318,29 +318,33 @@ fun PrivatAvtale.mapTilGrunnlag(
     gjelderBarnReferanse: String,
     bpReferanse: String,
     virkningstidspunkt: LocalDate,
-): List<GrunnlagDto> =
-    perioderInnkreving.map {
-        GrunnlagDto(
-            type = Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG,
-            referanse = it.tilGrunnlagsreferansPrivatAvtalePeriode(gjelderBarnReferanse),
-            gjelderReferanse = bpReferanse,
-            gjelderBarnReferanse = gjelderBarnReferanse,
-            innhold =
-                POJONode(
-                    PrivatAvtalePeriodeGrunnlag(
-                        periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
-                        beløp = it.beløp,
-                        valutakode = if (this.utenlandsk) it.valutakode ?: Valutakode.NOK else Valutakode.NOK,
-                        samværsklasse = it.samværsklasse,
+): List<GrunnlagDto> {
+    val perioder =
+        perioderInnkreving.map {
+            GrunnlagDto(
+                type = Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG,
+                referanse = it.tilGrunnlagsreferansPrivatAvtalePeriode(gjelderBarnReferanse, stønadstype ?: Stønadstype.BIDRAG),
+                gjelderReferanse = bpReferanse,
+                gjelderBarnReferanse = gjelderBarnReferanse,
+                innhold =
+                    POJONode(
+                        PrivatAvtalePeriodeGrunnlag(
+                            periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
+                            beløp = it.beløp,
+                            valutakode = if (this.utenlandsk) it.valutakode ?: Valutakode.NOK else Valutakode.NOK,
+                            samværsklasse = it.samværsklasse,
+                        ),
                     ),
-                ),
-        )
-    } +
+            )
+        }
+
+    val privatAvtale =
         GrunnlagDto(
             referanse = tilGrunnlagsreferansPrivatAvtale(gjelderBarnReferanse),
             gjelderReferanse = bpReferanse,
             gjelderBarnReferanse = gjelderBarnReferanse,
             type = Grunnlagstype.PRIVAT_AVTALE_GRUNNLAG,
+            grunnlagsreferanseListe = perioder.map { it.referanse },
             innhold =
                 POJONode(
                     PrivatAvtaleGrunnlagV2(
@@ -353,6 +357,9 @@ fun PrivatAvtale.mapTilGrunnlag(
                     ),
                 ),
         )
+
+    return perioder + listOf(privatAvtale)
+}
 
 /*
 Legg til vedtaksid hvis aldersjustering er utført basert på klagevedtaket i klageorkestreringen

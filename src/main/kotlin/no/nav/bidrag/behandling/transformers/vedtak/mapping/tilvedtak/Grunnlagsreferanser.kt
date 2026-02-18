@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.database.datamodell.Samværsperiode
 import no.nav.bidrag.behandling.database.datamodell.Tilleggsstønad
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.felles.toCompactString
 
@@ -29,8 +30,10 @@ fun FaktiskTilsynsutgift.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnRe
         "_${fom.toCompactString()}${tom?.let { "_${it.toCompactString()}" } ?: ""}"
 
 fun PrivatAvtale.tilGrunnlagsreferansPrivatAvtale(gjelderBarnReferanse: Grunnlagsreferanse) =
-    "${Grunnlagstype.PRIVAT_AVTALE_GRUNNLAG}_$gjelderBarnReferanse"
+    "${Grunnlagstype.PRIVAT_AVTALE_GRUNNLAG}_${gjelderBarnReferanse}_${stønadstype ?: Stønadstype.BIDRAG}"
 
-fun PrivatAvtalePeriode.tilGrunnlagsreferansPrivatAvtalePeriode(gjelderBarnReferanse: Grunnlagsreferanse) =
-    "${Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG}_${gjelderBarnReferanse}_" +
-        "_${fom.toCompactString()}${tom?.let { "_${it.toCompactString()}" } ?: ""}"
+fun PrivatAvtalePeriode.tilGrunnlagsreferansPrivatAvtalePeriode(
+    gjelderBarnReferanse: Grunnlagsreferanse,
+    stønadstype: Stønadstype,
+) = "${Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG}_${gjelderBarnReferanse}_" +
+    "_${fom.toCompactString()}${tom?.let { "_${it.toCompactString()}" } ?: ""}"
