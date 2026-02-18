@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
+import no.nav.bidrag.behandling.transformers.normalizeForComparison
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTil
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
@@ -45,10 +46,12 @@ open class Samvær(
         if (rolle.notat
                 .find { it.type == NotatGrunnlag.NotatType.SAMVÆR && it.erDelAvBehandlingen }
                 ?.innhold
+                ?.normalizeForComparison()
                 ?.takeIf { it.isNotEmpty() } !=
             other.rolle.notat
                 .find { it.type == NotatGrunnlag.NotatType.SAMVÆR && it.erDelAvBehandlingen }
                 ?.innhold
+                ?.normalizeForComparison()
                 ?.takeIf { it.isNotEmpty() }
         ) {
             return false

@@ -534,11 +534,13 @@ class VirkningstidspunktService(
                     }
 
                     TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
-                        oppdaterBoforhold()
-                        oppdaterAndreVoksneIHusstanden()
-                        oppdaterInntekter()
-                        oppdatereUnderhold()
-                        oppdaterSamvær()
+                        if (!behandling.erAvslagForAlle) {
+                            oppdaterBoforhold()
+                            oppdaterAndreVoksneIHusstanden()
+                            oppdaterInntekter()
+                            oppdatereUnderhold()
+                            oppdaterSamvær()
+                        }
                     }
                 }
             }
@@ -605,11 +607,13 @@ class VirkningstidspunktService(
                 }
             }
             if (rekalkulerOpplysningerVedEndring) {
-                oppdaterBoforhold()
-                oppdaterAndreVoksneIHusstanden()
-                oppdaterInntekter()
-                oppdatereUnderhold()
-                oppdaterSamvær()
+                if (!behandling.erAvslagForAlle) {
+                    oppdaterBoforhold()
+                    oppdaterAndreVoksneIHusstanden()
+                    oppdaterInntekter()
+                    oppdatereUnderhold()
+                    oppdaterSamvær()
+                }
             }
         }
     }
@@ -722,11 +726,13 @@ class VirkningstidspunktService(
                 }
             }
             if (rekalkulerOpplysningerVedEndring) {
-                oppdaterBoforhold()
-                oppdaterAndreVoksneIHusstanden()
-                oppdaterInntekter()
-                oppdatereUnderhold()
-                oppdaterSamvær()
+                if (!behandling.erAvslagForAlle) {
+                    oppdaterBoforhold()
+                    oppdaterAndreVoksneIHusstanden()
+                    oppdaterInntekter()
+                    oppdatereUnderhold()
+                    oppdaterSamvær()
+                }
             }
         }
     }
