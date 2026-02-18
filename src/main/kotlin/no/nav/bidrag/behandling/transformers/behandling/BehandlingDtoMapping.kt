@@ -64,6 +64,7 @@ import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjel
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegang
 import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegangAlle
+import no.nav.bidrag.behandling.transformers.normalizeForComparison
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
 import no.nav.bidrag.behandling.transformers.sorterEtterDato
@@ -766,8 +767,8 @@ fun Rolle.hentVirkningstidspunktValideringsfeilRolle(): VirkningstidspunktFeilV2
             behandling.omgjøringsdetaljer?.opprinneligVirkningstidspunkt != null &&
             virkningstidspunktRolle.isAfter(behandling.omgjøringsdetaljer!!.opprinneligVirkningstidspunkt) == true
     val begrunnelseVirkningstidspunkt =
-        NotatService.henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT, this).takeIf { it.isNotEmpty() }
-            ?: NotatService.henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT)
+        NotatService.henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT, this).normalizeForComparison().takeIf { it.isNotEmpty() }
+            ?: NotatService.henteNotatinnhold(behandling, NotatType.VIRKNINGSTIDSPUNKT).normalizeForComparison()
     val avslagRolle = if (avslag == null && årsak == null) behandling.avslag else avslag
     val årsakRolle = if (avslag == null && årsak == null) behandling.årsak else årsak
     return VirkningstidspunktFeilV2Dto(
