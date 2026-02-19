@@ -1058,7 +1058,11 @@ class Dtomapper(
         val andreBarn =
             PrivatAvtaleAndreBarnDetaljerDtoV2(
                 manglerBegrunnelse = manglerPrivatAvtaleBegrunnelseAndreBarn(),
-                barn = barnManueltLagtInn + andreBarnUtenLøpendeBidrag,
+                barn =
+                    (barnManueltLagtInn + andreBarnUtenLøpendeBidrag).sortedBy {
+                        it.gjelderBarn.ident?.verdi +
+                            it.gjelderBarn?.stønadstype
+                    },
                 begrunnelse =
                     henteNotatinnhold(
                         this,
