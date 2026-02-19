@@ -425,13 +425,18 @@ fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
                 emptySet()
             },
         ingenLøpendePeriode =
-            perioderInnkreving.isEmpty() || (
+            when {
+                perioderInnkreving.isEmpty() -> true
+
                 rolle != null &&
                     behandling.manglerLøpendePeriode(
                         perioderInnkreving,
                         rolle!!,
                     )
-            ),
+                -> true
+
+                else -> false
+            },
         manglerBegrunnelse = if (rolle == null) false else !behandling.erKlageEllerOmgjøring && notatPrivatAvtale?.innhold.isNullOrEmpty(),
         finnesPerioderFør18Årsdag =
             if (stønadstype == Stønadstype.BIDRAG18AAR) {
@@ -556,7 +561,10 @@ fun Behandling.manglerLøpendePeriode(
     val løpendeBidrag = finnPerioderHvorDetLøperBidrag(søknadsbarn)
     val løperBidrag = løpendeBidrag.isNotEmpty() && løpendeBidrag.maxBy { it.fom }.til == null
     val harLøpendePrivatAvtale = perioder.isNotEmpty() && perioder.maxBy { it.fom }.tom == null
-    return !(løperBidrag || harLøpendePrivatAvtale)
+    val fødselsdato18År = søknadsbarn.fødselsdato.tilDato18årsBidrag()
+    val ikkeLøpendePeriode = perioder.maxByOrNull { it.fom }?.tom
+    val sistePeriodeEr18Årsdag = ikkeLøpendePeriode != null && ikkeLøpendePeriode == fødselsdato18År
+    return !løperBidrag && (!harLøpendePrivatAvtale && !sistePeriodeEr18Årsdag)
 }
 
 fun Behandling.finnPerioderSomOverlapperMedLøpendeBidrag(

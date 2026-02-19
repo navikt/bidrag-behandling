@@ -358,12 +358,16 @@ class VedtakGrunnlagMapper(
     ): BeregnGrunnlag {
         mapper.run {
             behandling.run {
+                val privatAvtale = behandling.privatAvtale.find { it.personIdent == person.ident }!!
+                val minPeriode =
+                    privatAvtale.perioderInnkreving.minOfOrNull { it.fom } ?: vedtakmappingFeilet("Mangler periode for privat avtale")
+                val maxPeriode = privatAvtale.perioderInnkreving.maxBy { it.fom }.tom
                 val personobjekter = tilPersonobjekter(person)
                 val privatavtaleGrunnlag = tilPrivatAvtaleGrunnlag(personobjekter, person)
 
                 val personObjekt = personobjekter.hentPerson(person.ident)!!
-                val beregnFraDato = virkningstidspunkt ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
-                val opphørsdato = person.opphørsdatoYearMonth
+                val beregnFraDato = minOf(eldsteVirkningstidspunkt, minPeriode)
+                val opphørsdato = person.opphørsdatoYearMonth ?: maxPeriode?.toYearMonth()
                 val beregningTilDato = finnBeregnTilDatoBehandling(person)
                 return BeregnGrunnlag(
                     periode =
