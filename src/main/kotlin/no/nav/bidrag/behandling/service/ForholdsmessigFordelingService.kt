@@ -172,8 +172,8 @@ class ForholdsmessigFordelingService(
     @Transactional
     fun lukkAllFFSaker(behandlingsid: Long) {
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
-        val åpneSaker = hentÅpneSøknader(behandling.bidragspliktig!!.ident!!)
-        åpneSaker.filter { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }.forEach {
+        val åpneSaker = hentÅpneSøknader(behandling.bidragspliktig!!.ident!!, behandling.behandlingstypeForFF)
+        åpneSaker.filter { it.behandlingstype == behandling.behandlingstypeForFF }.forEach {
             bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(it.søknadsid))
         }
     }
@@ -250,7 +250,7 @@ class ForholdsmessigFordelingService(
                         .first()
                         .forholdsmessigFordeling
                         ?.søknader
-                        ?.find { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }
+                        ?.find { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING_KLAGE }
                         ?.søknadFomDato ?: relevanteKravhavereRevurderingsbarn.finnSøktFomRevurderingSøknad(behandling)
 
                 revurderingsbarnRoller.forEach {
@@ -534,8 +534,7 @@ class ForholdsmessigFordelingService(
     fun feilregistrerBarnFraFFSøknad(rolle: Rolle) {
         val søknader =
             rolle.forholdsmessigFordeling!!.søknaderUnderBehandling.filter {
-                it.behandlingstype ==
-                    Behandlingstype.FORHOLDSMESSIG_FORDELING
+                it.behandlingstype == rolle.behandling.behandlingstypeForFF
             }
         val søknaderFeilregistrert =
             søknader.mapNotNull { søknad ->
@@ -819,7 +818,7 @@ class ForholdsmessigFordelingService(
         LOGGER.info { "Sletter barn ${barn.ident} fra behandling ${behandling.id} og lager ny revurderingsøknad" }
         barn.forholdsmessigFordeling!!.erRevurdering = true
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
-        val åpneSøknader = hentÅpneSøknader(bidragspliktigFnr)
+        val åpneSøknader = hentÅpneSøknader(bidragspliktigFnr, behandling.behandlingstypeForFF)
         val søktFomDato = LocalDate.now().plusMonths(1).withDayOfMonth(1)
 
         val skalOppretteFFSøknadMedInnkreving =
@@ -827,7 +826,7 @@ class ForholdsmessigFordelingService(
                 behandling.finnBeregnTilDato().toYearMonth(),
             )
         val åpenFFBehandling =
-            åpneSøknader.filter { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }.find {
+            åpneSøknader.filter { it.behandlingstype == behandling.behandlingstypeForFF }.find {
                 it.innkreving && skalOppretteFFSøknadMedInnkreving &&
                     it.saksnummer == barn.forholdsmessigFordeling?.tilhørerSak &&
                     it.søknadFomDato == søktFomDato && it.behandlingstema.tilStønadstype() == barn.stønadstype
@@ -844,7 +843,7 @@ class ForholdsmessigFordelingService(
             barn.forholdsmessigFordeling!!.søknader.add(
                 åpenFFBehandling.tilForholdsmessigFordelingSøknad().copy(
                     søktAvType = SøktAvType.NAV_BIDRAG,
-                    behandlingstype = Behandlingstype.FORHOLDSMESSIG_FORDELING,
+                    behandlingstype = behandling.behandlingstypeForFF,
                     behandlingstema = Behandlingstema.BIDRAG,
                 ),
             )
@@ -854,7 +853,7 @@ class ForholdsmessigFordelingService(
                     OpprettSøknadRequest(
                         saksnummer = barn.forholdsmessigFordeling!!.tilhørerSak,
                         behandlingsid = behandling.id,
-                        behandlingstype = Behandlingstype.FORHOLDSMESSIG_FORDELING,
+                        behandlingstype = behandling.behandlingstypeForFF,
                         behandlerenhet = behandling.behandlerEnhet,
                         behandlingstema =
                             if (barn.stønadstype ==
@@ -872,7 +871,7 @@ class ForholdsmessigFordelingService(
             barn.forholdsmessigFordeling!!.søknader.add(
                 ForholdsmessigFordelingSøknadBarn(
                     søktAvType = SøktAvType.NAV_BIDRAG,
-                    behandlingstype = Behandlingstype.FORHOLDSMESSIG_FORDELING,
+                    behandlingstype = behandling.behandlingstypeForFF,
                     behandlingstema = Behandlingstema.BIDRAG,
                     mottattDato = LocalDate.now(),
                     søknadFomDato = søktFomDato,
@@ -1143,7 +1142,7 @@ class ForholdsmessigFordelingService(
                         tilhørerSak = åpenSøknad.saksnummer,
                         behandlerenhet = sak.eierfogd.verdi,
                         bidragsmottaker = åpenSøknad.bidragsmottaker?.personident,
-                        erRevurdering = åpenSøknad.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING,
+                        erRevurdering = åpenSøknad.behandlingstype == behandling.behandlingstypeForFF,
                         søknader =
                             mutableSetOf(
                                 åpenSøknad.tilForholdsmessigFordelingSøknad(),
@@ -1202,15 +1201,17 @@ class ForholdsmessigFordelingService(
             }
     }
 
-    private fun hentÅpneSøknader(bidragspliktigFnr: String) =
-        bbmConsumer
-            .hentÅpneSøknaderForBp(bidragspliktigFnr)
-            .åpneSøknader
-            .filter { !behandlingstyperSomIkkeSkalInkluderesIFF.contains(it.behandlingstype) }
-            .sortedWith(
-                compareByDescending<ÅpenSøknadDto> { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }
-                    .thenBy { it.søknadFomDato },
-            )
+    private fun hentÅpneSøknader(
+        bidragspliktigFnr: String,
+        behandlingstypeForFF: Behandlingstype,
+    ) = bbmConsumer
+        .hentÅpneSøknaderForBp(bidragspliktigFnr)
+        .åpneSøknader
+        .filter { !behandlingstyperSomIkkeSkalInkluderesIFF.contains(it.behandlingstype) }
+        .sortedWith(
+            compareByDescending<ÅpenSøknadDto> { it.behandlingstype == behandlingstypeForFF }
+                .thenBy { it.søknadFomDato },
+        )
 
     private fun Behandling.syncGebyrSøknadReferanse() {
         roller.forEach { rolle ->
@@ -1545,7 +1546,7 @@ class ForholdsmessigFordelingService(
                     søknadFomDato = søktFomDato,
                     barnListe = opprettSøknader,
                     innkreving = medInnkreving,
-                    behandlingstype = Behandlingstype.FORHOLDSMESSIG_FORDELING,
+                    behandlingstype = behandling.behandlingstypeForFF,
                 ),
             )
 
@@ -1625,7 +1626,7 @@ class ForholdsmessigFordelingService(
                         it.vedtakstype != Vedtakstype.KLAGE
                 }
         val åpneSøknader =
-            hentÅpneSøknader(bidragspliktigFnr).filter {
+            hentÅpneSøknader(bidragspliktigFnr, behandling.behandlingstypeForFF).filter {
                 (it.behandlingstype == Behandlingstype.KLAGE && behandling.erKlageEllerOmgjøring) ||
                     it.behandlingstype != Behandlingstype.KLAGE
             }

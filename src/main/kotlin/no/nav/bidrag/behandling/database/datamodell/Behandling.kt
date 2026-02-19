@@ -300,6 +300,7 @@ open class Behandling(
 
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
 
+    val behandlingstypeForFF get() = if (erKlageEllerOmgjøring) Behandlingstype.FORHOLDSMESSIG_FORDELING_KLAGE else Behandlingstype.FORHOLDSMESSIG_FORDELING
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
     val erKlageEllerOmgjøring get() = vedtakstype == Vedtakstype.KLAGE || omgjøringsdetaljer?.opprinneligVedtakId != null
