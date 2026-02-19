@@ -118,6 +118,23 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatTyp
 
 private val log = KotlinLogging.logger {}
 
+fun KanBehandlesINyLøsningRequest.toSimple() =
+    BehandlingSimple(
+        id = null,
+        harPrivatAvtaleAndreBarn = false,
+        omgjøringsdetaljer = null,
+        forholdsmessigFordeling = null,
+        virkningstidspunkt = søktFomDato,
+        søktFomDato = søktFomDato ?: LocalDate.now(),
+        mottattdato = mottattdato ?: LocalDate.now(),
+        saksnummer = saksnummer,
+        vedtakstype = vedtakstype,
+        søknadstype = søknadstype,
+        stønadstype = stønadstype,
+        engangsbeløptype = engangsbeløpstype,
+        roller = roller.map { RolleSimple(it.rolletype, it.ident?.verdi ?: "", søktFomDato) },
+    )
+
 fun Behandling.toSimple() =
     BehandlingSimple(
         id = id!!,
@@ -363,9 +380,6 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
         return "Kan ikke fatte omgjøring/klagevedtak for bidrag med flere barn"
     }
 
-    val stønaderBp =
-        hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident)
-            ?: return if (søknadsbarn.size == 1) null else "Kan ikke fatte vedtak for bidrag med flere barn"
     if (UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled &&
         !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled
     ) {
@@ -395,6 +409,13 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
             return "Kan ikke fatte vedtak når det er lagt inn privat avtale for andre barn"
         }
     }
+
+    if (bidragspliktig == null && stønadstype in listOf(Stønadstype.BIDRAG, Stønadstype.BIDRAG18AAR)) {
+        return "Kan ikke behandle søknad for bidrag uten bidragspliktig"
+    }
+    val stønaderBp =
+        hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident)
+            ?: return if (søknadsbarn.size == 1) null else "Kan ikke fatte vedtak for bidrag med flere barn"
     val harBPStønadForFlereBarn =
         stønaderBp
             .stønader

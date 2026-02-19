@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.tilType
 import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtak
 import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtakBegrunnelse
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
+import no.nav.bidrag.behandling.transformers.behandling.toSimple
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.util.secureLogger
@@ -132,7 +133,12 @@ class ValiderBehandlingService(
             return "Behandlingen er registrert med søkt fra dato før mars 2023"
         }
 
-        return null
+        try {
+            return request.toSimple().kanFatteVedtakBegrunnelse()
+        } catch (e: Exception) {
+            secureLogger.error(e) { "Feil ved vurdering av om behandling kan fattes i ny løsning for request: $request" }
+            return null
+        }
     }
 
     fun validerKanBehandlesIBisys(behandling: BehandlingSimple) {
