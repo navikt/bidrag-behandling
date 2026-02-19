@@ -13,7 +13,7 @@ import no.nav.bidrag.domene.ident.Personident
 import java.time.LocalDate
 
 data class BehandlingSimple(
-    val id: Long,
+    val id: Long?,
     val virkningstidspunkt: LocalDate?,
     val søktFomDato: LocalDate,
     val mottattdato: LocalDate,
@@ -28,7 +28,7 @@ data class BehandlingSimple(
     val roller: List<RolleSimple> = emptyList(),
 ) {
     constructor(
-        id: Long,
+        id: Long? = null,
         virkningstidspunkt: LocalDate,
         søktFomDato: LocalDate,
         mottattdato: LocalDate,

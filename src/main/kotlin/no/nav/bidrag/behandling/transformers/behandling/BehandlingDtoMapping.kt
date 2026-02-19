@@ -118,6 +118,23 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatTyp
 
 private val log = KotlinLogging.logger {}
 
+fun KanBehandlesINyLøsningRequest.toSimple() =
+    BehandlingSimple(
+        id = null,
+        harPrivatAvtaleAndreBarn = false,
+        omgjøringsdetaljer = null,
+        forholdsmessigFordeling = null,
+        virkningstidspunkt = søktFomDato,
+        søktFomDato = søktFomDato ?: LocalDate.now(),
+        mottattdato = mottattdato ?: LocalDate.now(),
+        saksnummer = saksnummer,
+        vedtakstype = vedtakstype,
+        søknadstype = søknadstype,
+        stønadstype = stønadstype,
+        engangsbeløptype = engangsbeløpstype,
+        roller = roller.map { RolleSimple(it.rolletype, it.ident?.verdi ?: "", søktFomDato) },
+    )
+
 fun Behandling.toSimple() =
     BehandlingSimple(
         id = id!!,
