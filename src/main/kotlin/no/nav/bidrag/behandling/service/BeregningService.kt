@@ -243,9 +243,10 @@ class BeregningService(
                     }
                     val perioderBarn = resultatBarn.resultatVedtakListe.flatMap { it.periodeListe }.map { it.periode }
                     val minstEnPeriodeSlåttUtTilFF = perioderBarn.any { pb -> perioderSlåttUtTilFF.any { it.inneholder(pb) } }
+                    val erOmgjøringMedPerioder = endeligBeregning && behandling.erKlageEllerOmgjøring && perioderBarn.isNotEmpty()
                     val erAvvistRevurdering =
                         forholdsmessigFordelingDetaljer != null && forholdsmessigFordelingDetaljer.erRevurdering &&
-                            !minstEnPeriodeSlåttUtTilFF
+                            !minstEnPeriodeSlåttUtTilFF && !erOmgjøringMedPerioder
                     val grunnlagSøknadsbarn = resultat.grunnlagListe.hentPersonMedReferanse(resultatBarn.søknadsbarnreferanse)!!
                     val grunnlagBarn =
                         resultat.grunnlagListe.filter {

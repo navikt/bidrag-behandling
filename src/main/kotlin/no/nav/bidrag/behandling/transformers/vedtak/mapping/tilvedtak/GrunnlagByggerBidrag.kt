@@ -176,7 +176,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
             resultatDelvedtak.find { rv ->
                 rv.resultatBarn(søknadsbarn).beregnetBarnebidragPeriodeListe.any { vp ->
                     (resultatPeriode.periode.fom == vp.periode.fom) ||
-                        erOpphørsperiode && vp.periode.til == søknadsbarnRolle.opphørsdato?.toYearMonth()
+                        (erOpphørsperiode && vp.periode.til == søknadsbarnRolle.opphørsdato?.toYearMonth())
                 }
             }!!
         val resultatkode =
