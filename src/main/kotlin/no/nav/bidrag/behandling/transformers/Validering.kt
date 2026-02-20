@@ -428,12 +428,12 @@ fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
             when {
                 perioderInnkreving.isEmpty() -> true
 
-                rolle != null &&
-                    behandling.manglerLøpendePeriode(
-                        perioderInnkreving,
-                        rolle!!,
-                    )
-                -> true
+//                rolle != null &&
+//                    behandling.manglerLøpendePeriode(
+//                        perioderInnkreving,
+//                        rolle!!,
+//                    )
+//                -> true
 
                 else -> false
             },
