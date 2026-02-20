@@ -45,6 +45,7 @@ import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.ressursIkkeTilknyttetBehandling
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.kategorierSomKreverType
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -424,12 +425,37 @@ fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
                 emptySet()
             },
         ingenLøpendePeriode =
-            perioderInnkreving.isEmpty() || rolle != null &&
-                behandling.manglerLøpendePeriode(
-                    perioderInnkreving,
-                    rolle!!,
-                ),
+            when {
+                perioderInnkreving.isEmpty() -> true
+
+//                rolle != null &&
+//                    behandling.manglerLøpendePeriode(
+//                        perioderInnkreving,
+//                        rolle!!,
+//                    )
+//                -> true
+
+                else -> false
+            },
         manglerBegrunnelse = if (rolle == null) false else !behandling.erKlageEllerOmgjøring && notatPrivatAvtale?.innhold.isNullOrEmpty(),
+        finnesPerioderFør18Årsdag =
+            if (stønadstype == Stønadstype.BIDRAG18AAR) {
+                val minDato = personFødselsdato.tilDato18årsBidrag()
+                perioder.any {
+                    it.fom.isBefore(minDato)
+                }
+            } else {
+                false
+            },
+        finnesPerioderEtter18Årsdag =
+            if (stønadstype == Stønadstype.BIDRAG) {
+                val maksDato = personFødselsdato.tilDato18årsBidrag()
+                perioder.any {
+                    it.fom >= maksDato || (it.tom != null && it.tom!! > maksDato)
+                }
+            } else {
+                false
+            },
         måVelgeVedtakHvisAvtaletypeErVedtakFraNav =
             behandling.erInnkreving && avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV && valgtVedtakFraNav == null,
         overlappendePerioder =
@@ -535,7 +561,10 @@ fun Behandling.manglerLøpendePeriode(
     val løpendeBidrag = finnPerioderHvorDetLøperBidrag(søknadsbarn)
     val løperBidrag = løpendeBidrag.isNotEmpty() && løpendeBidrag.maxBy { it.fom }.til == null
     val harLøpendePrivatAvtale = perioder.isNotEmpty() && perioder.maxBy { it.fom }.tom == null
-    return !(løperBidrag || harLøpendePrivatAvtale)
+    val fødselsdato18År = søknadsbarn.fødselsdato.tilDato18årsBidrag()
+    val ikkeLøpendePeriode = perioder.maxByOrNull { it.fom }?.tom
+    val sistePeriodeEr18Årsdag = ikkeLøpendePeriode != null && ikkeLøpendePeriode == fødselsdato18År
+    return !løperBidrag && (!harLøpendePrivatAvtale && !sistePeriodeEr18Årsdag)
 }
 
 fun Behandling.finnPerioderSomOverlapperMedLøpendeBidrag(

@@ -587,7 +587,10 @@ class GrunnlagService(
             sakConsumer!!
                 .hentSakerPerson(bidragspliktigIdent)
                 .filtrerSakerHvorPersonErBP(bidragspliktigIdent)
-        val barnBpMedÅpenSøknad = åpneSakerBp.map { it.kravhaver } + behandling.søknadsbarn.map { it.ident!! }
+        val barnBpMedÅpenSøknad =
+            åpneSakerBp
+                .filter { it.løperBidragFra == null || it.løperBidragFra > behandling.søktFomDato.toYearMonth() }
+                .map { it.kravhaver } + behandling.søknadsbarn.map { it.ident!! }
         val barnBpMedBidragssak =
             sakerBp.flatMap {
                 it.roller

@@ -209,6 +209,7 @@ data class ResultatBidragsberegning(
 
 data class ResultatBidragsberegningBarn(
     val barn: ResultatRolle,
+    val medInnkreving: Boolean = true,
     val erAvvistRevurdering: Boolean = false,
     val beregningInnkrevingsgrunnlag: Boolean = false,
     val resultat: BeregnetBarnebidragResultat,
@@ -259,6 +260,7 @@ data class ResultatBidragsberegningBarnDto(
     val indeksår: Int? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val forsendelseDistribueresAutomatisk: Boolean = false,
+    val medInnkreving: Boolean = true,
     val erAvvistRevurdering: Boolean = false,
     val erAvvisning: Boolean = false,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,
@@ -271,7 +273,7 @@ data class DelvedtakDto(
     val vedtaksid: Int? = null,
     val delvedtak: Boolean,
     val beregnet: Boolean,
-    val indeksår: Int,
+    val indeksår: Int?,
     val erForholdsmessigFordeling: Boolean = false,
     val resultatFraVedtakVedtakstidspunkt: LocalDateTime? = null,
     val perioder: List<ResultatBarnebidragsberegningPeriodeDto>,

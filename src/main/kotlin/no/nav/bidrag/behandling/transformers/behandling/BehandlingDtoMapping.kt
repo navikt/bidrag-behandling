@@ -380,9 +380,6 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
         return "Kan ikke fatte omgjøring/klagevedtak for bidrag med flere barn"
     }
 
-    val stønaderBp =
-        hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident)
-            ?: return if (søknadsbarn.size == 1) null else "Kan ikke fatte vedtak for bidrag med flere barn"
     if (UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled &&
         !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled
     ) {
@@ -412,6 +409,13 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
             return "Kan ikke fatte vedtak når det er lagt inn privat avtale for andre barn"
         }
     }
+
+    if (bidragspliktig == null && stønadstype in listOf(Stønadstype.BIDRAG, Stønadstype.BIDRAG18AAR)) {
+        return "Kan ikke behandle søknad for bidrag uten bidragspliktig"
+    }
+    val stønaderBp =
+        hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident)
+            ?: return if (søknadsbarn.size == 1) null else "Kan ikke fatte vedtak for bidrag med flere barn"
     val harBPStønadForFlereBarn =
         stønaderBp
             .stønader

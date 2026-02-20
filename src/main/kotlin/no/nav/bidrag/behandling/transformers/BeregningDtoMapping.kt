@@ -64,6 +64,7 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.samhandler.Valutakode
 import no.nav.bidrag.domene.enums.sjablon.SjablonTallNavn
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
@@ -186,11 +187,12 @@ fun mapTilBeregningresultatBarn(
     ResultatBidragsberegningBarn(
         barn = søknadsbarn.mapTilResultatBarn(),
         erAvvistRevurdering = erAvvistRevurdering,
+        medInnkreving = (søknadsbarn.innkrevingstype ?: behandling.innkrevingstype) == Innkrevingstype.MED_INNKREVING,
         avslagskode = søknadsbarn.avslag,
         resultatVedtak =
             BidragsberegningOrkestratorResponse(
                 resultatVedtakListe =
-                    if (erAvvistRevurdering) {
+                    if (erAvvistRevurdering && !behandling.erKlageEllerOmgjøring) {
                         emptyList()
                     } else {
                         resultatBarn.resultatVedtakListe.map {
@@ -422,6 +424,7 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                         innkrevesFraDato = resultat.innkrevesFraDato,
                         ugyldigBeregning = resultat.ugyldigBeregning,
                         erAvvistRevurdering = resultat.erAvvistRevurdering,
+                        medInnkreving = resultat.medInnkreving,
                         erAvvisning = resultat.avslagskode?.erAvvisning() == true,
                         forsendelseDistribueresAutomatisk =
                             vedtakstype == Vedtakstype.ALDERSJUSTERING && aldersjusteringDetaljer?.aldersjustert == true,

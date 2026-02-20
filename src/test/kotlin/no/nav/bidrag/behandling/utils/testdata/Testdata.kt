@@ -490,9 +490,9 @@ fun opprettSakForBehandling(behandling: Behandling): BidragssakDto =
                 RolleDto(
                     fødselsnummer = Personident(it.ident!!),
                     type = it.rolletype,
+                    rollehistorikk = emptyList(),
                 )
             },
-        rollehistorikk = emptyList(),
     )
 
 fun opprettSakForBehandlingMedReelMottaker(behandling: Behandling): BidragssakDto =

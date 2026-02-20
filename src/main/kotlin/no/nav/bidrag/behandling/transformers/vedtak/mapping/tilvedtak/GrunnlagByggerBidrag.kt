@@ -20,6 +20,7 @@ import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.sak.Sakskategori
 import no.nav.bidrag.domene.enums.samhandler.Valutakode
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
@@ -175,7 +176,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
             resultatDelvedtak.find { rv ->
                 rv.resultatBarn(søknadsbarn).beregnetBarnebidragPeriodeListe.any { vp ->
                     (resultatPeriode.periode.fom == vp.periode.fom) ||
-                        erOpphørsperiode && vp.periode.til == søknadsbarnRolle.opphørsdato?.toYearMonth()
+                        (erOpphørsperiode && vp.periode.til == søknadsbarnRolle.opphørsdato?.toYearMonth())
                 }
             }!!
         val resultatkode =
@@ -317,40 +318,48 @@ fun PrivatAvtale.mapTilGrunnlag(
     gjelderBarnReferanse: String,
     bpReferanse: String,
     virkningstidspunkt: LocalDate,
-): List<GrunnlagDto> =
-    perioderInnkreving.map {
-        GrunnlagDto(
-            type = Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG,
-            referanse = it.tilGrunnlagsreferansPrivatAvtalePeriode(gjelderBarnReferanse),
-            gjelderReferanse = bpReferanse,
-            gjelderBarnReferanse = gjelderBarnReferanse,
-            innhold =
-                POJONode(
-                    PrivatAvtalePeriodeGrunnlag(
-                        periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
-                        beløp = it.beløp,
-                        valutakode = if (this.utenlandsk) it.valutakode ?: Valutakode.NOK else Valutakode.NOK,
-                        samværsklasse = it.samværsklasse,
+): List<GrunnlagDto> {
+    val perioder =
+        perioderInnkreving.map {
+            GrunnlagDto(
+                type = Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG,
+                referanse = it.tilGrunnlagsreferansPrivatAvtalePeriode(gjelderBarnReferanse, stønadstype ?: Stønadstype.BIDRAG),
+                gjelderReferanse = bpReferanse,
+                gjelderBarnReferanse = gjelderBarnReferanse,
+                innhold =
+                    POJONode(
+                        PrivatAvtalePeriodeGrunnlag(
+                            periode = ÅrMånedsperiode(it.fom, it.tom?.plusDays(1)),
+                            beløp = it.beløp,
+                            valutakode = if (this.utenlandsk) it.valutakode ?: Valutakode.NOK else Valutakode.NOK,
+                            samværsklasse = it.samværsklasse,
+                        ),
                     ),
-                ),
-        )
-    } +
+            )
+        }
+
+    val privatAvtale =
         GrunnlagDto(
             referanse = tilGrunnlagsreferansPrivatAvtale(gjelderBarnReferanse),
             gjelderReferanse = bpReferanse,
             gjelderBarnReferanse = gjelderBarnReferanse,
             type = Grunnlagstype.PRIVAT_AVTALE_GRUNNLAG,
+            grunnlagsreferanseListe = perioder.map { it.referanse },
             innhold =
                 POJONode(
                     PrivatAvtaleGrunnlagV2(
                         avtaleInngåttDato = utledetAvtaledato ?: virkningstidspunkt!!,
                         avtaleType = avtaleType ?: PrivatAvtaleType.PRIVAT_AVTALE,
                         skalIndeksreguleres = skalIndeksreguleres,
+                        stønadstype = stønadstype ?: Stønadstype.BIDRAG,
                         sakskategori = if (utenlandsk) Sakskategori.U else Sakskategori.N,
                         vedtaksid = if (avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV) valgtVedtakFraNav?.vedtak else null,
                     ),
                 ),
         )
+
+    return perioder + listOf(privatAvtale)
+}
 
 /*
 Legg til vedtaksid hvis aldersjustering er utført basert på klagevedtaket i klageorkestreringen

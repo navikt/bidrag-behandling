@@ -1,0 +1,1 @@
+alter table privat_avtale add column if not exists stønadstype text default 'BIDRAG';

@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.samhandler.Valutakode
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.felles.toYearMonth
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
@@ -40,6 +41,8 @@ open class PrivatAvtale(
     open var grunnlagFraVedtak: GrunnlagFraVedtak? = null,
     @Enumerated(EnumType.STRING)
     open var avtaleType: PrivatAvtaleType? = null,
+    @Enumerated(EnumType.STRING)
+    open var stønadstype: Stønadstype? = null,
     open var skalIndeksreguleres: Boolean = true,
     @ManyToOne(
         fetch = FetchType.LAZY,
@@ -58,6 +61,23 @@ open class PrivatAvtale(
     )
     open var perioder: MutableSet<PrivatAvtalePeriode> = mutableSetOf(),
 ) {
+    fun gjelderPerson(
+        ident: String,
+        stønadstype: Stønadstype?,
+    ): Boolean {
+        if (rolle != null) return rolle!!.erSammeRolle(ident, stønadstype)
+        if (ident != this.personIdent) return false
+
+        return if (stønadstype == null) {
+            true
+        } else if (this.stønadstype == null) {
+            stønadstype == Stønadstype.BIDRAG
+        } else {
+            stønadstype == this.stønadstype
+        }
+    }
+
+    val gjelderOrdinærBidrag get() = stønadstype == null || stønadstype == Stønadstype.BIDRAG
     val erAllePerioderNorsk get() = perioderInnkreving.all { it.valutakode == null || it.valutakode == Valutakode.NOK }
     val personIdent get() = person?.ident ?: rolle!!.ident
     val personFødselsdato get() = person?.fødselsdato ?: rolle!!.fødselsdato

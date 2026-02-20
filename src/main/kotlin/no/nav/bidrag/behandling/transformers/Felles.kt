@@ -152,19 +152,10 @@ fun Behandling.tilStønadsid(søknadsbarn: Rolle) =
         Saksnummer(saksnummer),
     )
 
-fun <T : Comparable<T>> maxOfNullable(
-    a: T?,
-    b: T?,
-): T? =
-    if (a == null && b == null) {
-        null
-    } else if (a == null) {
-        b
-    } else if (b == null) {
-        a
-    } else {
-        maxOf(a, b)
-    }
+fun <T : Comparable<T>> maxOfNullable(vararg values: T?): T? {
+    val nonNull = values.filterNotNull()
+    return nonNull.maxOrNull()
+}
 
 fun <T : Comparable<T>> minOfNullable(vararg values: T?): T? {
     val nonNull = values.filterNotNull()
@@ -227,7 +218,7 @@ fun Behandling.finnPeriodeLøperBidrag(rolle: Rolle): ÅrMånedsperiode? {
     val fraPeriodePrivatAvtale =
         privatAvtale
             .find {
-                it.rolle?.ident == rolle.ident
+                it.rolle?.id == rolle.id
             }?.perioderInnkreving
             ?.minByOrNull { it.fom }
             ?.fom
@@ -235,7 +226,7 @@ fun Behandling.finnPeriodeLøperBidrag(rolle: Rolle): ÅrMånedsperiode? {
     val tilPeriodePrivatAvtale =
         privatAvtale
             .find {
-                it.rolle?.ident == rolle.ident
+                it.rolle?.id == rolle.id
             }?.perioderInnkreving
             ?.maxByOrNull { it.fom }
             ?.tom

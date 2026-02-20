@@ -14,9 +14,14 @@ import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleBegrunn
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.transformers.maxOfNullable
+import no.nav.bidrag.behandling.transformers.minOfNullable
+import no.nav.bidrag.behandling.transformers.tilDato18årsBidrag
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -53,9 +58,17 @@ class PrivatAvtaleService(
         behandling: Behandling,
         rolle: Rolle? = null,
         person: Person? = null,
+        stønadstype: Stønadstype? = null,
     ): PrivatAvtale {
         val privatAvtale =
-            PrivatAvtale(behandling = behandling, rolle = rolle, person = person, avtaleType = PrivatAvtaleType.PRIVAT_AVTALE)
+            PrivatAvtale(
+                behandling = behandling,
+                rolle = rolle,
+                person = person,
+                avtaleType = PrivatAvtaleType.PRIVAT_AVTALE,
+                stønadstype =
+                    rolle?.stønadstype ?: stønadstype,
+            )
         behandling.privatAvtale.add(privatAvtale)
         return privatAvtale
     }
@@ -86,6 +99,7 @@ class PrivatAvtaleService(
         privatAvtale.avtaleDato = request.avtaleDato ?: privatAvtale.avtaleDato
         privatAvtale.avtaleType = request.avtaleType ?: privatAvtale.avtaleType
         privatAvtale.utenlandsk = request.gjelderUtland ?: privatAvtale.utenlandsk
+        privatAvtale.stønadstype = request.stønadstype ?: privatAvtale.stønadstype
 
         request.oppdaterPeriode?.let {
             oppdaterPrivatAvtaleAvtalePeriode(behandlingsid, privatavtaleId, it)
@@ -178,17 +192,22 @@ class PrivatAvtaleService(
         val privatAvtale =
             behandling.privatAvtale.find { it.id == privatavtaleId }
                 ?: ugyldigForespørsel("Fant ikke privat avtale med id $privatavtaleId i behandling $behandlingsid")
-
+        val maksDato =
+            if (privatAvtale.gjelderOrdinærBidrag) {
+                privatAvtale.personFødselsdato.tilDato18årsBidrag().takeIf { it <= behandling.finnBeregnTilDato() }
+            } else {
+                null
+            }
         if (request.id == null) {
             privatAvtale.perioder.filter { it.fom < request.periode.fom }.maxByOrNull { it.fom }?.let {
-                it.tom = request.periode.fom.minusDays(1)
+                it.tom = minOfNullable(request.periode.fom.minusDays(1), maksDato)
             }
             val nyPeriode =
                 PrivatAvtalePeriode(
                     privatAvtale = privatAvtale,
                     beløp = request.beløp,
                     fom = request.periode.fom,
-                    tom = request.periode.tom,
+                    tom = maxOfNullable(request.periode.tom, maksDato),
                     valutakode = request.valutakode,
                     samværsklasse = request.samværsklasse,
                 )
@@ -206,7 +225,7 @@ class PrivatAvtaleService(
                     )
             eksisterendePeriode.beløp = request.beløp
             eksisterendePeriode.fom = request.periode.fom
-            eksisterendePeriode.tom = request.periode.tom
+            eksisterendePeriode.tom = maxOfNullable(request.periode.tom, maksDato)
             eksisterendePeriode.valutakode = request.valutakode
             eksisterendePeriode.samværsklasse = request.samværsklasse
         }
@@ -219,12 +238,12 @@ class PrivatAvtaleService(
     ): PrivatAvtale {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
         behandling.privatAvtale
-            .find { it.rolle?.ident == gjelderBarn.personident?.verdi || it.person?.ident == gjelderBarn.personident?.verdi }
+            .find { gjelderBarn.personident != null && it.gjelderPerson(gjelderBarn.personident.verdi, gjelderBarn.stønadstype) }
             ?.let {
                 ugyldigForespørsel("Privat avtale for barn med personident ${gjelderBarn.personident?.verdi} finnes allerede")
             }
         return gjelderBarn.personident?.let { personidentBarn ->
-            behandling.søknadsbarn.find { it.ident == personidentBarn.verdi }?.let {
+            behandling.søknadsbarn.find { it.erSammeRolle(personidentBarn.verdi, gjelderBarn.stønadstype) }?.let {
                 lagrePrivatAvtale(behandling, it)
             }
         } ?: run {
@@ -238,6 +257,7 @@ class PrivatAvtaleService(
             lagrePrivatAvtale(
                 behandling,
                 person = person,
+                stønadstype = gjelderBarn.stønadstype,
             )
         }
     }

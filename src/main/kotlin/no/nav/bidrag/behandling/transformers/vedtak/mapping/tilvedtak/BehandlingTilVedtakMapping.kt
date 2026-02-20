@@ -431,16 +431,19 @@ class BehandlingTilVedtakMapping(
     ): OpprettVedtakRequestDto {
         val beregninger =
             resultat.beregning.map { beregningBarn ->
+                val søknadsbarnRolle =
+                    behandling.søknadsbarn.find { it.ident == beregningBarn.barn.ident!!.verdi }
+                        ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!)
                 val endeligVedtak =
                     beregningBarn
                         .resultatVedtak!!
                         .resultatVedtakListe
                         .find { it.endeligVedtak }!!
+
                 val stønadsendringPerioder =
                     listOf(
                         endeligVedtak.resultat,
                     ).map { it.byggStønadsendringerForEndeligVedtak(behandling, beregningBarn.barn, resultat.delvedtak) }
-
                 byggVedtakForKlage(
                     behandling,
                     resultat.sak,
@@ -448,8 +451,8 @@ class BehandlingTilVedtakMapping(
                     enhet,
                     stønadsendringPerioder,
                     beregningBarn.barn,
-                    behandling.innkrevingstype!!,
-                    Beslutningstype.ENDRING,
+                    søknadsbarnRolle.innkrevingstype ?: behandling.innkrevingstype!!,
+                    if (beregningBarn.erAvvistRevurdering) Beslutningstype.AVVIST else Beslutningstype.ENDRING,
                 )
             }
 
@@ -667,7 +670,6 @@ class BehandlingTilVedtakMapping(
                 type = resultatVedtak.vedtakstype,
                 stønadsendringListe =
                     stønadsendringPerioder.map { it ->
-                        val sistePeriode = it.perioder.maxBy { it.periode.fom }
                         val søknadsbarnReferanse = it.barn.tilGrunnlagsreferanse()
                         OpprettStønadsendringRequestDto(
                             innkreving = innkreving,
@@ -697,11 +699,16 @@ class BehandlingTilVedtakMapping(
                                 stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
                             periodeListe = it.perioder,
                             førsteIndeksreguleringsår =
-                                resultatVedtak.resultat.grunnlagListe.toList().finnIndeksår(
-                                    søknadsbarnReferanse,
-                                    sistePeriode.periode,
-                                    sistePeriode.grunnlagReferanseListe,
-                                ),
+                                if (it.perioder.isEmpty()) {
+                                    null
+                                } else {
+                                    val sistePeriode = it.perioder.maxBy { it.periode.fom }
+                                    resultatVedtak.resultat.grunnlagListe.toList().finnIndeksår(
+                                        søknadsbarnReferanse,
+                                        sistePeriode.periode,
+                                        sistePeriode.grunnlagReferanseListe,
+                                    )
+                                },
                         )
                     },
                 engangsbeløpListe = emptyList(),
