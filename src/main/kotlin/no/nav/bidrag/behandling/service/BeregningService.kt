@@ -25,6 +25,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.løperBidragEtterEldsteVirkning
 import no.nav.bidrag.behandling.transformers.mapTilBeregningresultatBarn
 import no.nav.bidrag.behandling.transformers.mapTilResultatBarn
+import no.nav.bidrag.behandling.transformers.maxOfNullable
 import no.nav.bidrag.behandling.transformers.minOfNullable
 import no.nav.bidrag.behandling.transformers.perioderSlåttUtTilFF
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
@@ -354,15 +355,10 @@ class BeregningService(
                     // Avvisning - opphørsdato = opphør fra historikk
                     // Avslag - opphørsdato = beregn til
                     val virkningstidspunktBeregning =
-                        if (it.beregnGrunnlag.opphørsdato != null) {
-                            minOfNullable(
-                                søknadsbarn.virkningstidspunkt?.toYearMonth(),
-                                it.beregnGrunnlag.periode.fom,
-                                it.beregnGrunnlag.opphørsdato,
-                            )!!
-                        } else {
-                            søknadsbarn.virkningstidspunkt?.toYearMonth()!!
-                        }
+                        maxOfNullable(
+                            minOfNullable(søknadsbarn.virkningstidspunkt?.toYearMonth(), it.beregnGrunnlag.opphørsdato),
+                            it.beregnGrunnlag.periode.fom,
+                        )!!
                     BeregningGrunnlagV2(
                         søknadsbarnreferanse = it.beregnGrunnlag.søknadsbarnReferanse,
                         periode = it.beregnGrunnlag.periode,

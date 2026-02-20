@@ -152,19 +152,10 @@ fun Behandling.tilStønadsid(søknadsbarn: Rolle) =
         Saksnummer(saksnummer),
     )
 
-fun <T : Comparable<T>> maxOfNullable(
-    a: T?,
-    b: T?,
-): T? =
-    if (a == null && b == null) {
-        null
-    } else if (a == null) {
-        b
-    } else if (b == null) {
-        a
-    } else {
-        maxOf(a, b)
-    }
+fun <T : Comparable<T>> maxOfNullable(vararg values: T?): T? {
+    val nonNull = values.filterNotNull()
+    return nonNull.maxOrNull()
+}
 
 fun <T : Comparable<T>> minOfNullable(vararg values: T?): T? {
     val nonNull = values.filterNotNull()
