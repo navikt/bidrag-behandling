@@ -227,7 +227,7 @@ class VedtakService(
             }
             // Konver i lesemodus først for å sjekke FF
             val konvertertBehandlingLesemodus =
-                konverterVedtakTilBehandling(request, refVedtaksid, true)
+                konverterVedtakTilBehandling(request, refVedtaksid, true, true)
                     ?: throw RuntimeException("Fant ikke vedtak for vedtakid $refVedtaksid")
 
             val påklagetVedtak = konvertertBehandlingLesemodus.omgjøringsdetaljer?.opprinneligVedtakId
@@ -326,6 +326,7 @@ class VedtakService(
         request: OpprettBehandlingFraVedtakRequest,
         omgjørVedtakId: Int,
         lesemodus: Boolean = false,
+        inkluderKlagedetaljer: Boolean = false,
     ): Behandling? {
         // TODO: Sjekk tilganger
         val vedtak =
@@ -348,6 +349,7 @@ class VedtakService(
             vedtak.tilBehandling(
                 omgjørVedtakId = omgjørVedtakId,
                 lesemodus = lesemodus,
+                inkluderKlagedetaljer = inkluderKlagedetaljer,
                 vedtakType = request.vedtakstype,
                 mottattdato = request.mottattdato,
                 søktFomDato = request.søktFomDato,

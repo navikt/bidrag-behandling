@@ -112,6 +112,7 @@ class VedtakTilBehandlingMapping(
     fun VedtakDto.tilBehandling(
         omgjørVedtakId: Int,
         lesemodus: Boolean = true,
+        inkluderKlagedetaljer: Boolean = true,
         vedtakType: Vedtakstype? = null,
         mottattdato: LocalDate? = null,
         søktFomDato: LocalDate? = null,
@@ -194,7 +195,7 @@ class VedtakTilBehandlingMapping(
         behandling.roller = grunnlagListe.mapRoller(påklagetVedtak ?: this, behandling, lesemodus, omgjortVedtakVirkningstidspunkt)
 
         behandling.omgjøringsdetaljer =
-            if (!lesemodus || opprinneligVedtak != omgjørVedtakId) {
+            if (!lesemodus || inkluderKlagedetaljer || opprinneligVedtak != omgjørVedtakId) {
                 Omgjøringsdetaljer(
                     opprinneligVedtakstype = opprinneligVedtakstype,
                     opprinneligVedtakId = opprinneligVedtak,
