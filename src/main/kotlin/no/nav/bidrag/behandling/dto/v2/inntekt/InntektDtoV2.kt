@@ -69,6 +69,12 @@ data class InntektDtoV2(
             ident?.verdi == rolle.ident
         }
 
+    val skatteprosent get() =
+        if (rapporteringstype == Inntektsrapportering.BARNETILLEGG) {
+            inntektsposter.firstOrNull()?.skatteprosent
+        } else {
+            null
+        }
     val beløpstype get() =
         if (rapporteringstype == Inntektsrapportering.BARNETILLEGG) {
             if (inntektsposter.firstOrNull()?.beløpstype == null ||
@@ -246,6 +252,7 @@ data class OppdaterePeriodeInntekt(
     val taMedIBeregning: Boolean = false,
     @Schema(description = "Angi periode inntekten skal dekke ved beregnings")
     val angittPeriode: Datoperiode? = null,
+    val skatteprosent: BigDecimal? = null,
 )
 
 data class OppdatereManuellInntekt(
@@ -265,6 +272,7 @@ data class OppdatereManuellInntekt(
     @Schema(description = "Inntektens beløp i norske kroner", required = true)
     val beløp: BigDecimal,
     val beløpstype: InntektBeløpstype = InntektBeløpstype.ÅRSBELØP,
+    val skatteprosent: BigDecimal? = null,
     @Schema(type = "String", format = "date", example = "2024-01-01", nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoFom: LocalDate,

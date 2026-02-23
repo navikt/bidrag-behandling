@@ -15,6 +15,8 @@ import no.nav.bidrag.behandling.transformers.behandling.mapTilInntektspostEndrin
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erHistorisk
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
+import no.nav.bidrag.behandling.transformers.skattefaktorTilProsent
+import no.nav.bidrag.behandling.transformers.skatteprosentTilFaktor
 import no.nav.bidrag.behandling.transformers.validerPerioder
 import no.nav.bidrag.beregn.core.util.InntektUtil.beløpTilÅrsbeløp
 import no.nav.bidrag.beregn.core.util.avrundetTilToDesimaler
@@ -34,6 +36,7 @@ import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import no.nav.bidrag.transport.felles.ifTrue
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
@@ -105,6 +108,7 @@ fun Set<Inntektspost>.tilInntektspostDtoV2() =
                 visningsnavn = finnVisningsnavn(inntekt.kode),
                 inntektstype = inntekt.inntektstype,
                 beløpstype = inntekt.beløpstype,
+                skatteprosent = inntekt.skattefaktor.skattefaktorTilProsent,
                 beløp =
                     inntekt.beløp.nærmesteHeltall *
                         if (inntekt.inntekt?.type ==
@@ -135,6 +139,7 @@ fun SummertMånedsinntekt.tilInntektDtoV2(gjelder: Rolle) =
                         inntektstype = it.inntekstype,
                         beløp = InntektUtil.kapitalinntektFaktor(it.kode) * it.beløp,
                         beløpstype = InntektBeløpstype.ÅRSBELØP,
+                        skatteprosent = null,
                     )
                 }.sortedByDescending { it.beløp }
                 .toSet(),
@@ -191,6 +196,12 @@ fun OppdatereManuellInntekt.oppdatereEksisterendeInntekt(inntekt: Inntekt): Innt
                 inntektstype = this.inntektstype,
                 beløpstype = beløpstype,
                 kode = this.type.toString(),
+                skattefaktor =
+                    if (inntekt.type === Inntektsrapportering.BARNETILLEGG) {
+                        this.skatteprosent.skatteprosentTilFaktor
+                    } else {
+                        null
+                    },
             ),
         )
     }
@@ -224,6 +235,7 @@ fun Inntekt.tilIkkeAktivInntektDto(
                     it.inntektstype,
                     it.beløp.nærmesteHeltall,
                     it.beløpstype,
+                    it.skattefaktor,
                 )
             }.toSet(),
 )
@@ -278,6 +290,7 @@ fun InntektPost.toInntektpost() =
         inntekstype,
         beløp.nærmesteHeltall,
         InntektBeløpstype.ÅRSBELØP,
+        null,
     )
 
 fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
@@ -314,6 +327,12 @@ fun OppdatereManuellInntekt.lagreSomNyInntekt(behandling: Behandling): Inntekt {
                     inntektstype = this.inntektstype,
                     beløpstype = this.beløpstype,
                     kode = this.type.toString(),
+                    skattefaktor =
+                        if (inntekt.type === Inntektsrapportering.BARNETILLEGG) {
+                            this.skatteprosent.skatteprosentTilFaktor
+                        } else {
+                            null
+                        },
                 ),
             )
     }
