@@ -1173,6 +1173,12 @@ fun List<Inntekt>.mapValideringsfeilForYtelse(
             gjelderBarn = gjelderBarn?.ident,
             gjelderBarnRolle = gjelderBarn?.tilDto(),
             erYtelse = true,
+            manglerSkatteprosent =
+                if (type == Inntektsrapportering.BARNETILLEGG) {
+                    inntekterTaMed.any { it.inntektsposter.any { it.skattefaktor == null } }
+                } else {
+                    false
+                },
         ).takeIf { it.harFeil }
     }
 

@@ -1242,6 +1242,7 @@ private fun BaseGrunnlag.tilInntekt(
                     inntektstype = it.inntektstype,
                     beløp = it.beløp,
                     beløpstype = it.beløpstype,
+                    skattefaktor = it.skattefaktor,
                     inntekt = inntektBO,
                 )
             }.toMutableSet()

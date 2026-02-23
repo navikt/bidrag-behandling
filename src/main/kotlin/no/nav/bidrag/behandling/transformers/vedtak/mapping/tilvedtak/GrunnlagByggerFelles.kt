@@ -785,6 +785,7 @@ internal fun Inntekt.tilInntektsrapporteringPeriode(
                             beløp = it.beløp,
                             inntektstype = it.inntektstype,
                             beløpstype = it.beløpstype ?: InntektBeløpstype.ÅRSBELØP,
+                            skattefaktor = it.skattefaktor,
                             kode = it.kode,
                         )
                     },

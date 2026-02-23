@@ -104,6 +104,9 @@ val eksplisitteYtelserGrunnlagsdatatype =
     )
 val inntekterSomKanHaHullIPerioder = eksplisitteYtelser
 
+val BigDecimal?.skatteprosentTilFaktor get() = this?.divide(BigDecimal(100), 10, RoundingMode.HALF_UP)
+val BigDecimal?.skattefaktorTilProsent get() = this?.multiply(BigDecimal(100))
+
 fun Behandling.tilType() = bestemTypeBehandling(stonadstype, engangsbeloptype)
 
 fun BehandlingSimple.tilType() = bestemTypeBehandling(stønadstype, engangsbeløptype)
