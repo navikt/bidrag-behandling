@@ -2143,6 +2143,7 @@ fun Behandling.leggTilBarnetillegg(
             beløp = BigDecimal(3000),
             inntektstype = Inntektstype.BARNETILLEGG_AAP,
             inntekt = inntekt,
+            skattefaktor = BigDecimal("0.02"),
             kode = "",
         ),
     )
