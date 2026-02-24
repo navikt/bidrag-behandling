@@ -88,7 +88,7 @@ data class ResultatDelvedtak(
 ) {
     val alleResultater get() = resultater.ifEmpty { listOf(Pair(null, resultat)) }
 
-    fun resultatBarn(barn: ResultatRolle) = resultatBarn(barn.ident!!.verdi, barn.stønadstype)!!
+    fun resultatBarn(barn: ResultatRolle) = resultatBarn(barn.ident!!.verdi, barn.stønadstype)
 
     fun resultatBarn(
         ident: String,
