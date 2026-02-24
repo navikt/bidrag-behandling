@@ -289,34 +289,6 @@ class VirkningstidspunktService(
                     }
                 }
             }
-
-            val notat = request.henteOppdatereNotat()
-            if (notat != null) {
-                if (gjelderBarnRolle != null) {
-                    notatService.oppdatereNotat(
-                        it,
-                        NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                        notat.nyBegrunnelse,
-                        gjelderBarnRolle,
-                    )
-                } else {
-                    it.søknadsbarn.forEach { barn ->
-                        notatService.oppdatereNotat(
-                            it,
-                            NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                            notat.nyBegrunnelse,
-                            barn,
-                        )
-                    }
-                    notatService.oppdatereNotat(
-                        it,
-                        NotatGrunnlag.NotatType.VIRKNINGSTIDSPUNKT,
-                        notat.nyBegrunnelse,
-                        it.bidragsmottaker!!,
-                    )
-                }
-            }
-
             oppdaterVirkningstidspunkt(request.rolleId, request.virkningstidspunkt, it)
             it
         }
