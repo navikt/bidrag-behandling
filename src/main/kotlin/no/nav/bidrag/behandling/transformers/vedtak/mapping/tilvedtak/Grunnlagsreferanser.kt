@@ -25,9 +25,11 @@ fun Tilleggsstønad.tilGrunnlagsreferanseTilleggsstønad(gjelderBarnReferanse: G
     "${Grunnlagstype.TILLEGGSSTØNAD_PERIODE}_${gjelderBarnReferanse}_" +
         "_${fom.toCompactString()}${tom?.let { "_${it.toCompactString()}" } ?: ""}"
 
-fun FaktiskTilsynsutgift.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse: Grunnlagsreferanse) =
-    "${Grunnlagstype.FAKTISK_UTGIFT_PERIODE}_${gjelderBarnReferanse}_" +
-        "_${fom.toCompactString()}${tom?.let { "_${it.toCompactString()}" } ?: ""}"
+fun FaktiskTilsynsutgift.tilGrunnlagsreferanseFaktiskTilsynsutgift(
+    gjelderBarnReferanse: Grunnlagsreferanse,
+    postfix: String,
+) = "${Grunnlagstype.FAKTISK_UTGIFT_PERIODE}_${gjelderBarnReferanse}_" +
+    "_${fom.toCompactString()}${tom?.let { "_${it.toCompactString()}" } ?: ""}$postfix"
 
 fun PrivatAvtale.tilGrunnlagsreferansPrivatAvtale(gjelderBarnReferanse: Grunnlagsreferanse) =
     "${Grunnlagstype.PRIVAT_AVTALE_GRUNNLAG}_${gjelderBarnReferanse}_${stønadstype ?: Stønadstype.BIDRAG}"

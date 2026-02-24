@@ -546,7 +546,7 @@ class BehandlingTilGrunnlagMappingV2(
 
                         val gjelderBarnReferanse = gjelderBarn.referanse
                         GrunnlagDto(
-                            referanse = it.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse),
+                            referanse = it.tilGrunnlagsreferanseFaktiskTilsynsutgift(gjelderBarnReferanse, id.toString()),
                             type = Grunnlagstype.FAKTISK_UTGIFT_PERIODE,
                             gjelderReferanse = uBidragsmottaker!!.tilGrunnlagsreferanse(),
                             gjelderBarnReferanse = gjelderBarnReferanse,
