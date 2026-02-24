@@ -30,6 +30,7 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -49,6 +50,11 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 val SakKravhaver.søknadsider get() = åpneSøknader.map { it.søknadsid } + åpneBehandlinger.map { it.soknadsid ?: -1 }
+val Behandlingstype.erForholdsmessigFordeling get() =
+    listOf(
+        Behandlingstype.FORHOLDSMESSIG_FORDELING,
+        Behandlingstype.FORHOLDSMESSIG_FORDELING_KLAGE,
+    ).contains(this)
 
 fun Collection<SakKravhaver>.finnEldsteSøktFomDato(behandling: Behandling) =
     (

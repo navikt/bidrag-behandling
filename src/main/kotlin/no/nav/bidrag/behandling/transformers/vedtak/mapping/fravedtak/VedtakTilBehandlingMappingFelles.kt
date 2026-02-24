@@ -38,6 +38,7 @@ import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.erForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.harOpprettetForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.kanOpprette35C
@@ -1316,7 +1317,7 @@ private fun GrunnlagDto.tilRolle(
                         grunnlagsliste.hentSøknader(referanse)
                     }
                 val personGrunnlag = grunnlagsliste.hentPerson(personIdent)?.personObjekt!!
-                val erRevurdering = søknader.all { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }
+                val erRevurdering = søknader.all { it.behandlingstype.erForholdsmessigFordeling }
                 val førsteSøknad = søknader.first()
                 ForholdsmessigFordelingRolle(
                     tilhørerSak = stønadsendring?.sak?.verdi ?: førsteSøknad.saksnummer ?: behandling.saksnummer,

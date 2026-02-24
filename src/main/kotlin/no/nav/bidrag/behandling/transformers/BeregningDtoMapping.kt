@@ -37,6 +37,7 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilSøknadsdetaljerDto
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.erForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligInntekt
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
@@ -1615,7 +1616,7 @@ fun List<GrunnlagDto>.harOpprettetForholdsmessigFordeling(): Boolean =
     hentBehandlingDetaljer()?.opprettetForholdsmessigFordeling == true ||
         // Opprettet FF
         hentSøknader().any {
-            it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING
+            it.behandlingstype.erForholdsmessigFordeling
         } ||
         // Opprett FF når alle barna er i samme søknad. Tilfelle hvor det er valgt ulik virkningstidspunkt for barna
         filtrerOgKonverterBasertPåEgenReferanse<VirkningstidspunktGrunnlag>(Grunnlagstype.VIRKNINGSTIDSPUNKT).any {

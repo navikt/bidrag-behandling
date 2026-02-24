@@ -250,7 +250,7 @@ class ForholdsmessigFordelingService(
                         .first()
                         .forholdsmessigFordeling
                         ?.søknader
-                        ?.find { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING_KLAGE }
+                        ?.find { it.behandlingstype == behandling.behandlingstypeForFF }
                         ?.søknadFomDato ?: relevanteKravhavereRevurderingsbarn.finnSøktFomRevurderingSøknad(behandling)
 
                 revurderingsbarnRoller.forEach {
@@ -1424,7 +1424,7 @@ class ForholdsmessigFordelingService(
                 søknadFomDato = søktFomDato,
                 søktAvType = SøktAvType.NAV_BIDRAG,
                 behandlingstema = stønadstype?.tilBehandlingstema() ?: behandling.behandlingstema,
-                behandlingstype = Behandlingstype.FORHOLDSMESSIG_FORDELING,
+                behandlingstype = behandling.behandlingstypeForFF,
                 enhet = behandlerEnhet,
             )
         val søknadMedInnkreving =
