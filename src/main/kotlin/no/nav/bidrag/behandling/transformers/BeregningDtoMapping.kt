@@ -1616,7 +1616,7 @@ fun List<GrunnlagDto>.harOpprettetForholdsmessigFordeling(): Boolean =
     hentBehandlingDetaljer()?.opprettetForholdsmessigFordeling == true ||
         // Opprettet FF
         hentSøknader().any {
-            it.behandlingstype.erForholdsmessigFordeling
+            it.behandlingstype?.erForholdsmessigFordeling == true
         } ||
         // Opprett FF når alle barna er i samme søknad. Tilfelle hvor det er valgt ulik virkningstidspunkt for barna
         filtrerOgKonverterBasertPåEgenReferanse<VirkningstidspunktGrunnlag>(Grunnlagstype.VIRKNINGSTIDSPUNKT).any {
