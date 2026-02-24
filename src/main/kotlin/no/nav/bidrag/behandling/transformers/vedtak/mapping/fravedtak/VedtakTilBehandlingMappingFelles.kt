@@ -1317,7 +1317,7 @@ private fun GrunnlagDto.tilRolle(
                         grunnlagsliste.hentSøknader(referanse)
                     }
                 val personGrunnlag = grunnlagsliste.hentPerson(personIdent)?.personObjekt!!
-                val erRevurdering = søknader.all { it.behandlingstype.erForholdsmessigFordeling }
+                val erRevurdering = søknader.all { it.behandlingstype?.erForholdsmessigFordeling == true }
                 val førsteSøknad = søknader.first()
                 ForholdsmessigFordelingRolle(
                     tilhørerSak = stønadsendring?.sak?.verdi ?: førsteSøknad.saksnummer ?: behandling.saksnummer,
