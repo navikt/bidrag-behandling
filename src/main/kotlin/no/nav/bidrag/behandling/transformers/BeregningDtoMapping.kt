@@ -1581,6 +1581,7 @@ fun List<GrunnlagDto>.finnBarnetillegg(
                         bruttoBeløp = it.bruttoBarnetillegg,
                         nettoBeløp = it.nettoBarnetillegg,
                         visningsnavn = it.barnetilleggType.visningsnavn.intern,
+                        skattefaktor = it.skattefaktor ?: BigDecimal.ZERO,
                     )
                 } ?: emptyList(),
     )
