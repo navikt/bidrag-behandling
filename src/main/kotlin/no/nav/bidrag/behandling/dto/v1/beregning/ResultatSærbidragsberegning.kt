@@ -60,6 +60,7 @@ data class DelberegningBarnetilleggDto(
         val bruttoBeløp: BigDecimal,
         val nettoBeløp: BigDecimal,
         val visningsnavn: String,
+        val skattefaktor: BigDecimal = BigDecimal.ZERO,
     )
 }
 
