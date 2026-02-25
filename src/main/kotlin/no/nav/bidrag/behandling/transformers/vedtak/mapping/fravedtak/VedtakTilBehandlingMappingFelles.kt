@@ -197,7 +197,8 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                     innkrevesFraDato = orkestreringDetaljer?.innkrevesFraDato,
                     perioder =
                         vedtakBeregning?.let {
-                            val stønadsendringBeregning = vedtakBeregning.finnStønadsendring(stønadsendring.tilStønadsid())!!
+                            val stønadsendringBeregning =
+                                vedtakBeregning.finnStønadsendring(stønadsendring.tilStønadsid()) ?: return@let emptyList()
                             it.hentBeregningsperioder(stønadsendringBeregning)
                         } ?: hentBeregningsperioder(stønadsendring),
                 )
