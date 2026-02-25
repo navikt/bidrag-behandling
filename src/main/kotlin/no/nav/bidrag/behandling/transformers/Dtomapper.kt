@@ -1181,7 +1181,7 @@ class Dtomapper(
                     avslag = avslag,
                     begrunnelse = BegrunnelseDto(henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT)),
                     harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
-                    harLøpendeForskudd = finnesLøpendeForskuddForRolle(søknadsbarn.first()),
+                    harLøpendeForskudd = søknadsbarn.any { finnesLøpendeForskuddForRolle(it) },
                     opphørsdato = globalOpphørsdato,
                     valideringsfeil = hentVirkningstidspunktValideringsfeil(),
                     mottattdato = mottattdato,

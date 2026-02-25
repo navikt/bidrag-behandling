@@ -211,7 +211,7 @@ fun VedtakDto.erVedtakUtenBeregning() =
         stønadsendringListe
             .all {
                 it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" ||
-                    erOrkestrertVedtak && type == Vedtakstype.INNKREVING
+                    (erOrkestrertVedtak && type == Vedtakstype.INNKREVING)
             }
 
 internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<DelvedtakDto> {

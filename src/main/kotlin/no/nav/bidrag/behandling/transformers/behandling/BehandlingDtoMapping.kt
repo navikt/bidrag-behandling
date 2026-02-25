@@ -58,6 +58,8 @@ import no.nav.bidrag.behandling.transformers.finnCutoffDatoFom
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
 import no.nav.bidrag.behandling.transformers.finnHullIPerioder
 import no.nav.bidrag.behandling.transformers.finnOverlappendePerioderInntekt
+import no.nav.bidrag.behandling.transformers.finnesLøpendeBidragForRolle
+import no.nav.bidrag.behandling.transformers.finnesLøpendeForskuddForRolle
 import no.nav.bidrag.behandling.transformers.harUgyldigSluttperiode
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.inntekstrapporteringerSomKreverGjelderBarn
@@ -510,6 +512,8 @@ fun Rolle.tilDto() =
         saksnummer = forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
         beregnFraDato = finnBeregnFra(),
         beregnTilDato = finnBeregnTil(),
+        harLøpendeForskudd = behandling.finnesLøpendeForskuddForRolle(this),
+        harLøpendeBidrag = behandling.finnesLøpendeBidragForRolle(this),
         bidragsmottaker =
             if (rolletype == Rolletype.BARN) {
                 forholdsmessigFordeling?.bidragsmottaker ?: behandling.bidragsmottaker?.ident

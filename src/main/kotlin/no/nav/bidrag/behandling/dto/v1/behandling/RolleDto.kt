@@ -19,4 +19,6 @@ data class RolleDto(
     val beregnFraDato: YearMonth? = null,
     val beregnTilDato: YearMonth? = null,
     val bidragsmottaker: String? = null,
+    val harLøpendeForskudd: Boolean? = false,
+    val harLøpendeBidrag: Boolean? = false,
 )
