@@ -1119,6 +1119,7 @@ private fun Behandling.tilVirkningstidspunktBarn() =
         val eldsteSøknad = it.forholdsmessigFordeling?.eldsteSøknad
         NotatVirkningstidspunktBarnDto(
             rolle = it.tilNotatRolle(),
+            stønadstype = it.stønadstypeBarnEllerBehandling,
             behandlingstype = eldsteSøknad?.behandlingstype ?: søknadstype,
             søknadstype = eldsteSøknad?.behandlingstype?.name ?: søknadstype?.name,
             vedtakstype = vedtakstype,

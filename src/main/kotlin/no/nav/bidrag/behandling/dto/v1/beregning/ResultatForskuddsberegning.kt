@@ -24,7 +24,7 @@ data class ResultatBeregningBarnDto(
         val løperForskudd: Boolean,
     ) {
         @Suppress("unused")
-        val resultatkodeVisningsnavn get() = resultatKode.visningsnavnIntern(if (løperForskudd) Vedtakstype.OPPHØR else vedtakstype)
+        val resultatkodeVisningsnavn get() = resultatKode.visningsnavnIntern(vedtakstype, løperForskudd)
     }
 }
 

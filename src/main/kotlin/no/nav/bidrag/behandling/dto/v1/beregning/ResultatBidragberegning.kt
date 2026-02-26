@@ -392,7 +392,7 @@ data class ResultatBarnebidragsberegningPeriodeDto(
             erDirekteAvslag ||
                 resultatKode == Resultatkode.INGEN_ENDRING_UNDER_GRENSE ||
                 resultatKode == Resultatkode.INNVILGET_VEDTAK -> {
-                resultatKode!!.visningsnavnIntern(if (`løperBidrag`) Vedtakstype.OPPHØR else vedtakstype)
+                resultatKode!!.visningsnavnIntern(vedtakstype, løperBidrag)
             }
 
             ugyldigBeregning != null -> {
