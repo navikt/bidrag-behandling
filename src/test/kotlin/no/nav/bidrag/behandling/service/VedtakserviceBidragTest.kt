@@ -2447,7 +2447,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
 
-            request.grunnlagListe shouldHaveSize 11
+            request.grunnlagListe shouldHaveSize 12
             hentGrunnlagstyper(Grunnlagstype.MANUELT_OVERSTYRT_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 1
@@ -2471,7 +2471,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 it.skyldner shouldBe Personident(testdataBP.ident)
                 it.kravhaver shouldBe Personident(testdataBarn1.ident)
                 it.mottaker shouldBe Personident(testdataBM.ident)
-                it.grunnlagReferanseListe shouldHaveSize 3
+                it.grunnlagReferanseListe shouldHaveSize 4
                 val vtGrunnlag = request.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(Grunnlagstype.VIRKNINGSTIDSPUNKT, it.grunnlagReferanseListe)
                 vtGrunnlag.size shouldBe 1
                 val virkningstidspunkt = vtGrunnlag.first().innholdTilObjekt<VirkningstidspunktGrunnlag>()
