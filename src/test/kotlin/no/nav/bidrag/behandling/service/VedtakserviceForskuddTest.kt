@@ -522,7 +522,7 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
             request.type shouldBe Vedtakstype.FASTSETTELSE
             request.stønadsendringListe shouldHaveSize 2
             request.engangsbeløpListe.shouldBeEmpty()
-            request.grunnlagListe shouldHaveSize 6
+            request.grunnlagListe shouldHaveSize 8
             assertSoftly(behandlingsreferanseListe) { behandlingRef ->
                 behandlingRef shouldHaveSize 2
                 with(behandlingRef[0]) {
@@ -540,7 +540,7 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
                     it[0].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
                     it[0].kravhaver.verdi shouldBe behandling.søknadsbarn[0].ident
                     it[0].skyldner.verdi shouldBe "NAV"
-                    it[0].grunnlagReferanseListe.shouldHaveSize(3)
+                    it[0].grunnlagReferanseListe.shouldHaveSize(4)
                     it[0].grunnlagReferanseListe.forEach {
                         grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
                     }
@@ -563,7 +563,7 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
                     it[1].mottaker.verdi shouldBe behandling.bidragsmottaker?.ident
                     it[1].kravhaver.verdi shouldBe behandling.søknadsbarn[1].ident
                     it[1].skyldner.verdi shouldBe "NAV"
-                    it[1].grunnlagReferanseListe.shouldHaveSize(3)
+                    it[1].grunnlagReferanseListe.shouldHaveSize(4)
                     it[1].grunnlagReferanseListe.forEach {
                         grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
                     }
