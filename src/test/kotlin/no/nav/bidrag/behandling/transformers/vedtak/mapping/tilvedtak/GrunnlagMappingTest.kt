@@ -206,7 +206,7 @@ class GrunnlagMappingTest {
                 val grunnlag = behandling.byggGrunnlagGenerelt()
 
                 assertSoftly(grunnlag.toList()) {
-                    it shouldHaveSize 5
+                    it shouldHaveSize 7
                     it.filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT) shouldHaveSize 1
                     it.filtrerBasertPåEgenReferanse(Grunnlagstype.SØKNAD) shouldHaveSize 1
                     it.filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT) shouldHaveSize 3

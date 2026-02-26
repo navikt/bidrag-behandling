@@ -894,7 +894,7 @@ fun StønadDto?.tilGrunnlagBeløpshistorikk(
         innhold =
             POJONode(
                 BeløpshistorikkGrunnlag(
-                    tidspunktInnhentet = LocalDateTime.now(),
+                    tidspunktInnhentet = innhentetTidspunkt,
                     nesteIndeksreguleringsår = this?.nesteIndeksreguleringsår ?: this?.førsteIndeksreguleringsår,
                     beløpshistorikk =
                         this?.periodeListe?.map {

@@ -722,7 +722,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 lesemodus = lesemodus,
             )
         },
-    if (behandling.vedtakstype == Vedtakstype.KLAGE && !lesemodus) {
+    if ((behandling.vedtakstype == Vedtakstype.KLAGE && !lesemodus) || lesemodus) {
         behandling.stonadstype?.let {
             filtrerOgKonverterBasertPåEgenReferanse<BeløpshistorikkGrunnlag>(
                 grunnlagType = it.tilGrunnlagstypeBeløpshistorikk(),
@@ -730,14 +730,16 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 .map { (gjelderBarnReferanse, grunnlagsliste) ->
                     val grunnlag = grunnlagsliste.firstOrNull()
                     val gjelderBarn = hentPersonMedReferanse(gjelderBarnReferanse)!!
-                    val gjelder = grunnlag?.let { hentPersonMedReferanse(grunnlag.gjelderReferanse) }
                     val rolleBarn = behandling.søknadsbarn.find { it.ident == gjelderBarn.personIdent }!!
                     behandling.opprettGrunnlag(
                         it.tilGrunnlagsdatatypeBeløpshistorikk(),
                         behandling.opprettStønadDto(rolleBarn, grunnlag?.innhold),
                         rolleIdent = rolleBarn.ident!!,
-                        gjelder = gjelder?.personIdent,
-                        innhentetTidspunkt = behandling.omgjøringsdetaljer?.omgjortVedtakstidspunktListe!!.min(),
+                        gjelder = rolleBarn.ident!!,
+                        innhentetTidspunkt =
+                            behandling.omgjøringsdetaljer?.omgjortVedtakstidspunktListe?.minOrNull()
+                                ?: grunnlag?.innhold?.tidspunktInnhentet
+                                ?: LocalDateTime.now(),
                         lesemodus = lesemodus,
                     )
                 }
@@ -1029,7 +1031,7 @@ fun Behandling.opprettGrunnlag(
     type = type,
     erBearbeidet = erBearbeidet,
     gjelder = gjelder,
-    grunnlagFraVedtakSomSkalOmgjøres = true,
+    grunnlagFraVedtakSomSkalOmgjøres = !lesemodus,
     aktiv = innhentetTidspunkt,
     rolle = roller.find { it.ident == rolleIdent }!!,
 )
