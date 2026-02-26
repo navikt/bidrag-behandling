@@ -730,12 +730,13 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 .map { (gjelderBarnReferanse, grunnlagsliste) ->
                     val grunnlag = grunnlagsliste.firstOrNull()
                     val gjelderBarn = hentPersonMedReferanse(gjelderBarnReferanse)!!
+                    val gjelder = grunnlag?.let { hentPersonMedReferanse(grunnlag.gjelderReferanse) }
                     val rolleBarn = behandling.søknadsbarn.find { it.ident == gjelderBarn.personIdent }!!
                     behandling.opprettGrunnlag(
                         it.tilGrunnlagsdatatypeBeløpshistorikk(),
                         behandling.opprettStønadDto(rolleBarn, grunnlag?.innhold),
                         rolleIdent = rolleBarn.ident!!,
-                        gjelder = rolleBarn.ident!!,
+                        gjelder = gjelder?.personIdent,
                         innhentetTidspunkt =
                             behandling.omgjøringsdetaljer?.omgjortVedtakstidspunktListe?.minOrNull()
                                 ?: grunnlag?.innhold?.tidspunktInnhentet
