@@ -39,6 +39,8 @@ import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspu
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erForskudd
 import no.nav.bidrag.behandling.transformers.erHistorisk
+import no.nav.bidrag.behandling.transformers.finnesLøpendeBidragForRolle
+import no.nav.bidrag.behandling.transformers.finnesLøpendeForskuddForRolle
 import no.nav.bidrag.behandling.transformers.grunnlag.erBarnTilBMUnder12År
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.inntekt.bestemOpprinneligTomVisningsverdi
@@ -1144,6 +1146,8 @@ private fun RolleDto.tilNotatRolle() =
         ident = ident?.let { Personident(ident) },
         saksnummer = saksnummer,
         bidragsmottakerIdent = bidragsmottaker,
+        harLøpendeBidrag = harLøpendeBidrag,
+        harLøpendeForskudd = harLøpendeForskudd,
     )
 
 private fun PersoninfoDto.tilNotatRolle(behandling: Behandling): DokumentmalPersonDto {
@@ -1156,6 +1160,8 @@ private fun PersoninfoDto.tilNotatRolle(behandling: Behandling): DokumentmalPers
         bidragsmottakerIdent = rolle?.bidragsmottaker?.ident,
         saksnummer = rolle?.saksnummer,
         revurdering = rolle?.erRevurderingsbarn == true,
+        harLøpendeForskudd = rolle?.let { behandling.finnesLøpendeForskuddForRolle(rolle) } == true,
+        harLøpendeBidrag = rolle?.let { behandling.finnesLøpendeBidragForRolle(rolle) } == true,
     )
 }
 
@@ -1170,6 +1176,8 @@ private fun Rolle.tilNotatRolle() =
         saksnummer = saksnummer,
         bidragsmottakerIdent = bidragsmottaker?.ident,
         revurdering = forholdsmessigFordeling?.erRevurdering == true,
+        harLøpendeForskudd = behandling.finnesLøpendeForskuddForRolle(this),
+        harLøpendeBidrag = behandling.finnesLøpendeBidragForRolle(this),
     )
 
 private fun Inntekt.tilNotatInntektDto() =

@@ -570,6 +570,8 @@ class Dtomapper(
                     revurdering = søknadsbarn?.forholdsmessigFordeling?.erRevurdering == true,
                     saksnummer = søknadsbarn?.saksnummer,
                     bidragsmottakerIdent = søknadsbarn?.bidragsmottaker?.ident,
+                    harLøpendeBidrag = søknadsbarn?.let { behandling.finnesLøpendeBidragForRolle(it) } == true,
+                    harLøpendeForskudd = søknadsbarn?.let { behandling.finnesLøpendeForskuddForRolle(it) } == true,
                 ),
             kilde = kilde,
             medIBehandling = behandling.roller.any { it.ident == this.ident },
