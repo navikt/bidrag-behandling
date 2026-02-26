@@ -76,6 +76,7 @@ class BeregningDtoMappingTest {
                         stønadstype = Stønadstype.FORSKUDD,
                         referanse = testdataBarn1.tilRolle().tilGrunnlagsreferanse(),
                     ),
+                    løperForskudd = false,
                     BeregnetForskuddResultat(
                         beregnetForskuddPeriodeListe =
                             listOf(

@@ -111,7 +111,7 @@ fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderBarn(
     grunnlagFraVedtakSomSkalOmgjøres: Boolean? = null,
 ) = hentSisteAktiv(true)
     .find {
-        it.gjelder == gjelderBarnIdent && type == it.type &&
+        (it.gjelder == gjelderBarnIdent || it.rolle.ident == gjelderBarnIdent) && type == it.type &&
             // Hvis det ikke er spesifikt valgt å hente grunnlag fra vedtak som omgjøres så hent det første som finnes. Kan hende siste grunnlag er grunnlag hentet fra vedtak som omgjøres
             if (grunnlagFraVedtakSomSkalOmgjøres == null) true else it.grunnlagFraVedtakSomSkalOmgjøres == grunnlagFraVedtakSomSkalOmgjøres
     }

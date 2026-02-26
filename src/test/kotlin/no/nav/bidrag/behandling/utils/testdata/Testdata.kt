@@ -492,7 +492,6 @@ fun opprettSakForBehandling(behandling: Behandling): BidragssakDto =
                     type = it.rolletype,
                 )
             },
-        rollehistorikk = emptyList(),
     )
 
 fun opprettSakForBehandlingMedReelMottaker(behandling: Behandling): BidragssakDto =
