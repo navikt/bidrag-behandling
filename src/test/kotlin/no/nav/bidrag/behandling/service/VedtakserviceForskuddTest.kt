@@ -482,7 +482,7 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
             mottaker.verdi shouldBe nyIdentBm
         }
         opprettVedtakRequest.engangsbeløpListe.shouldBeEmpty()
-        opprettVedtakRequest.grunnlagListe.shouldHaveSize(6)
+        opprettVedtakRequest.grunnlagListe.shouldHaveSize(8)
         opprettVedtakRequest.grunnlagListe.hentAllePersoner() shouldHaveSize 3
         verify(exactly = 1) {
             vedtakConsumer.fatteVedtak(any())
@@ -638,7 +638,7 @@ private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandlin
             it[0].kravhaver.verdi shouldBe behandling.søknadsbarn[0].ident
             it[0].skyldner.verdi shouldBe "NAV"
             it[0].omgjørVedtakId shouldBe 553
-            it[0].grunnlagReferanseListe.shouldHaveSize(5)
+            it[0].grunnlagReferanseListe.shouldHaveSize(6)
             it[0].grunnlagReferanseListe.forEach {
                 grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
             }
