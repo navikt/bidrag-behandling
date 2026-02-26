@@ -666,7 +666,7 @@ private fun OpprettVedtakRequestDto.validerVedtaksdetaljer(behandling: Behandlin
             it[1].kravhaver.verdi shouldBe behandling.søknadsbarn[1].ident
             it[1].skyldner.verdi shouldBe "NAV"
             it[1].omgjørVedtakId shouldBe 553
-            it[1].grunnlagReferanseListe.shouldHaveSize(5)
+            it[1].grunnlagReferanseListe.shouldHaveSize(6)
             it[1].grunnlagReferanseListe.forEach {
                 grunnlagListe.filtrerBasertPåEgenReferanse(referanse = it).shouldHaveSize(1)
             }
