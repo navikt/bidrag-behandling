@@ -21,13 +21,15 @@ data class ResultatBeregningBarnDto(
         val sivilstand: Sivilstandskode?,
         val inntekt: BigDecimal,
         val antallBarnIHusstanden: Int,
+        val løperForskudd: Boolean,
     ) {
         @Suppress("unused")
-        val resultatkodeVisningsnavn get() = resultatKode.visningsnavnIntern(vedtakstype)
+        val resultatkodeVisningsnavn get() = resultatKode.visningsnavnIntern(if (løperForskudd) Vedtakstype.OPPHØR else vedtakstype)
     }
 }
 
 data class ResultatForskuddsberegningBarn(
     val barn: ResultatRolle,
+    val løperForskudd: Boolean = false,
     val resultat: BeregnetForskuddResultat,
 )

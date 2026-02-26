@@ -223,6 +223,7 @@ fun mapTilBeregningresultatBarn(
                 ?.toYearMonth(),
         innkrevesFraDato = behandling.finnInnkrevesFraDato(`søknadsbarn`),
         opphørsdato = `søknadsbarn`.opphørsdato?.toYearMonth(),
+        `løperBidrag` = behandling.løperBidragEtterEldsteVirkning(søknadsbarn),
         resultat =
             if (endeligResultat != null && søknadsbarn.erDirekteAvslag) {
                 val sistePeriode = endeligResultat.periodeListe.maxByOrNull { it.periode.fom }
@@ -792,6 +793,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
     vedtakstype: Vedtakstype,
     barnIdent: Personident,
     erEndeligVedtak: Boolean = false,
+    `løperBidrag`: Boolean = false,
 ): ResultatBarnebidragsberegningPeriodeDto {
     if (vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringBisysVedtak()) {
         return byggPeriodeBeregningDtoForAldersjustering(
@@ -840,6 +842,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
             ugyldigBeregning,
             resultat,
             erResultatEndringUnderGrense,
+            `løperBidrag`,
         )
     }
 }
@@ -957,6 +960,7 @@ private fun List<GrunnlagDto>.byggPeriodeBeregningDto(
     ugyldigBeregning: UgyldigBeregningDto?,
     resultat: BigDecimal?,
     erResultatEndringUnderGrense: Boolean,
+    `løperBidrag`: Boolean = false,
 ): ResultatBarnebidragsberegningPeriodeDto {
     val bpsAndel = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)
     val delberegningUnderholdskostnad = finnDelberegningUnderholdskostnad(grunnlagsreferanseListe)
@@ -999,6 +1003,7 @@ private fun List<GrunnlagDto>.byggPeriodeBeregningDto(
             } else {
                 bpsAndel?.endeligAndelFaktor ?: BigDecimal.ZERO
             },
+        `løperBidrag` = `løperBidrag`,
         bpsAndelBeløp = bpsAndel?.andelBeløp ?: BigDecimal.ZERO,
         erDirekteAvslag = resultatkode?.erDirekteAvslag() ?: false,
         erEndringUnderGrense = erResultatEndringUnderGrense,
@@ -1102,6 +1107,7 @@ fun List<ResultatForskuddsberegningBarn>.tilDto(vedtakstype: Vedtakstype? = null
                         sivilstand = grunnlagsListe.finnSivilstandForPeriode(periode.grunnlagsreferanseListe),
                         inntekt =
                             grunnlagsListe.finnTotalInntektForRolle(periode.grunnlagsreferanseListe),
+                        løperForskudd = resultat.løperForskudd,
                         antallBarnIHusstanden =
                             grunnlagsListe
                                 .finnAntallBarnIHusstanden(periode.grunnlagsreferanseListe)

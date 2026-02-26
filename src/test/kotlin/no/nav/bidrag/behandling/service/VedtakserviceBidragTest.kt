@@ -880,7 +880,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             request.type shouldBe Vedtakstype.FASTSETTELSE
 
             it.innkrevingUtsattTilDato shouldBe LocalDate.now().plusDays(3)
-            request.grunnlagListe shouldHaveSize 11
+            request.grunnlagListe shouldHaveSize 13
             hentGrunnlagstyper(Grunnlagstype.MANUELT_OVERSTYRT_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 1
