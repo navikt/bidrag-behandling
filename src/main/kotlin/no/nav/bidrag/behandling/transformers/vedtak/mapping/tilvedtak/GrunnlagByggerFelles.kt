@@ -353,8 +353,6 @@ fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<Grunnl
                                 beregnTil = sb.beregnTil,
                                 beregnTilDato = finnBeregnTilDatoBehandling(sb).toYearMonth(),
                                 avslag = (årsak == null).ifTrue { avslag },
-                                løperForskuddPeriode = finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(sb)?.periode,
-                                løperBidragPeriode = finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(sb)?.periode,
                             ),
                         ),
                 )
