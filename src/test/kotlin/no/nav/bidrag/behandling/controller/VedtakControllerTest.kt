@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.utils.testdata.erstattVariablerITestFil
 import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
 import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.leggTilSamvær
+import no.nav.bidrag.behandling.utils.testdata.leggTilSkatteprosentPåBarnetillegg
 import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
@@ -215,6 +216,10 @@ class VedtakControllerTest : KontrollerTestRunner() {
                 Void::class.java,
             )
         henteBehandlingResponse.statusCode shouldBe HttpStatus.OK
+        val behandlingEtter1 = behandlingRepository.findBehandlingById(behandling.id!!).get()
+        behandlingEtter1.leggTilSkatteprosentPåBarnetillegg()
+        testdataManager.lagreBehandling(behandlingEtter1)
+
         val response =
             httpHeaderTestRestTemplate.exchange(
                 "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",

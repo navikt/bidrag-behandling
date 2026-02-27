@@ -27,6 +27,7 @@ import no.nav.bidrag.behandling.utils.søknad
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
 import no.nav.bidrag.behandling.utils.testdata.initGrunnlagRespons
 import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
+import no.nav.bidrag.behandling.utils.testdata.leggTilSkatteprosentPåBarnetillegg
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettInntekt
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
@@ -176,6 +177,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 1,
                 emptyList(),
             )
+        behandling.leggTilSkatteprosentPåBarnetillegg()
 
         vedtakService.fatteVedtak(behandling.id!!)
         entityManager.flush()
@@ -423,6 +425,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 1,
                 emptyList(),
             )
+        behandling.leggTilSkatteprosentPåBarnetillegg()
 
         vedtakService.fatteVedtak(behandling.id!!)
         entityManager.flush()
@@ -516,6 +519,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 1,
                 emptyList(),
             )
+        behandling.leggTilSkatteprosentPåBarnetillegg()
 
         vedtakService.fatteVedtak(behandling.id!!)
         entityManager.flush()
@@ -613,6 +617,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 1,
                 emptyList(),
             )
+        behandling.leggTilSkatteprosentPåBarnetillegg()
 
         vedtakService.fatteVedtak(behandling.id!!)
         entityManager.flush()
@@ -754,6 +759,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 1,
                 emptyList(),
             )
+        behandling.leggTilSkatteprosentPåBarnetillegg()
 
         vedtakService.fatteVedtak(behandling.id!!)
         entityManager.flush()
@@ -907,6 +913,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 emptyList(),
             )
 
+        behandling.leggTilSkatteprosentPåBarnetillegg()
         vedtakService.fatteVedtak(behandling.id!!)
 
         val opprettVedtakRequest = opprettVedtakSlot.captured
@@ -1451,6 +1458,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 1,
                 emptyList(),
             )
+        behandling.leggTilSkatteprosentPåBarnetillegg()
 
         vedtakService.fatteVedtak(behandling.id!!)
 
@@ -1647,6 +1655,7 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
                 1,
                 emptyList(),
             )
+        behandling.leggTilSkatteprosentPåBarnetillegg()
 
         vedtakService.fatteVedtak(behandling.id!!)
 

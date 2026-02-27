@@ -490,6 +490,7 @@ fun opprettSakForBehandling(behandling: Behandling): BidragssakDto =
                 RolleDto(
                     fødselsnummer = Personident(it.ident!!),
                     type = it.rolletype,
+                    rollehistorikk = emptyList(),
                 )
             },
     )
@@ -679,6 +680,15 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                     type = Inntektsrapportering.BARNETILLEGG,
                     id = if (generateId) (4).toLong() else null,
                 )
+            val inntektspost =
+                Inntektspost(
+                    inntekt = barnetillegg,
+                    skattefaktor = BigDecimal("0.05"),
+                    beløp = BigDecimal(60000),
+                    inntektstype = Inntektstype.BARNETILLEGG_DNB,
+                    kode = "",
+                )
+            barnetillegg.inntektsposter.add(inntektspost)
             val barnInntekt =
                 Inntekt(
                     belop = BigDecimal(60000),
@@ -2120,6 +2130,17 @@ fun Behandling.leggTilPrivatAvtale(
     privatAvtale.perioder.add(opprettPrivatAvtalePeriode(privatAvtale, fom, tom, beløp))
 }
 
+fun Behandling.leggTilSkatteprosentPåBarnetillegg() {
+    inntekter
+        .filter { it.taMed }
+        .filter { it.type == Inntektsrapportering.BARNETILLEGG }
+        .forEach {
+            it.inntektsposter.forEach {
+                it.skattefaktor = BigDecimal("0")
+            }
+        }
+}
+
 fun Behandling.leggTilBarnetillegg(
     forBarn: TestDataPerson,
     rolle: Rolle,
@@ -2143,6 +2164,7 @@ fun Behandling.leggTilBarnetillegg(
             beløp = BigDecimal(3000),
             inntektstype = Inntektstype.BARNETILLEGG_AAP,
             inntekt = inntekt,
+            skattefaktor = BigDecimal("0.02"),
             kode = "",
         ),
     )

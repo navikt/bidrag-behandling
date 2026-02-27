@@ -1,0 +1,1 @@
+alter table inntektspost add column if not exists skattefaktor numeric;

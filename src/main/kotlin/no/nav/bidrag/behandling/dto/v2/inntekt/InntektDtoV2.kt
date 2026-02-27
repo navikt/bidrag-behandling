@@ -69,6 +69,12 @@ data class InntektDtoV2(
             ident?.verdi == rolle.ident
         }
 
+    val skatteprosent get() =
+        if (rapporteringstype == Inntektsrapportering.BARNETILLEGG) {
+            inntektsposter.firstOrNull()?.skatteprosent
+        } else {
+            null
+        }
     val beløpstype get() =
         if (rapporteringstype == Inntektsrapportering.BARNETILLEGG) {
             if (inntektsposter.firstOrNull()?.beløpstype == null ||
@@ -195,6 +201,7 @@ data class OppdatereInntektBegrunnelseRequest(
 data class OppdatereInntektRequest(
     @Schema(description = "Angi periodeinformasjon for inntekt")
     val oppdatereInntektsperiode: OppdaterePeriodeInntekt? = null,
+    val oppdaterInnteksperiodeSkatteprosent: List<OppdatereSkatteprosentInntekt> = emptyList(),
     @Schema(description = "Opprette eller oppdatere manuelt oppgitt inntekt")
     val oppdatereManuellInntekt: OppdatereManuellInntekt? = null,
     @Schema(description = "Oppdatere begrunnelse for inntekt")
@@ -239,6 +246,12 @@ data class OppdatereInntekterRequestV2(
     val notat: OppdatereBegrunnelse? = null,
 )
 
+data class OppdatereSkatteprosentInntekt(
+    @Schema(description = "Id til inntekt som skal oppdateres")
+    val id: Long,
+    val skatteprosent: BigDecimal? = null,
+)
+
 data class OppdaterePeriodeInntekt(
     @Schema(description = "Id til inntekt som skal oppdateres")
     val id: Long,
@@ -246,6 +259,7 @@ data class OppdaterePeriodeInntekt(
     val taMedIBeregning: Boolean = false,
     @Schema(description = "Angi periode inntekten skal dekke ved beregnings")
     val angittPeriode: Datoperiode? = null,
+    val skatteprosent: BigDecimal? = null,
 )
 
 data class OppdatereManuellInntekt(
@@ -265,6 +279,7 @@ data class OppdatereManuellInntekt(
     @Schema(description = "Inntektens beløp i norske kroner", required = true)
     val beløp: BigDecimal,
     val beløpstype: InntektBeløpstype = InntektBeløpstype.ÅRSBELØP,
+    val skatteprosent: BigDecimal? = null,
     @Schema(type = "String", format = "date", example = "2024-01-01", nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoFom: LocalDate,

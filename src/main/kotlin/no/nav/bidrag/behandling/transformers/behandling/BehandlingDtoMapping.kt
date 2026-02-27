@@ -78,8 +78,6 @@ import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTil
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
@@ -382,9 +380,6 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
         return "Kan ikke fatte omgjøring/klagevedtak for bidrag med flere barn"
     }
 
-    val stønaderBp =
-        hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident)
-            ?: return if (søknadsbarn.size == 1) null else "Kan ikke fatte vedtak for bidrag med flere barn"
     if (UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled &&
         !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled
     ) {
@@ -414,6 +409,13 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
             return "Kan ikke fatte vedtak når det er lagt inn privat avtale for andre barn"
         }
     }
+
+    if (bidragspliktig == null && stønadstype in listOf(Stønadstype.BIDRAG, Stønadstype.BIDRAG18AAR)) {
+        return "Kan ikke behandle søknad for bidrag uten bidragspliktig"
+    }
+    val stønaderBp =
+        hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident)
+            ?: return if (søknadsbarn.size == 1) null else "Kan ikke fatte vedtak for bidrag med flere barn"
     val harBPStønadForFlereBarn =
         stønaderBp
             .stønader
@@ -1173,6 +1175,12 @@ fun List<Inntekt>.mapValideringsfeilForYtelse(
             gjelderBarn = gjelderBarn?.ident,
             gjelderBarnRolle = gjelderBarn?.tilDto(),
             erYtelse = true,
+            manglerSkatteprosent =
+                if (type == Inntektsrapportering.BARNETILLEGG) {
+                    inntekterTaMed.any { it.inntektsposter.any { it.skattefaktor == null } }
+                } else {
+                    false
+                },
         ).takeIf { it.harFeil }
     }
 

@@ -31,6 +31,7 @@ import no.nav.bidrag.behandling.transformers.inntekt.skalAutomatiskSettePeriode
 import no.nav.bidrag.behandling.transformers.inntekt.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.inntektstypeListe
 import no.nav.bidrag.behandling.transformers.opphørSisteTilDato
+import no.nav.bidrag.behandling.transformers.skatteprosentTilFaktor
 import no.nav.bidrag.behandling.transformers.valider
 import no.nav.bidrag.behandling.transformers.validerKanOppdatere
 import no.nav.bidrag.behandling.transformers.vedtak.nullIfEmpty
@@ -49,6 +50,8 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.YearMonth
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
@@ -358,6 +361,16 @@ class InntektService(
         oppdatereInntektRequest: OppdatereInntektRequest,
         behandling: Behandling,
     ): InntektDtoV2? {
+        oppdatereInntektRequest.oppdaterInnteksperiodeSkatteprosent.apply {
+            forEach {
+                val inntekt = henteInntektMedId(behandling, it.id)
+                if (inntekt.type == Inntektsrapportering.BARNETILLEGG) {
+                    inntekt.inntektsposter.forEach { inntektspost ->
+                        inntektspost.skattefaktor = it.skatteprosent.skatteprosentTilFaktor
+                    }
+                }
+            }
+        }
         oppdatereInntektRequest.oppdatereInntektsperiode?.apply {
             val inntekt = henteInntektMedId(behandling, id)
             taMedIBeregning.ifTrue {
@@ -391,6 +404,11 @@ class InntektService(
             }
 
             inntekt.taMed = taMedIBeregning
+            if (inntekt.type == Inntektsrapportering.BARNETILLEGG) {
+                inntekt.inntektsposter.forEach { inntektspost ->
+                    inntektspost.skattefaktor = skatteprosent.skatteprosentTilFaktor
+                }
+            }
             return inntekt.tilInntektDtoV2()
         }
 

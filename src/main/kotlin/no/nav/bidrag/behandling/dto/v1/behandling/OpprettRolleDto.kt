@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.dto.v1.behandling
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
@@ -36,6 +37,11 @@ data class OpprettRolleDto(
     val referanseGebyr: String? = null,
     val behandlingstatus: Behandlingstatus? = null,
     val behandlingstema: Behandlingstema? = null,
+    // Brukes bare intern når det opprettes klage
+    @JsonIgnore
+    val opprinneligVirkningstidspunkt: LocalDate? = null,
+    @JsonIgnore
+    val opphørsdato: LocalDate? = null,
 ) {
     val stønadstype get() = behandlingstema?.tilStønadstype()
 }

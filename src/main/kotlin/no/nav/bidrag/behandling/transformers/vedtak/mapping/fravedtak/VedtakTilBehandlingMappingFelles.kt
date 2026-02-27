@@ -38,6 +38,7 @@ import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.erForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.harOpprettetForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.kanOpprette35C
@@ -196,7 +197,8 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                     innkrevesFraDato = orkestreringDetaljer?.innkrevesFraDato,
                     perioder =
                         vedtakBeregning?.let {
-                            val stønadsendringBeregning = vedtakBeregning.finnStønadsendring(stønadsendring.tilStønadsid())!!
+                            val stønadsendringBeregning =
+                                vedtakBeregning.finnStønadsendring(stønadsendring.tilStønadsid()) ?: return@let emptyList()
                             it.hentBeregningsperioder(stønadsendringBeregning)
                         } ?: hentBeregningsperioder(stønadsendring),
                 )
@@ -209,7 +211,7 @@ fun VedtakDto.erVedtakUtenBeregning() =
         stønadsendringListe
             .all {
                 it.periodeListe.isEmpty() || it.finnSistePeriode()?.resultatkode == "IV" ||
-                    erOrkestrertVedtak && type == Vedtakstype.INNKREVING
+                    (erOrkestrertVedtak && type == Vedtakstype.INNKREVING)
             }
 
 internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<DelvedtakDto> {
@@ -1246,6 +1248,7 @@ private fun BaseGrunnlag.tilInntekt(
                     inntektstype = it.inntektstype,
                     beløp = it.beløp,
                     beløpstype = it.beløpstype,
+                    skattefaktor = it.skattefaktor,
                     inntekt = inntektBO,
                 )
             }.toMutableSet()
@@ -1319,7 +1322,7 @@ private fun GrunnlagDto.tilRolle(
                         grunnlagsliste.hentSøknader(referanse)
                     }
                 val personGrunnlag = grunnlagsliste.hentPerson(personIdent)?.personObjekt!!
-                val erRevurdering = søknader.all { it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING }
+                val erRevurdering = søknader.all { it.behandlingstype?.erForholdsmessigFordeling == true }
                 val førsteSøknad = søknader.first()
                 ForholdsmessigFordelingRolle(
                     tilhørerSak = stønadsendring?.sak?.verdi ?: førsteSøknad.saksnummer ?: behandling.saksnummer,

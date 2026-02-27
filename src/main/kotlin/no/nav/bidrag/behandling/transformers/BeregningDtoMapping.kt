@@ -37,6 +37,7 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilSøknadsdetaljerDto
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.erForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligInntekt
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
@@ -64,6 +65,7 @@ import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.samhandler.Valutakode
 import no.nav.bidrag.domene.enums.sjablon.SjablonTallNavn
+import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
@@ -186,11 +188,12 @@ fun mapTilBeregningresultatBarn(
     ResultatBidragsberegningBarn(
         barn = søknadsbarn.mapTilResultatBarn(),
         erAvvistRevurdering = erAvvistRevurdering,
+        medInnkreving = (søknadsbarn.innkrevingstype ?: behandling.innkrevingstype) == Innkrevingstype.MED_INNKREVING,
         avslagskode = søknadsbarn.avslag,
         resultatVedtak =
             BidragsberegningOrkestratorResponse(
                 resultatVedtakListe =
-                    if (erAvvistRevurdering) {
+                    if (erAvvistRevurdering && !behandling.erKlageEllerOmgjøring) {
                         emptyList()
                     } else {
                         resultatBarn.resultatVedtakListe.map {
@@ -423,6 +426,7 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                         innkrevesFraDato = resultat.innkrevesFraDato,
                         ugyldigBeregning = resultat.ugyldigBeregning,
                         erAvvistRevurdering = resultat.erAvvistRevurdering,
+                        medInnkreving = resultat.medInnkreving,
                         erAvvisning = resultat.avslagskode?.erAvvisning() == true,
                         forsendelseDistribueresAutomatisk =
                             vedtakstype == Vedtakstype.ALDERSJUSTERING && aldersjusteringDetaljer?.aldersjustert == true,
@@ -1583,6 +1587,7 @@ fun List<GrunnlagDto>.finnBarnetillegg(
                         bruttoBeløp = it.bruttoBarnetillegg,
                         nettoBeløp = it.nettoBarnetillegg,
                         visningsnavn = it.barnetilleggType.visningsnavn.intern,
+                        skattefaktor = it.skattefaktor ?: BigDecimal.ZERO,
                     )
                 } ?: emptyList(),
     )
@@ -1618,7 +1623,7 @@ fun List<GrunnlagDto>.harOpprettetForholdsmessigFordeling(): Boolean =
     hentBehandlingDetaljer()?.opprettetForholdsmessigFordeling == true ||
         // Opprettet FF
         hentSøknader().any {
-            it.behandlingstype == Behandlingstype.FORHOLDSMESSIG_FORDELING
+            it.behandlingstype?.erForholdsmessigFordeling == true
         } ||
         // Opprett FF når alle barna er i samme søknad. Tilfelle hvor det er valgt ulik virkningstidspunkt for barna
         filtrerOgKonverterBasertPåEgenReferanse<VirkningstidspunktGrunnlag>(Grunnlagstype.VIRKNINGSTIDSPUNKT).any {

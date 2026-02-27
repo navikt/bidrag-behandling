@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.samhandler.Valutakode
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import java.math.BigDecimal
@@ -37,6 +38,7 @@ data class OppdaterePrivatAvtaleRequest(
     )
     val begrunnelse: String? = null,
     val avtaleType: PrivatAvtaleType? = null,
+    val stønadstype: Stønadstype? = null,
     val gjelderUtland: Boolean? = null,
     val oppdaterPeriode: OppdaterePrivatAvtalePeriodeDto? = null,
     val slettePeriodeId: Long? = null,
@@ -104,6 +106,7 @@ data class PrivatAvtaleBarnDtoV2(
     val id: Long,
     val avtaleDato: LocalDate?,
     val avtaleType: PrivatAvtaleType?,
+    val stønadstype: Stønadstype = Stønadstype.BIDRAG,
     val gjelderUtland: Boolean = false,
     val skalIndeksreguleres: Boolean = false,
     val erSøknadsbarn: Boolean = true,
@@ -145,13 +148,17 @@ data class PrivatAvtaleValideringsfeilDto(
     val manglerBegrunnelse: Boolean = false,
     val manglerAvtaledato: Boolean = false,
     val manglerAvtaletype: Boolean,
+    val finnesPerioderFør18Årsdag: Boolean,
+    val finnesPerioderEtter18Årsdag: Boolean,
     val måVelgeVedtakHvisAvtaletypeErVedtakFraNav: Boolean,
     val ingenLøpendePeriode: Boolean,
     val overlappendePerioder: Set<OverlappendePeriode>,
 ) {
     val harPeriodiseringsfeil
         get() =
-            overlappendePerioder.isNotEmpty() || ingenLøpendePeriode || perioderOverlapperMedLøpendeBidrag.isNotEmpty()
+            overlappendePerioder.isNotEmpty() || ingenLøpendePeriode || perioderOverlapperMedLøpendeBidrag.isNotEmpty() ||
+                finnesPerioderFør18Årsdag ||
+                finnesPerioderEtter18Årsdag
 
     val gjelderBarn get() = gjelderPerson.ident
     val gjelderBarnNavn get() = gjelderPerson.navn ?: hentPersonVisningsnavn(gjelderPerson.ident)

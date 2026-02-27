@@ -255,7 +255,7 @@ class PrivatAvtaleServiceTest {
         )
 
         assertSoftly(privatAvtale.validerePrivatAvtale()) {
-            it.ingenLøpendePeriode shouldBe true
+            it.ingenLøpendePeriode shouldBe false
             it.overlappendePerioder.shouldHaveSize(0)
             it.manglerAvtaledato shouldBe false
             it.manglerBegrunnelse shouldBe false

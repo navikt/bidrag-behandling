@@ -148,7 +148,7 @@ class VedtakHendelseListener(
         if (vedtak.type == Vedtakstype.ALDERSJUSTERING) return
         behandling.saker.forEach { sak ->
             val søknader = behandling.søknadForSak(sak)
-            val opprettForSøknad = søknader.minByOrNull { it.behandlingstype != Behandlingstype.FORHOLDSMESSIG_FORDELING }!!
+            val opprettForSøknad = søknader.minByOrNull { it.behandlingstype != behandling.behandlingstypeForFF }!!
             forsendelseService.slettEllerOpprettForsendelse(
                 InitalizeForsendelseRequest(
                     saksnummer = sak,
