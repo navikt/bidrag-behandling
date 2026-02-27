@@ -201,6 +201,7 @@ data class OppdatereInntektBegrunnelseRequest(
 data class OppdatereInntektRequest(
     @Schema(description = "Angi periodeinformasjon for inntekt")
     val oppdatereInntektsperiode: OppdaterePeriodeInntekt? = null,
+    val oppdaterInnteksperiodeSkatteprosent: List<OppdatereSkatteprosentInntekt> = emptyList(),
     @Schema(description = "Opprette eller oppdatere manuelt oppgitt inntekt")
     val oppdatereManuellInntekt: OppdatereManuellInntekt? = null,
     @Schema(description = "Oppdatere begrunnelse for inntekt")
@@ -243,6 +244,12 @@ data class OppdatereInntekterRequestV2(
     @Schema(description = "Angi id til inntekter som skal slettes")
     val sletteInntekter: Set<Long> = emptySet(),
     val notat: OppdatereBegrunnelse? = null,
+)
+
+data class OppdatereSkatteprosentInntekt(
+    @Schema(description = "Id til inntekt som skal oppdateres")
+    val id: Long,
+    val skatteprosent: BigDecimal? = null,
 )
 
 data class OppdaterePeriodeInntekt(

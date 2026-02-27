@@ -361,6 +361,16 @@ class InntektService(
         oppdatereInntektRequest: OppdatereInntektRequest,
         behandling: Behandling,
     ): InntektDtoV2? {
+        oppdatereInntektRequest.oppdaterInnteksperiodeSkatteprosent.apply {
+            forEach {
+                val inntekt = henteInntektMedId(behandling, it.id)
+                if (inntekt.type == Inntektsrapportering.BARNETILLEGG) {
+                    inntekt.inntektsposter.forEach { inntektspost ->
+                        inntektspost.skattefaktor = it.skatteprosent.skatteprosentTilFaktor
+                    }
+                }
+            }
+        }
         oppdatereInntektRequest.oppdatereInntektsperiode?.apply {
             val inntekt = henteInntektMedId(behandling, id)
             taMedIBeregning.ifTrue {
