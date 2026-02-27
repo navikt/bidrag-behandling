@@ -1136,7 +1136,6 @@ private fun Behandling.tilVirkningstidspunktBarn() =
             beregnTilDato = YearMonth.from(finnBeregnTilDatoBehandling(it)),
             beregnTil = it.beregnTil,
             innkreving = innkrevingstype == Innkrevingstype.MED_INNKREVING,
-            stønadstype = it.stønadstypeBarnEllerBehandling,
             etterfølgendeVedtakVirkningstidspunkt = hentNesteEtterfølgendeVedtak(it)?.virkningstidspunkt,
         )
     }
