@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderRolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -16,6 +17,8 @@ import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteSamværsnotat
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erBidrag
+import no.nav.bidrag.behandling.transformers.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato
+import no.nav.bidrag.behandling.transformers.finnesLøpendeForskuddForRolle
 import no.nav.bidrag.behandling.transformers.grunnlag.hentGrunnlagsreferanserForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.hentVersjonForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.inntektManglerSøknadsbarn
@@ -40,8 +43,11 @@ import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.BeløpshistorikkPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.EtterfølgendeManuelleVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
@@ -67,6 +73,8 @@ import no.nav.bidrag.transport.felles.toCompactString
 import no.nav.bidrag.transport.felles.toYearMonth
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
+import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
@@ -85,6 +93,7 @@ fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlags
 
 fun Behandling.byggGrunnlagGenerelt(søknadsbarn: List<Rolle> = this.søknadsbarn): Set<GrunnlagDto> {
     val grunnlagListe = (byggGrunnlagNotater(søknadsbarn) + byggGrunnlagSøknad(søknadsbarn)).toMutableSet()
+    grunnlagListe.addAll(byggGrunnlagBeløpshistorikkAlle())
     when (tilType()) {
         TypeBehandling.FORSKUDD -> {
             grunnlagListe.addAll(byggGrunnlagVirkningsttidspunkt())
@@ -841,3 +850,137 @@ fun opprettPeriodeOpphør(
             )
         }
     }
+
+fun StønadDto?.tilGrunnlagBeløpshistorikk(
+    kravhaver: String,
+    skyldner: String,
+    type: Stønadstype,
+    behandling: Behandling,
+    søknadsbarn: Rolle,
+    innhentetTidspunkt: LocalDateTime,
+): GrunnlagDto {
+    val grunnlagstype =
+        when (type) {
+            Stønadstype.BIDRAG -> Grunnlagstype.BELØPSHISTORIKK_BIDRAG
+            Stønadstype.BIDRAG18AAR -> Grunnlagstype.BELØPSHISTORIKK_BIDRAG_18_ÅR
+            Stønadstype.FORSKUDD -> Grunnlagstype.BELØPSHISTORIKK_FORSKUDD
+            else -> throw IllegalArgumentException("Ukjent stønadstype")
+        }
+
+    return GrunnlagDto(
+        referanse =
+            "${grunnlagstype}_${behandling.saksnummer}_${kravhaver}_$skyldner" +
+                "_${innhentetTidspunkt.toCompactString()}",
+        type = grunnlagstype,
+        gjelderReferanse =
+            when {
+                type == Stønadstype.BIDRAG -> {
+                    behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                }
+
+                type == Stønadstype.BIDRAG18AAR -> {
+                    behandling.bidragspliktig!!.tilGrunnlagsreferanse()
+                }
+
+                this != null && this.mottaker.verdi != behandling.bidragsmottaker!!.ident -> {
+                    // TODO: What to do here?
+                    behandling.bidragsmottaker!!.tilGrunnlagsreferanse()
+                }
+
+                else -> {
+                    behandling.bidragsmottaker!!.tilGrunnlagsreferanse()
+                }
+            },
+        gjelderBarnReferanse = søknadsbarn.tilGrunnlagsreferanse(),
+        innhold =
+            POJONode(
+                BeløpshistorikkGrunnlag(
+                    tidspunktInnhentet = innhentetTidspunkt,
+                    nesteIndeksreguleringsår = this?.nesteIndeksreguleringsår ?: this?.førsteIndeksreguleringsår,
+                    beløpshistorikk =
+                        this?.periodeListe?.map {
+                            BeløpshistorikkPeriode(
+                                periode = it.periode,
+                                beløp = it.beløp,
+                                valutakode = it.valutakode,
+                                vedtaksid = it.vedtaksid,
+                            )
+                        } ?: emptyList(),
+                ),
+            ),
+    )
+}
+
+fun Behandling.byggGrunnlagBeløpshistorikkAlle(): List<GrunnlagDto> =
+    søknadsbarn.flatMap {
+        byggGrunnlagBeløpshistorikkAlleForRolle(it)
+    }
+
+fun Behandling.byggGrunnlagBeløpshistorikkAlleForRolle(søknadsbarn: Rolle): List<GrunnlagDto> {
+    val stønadstype = søknadsbarn.stønadstypeBarnEllerBehandling
+    return when (stønadstype) {
+        Stønadstype.FORSKUDD -> {
+            listOf(byggGrunnlagBeløpshistorikkForskudd(søknadsbarn))
+        }
+
+        Stønadstype.BIDRAG, Stønadstype.BIDRAG18AAR -> {
+            val grunnlagsliste = mutableListOf(byggGrunnlagBeløpshistorikkBidrag(søknadsbarn))
+            if (søknadsbarn.stønadstypeBarnEllerBehandling == Stønadstype.BIDRAG18AAR) {
+                grunnlagsliste.add(byggGrunnlagBeløpshistorikkBidrag18År(søknadsbarn))
+            }
+            grunnlagsliste
+        }
+
+        else -> {
+            emptyList()
+        }
+    }
+}
+
+fun Behandling.byggGrunnlagBeløpshistorikkBidrag(søknadsbarn: Rolle): GrunnlagDto {
+    val grunnlagBh =
+        grunnlag
+            .hentSisteGrunnlagSomGjelderRolle(søknadsbarn, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
+    return grunnlagBh
+        .konvertereData<StønadDto>()
+        .tilGrunnlagBeløpshistorikk(
+            kravhaver = søknadsbarn.ident!!,
+            skyldner = bidragspliktig!!.ident!!,
+            type = Stønadstype.BIDRAG,
+            this,
+            søknadsbarn,
+            grunnlagBh?.innhentet ?: opprettetTidspunkt,
+        )
+}
+
+fun Behandling.byggGrunnlagBeløpshistorikkBidrag18År(søknadsbarn: Rolle): GrunnlagDto {
+    val grunnlagBh =
+        grunnlag
+            .hentSisteGrunnlagSomGjelderRolle(søknadsbarn, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
+    return grunnlagBh
+        .konvertereData<StønadDto>()
+        .tilGrunnlagBeløpshistorikk(
+            kravhaver = søknadsbarn.ident!!,
+            skyldner = bidragspliktig!!.ident!!,
+            type = Stønadstype.BIDRAG18AAR,
+            this,
+            søknadsbarn,
+            grunnlagBh?.innhentet ?: opprettetTidspunkt,
+        )
+}
+
+fun Behandling.byggGrunnlagBeløpshistorikkForskudd(søknadsbarn: Rolle): GrunnlagDto {
+    val grunnlagBh =
+        grunnlag
+            .hentSisteGrunnlagSomGjelderRolle(søknadsbarn, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD)
+    return grunnlagBh
+        .konvertereData<StønadDto>()
+        .tilGrunnlagBeløpshistorikk(
+            kravhaver = søknadsbarn.ident!!,
+            skyldner = personIdentNav.verdi,
+            type = Stønadstype.FORSKUDD,
+            this,
+            søknadsbarn,
+            grunnlagBh?.innhentet ?: opprettetTidspunkt,
+        )
+}

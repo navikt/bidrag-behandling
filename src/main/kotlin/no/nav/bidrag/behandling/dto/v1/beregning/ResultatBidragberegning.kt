@@ -220,6 +220,7 @@ data class ResultatBidragsberegningBarn(
     val innkrevesFraDato: YearMonth? = null,
     val opphørsdato: YearMonth?,
     val beregnTilDato: YearMonth? = null,
+    val `løperBidrag`: Boolean,
 )
 
 data class UgyldigBeregningDto(
@@ -299,6 +300,7 @@ data class ResultatBarnebidragsberegningPeriodeDto(
     val erBeregnetAvslag: Boolean = false,
     val erEndringUnderGrense: Boolean = false,
     val periodeHarSlåttUtTilFF: Boolean = false,
+    val `løperBidrag`: Boolean = false,
     val beregningsdetaljer: BidragPeriodeBeregningsdetaljer? = null,
     val vedtakstype: Vedtakstype,
     val klageOmgjøringDetaljer: KlageOmgjøringDetaljer? = null,
@@ -392,7 +394,7 @@ data class ResultatBarnebidragsberegningPeriodeDto(
             erDirekteAvslag ||
                 resultatKode == Resultatkode.INGEN_ENDRING_UNDER_GRENSE ||
                 resultatKode == Resultatkode.INNVILGET_VEDTAK -> {
-                resultatKode!!.visningsnavnIntern(vedtakstype)
+                resultatKode!!.visningsnavnIntern(vedtakstype, løperBidrag)
             }
 
             ugyldigBeregning != null -> {

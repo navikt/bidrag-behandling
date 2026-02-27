@@ -1347,7 +1347,7 @@ class BehandlingTilVedtakMapping(
                     byggGrunnlagForAvslagUgyldigUtgifter()
                 } else {
                     val personobjekterFraBeregning = beregning.grunnlagListe.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>
-                    listOf(byggGrunnlagForVedtak(personobjekterFraBeregning), byggGrunnlagGenerelt())
+                    setOf(byggGrunnlagForVedtak(personobjekterFraBeregning), byggGrunnlagGenerelt()).toList()
                 }
 
             val grunnlagliste = (grunnlagListeVedtak + grunnlaglisteGenerelt + beregning.grunnlagListe).toSet()
@@ -1433,7 +1433,12 @@ class BehandlingTilVedtakMapping(
                             sak = Saksnummer(saksnummer),
                             type = stonadstype!!,
                             beslutning = Beslutningstype.ENDRING,
-                            grunnlagReferanseListe = stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
+                            grunnlagReferanseListe =
+                                stønadsendringGrunnlagListe
+                                    .filter { gl ->
+                                        gl.gjelderBarnReferanse == null ||
+                                            gl.gjelderBarnReferanse == it.barn.tilGrunnlagsreferanse()
+                                    }.map(GrunnlagDto::referanse),
                             periodeListe = it.perioder + opphørPeriode,
                             // Settes null for forskudd men skal settes til riktig verdi for bidrag
                             førsteIndeksreguleringsår = null,
@@ -1468,7 +1473,11 @@ class BehandlingTilVedtakMapping(
                                 sak = Saksnummer(saksnummer),
                                 type = stonadstype!!,
                                 beslutning = Beslutningstype.ENDRING,
-                                grunnlagReferanseListe = grunnlagListe.map { it.referanse },
+                                grunnlagReferanseListe =
+                                    grunnlagListe
+                                        .filter { gl ->
+                                            gl.gjelderBarnReferanse == null || gl.gjelderBarnReferanse == it.tilGrunnlagsreferanse()
+                                        }.map { it.referanse },
                                 periodeListe =
                                     listOf(
                                         OpprettPeriodeRequestDto(

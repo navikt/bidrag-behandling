@@ -67,7 +67,6 @@ import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
-import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
@@ -90,7 +89,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
-import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
@@ -109,6 +107,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetalj
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
 import no.nav.bidrag.transport.behandling.vedtak.response.finnStønadsendring
+import no.nav.bidrag.transport.behandling.vedtak.response.løpteBidragEllerForskuddFraVirkningstidspunkt
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.toYearMonth
@@ -157,6 +156,7 @@ fun VedtakDto.tilBeregningResultatForskudd(): List<ResultatBeregningBarnDto> =
                         resultatKode = Resultatkode.fraKode(it.resultatkode)!!,
                         vedtakstype = type,
                         regel = "",
+                        løperForskudd = løpteBidragEllerForskuddFraVirkningstidspunkt(stønadsendring.tilStønadsid()),
                         beløp = it.beløp ?: BigDecimal.ZERO,
                         sivilstand = grunnlagListe.finnSivilstandForPeriode(it.grunnlagReferanseListe),
                         inntekt = grunnlagListe.finnTotalInntektForRolle(it.grunnlagReferanseListe),
@@ -412,6 +412,7 @@ internal fun VedtakDto.hentBeregningsperioder(stønadsendring: StønadsendringDt
                 Resultatkode.fraKode(it.resultatkode) == Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
                 type,
                 barnIdent = stønadsendring.kravhaver,
+                `løperBidrag` = løpteBidragEllerForskuddFraVirkningstidspunkt(stønadsendring.tilStønadsid()),
             )
         }
     }
@@ -724,7 +725,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 lesemodus = lesemodus,
             )
         },
-    if (behandling.vedtakstype == Vedtakstype.KLAGE && !lesemodus) {
+    if ((behandling.vedtakstype == Vedtakstype.KLAGE && !lesemodus) || lesemodus) {
         behandling.stonadstype?.let {
             filtrerOgKonverterBasertPåEgenReferanse<BeløpshistorikkGrunnlag>(
                 grunnlagType = it.tilGrunnlagstypeBeløpshistorikk(),
@@ -739,7 +740,10 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                         behandling.opprettStønadDto(rolleBarn, grunnlag?.innhold),
                         rolleIdent = rolleBarn.ident!!,
                         gjelder = gjelder?.personIdent,
-                        innhentetTidspunkt = behandling.omgjøringsdetaljer?.omgjortVedtakstidspunktListe!!.min(),
+                        innhentetTidspunkt =
+                            behandling.omgjøringsdetaljer?.omgjortVedtakstidspunktListe?.minOrNull()
+                                ?: grunnlag?.innhold?.tidspunktInnhentet
+                                ?: LocalDateTime.now(),
                         lesemodus = lesemodus,
                     )
                 }
@@ -1031,7 +1035,7 @@ fun Behandling.opprettGrunnlag(
     type = type,
     erBearbeidet = erBearbeidet,
     gjelder = gjelder,
-    grunnlagFraVedtakSomSkalOmgjøres = true,
+    grunnlagFraVedtakSomSkalOmgjøres = !lesemodus,
     aktiv = innhentetTidspunkt,
     rolle = roller.find { it.ident == rolleIdent }!!,
 )
