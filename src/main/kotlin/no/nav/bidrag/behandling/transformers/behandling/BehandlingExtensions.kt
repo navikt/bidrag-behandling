@@ -19,7 +19,7 @@ fun Behandling.finnRolleForPeriode(
         } else if (roller.count { it.ident == ident } == 1) {
             roller.find { it.ident == ident }?.stønadstype
         } else {
-            val dato18ÅrsBidrag = hentPersonFødselsdato(ident)!!.dato18ÅrsBidrag
+            val dato18ÅrsBidrag = hentPersonFødselsdato(ident)?.dato18ÅrsBidrag
             if (dato18ÅrsBidrag != null && dato18ÅrsBidrag >= periodeFom) {
                 Stønadstype.BIDRAG18AAR
             } else {
