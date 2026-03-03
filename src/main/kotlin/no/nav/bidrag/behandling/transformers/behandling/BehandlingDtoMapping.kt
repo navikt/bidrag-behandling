@@ -1165,6 +1165,7 @@ fun List<Inntekt>.mapValideringsfeilForYtelse(
     .filter { it.type == type }
     .groupBy { it.gjelderRolle }
     .map { (gjelderRolle, inntekterTaMed) ->
+        val erBidrag = inntekterTaMed.firstOrNull()?.behandling?.erBidrag() == true
         InntektValideringsfeil(
             overlappendePerioder = inntekterTaMed.finnOverlappendePerioderInntekt(),
             fremtidigPeriode =
@@ -1176,7 +1177,7 @@ fun List<Inntekt>.mapValideringsfeilForYtelse(
             gjelderBarnRolle = gjelderBarn?.tilDto(),
             erYtelse = true,
             manglerSkatteprosent =
-                if (type == Inntektsrapportering.BARNETILLEGG) {
+                if (type == Inntektsrapportering.BARNETILLEGG && erBidrag) {
                     inntekterTaMed.any { it.inntektsposter.any { it.skattefaktor == null } }
                 } else {
                     false
