@@ -46,6 +46,8 @@ val grunnlagsreferanseSimulert = "simulert_grunnlag"
 val vedtakstyperIkkeBeregning =
     listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INDEKSREGULERING, Vedtakstype.OPPHØR, Vedtakstype.ALDERSOPPHØR)
 
+val LocalDate.dato18ÅrsBidrag get() = plusYears(18).plusMonths(1).withDayOfMonth(1)
+
 fun Vedtakstype.opprettForsendelse() = !listOf(Vedtakstype.ALDERSJUSTERING).contains(this)
 
 fun Vedtakstype.kreverGrunnlag() = !listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INNKREVING).contains(this)

@@ -8,6 +8,8 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.behandling.transformers.behandling.finnRolle
+import no.nav.bidrag.behandling.transformers.behandling.finnRolleForPeriode
 import no.nav.bidrag.behandling.transformers.erUnder12År
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoFomForOffentligInntekt
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligInntekt
@@ -99,6 +101,9 @@ fun SummertÅrsinntekt.tilInntekt(
             behandling = behandling,
             ident = rolle.ident!!,
             gjelderBarn = this.gjelderBarnPersonId,
+            gjelderBarnRolle =
+                this.gjelderBarnPersonId
+                    .let { behandling.finnRolleForPeriode(it, null, this.periode.fom.atDay(1)) },
             datoFom = null,
             datoTom = null,
             rolle = rolle,

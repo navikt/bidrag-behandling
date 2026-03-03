@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereInntektRequest
 import no.nav.bidrag.behandling.dto.v2.inntekt.OppdatereManuellInntekt
 import no.nav.bidrag.behandling.inntektIkkeFunnetException
 import no.nav.bidrag.behandling.oppdateringAvInntektFeilet
+import no.nav.bidrag.behandling.transformers.behandling.finnRolleForPeriode
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsdataType
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInntekt
@@ -504,11 +505,16 @@ class InntektService(
     ) {
         val type: Inntektsrapportering
         val periode: ÅrMånedsperiode?
+        val gjelderBarnRolle: Rolle?
 
         when (nyInntekt) {
             is SummertÅrsinntekt -> {
                 type = nyInntekt.inntektRapportering
                 periode = nyInntekt.periode.copy(til = nyInntekt.periode.til?.plusMonths(1))
+                gjelderBarnRolle =
+                    nyInntekt.gjelderBarnPersonId
+                        .takeIf { it.isNotEmpty() }
+                        ?.let { behandling.finnRolleForPeriode(it, null, nyInntekt.periode.fom.toLocalDate()) }
             }
 
             else -> {
@@ -529,8 +535,9 @@ class InntektService(
                 .filter { i -> Kilde.OFFENTLIG == i.kilde }
                 .filter { i -> type == i.type }
                 .filter { i -> i.opprinneligFom != null }
-                .filter { i -> i.erSammeRolle(rolle) }
-                .toList()
+                .filter { i ->
+                    i.erSammeRolle(rolle) && (i.gjelderSøknadsbarn == null || i.gjelderSøknadsbarn!!.id == gjelderBarnRolle?.id)
+                }.toList()
                 .filter { i ->
                     inntekterSomKunIdentifiseresPåType.contains(i.type) ||
                         periode.fom == YearMonth.from(i.opprinneligFom)
