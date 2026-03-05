@@ -1,0 +1,2 @@
+UPDATE behandling set avslag = 'BARNET_ANSES_Å_BO_SAMMEN_MED_BEGGE_FORELDRE' where avslag = 'PÅ_GRUNN_AV_SAMMENFLYTTING' and deleted is false;
+UPDATE rolle set avslag = 'BARNET_ANSES_Å_BO_SAMMEN_MED_BEGGE_FORELDRE' where avslag = 'PÅ_GRUNN_AV_SAMMENFLYTTING' and deleted is false;
