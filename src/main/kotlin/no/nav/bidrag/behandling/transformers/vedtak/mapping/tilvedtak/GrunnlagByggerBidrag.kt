@@ -352,7 +352,7 @@ fun PrivatAvtale.mapTilGrunnlag(
                         avtaleType = avtaleType ?: PrivatAvtaleType.PRIVAT_AVTALE,
                         skalIndeksreguleres = skalIndeksreguleres,
                         stønadstype = stønadstype ?: Stønadstype.BIDRAG,
-                        sakskategori = if (utenlandsk) Sakskategori.U else Sakskategori.N,
+                        sakskategori = if (utenlandsk) Sakskategori.UTLAND else Sakskategori.NASJONAL,
                         vedtaksid = if (avtaleType == PrivatAvtaleType.VEDTAK_FRA_NAV) valgtVedtakFraNav?.vedtak else null,
                     ),
                 ),
