@@ -1335,6 +1335,7 @@ private fun GrunnlagDto.tilRolle(
                             .map { søknadGrunnlag ->
                                 ForholdsmessigFordelingSøknadBarn(
                                     søknadsid = søknadGrunnlag.søknadsid,
+                                    erFraPåklagetVedtak = true,
                                     søknadFomDato = søknadGrunnlag.søktFraDato,
                                     mottattDato = søknadGrunnlag.mottattDato,
                                     søktAvType = søknadGrunnlag.søktAv,

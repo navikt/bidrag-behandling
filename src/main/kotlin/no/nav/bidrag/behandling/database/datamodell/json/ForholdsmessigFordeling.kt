@@ -53,6 +53,8 @@ data class ForholdsmessigFordelingSøknadBarn(
     var søknadFomDato: LocalDate? = null,
     val søktAvType: SøktAvType,
     var søknadsid: Long? = null,
+    // Flagg om det er overført fra påklaget vedtak. Fjerner søknadene etter opprettelse
+    var erFraPåklagetVedtak: Boolean = false,
     val behandlingstype: Behandlingstype?,
     val behandlingstema: Behandlingstema?,
     val omgjørSøknadsid: Long? = null,

@@ -277,6 +277,7 @@ class VedtakService(
                                 it.copy(behandling)
                             },
                         )
+
                         forholdsmessigFordelingService!!.opprettRevurderingssøknaderForKlageEllerOmgjøring(behandling)
 
                         return OpprettBehandlingResponse(behandling.id!!)
@@ -289,6 +290,9 @@ class VedtakService(
 
             if (konvertertBehandling.erIForholdsmessigFordeling) {
                 forholdsmessigFordelingService!!.opprettRevurderingssøknaderForKlageEllerOmgjøring(konvertertBehandling)
+            }
+            konvertertBehandling.roller.forEach {
+                it.forholdsmessigFordeling?.søknader?.removeIf { it.erFraPåklagetVedtak }
             }
             tilgangskontrollService.sjekkTilgangBehandling(konvertertBehandling)
             val behandlingDo = behandlingService.lagreBehandling(konvertertBehandling, true)
