@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.transformers.behandling.finnes
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.filtrerSakerHvorPersonErBP
 import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.erForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.erLik
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.finnEldsteSøktFomDato
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.finnSøktFomRevurderingSøknad
@@ -250,7 +251,7 @@ class ForholdsmessigFordelingService(
                         .first()
                         .forholdsmessigFordeling
                         ?.søknader
-                        ?.find { it.behandlingstype == behandling.behandlingstypeForFF }
+                        ?.find { it.behandlingstype?.erForholdsmessigFordeling == true }
                         ?.søknadFomDato ?: relevanteKravhavereRevurderingsbarn.finnSøktFomRevurderingSøknad(behandling)
 
                 revurderingsbarnRoller.forEach {
@@ -676,10 +677,13 @@ class ForholdsmessigFordelingService(
         val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
         feilregistrerRevurderingsbarnFraFFSøknad(behandling, rollerSomSkalLeggesTilDto)
         val relevanteKravhavere = hentAlleRelevanteKravhavere(behandling)
+        val søknad = bbmConsumer.hentSøknad(søknadsid).søknad
+        // Skal ikke trigge noe endringer for FF søknad
+        if (søknad.behandlingstype.erForholdsmessigFordeling) {
+            return
+        }
         val stønadstypeBeregnet =
-            stønadstype ?: bbmConsumer
-                .hentSøknad(søknadsid)
-                .søknad.behandlingstema
+            stønadstype ?: søknad.behandlingstema
                 .tilStønadstype()
 
         val rollerSomSkalLeggesTil = mutableSetOf<Rolle>()
