@@ -1331,6 +1331,7 @@ fun opprettInntekt(
                     beløp = BigDecimal.ONE,
                     inntektstype = it,
                     kode = "",
+                    skattefaktor = BigDecimal("0"),
                 )
             }.toMutableSet(),
 )

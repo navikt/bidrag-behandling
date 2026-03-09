@@ -909,6 +909,7 @@ private fun DelberegningBarnetilleggDto.tilNotatDto() =
                 DokumentmalDelberegningBarnetilleggDto.DokumentmalBarnetilleggDetaljerDto(
                     bruttoBeløp = it.bruttoBeløp,
                     nettoBeløp = it.nettoBeløp,
+                    skattefaktor = it.skattefaktor,
                     visningsnavn = it.visningsnavn,
                 )
             },
@@ -1214,6 +1215,7 @@ private fun Inntekt.tilNotatInntektDto() =
                         it.inntektstype,
                         InntektUtil.kapitalinntektFaktor(it.kode) * it.beløp.nærmesteHeltall,
                         beløpstype = it.beløpstype ?: InntektBeløpstype.ÅRSBELØP,
+                        skattefaktor = it.skattefaktor,
                         visningsnavn = it.inntektstype?.visningsnavn?.intern ?: finnVisningsnavn(it.kode),
                     )
                 }.sortedByDescending { it.beløp },

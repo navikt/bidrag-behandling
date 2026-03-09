@@ -10,4 +10,5 @@ data class InntektspostDtoV2(
     val inntektstype: Inntektstype?,
     val beløp: BigDecimal?,
     val beløpstype: InntektBeløpstype?,
+    val skatteprosent: BigDecimal?,
 )

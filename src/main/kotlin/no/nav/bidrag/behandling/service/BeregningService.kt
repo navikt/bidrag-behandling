@@ -27,6 +27,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.løperBidragEtterEldsteVirkning
 import no.nav.bidrag.behandling.transformers.mapTilBeregningresultatBarn
 import no.nav.bidrag.behandling.transformers.mapTilResultatBarn
+import no.nav.bidrag.behandling.transformers.maxOfNullable
 import no.nav.bidrag.behandling.transformers.minOfNullable
 import no.nav.bidrag.behandling.transformers.perioderSlåttUtTilFF
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
@@ -244,9 +245,10 @@ class BeregningService(
                     }
                     val perioderBarn = resultatBarn.resultatVedtakListe.flatMap { it.periodeListe }.map { it.periode }
                     val minstEnPeriodeSlåttUtTilFF = perioderBarn.any { pb -> perioderSlåttUtTilFF.any { it.inneholder(pb) } }
+                    val erOmgjøringMedPerioder = endeligBeregning && behandling.erKlageEllerOmgjøring && perioderBarn.isNotEmpty()
                     val erAvvistRevurdering =
                         forholdsmessigFordelingDetaljer != null && forholdsmessigFordelingDetaljer.erRevurdering &&
-                            !minstEnPeriodeSlåttUtTilFF
+                            !minstEnPeriodeSlåttUtTilFF && !erOmgjøringMedPerioder
                     val grunnlagSøknadsbarn = resultat.grunnlagListe.hentPersonMedReferanse(resultatBarn.søknadsbarnreferanse)!!
                     val grunnlagBarn =
                         resultat.grunnlagListe.filter {
@@ -357,10 +359,9 @@ class BeregningService(
                     // Avvisning - opphørsdato = opphør fra historikk
                     // Avslag - opphørsdato = beregn til
                     val virkningstidspunktBeregning =
-                        minOfNullable(
-                            søknadsbarn.virkningstidspunkt?.toYearMonth(),
+                        maxOfNullable(
+                            minOfNullable(søknadsbarn.virkningstidspunkt?.toYearMonth(), it.beregnGrunnlag.opphørsdato),
                             it.beregnGrunnlag.periode.fom,
-                            it.beregnGrunnlag.opphørsdato,
                         )!!
                     BeregningGrunnlagV2(
                         søknadsbarnreferanse = it.beregnGrunnlag.søknadsbarnReferanse,

@@ -45,6 +45,7 @@ import no.nav.bidrag.behandling.utils.testdata.leggTilBarnetilsyn
 import no.nav.bidrag.behandling.utils.testdata.leggTilFaktiskTilsynsutgift
 import no.nav.bidrag.behandling.utils.testdata.leggTilNotat
 import no.nav.bidrag.behandling.utils.testdata.leggTilSamvær
+import no.nav.bidrag.behandling.utils.testdata.leggTilSkatteprosentPåBarnetillegg
 import no.nav.bidrag.behandling.utils.testdata.leggTilTillegsstønad
 import no.nav.bidrag.behandling.utils.testdata.opprettEngangsbeløp
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
@@ -311,6 +312,7 @@ class VedtakserviceTest : TestContainerRunner() {
         entityManager.refresh(behandling)
         behandling.taMedInntekt(behandling.bidragsmottaker!!, Inntektsrapportering.AINNTEKT_BEREGNET_3MND)
 
+        behandling.leggTilSkatteprosentPåBarnetillegg()
         every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
 
         val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
@@ -401,6 +403,7 @@ class VedtakserviceTest : TestContainerRunner() {
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         entityManager.flush()
         entityManager.refresh(behandling)
+        behandling.leggTilSkatteprosentPåBarnetillegg()
         behandling.taMedInntekt(behandling.bidragsmottaker!!, Inntektsrapportering.AINNTEKT_BEREGNET_12MND)
         behandling.taMedInntekt(behandling.bidragspliktig!!, Inntektsrapportering.AINNTEKT_BEREGNET_12MND)
 

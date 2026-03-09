@@ -144,6 +144,7 @@ data class InntektValideringsfeil(
     val gjelderBarn: String? = gjelderBarnRolle?.ident,
     @JsonIgnore
     val erYtelse: Boolean = false,
+    val manglerSkatteprosent: Boolean = false,
     val rolle: RolleDto? = null,
     @Deprecated("Skal fjernes")
     val ident: String? = rolle?.ident,
@@ -161,6 +162,7 @@ data class InntektValideringsfeil(
                 hullIPerioder.isNotEmpty() ||
                 ugyldigSluttPeriode ||
                 fremtidigPeriode ||
+                manglerSkatteprosent ||
                 manglerPerioder ||
                 perioderFørVirkningstidspunkt ||
                 ingenLøpendePeriode

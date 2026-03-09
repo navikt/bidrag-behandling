@@ -30,4 +30,5 @@ open class Inntektspost(
     open val inntektstype: Inntektstype?,
     @Enumerated(EnumType.STRING)
     open val beløpstype: InntektBeløpstype? = InntektBeløpstype.ÅRSBELØP,
+    open var skattefaktor: BigDecimal? = null,
 )
