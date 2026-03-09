@@ -709,7 +709,7 @@ class ForholdsmessigFordelingService(
         bmIdent: String? = null,
         behandlerenhet: String = behandling.behandlerEnhet,
         erRevurdering: Boolean = false,
-        medInnkreving: Boolean = false,
+        medInnkreving: Boolean? = null,
         søknadsdetaljer: ForholdsmessigFordelingSøknadBarn? = null,
         søktFraDato: LocalDate? = null,
         gebyrGjelder18År: Boolean = false,
@@ -754,7 +754,12 @@ class ForholdsmessigFordelingService(
                             løperBidragFra = if (løperBidrag) løpendeBidragRolle.løperBidragFra else null,
                             løperBidragTil = if (løperBidrag) løpendeBidragRolle.løperBidragTil else null,
                         )
-                    rolle.innkrevingstype = if (medInnkreving) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
+                    rolle.innkrevingstype =
+                        if ((medInnkreving == null && løperBidrag) || medInnkreving == true) {
+                            Innkrevingstype.MED_INNKREVING
+                        } else {
+                            Innkrevingstype.UTEN_INNKREVING
+                        }
                     rolle.opphørsdato = if (løperBidrag) løpendeBidragRolle.løperBidragTil?.toLocalDate() else null
                     rollerSomSkalLeggesTil.add(rolle)
                 } else {
@@ -773,7 +778,13 @@ class ForholdsmessigFordelingService(
                                     ).toMutableSet(),
                             )
                         eksisterendeRolle.innkrevingstype =
-                            if (medInnkreving) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
+                            if (medInnkreving == null) {
+                                eksisterendeRolle.innkrevingstype
+                            } else if (medInnkreving) {
+                                Innkrevingstype.MED_INNKREVING
+                            } else {
+                                Innkrevingstype.UTEN_INNKREVING
+                            }
                         if (varRevurderingsbarn && søktFraDato != null) {
                             eksisterendeRolle.årsak = VirkningstidspunktÅrsakstype.FRA_SØKNADSTIDSPUNKT
                             virkningstidspunktService.oppdaterVirkningstidspunkt(

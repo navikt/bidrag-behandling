@@ -258,7 +258,7 @@ private fun oppdaterOpphørForRoller(
         rollerSomLeggesTil.forEach { r ->
             val rolle = behandling.roller.find { it.erSammeRolle(r.ident!!.verdi, r.stønadstype) }!!
             behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
-                val opphørsdato = if (it.opphørsdato.isAfter(behandling.virkningstidspunkt!!)) it.opphørsdato else null
+                val opphørsdato = if (it.opphørsdato.isAfter(rolle.virkningstidspunktRolle)) it.opphørsdato else null
                 if (opphørsdato != null) {
                     virkningstidspunktService.oppdaterOpphørsdato(
                         behandling.id!!,
