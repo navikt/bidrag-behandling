@@ -92,6 +92,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.behandling.vedtak.Periode
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
@@ -537,7 +538,7 @@ class ForholdsmessigFordelingService(
             rolle.forholdsmessigFordeling!!.søknaderUnderBehandling.filter {
                 it.behandlingstype == rolle.behandling.behandlingstypeForFF
             }
-        val søknaderFeilregistrert =
+        val søknaderFeilregistrertBarn =
             søknader.mapNotNull { søknad ->
                 val søknadsid = søknad.søknadsid!!
                 val personidentBarn = rolle.ident!!
@@ -552,8 +553,30 @@ class ForholdsmessigFordelingService(
             }
         rolle.forholdsmessigFordeling!!
             .søknaderUnderBehandling
-            .filter { søknaderFeilregistrert.contains(it.søknadsid!!) }
+            .filter { `søknaderFeilregistrertBarn`.contains(it.søknadsid!!) }
             .forEach {
+                it.status = Behandlingstatus.FEILREGISTRERT
+            }
+
+        val søknaderFeilregistrert =
+            søknaderFeilregistrertBarn.filter {
+                val søknad = bbmConsumer.hentSøknad(it)
+                søknad.søknad.behandlingStatusType == BehandlingStatusType.AVBRUTT
+            }
+
+        rolle.behandling.bidragsmottaker
+            ?.forholdsmessigFordeling
+            ?.søknaderUnderBehandling
+            ?.filter { `søknaderFeilregistrert`.contains(it.søknadsid!!) }
+            ?.forEach {
+                it.status = Behandlingstatus.FEILREGISTRERT
+            }
+
+        rolle.behandling.bidragspliktig
+            ?.forholdsmessigFordeling
+            ?.søknaderUnderBehandling
+            ?.filter { `søknaderFeilregistrert`.contains(it.søknadsid!!) }
+            ?.forEach {
                 it.status = Behandlingstatus.FEILREGISTRERT
             }
     }
@@ -655,6 +678,24 @@ class ForholdsmessigFordelingService(
                 ),
                 tvingEndring = true,
             )
+        }
+    }
+
+    // Feilhåndtering hvis FF søknad blir slettet manuelt eller ved feil
+    @Transactional
+    fun gjenopprettFFSøknad(behandling: Behandling) {
+        val roller = behandling.søknadsbarn.filter { it.erRevurderingsbarn }
+        roller.forEach { rolle ->
+            val ffSøknadDetaljer = rolle.forholdsmessigFordeling!!.eldsteSøknad
+            if (ffSøknadDetaljer.behandlingstype!!.erForholdsmessigFordeling) {
+                val søknad = bbmConsumer.hentSøknad(ffSøknadDetaljer.søknadsid!!)
+                val søknadBarn = søknad.søknad.partISøknadListe.find { it.personident == rolle.ident }
+                if (søknad.søknad.behandlingStatusType == BehandlingStatusType.AVBRUTT ||
+                    søknadBarn?.behandlingstatus == Behandlingstatus.FEILREGISTRERT
+                ) {
+                    slettBarnFraBehandlingFF(rolle, behandling, ffSøknadDetaljer.søknadsid!!)
+                }
+            }
         }
     }
 
@@ -832,6 +873,7 @@ class ForholdsmessigFordelingService(
         val åpenFFBehandling =
             åpneSøknader.filter { it.behandlingstype == behandling.behandlingstypeForFF }.find {
                 it.innkreving && skalOppretteFFSøknadMedInnkreving &&
+                    it.behandlingsid == behandling.id &&
                     it.saksnummer == barn.forholdsmessigFordeling?.tilhørerSak &&
                     it.søknadFomDato == søktFomDato && it.behandlingstema.tilStønadstype() == barn.stønadstype
             }
@@ -1396,7 +1438,7 @@ class ForholdsmessigFordelingService(
             løpendeBidragssak.filter { ls ->
                 behandling.søknadsbarn.none {
                     it.erSammeRolle(ls.kravhaver, ls.stønadstype) &&
-                        (it.forholdsmessigFordeling?.søknader?.isNotEmpty() == true)
+                        (it.forholdsmessigFordeling?.søknaderUnderBehandling?.isNotEmpty() == true)
                 }
             }
         if (barnUtenSøknader.isEmpty()) return

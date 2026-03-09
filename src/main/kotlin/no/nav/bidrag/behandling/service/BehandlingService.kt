@@ -603,7 +603,11 @@ class BehandlingService(
         val behandling =
             behandlingRepository.findBehandlingById(behandlingId).get().let {
                 if (it.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
-                    behandlingRepository.finnHovedbehandlingForBpVedFF(it.bidragspliktig!!.ident!!, it.vedtakstype.name)!!
+                    behandlingRepository.finnHovedbehandlingForBpVedFF(
+                        it.bidragspliktig!!.ident!!,
+                        it.vedtakstype.name,
+                        it.omgjøringsdetaljer?.opprinneligVedtakId,
+                    )!!
                 } else {
                     it
                 }
@@ -665,6 +669,7 @@ class BehandlingService(
                 request.søknadsid ?: behandling.soknadsid!!,
                 request.saksnummer ?: behandling.saksnummer,
             )
+            forholdsmessigFordelingService.gjenopprettFFSøknad(behandling)
         } else {
             behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
             oppdaterBehandlingEtterOppdatertRoller(
