@@ -244,7 +244,7 @@ class BeregningService(
                         )
                     }
                     val perioderBarn = resultatBarn.resultatVedtakListe.flatMap { it.periodeListe }.map { it.periode }
-                    val minstEnPeriodeSlåttUtTilFF = perioderBarn.any { pb -> perioderSlåttUtTilFF.any { it.inneholder(pb) } }
+                    val minstEnPeriodeSlåttUtTilFF = perioderBarn.any { pb -> perioderSlåttUtTilFF.any { it.overlapper(pb) } }
                     val erOmgjøringMedPerioder = endeligBeregning && behandling.erKlageEllerOmgjøring && perioderBarn.isNotEmpty()
                     val erAvvistRevurdering =
                         forholdsmessigFordelingDetaljer != null && forholdsmessigFordelingDetaljer.erRevurdering &&
