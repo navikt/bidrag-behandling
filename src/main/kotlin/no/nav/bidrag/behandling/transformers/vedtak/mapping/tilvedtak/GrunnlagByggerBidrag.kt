@@ -150,7 +150,7 @@ fun List<LøpendeBidragGrunnlagForholdsmessigFordeling>.tilGrunnlagDto(personGru
                         "${Grunnlagstype.LØPENDE_BIDRAG}_FORHOLDSMESSIG_FORDELING_" +
                             "${personObjekt.referanse}_${personGrunnlagListe.bidragspliktig!!.referanse}",
                     gjelderReferanse = personGrunnlagListe.bidragspliktig!!.referanse,
-                    gjelderBarnReferanse = personObjekt.gjelderBarnReferanse,
+                    gjelderBarnReferanse = personObjekt.referanse,
                     type = Grunnlagstype.LØPENDE_BIDRAG,
                     innhold =
                         POJONode(

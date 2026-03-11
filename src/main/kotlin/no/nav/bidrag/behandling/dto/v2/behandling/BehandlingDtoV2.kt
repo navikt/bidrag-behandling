@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
@@ -112,6 +113,7 @@ data class BehandlingDtoV2(
     val type: TypeBehandling,
     val lesemodus: LesemodusVedtak? = null,
     val erBisysVedtak: Boolean = false,
+    val løpendeBidragBarn: List<LøpendeBidragGrunnlagForholdsmessigFordeling> = emptyList(),
     val forholdsmessigFordeling: ForholdmessigFordelingDetaljerDto? = null,
     val erVedtakUtenBeregning: Boolean = false,
     val grunnlagFraVedtaksid: Int? = null,

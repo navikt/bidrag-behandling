@@ -721,29 +721,25 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
             val gjelderGrunnlag = hentPersonMedReferanse(grunnlag.gjelderReferanse)!!
             behandling.opprettGrunnlag(
                 Grunnlagsdatatype.LØPENDE_BIDRAG_OPPRETT_FORHOLDSMESSIG_FORDELING,
-                LøpendeBidragGrunnlagForholdsmessigFordeling(
-                    gjelderBarnIdent = gjelderBarnGrunnlag.personIdent!!,
-                    løpendeBidragPerioder =
-                        grunnlag
-                            .innholdTilObjekt<LøpendeBidragForholdsmessigFordelingGrunnlag>()
-                            .løpendeBidragListe
-                            .map { beregning ->
-                                BeregnetBidragBarnDto(
-                                    periode = beregning.periode,
-                                    faktiskBeløp = beregning.faktiskBeløp,
-                                    samværsklasse = beregning.samværsklasse,
-                                    beregnetBeløp = beregning.beregnetBeløp,
-                                    løpendeBeløp = beregning.løpendeBeløp,
-                                    stønadstype = beregning.stønadstype,
-                                    saksnummer = beregning.saksnummer,
-                                    valutakode = beregning.valutakode,
-                                    valutakurs = beregning.valutakurs,
-                                    reduksjonUnderholdskostnad = beregning.reduksjonUnderholdskostnad,
-                                    samværsfradrag = beregning.samværsfradrag,
-                                    beregnetBidrag = beregning.beregnetBidrag,
-                                )
-                            },
-                ),
+                grunnlag
+                    .innholdTilObjekt<LøpendeBidragForholdsmessigFordelingGrunnlag>()
+                    .løpendeBidragListe
+                    .map { beregning ->
+                        BeregnetBidragBarnDto(
+                            periode = beregning.periode,
+                            faktiskBeløp = beregning.faktiskBeløp,
+                            samværsklasse = beregning.samværsklasse,
+                            beregnetBeløp = beregning.beregnetBeløp,
+                            løpendeBeløp = beregning.løpendeBeløp,
+                            stønadstype = beregning.stønadstype,
+                            saksnummer = beregning.saksnummer,
+                            valutakode = beregning.valutakode,
+                            valutakurs = beregning.valutakurs,
+                            reduksjonUnderholdskostnad = beregning.reduksjonUnderholdskostnad,
+                            samværsfradrag = beregning.samværsfradrag,
+                            beregnetBidrag = beregning.beregnetBidrag,
+                        )
+                    },
                 gjelder = gjelderBarnGrunnlag.personIdent!!,
                 rolleIdent = gjelderGrunnlag.personIdent!!,
                 innhentetTidspunkt = LocalDateTime.now(),
