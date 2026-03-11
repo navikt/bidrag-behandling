@@ -128,6 +128,7 @@ fun List<LøpendeBidragGrunnlagForholdsmessigFordeling>.tilGrunnlagDto(personGru
                 val løpendeBidragBarn =
                     løpendeBidragListe.first().løpendeBidragPerioder.map { beregning ->
                         LøpendeBidragForholdsmessigFordeling(
+                            periode = beregning.periode,
                             faktiskBeløp = beregning.faktiskBeløp,
                             samværsklasse = beregning.samværsklasse,
                             beregnetBeløp = beregning.beregnetBeløp,
@@ -145,7 +146,9 @@ fun List<LøpendeBidragGrunnlagForholdsmessigFordeling>.tilGrunnlagDto(personGru
                     personGrunnlagListe.hentPerson(gjelderBarn)
                         ?: opprettPersonGrunnlag(gjelderBarn)
                 GrunnlagDto(
-                    referanse = grunnlagsreferanse_løpende_bidrag,
+                    referanse =
+                        "${Grunnlagstype.LØPENDE_BIDRAG}_FORHOLDSMESSIG_FORDELING_" +
+                            "${personObjekt.referanse}_${personGrunnlagListe.bidragspliktig!!.referanse}",
                     gjelderReferanse = personGrunnlagListe.bidragspliktig!!.referanse,
                     gjelderBarnReferanse = personObjekt.gjelderBarnReferanse,
                     type = Grunnlagstype.LØPENDE_BIDRAG,

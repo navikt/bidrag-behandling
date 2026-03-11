@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagLøpendeBidragFF
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -104,6 +105,9 @@ fun Behandling.byggGrunnlagUtgiftDirekteBetalt() =
                 ),
         ),
     )
+
+fun Behandling.byggGrunnlagLøpendeBidragForholdsmessigFordeling(grunnlagsliste: MutableSet<GrunnlagDto>) =
+    grunnlag.hentSisteGrunnlagLøpendeBidragFF(this).tilGrunnlagDto(grunnlagsliste)
 
 fun Behandling.byggGrunnlagBehandlingDetaljer() =
     setOf(

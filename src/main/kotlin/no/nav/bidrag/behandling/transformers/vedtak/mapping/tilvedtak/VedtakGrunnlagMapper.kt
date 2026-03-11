@@ -474,6 +474,7 @@ class VedtakGrunnlagMapper(
                             }
 
                             TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
+                                grunnlagsliste.addAll(byggGrunnlagLøpendeBidragForholdsmessigFordeling(grunnlagsliste))
                                 grunnlagsliste.addAll(tilPrivatAvtaleGrunnlag(grunnlagsliste, søknadsbarnRolle))
                                 grunnlagsliste.addAll(
                                     opprettMidlertidligPersonobjekterBMsbarn(grunnlagsliste.filter { it.erPerson() }.toSet()),

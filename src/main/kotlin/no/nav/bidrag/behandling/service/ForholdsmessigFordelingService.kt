@@ -302,8 +302,10 @@ class ForholdsmessigFordelingService(
             ugyldigForespørsel("Opprettelse av forholdsmessig fordeling er deaktivert")
         }
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
+        opprettGrunnlagLøpendeBidrag(behandling)
 
         val originalBM = behandling.bidragsmottaker!!.ident
+
         behandling.alleBidragsmottakere.filter { it.forholdsmessigFordeling == null }.forEach {
             it.forholdsmessigFordeling = behandling.tilFFDetaljerBM()
         }
@@ -400,7 +402,6 @@ class ForholdsmessigFordelingService(
             emptyList(),
         )
         behandling.syncGebyrSøknadReferanse()
-        opprettGrunnlagLøpendeBidrag(behandling)
         behandlingService.lagreBehandling(behandling)
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
@@ -429,7 +430,7 @@ class ForholdsmessigFordelingService(
                         behandling = behandling,
                         type = type,
                         gjelder = it.gjelderBarnIdent,
-                        data = commonObjectmapper.writeValueAsString(it),
+                        data = commonObjectmapper.writeValueAsString(it.løpendeBidragPerioder),
                         innhentet = LocalDateTime.now(),
                         aktiv = LocalDateTime.now(),
                         rolle = behandling.bidragspliktig!!,
