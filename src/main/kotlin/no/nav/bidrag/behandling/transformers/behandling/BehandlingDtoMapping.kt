@@ -258,7 +258,7 @@ private fun oppdaterOpphørForRoller(
         rollerSomLeggesTil.forEach { r ->
             val rolle = behandling.roller.find { it.erSammeRolle(r.ident!!.verdi, r.stønadstype) }!!
             behandling.finnEksisterendeVedtakMedOpphør(rolle)?.let {
-                val opphørsdato = if (it.opphørsdato.isAfter(behandling.virkningstidspunkt!!)) it.opphørsdato else null
+                val opphørsdato = if (it.opphørsdato.isAfter(rolle.virkningstidspunktRolle)) it.opphørsdato else null
                 if (opphørsdato != null) {
                     virkningstidspunktService.oppdaterOpphørsdato(
                         behandling.id!!,
@@ -285,7 +285,10 @@ private fun oppdatereHusstandsmedlemmerForRoller(
             // Oppdater rolle slik at husstandsmedlemmen blir låst til rollen i behandlingen
             val husstandsmedlem =
                 behandling.husstandsmedlem.find { it.erSammePerson(nyRolle.ident.verdi, nyRolle.stønadstype) } ?: return@forEach
-            husstandsmedlem.rolle = rolle
+            husstandsmedlem.rolle = rolle!!
+            husstandsmedlem.navn = rolle.navn
+            husstandsmedlem.ident = rolle.ident
+            husstandsmedlem.fødselsdato = rolle.fødselsdato
             husstandsmedlem.kilde = Kilde.OFFENTLIG
         }
 

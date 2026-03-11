@@ -125,6 +125,7 @@ import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.diverse.Kilde
+import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
@@ -750,7 +751,7 @@ class Dtomapper(
                         .filter { it.bostatus != null }
                         .map {
                             PeriodeAndreVoksneIHusstanden(
-                                periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
+                                periode = Datoperiode(it.periodeFom!!, it.periodeTom),
                                 status = it.bostatus!!,
                                 totalAntallHusstandsmedlemmer =
                                     toSet()
@@ -1635,10 +1636,87 @@ class Dtomapper(
 
     private fun List<Grunnlag>.tilAndreVoksneIHusstanden(erAktivert: Boolean) =
         AndreVoksneIHusstandenGrunnlagDto(
-            perioder = tilPeriodeAndreVoksneIHusstanden(erAktivert),
+            perioder = toSet().tilPeriodeAndreVoksneIHusstandenNy(erAktivert),
             innhentet = LocalDateTime.now(),
         )
 
+    private fun Set<Grunnlag>.tilPeriodeAndreVoksneIHusstandenNy(erAktivert: Boolean = true): Set<PeriodeAndreVoksneIHusstanden> {
+        val grunnlag = if (erAktivert) hentSisteAktiv() else hentSisteIkkeAktiv()
+        val behandling = firstOrNull()?.behandling ?: return emptySet()
+
+        val boforholdAndreVoksneIHusstanden =
+            grunnlag
+                .find {
+                    it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN && !it.erBearbeidet
+                }.konvertereData<List<RelatertPersonGrunnlagDto>>() ?: return emptySet()
+
+        // Filter and prepare the list of andre voksne (same logic as hentAlleAndreVoksneHusstandForPeriode)
+        val filtrerteAndreVoksne =
+            boforholdAndreVoksneIHusstanden
+                .filter { it.relasjon != Familierelasjon.BARN }
+                .filter {
+                    it.fødselsdato == null ||
+                        it.fødselsdato!!
+                            .withDayOfMonth(1)
+                            .isBefore(behandling.eldsteVirkningstidspunkt.minusYears(18))
+                }.filter {
+                    val sistePeriode = it.borISammeHusstandDtoListe.filter { it.periodeFra != null }.maxByOrNull { it.periodeFra!! }
+                    sistePeriode?.periodeTil == null ||
+                        sistePeriode.periodeTil!!.withDayOfMonth(1) >= behandling.eldsteVirkningstidspunkt.withDayOfMonth(1)
+                }
+
+        // Collect all periods with their associated people
+        val periodePeopleMap = mutableMapOf<Datoperiode, MutableList<RelatertPersonGrunnlagDto>>()
+
+        filtrerteAndreVoksne.forEach { person ->
+            person.borISammeHusstandDtoListe.forEach { boStatus ->
+                val periodeTil = boStatus.periodeTil
+                val periodeFom = boStatus.periodeFra ?: return@forEach
+                val periode = Datoperiode(periodeFom, periodeTil)
+                periodePeopleMap.getOrPut(periode) { mutableListOf() }.add(person)
+            }
+        }
+
+        // Create PeriodeAndreVoksneIHusstanden entries grouped by period and number of people
+        return periodePeopleMap
+            .toSortedMap(compareBy { it.fom })
+            .flatMap { (periode, people) ->
+                // Group by count of people to create separate periods if count changes
+                val countGroups = people.groupBy { people.size }
+                countGroups.map { (count, peopleInGroup) ->
+                    PeriodeAndreVoksneIHusstanden(
+                        periode = periode,
+                        status = Bostatuskode.BOR_MED_ANDRE_VOKSNE,
+                        totalAntallHusstandsmedlemmer = count,
+                        husstandsmedlemmer =
+                            peopleInGroup.mapNotNull { person ->
+                                try {
+                                    person.tilAndreVoksneIHusstandenDetaljerDto(
+                                        Saksnummer(
+                                            grunnlag
+                                                .find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN }
+                                                ?.behandling
+                                                ?.saksnummer!!,
+                                        ),
+                                    )
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            },
+                    )
+                }
+            }.mapIndexed { index, husstanden ->
+                if (index == 0) {
+                    husstanden.copy(
+                        periode = Datoperiode(behandling.eldsteVirkningstidspunkt, husstanden.periode.til),
+                    )
+                } else {
+                    husstanden
+                }
+            }.toSet()
+    }
+
+    @Deprecated("Kan fjernes i neste prodsetting")
     private fun List<Grunnlag>.tilPeriodeAndreVoksneIHusstanden(erAktivert: Boolean = true): Set<PeriodeAndreVoksneIHusstanden> =
         find { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type && it.erBearbeidet }
             .konvertereData<Set<Bostatus>>()
@@ -1646,7 +1724,7 @@ class Dtomapper(
             ?.map {
                 val periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom)
                 PeriodeAndreVoksneIHusstanden(
-                    periode = ÅrMånedsperiode(it.periodeFom!!, it.periodeTom),
+                    periode = Datoperiode(it.periodeFom!!, it.periodeTom),
                     status = it.bostatus!!,
                     totalAntallHusstandsmedlemmer =
                         toSet()

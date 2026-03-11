@@ -49,6 +49,7 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.tid.Datoperiode
 import no.nav.bidrag.domene.tid.Periode
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavn
@@ -465,7 +466,7 @@ data class AndreVoksneIHusstandenGrunnlagDto(
 )
 
 data class PeriodeAndreVoksneIHusstanden(
-    val periode: ÅrMånedsperiode,
+    val periode: Datoperiode,
     val status: Bostatuskode,
     @Schema(description = "Total antall husstandsmedlemmer som bor hos BP for gjeldende periode")
     val totalAntallHusstandsmedlemmer: Int,
