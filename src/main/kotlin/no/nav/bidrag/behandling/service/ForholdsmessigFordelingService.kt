@@ -7,18 +7,22 @@ import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagLøpendeBidragFF
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
 import no.nav.bidrag.behandling.database.datamodell.leggTilGebyr
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
 import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.behandling.finnRolle
@@ -52,12 +56,14 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilForholds
 import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.løperBidragFørOpphør
+import no.nav.bidrag.behandling.transformers.mapTilBeregnetBidragDto
 import no.nav.bidrag.behandling.transformers.tilDato18årsBidrag
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
@@ -87,14 +93,17 @@ import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlerenhe
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlingsidRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragTilFordelingLøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.behandling.vedtak.Periode
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toLocalDate
 import no.nav.bidrag.transport.felles.toYearMonth
@@ -105,6 +114,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.YearMonth
 import kotlin.collections.plus
 
@@ -125,6 +135,7 @@ data class FFBeregningResultat(
     val harSlåttUtTilFF: Boolean,
     val beregningManglerGrunnlag: Boolean,
     val simulertGrunnlag: List<SimulertInntektGrunnlag> = emptyList(),
+    val løpendeBidragBarn: List<LøpendeBidragGrunnlagForholdsmessigFordeling> = emptyList(),
 )
 
 data class SimulertInntektGrunnlag(
@@ -389,9 +400,44 @@ class ForholdsmessigFordelingService(
             emptyList(),
         )
         behandling.syncGebyrSøknadReferanse()
+        opprettGrunnlagLøpendeBidrag(behandling)
         behandlingService.lagreBehandling(behandling)
 
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+    }
+
+    private fun opprettGrunnlagLøpendeBidrag(behandling: Behandling) {
+        val type = Grunnlagsdatatype.LØPENDE_BIDRAG_OPPRETT_FORHOLDSMESSIG_FORDELING
+        val nyesteLøpendeBidragGrunnlag = sjekkBeregningKreverForholdsmessigFordeling(behandling).løpendeBidragBarn
+        val eksisterendeGrunnlag =
+            behandling.grunnlag.hentSisteGrunnlagLøpendeBidragFF(behandling) ?: emptyList()
+        if (eksisterendeGrunnlag != nyesteLøpendeBidragGrunnlag) {
+            secureLogger.debug {
+                "Lagrer ny grunnlag løpende bidrag hvor siste aktive grunnlag var $eksisterendeGrunnlag"
+            }
+            // Hver gang det lagres så legges det til ny barn. Dette er grunnlag når FF opprettes.
+            // Det betyr det saksbehandler baserte valget på for når FF skulle opprettes. Derfor bør ikke eksisterende data endres
+            // Når nye grunnlag lagres
+            val eksisterendeGrunnlagIdenter = eksisterendeGrunnlag.map { it.gjelderBarnIdent }
+            val nyeGrunnlag =
+                nyesteLøpendeBidragGrunnlag
+                    .filter { !eksisterendeGrunnlagIdenter.contains(it.gjelderBarnIdent) }
+
+            behandling.grunnlag.addAll(
+                nyeGrunnlag.map {
+                    Grunnlag(
+                        behandling = behandling,
+                        type = type,
+                        gjelder = it.gjelderBarnIdent,
+                        data = commonObjectmapper.writeValueAsString(it),
+                        innhentet = LocalDateTime.now(),
+                        aktiv = LocalDateTime.now(),
+                        rolle = behandling.bidragspliktig!!,
+                        erBearbeidet = false,
+                    )
+                },
+            )
+        }
     }
 
     private fun oppdaterGebyrDetaljerRollerIBehandling(
@@ -979,6 +1025,7 @@ class ForholdsmessigFordelingService(
         try {
             val resultat = beregningService.beregneBidrag(behandling, true, simulerBeregning = true)
             val resultatBarn = resultat.resultatBarn
+            val lagretLøpendeBidrag = behandling.grunnlag.hentSisteGrunnlagLøpendeBidragFF(behandling) ?: emptyList()
             val grunnlagsliste = resultat.grunnlagsliste.toSet().toList()
 
             val simulertInntektGrunnlag =
@@ -995,10 +1042,30 @@ class ForholdsmessigFordelingService(
                         )
                     }
 
+            val løpendeBidrag =
+                grunnlagsliste.filtrerOgKonverterBasertPåEgenReferanse<DelberegningBidragTilFordelingLøpendeBidrag>(
+                    Grunnlagstype.DELBEREGNING_BIDRAG_TIL_FORDELING_LØPENDE_BIDRAG,
+                )
+            val lagretLøpendeBidragBarnIdenter = lagretLøpendeBidrag.map { it.gjelderBarnIdent }
+            val løpendeBidragBarn =
+                grunnlagsliste
+                    .mapTilBeregnetBidragDto(løpendeBidrag)
+                    // Lagret løpende bidrag så betyr det at det er opprettet FF på grunnlaget av løpende bidraget som ble lagret
+                    // Da skal de brukes istedenfor det som kommer fra beregningen.
+                    .filter { !lagretLøpendeBidragBarnIdenter.contains(it.barn.ident!!.verdi) }
+                    .groupBy { it.barn.ident!!.verdi }
+                    .map { (ident, løpendeBidrag) ->
+                        LøpendeBidragGrunnlagForholdsmessigFordeling(
+                            ident,
+                            løpendeBidrag.mapNotNull { it.beregnetBidrag },
+                        )
+                    }
+
             FFBeregningResultat(
                 harSlåttUtTilFF = grunnlagsliste.harSlåttUtTilForholdsmessigFordeling(),
                 beregningManglerGrunnlag = resultat.alleUgyldigBeregninger.isNotEmpty(),
                 simulertGrunnlag = simulertInntektGrunnlag,
+                løpendeBidragBarn = løpendeBidragBarn + lagretLøpendeBidrag,
             )
         } catch (e: Exception) {
             // Valideringsfeil
@@ -1055,6 +1122,7 @@ class ForholdsmessigFordelingService(
             harSlåttUtTilForholdsmessigFordeling = resultat.harSlåttUtTilFF,
             eldsteSøktFraDato = relevanteKravhavere.finnEldsteSøktFomDato(behandling),
             barn = bpsBarnMedLøpendeBidragEllerPrivatAvtale,
+            løpendeBidragBarn = resultat.løpendeBidragBarn,
         )
     }
 

@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentNavn
+import no.nav.bidrag.behandling.dto.v1.beregning.BeregnetBidragBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.BidragPeriodeBeregningsdetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBarnetilleggDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelberegningBidragsevneDto
@@ -50,7 +51,6 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregn
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnInnkrevesFraDato
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.commons.util.secureLogger
-import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvslag
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvvisning
@@ -66,6 +66,7 @@ import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.samhandler.Valutakode
 import no.nav.bidrag.domene.enums.sjablon.SjablonTallNavn
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
@@ -1674,7 +1675,8 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
                 privatAvtale = false,
                 erSøknadsbarn = true,
                 beregnetBidrag =
-                    ForholdsmessigFordelingBidragTilFordelingBarn.BeregnetBidragBarnDto(
+                    BeregnetBidragBarnDto(
+                        periode = it.innhold.periode,
                         // Verdiene under er ikke interessant å vise for barn som er i søknaden
                         saksnummer = Saksnummer(""),
                         samværsklasse = Samværsklasse.SAMVÆRSKLASSE_0,
@@ -1684,6 +1686,8 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
                         beregnetBeløp = BigDecimal.ZERO,
                         reduksjonUnderholdskostnad = BigDecimal.ZERO,
                         samværsfradrag = BigDecimal.ZERO,
+                        // TODO: Her må det legges inn riktig stønadstype
+                        stønadstype = Stønadstype.BIDRAG,
                     ),
                 barn =
                     PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
@@ -1740,58 +1744,7 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
             fraGrunnlag,
         )
 
-    val løpendeBidrag =
-        bidragTilFordelingLøpendeBidrag.mapNotNull {
-            val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
-            val grunnlagSamværsfradrag =
-                finnOgKonverterGrunnlagSomErReferertAv<DelberegningSamværsfradrag>(
-                    Grunnlagstype.DELBEREGNING_SAMVÆRSFRADRAG,
-                    it.grunnlag,
-                ).firstOrNull()
-            val løpendeBidrag =
-                finnOgKonverterGrunnlagSomErReferertAv<LøpendeBidragPeriode>(
-                    Grunnlagstype.LØPENDE_BIDRAG_PERIODE,
-                    it.grunnlag,
-                ).firstOrNull()?.innhold ?: return@mapNotNull null
-            val valutakurser =
-                finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<ValutakursGrunnlag>(
-                    Grunnlagstype.VALUTAKURS_GRUNNLAG,
-                    it.grunnlag.grunnlagsreferanseListe,
-                ).firstOrNull()
-                    ?.innhold
-            val valutakursNOKTilValuta =
-                valutakurser
-                    ?.valutakursListe
-                    ?.find { vl -> vl.valutakode1 == it.innhold.valutakode && vl.valutakode2 == Valutakode.NOK }
-                    ?.valutakurs ?: BigDecimal.ONE
-            val valutakursValutaTilNOK =
-                valutakurser
-                    ?.valutakursListe
-                    ?.find { vl -> vl.valutakode1 == it.innhold.valutakode && vl.valutakode2 == Valutakode.NOK }
-                    ?.valutakurs ?: BigDecimal.ONE
-            ForholdsmessigFordelingBidragTilFordelingBarn(
-                utenlandskbidrag = !it.innhold.erNorskBidrag,
-                oppfostringsbidrag = it.innhold.erOppfostringsbidrag,
-                privatAvtale = false,
-                erSøknadsbarn = false,
-                bidragTilFordeling = it.innhold.bidragTilFordelingNOK,
-                barn =
-                    PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
-                beregnetBidrag =
-                    ForholdsmessigFordelingBidragTilFordelingBarn.BeregnetBidragBarnDto(
-                        saksnummer = løpendeBidrag.saksnummer,
-                        samværsklasse = løpendeBidrag.samværsklasse ?: Samværsklasse.SAMVÆRSKLASSE_0,
-                        løpendeBeløp = løpendeBidrag.løpendeBeløp,
-                        faktiskBeløp = løpendeBidrag.faktiskBeløp,
-                        beregnetBidrag = it.innhold.bidragTilFordelingNOK,
-                        beregnetBeløp = løpendeBidrag.beregnetBeløp,
-                        valutakode = løpendeBidrag.valutakode,
-                        valutakurs = valutakursNOKTilValuta ?: BigDecimal.ONE,
-                        reduksjonUnderholdskostnad = it.innhold.reduksjonUnderholdskostnad,
-                        samværsfradrag = grunnlagSamværsfradrag?.innhold?.beløp?.multiply(valutakursValutaTilNOK) ?: BigDecimal.ZERO,
-                    ),
-            )
-        }
+    val løpendeBidrag = mapTilBeregnetBidragDto(bidragTilFordelingLøpendeBidrag)
 
     val privatAvtaleBeregnetPerioder =
         finnOgKonverterGrunnlagSomErReferertAv<DelberegningBidragTilFordelingPrivatAvtale>(
@@ -1800,7 +1753,7 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
         )
 
     val privatAvtaler =
-        privatAvtaleBeregnetPerioder.map {
+        privatAvtaleBeregnetPerioder.mapNotNull {
             val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
             val privatAvtalePerioder =
                 finnOgKonverterGrunnlagSomErReferertAv<PrivatAvtalePeriodeGrunnlag>(
@@ -1808,7 +1761,8 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                     it.grunnlag,
                 )
 
-            val periodeSomOverlapper = privatAvtalePerioder.find { it.innhold.periode.inneholder(periode) }!!.innhold
+            val periodeSomOverlapper =
+                privatAvtalePerioder.find { it.innhold.periode.inneholder(periode) }?.innhold ?: return@mapNotNull null
 
             val indeksregulertGrunnalg =
                 finnOgKonverterGrunnlagSomErReferertAv<DelberegningIndeksreguleringPrivatAvtale>(
@@ -1840,7 +1794,8 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                 barn =
                     PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
                 beregnetBidrag =
-                    ForholdsmessigFordelingBidragTilFordelingBarn.BeregnetBidragBarnDto(
+                    BeregnetBidragBarnDto(
+                        periode = periode,
                         saksnummer = Saksnummer(""), // TODO,
                         samværsklasse = periodeSomOverlapper.samværsklasse ?: Samværsklasse.SAMVÆRSKLASSE_0,
                         løpendeBeløp = periodeSomOverlapper.beløp,
@@ -1851,6 +1806,8 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                         valutakode = it.innhold.valutakode,
                         valutakurs = valutakursNOKTilValuta ?: BigDecimal.ONE,
                         reduksjonUnderholdskostnad = BigDecimal.ZERO,
+                        // TODO: Her må det legges inn riktig stønadstype
+                        stønadstype = Stønadstype.BIDRAG,
                         samværsfradrag = it.innhold.samværsfradrag?.multiply(valutakursValutaTilNOK) ?: BigDecimal.ZERO,
                     ),
             )
@@ -1885,7 +1842,8 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                 barn =
                     PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
                 beregnetBidrag =
-                    ForholdsmessigFordelingBidragTilFordelingBarn.BeregnetBidragBarnDto(
+                    BeregnetBidragBarnDto(
+                        periode = periode,
                         saksnummer = Saksnummer(""), // TODO,
                         samværsklasse = periodeSomOverlapper.samværsklasse ?: Samværsklasse.SAMVÆRSKLASSE_0,
                         løpendeBeløp = periodeSomOverlapper.beløp,
@@ -1896,10 +1854,70 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                         valutakode = periodeSomOverlapper.valutakode ?: Valutakode.NOK,
                         reduksjonUnderholdskostnad = BigDecimal.ZERO,
                         samværsfradrag = BigDecimal.ZERO,
+                        // TODO: Her må det legges inn riktig stønadstype
+                        stønadstype = Stønadstype.BIDRAG,
                     ),
             )
         }
     return privatAvtaler + løpendeBidrag + privatAvtalerLegacy
+}
+
+fun List<GrunnlagDto>.mapTilBeregnetBidragDto(
+    bidragTilFordeling: List<InnholdMedReferanse<DelberegningBidragTilFordelingLøpendeBidrag>>,
+): List<ForholdsmessigFordelingBidragTilFordelingBarn> {
+    return bidragTilFordeling.mapNotNull {
+        val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
+        val grunnlagSamværsfradrag =
+            finnOgKonverterGrunnlagSomErReferertAv<DelberegningSamværsfradrag>(
+                Grunnlagstype.DELBEREGNING_SAMVÆRSFRADRAG,
+                it.grunnlag,
+            ).firstOrNull()
+        val løpendeBidrag =
+            finnOgKonverterGrunnlagSomErReferertAv<LøpendeBidragPeriode>(
+                Grunnlagstype.LØPENDE_BIDRAG_PERIODE,
+                it.grunnlag,
+            ).firstOrNull()?.innhold ?: return@mapNotNull null
+        val valutakurser =
+            finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe<ValutakursGrunnlag>(
+                Grunnlagstype.VALUTAKURS_GRUNNLAG,
+                it.grunnlag.grunnlagsreferanseListe,
+            ).firstOrNull()
+                ?.innhold
+        val valutakursNOKTilValuta =
+            valutakurser
+                ?.valutakursListe
+                ?.find { vl -> vl.valutakode1 == it.innhold.valutakode && vl.valutakode2 == Valutakode.NOK }
+                ?.valutakurs ?: BigDecimal.ONE
+        val valutakursValutaTilNOK =
+            valutakurser
+                ?.valutakursListe
+                ?.find { vl -> vl.valutakode1 == it.innhold.valutakode && vl.valutakode2 == Valutakode.NOK }
+                ?.valutakurs ?: BigDecimal.ONE
+        ForholdsmessigFordelingBidragTilFordelingBarn(
+            utenlandskbidrag = !it.innhold.erNorskBidrag,
+            oppfostringsbidrag = it.innhold.erOppfostringsbidrag,
+            privatAvtale = false,
+            erSøknadsbarn = false,
+            bidragTilFordeling = it.innhold.bidragTilFordelingNOK,
+            barn =
+                PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
+            beregnetBidrag =
+                BeregnetBidragBarnDto(
+                    periode = it.innhold.periode,
+                    saksnummer = løpendeBidrag.saksnummer,
+                    samværsklasse = løpendeBidrag.samværsklasse ?: Samværsklasse.SAMVÆRSKLASSE_0,
+                    løpendeBeløp = løpendeBidrag.løpendeBeløp,
+                    faktiskBeløp = løpendeBidrag.faktiskBeløp,
+                    stønadstype = løpendeBidrag.stønadstype,
+                    beregnetBidrag = it.innhold.bidragTilFordelingNOK,
+                    beregnetBeløp = løpendeBidrag.beregnetBeløp,
+                    valutakode = løpendeBidrag.valutakode,
+                    valutakurs = valutakursNOKTilValuta ?: BigDecimal.ONE,
+                    reduksjonUnderholdskostnad = it.innhold.reduksjonUnderholdskostnad,
+                    samværsfradrag = grunnlagSamværsfradrag?.innhold?.beløp?.multiply(valutakursValutaTilNOK) ?: BigDecimal.ZERO,
+                ),
+        )
+    }
 }
 
 fun List<GrunnlagDto>.finnGrunnlag25ProsentAvInntekt(grunnlagsreferanseListe: List<Grunnlagsreferanse>) =

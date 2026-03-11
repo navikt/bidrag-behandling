@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling
 
 import io.swagger.v3.oas.annotations.media.Schema
+import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.service.SimulertInntektGrunnlag
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
@@ -22,6 +23,7 @@ data class SjekkForholdmessigFordelingResponse(
     val harSlåttUtTilForholdsmessigFordeling: Boolean = false,
     val eldsteSøktFraDato: LocalDate,
     val barn: List<ForholdsmessigFordelingBarnDto> = emptyList(),
+    val løpendeBidragBarn: List<LøpendeBidragGrunnlagForholdsmessigFordeling> = emptyList(),
 )
 
 data class ForholdsmessigFordelingBarnDto(
@@ -32,6 +34,7 @@ data class ForholdsmessigFordelingBarnDto(
     val saksnr: String?,
     val enhet: String,
     val erRevurdering: Boolean,
+    val harOpprettetForholdsmessigFordeling: Boolean,
     val stønadstype: Stønadstype?,
     val eldsteSøktFraDato: LocalDate?,
     val harLøpendeBidrag: Boolean,

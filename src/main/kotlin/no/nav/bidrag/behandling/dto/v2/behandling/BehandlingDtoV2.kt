@@ -579,6 +579,7 @@ enum class Grunnlagsdatatype(
     ),
     TILLEGGSSTØNAD(mapOf(TypeBehandling.BIDRAG to setOf(Rolletype.BIDRAGSMOTTAKER))),
     MANUELLE_VEDTAK(mapOf(), erGjeldende = false),
+    LØPENDE_BIDRAG_OPPRETT_FORHOLDSMESSIG_FORDELING(mapOf(), erGjeldende = false),
     BELØPSHISTORIKK_BIDRAG(mapOf(), erGjeldende = false),
     ETTERFØLGENDE_VEDTAK(mapOf(), erGjeldende = false),
     BELØPSHISTORIKK_FORSKUDD(mapOf(), erGjeldende = false),

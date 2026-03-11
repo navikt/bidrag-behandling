@@ -4,16 +4,23 @@ import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
+import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
+import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.rolleManglerIdent
+import no.nav.bidrag.behandling.service.hentNyesteIdent
+import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
+import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
@@ -22,24 +29,35 @@ import no.nav.bidrag.domene.enums.sak.Sakskategori
 import no.nav.bidrag.domene.enums.samhandler.Valutakode
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
+import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragForholdsmessigFordeling
+import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragForholdsmessigFordelingGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlagV2
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtalePeriodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VedtakOrkestreringDetaljerGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanser
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAldersjusteringDetaljerGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilsynGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.resultatSluttberegning
+import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
@@ -72,6 +90,76 @@ fun Behandling.opprettMidlertidligPersonobjekterBMsbarn(personobjekter: Set<Grun
                 barn.tilPersonGrunnlagAndreBarnTilBidragsmottaker(referanse, bidragsmottakerReferanse)
             }
         }.toMutableSet()
+
+fun List<LøpendeBidragGrunnlagForholdsmessigFordeling>.tilGrunnlagDto(personGrunnlagListe: MutableSet<GrunnlagDto>): List<GrunnlagDto> {
+    val grunnlagslistePersoner: MutableList<GrunnlagDto> = mutableListOf()
+
+    fun opprettPersonGrunnlag(gjelderBarnIdent: String): GrunnlagDto {
+        val fødselsdato = hentPersonFødselsdato(gjelderBarnIdent) ?: fantIkkeFødselsdatoTilSøknadsbarn(-1)
+        val nyesteIdent = (hentNyesteIdent(gjelderBarnIdent) ?: Personident(gjelderBarnIdent))
+
+        val referanse =
+            Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG.tilPersonreferanse(
+                fødselsdato.toCompactString(),
+                (gjelderBarnIdent + 1).hashCode(),
+            )
+        val relatertPersonGrunnlag =
+            GrunnlagDto(
+                referanse = referanse,
+                type = Grunnlagstype.PERSON_BARN_BIDRAGSPLIKTIG,
+                gjelderReferanse = referanse,
+                innhold =
+                    POJONode(
+                        Person(
+                            ident = nyesteIdent,
+                            fødselsdato = fødselsdato,
+                        ).valider(),
+                    ),
+            )
+        grunnlagslistePersoner.add(
+            relatertPersonGrunnlag,
+        )
+        return relatertPersonGrunnlag
+    }
+
+    val grunnlagsliste =
+        groupBy { it.gjelderBarnIdent }
+            .map { (gjelderBarn, løpendeBidragListe) ->
+                val løpendeBidragBarn =
+                    løpendeBidragListe.first().løpendeBidragPerioder.map { beregning ->
+                        LøpendeBidragForholdsmessigFordeling(
+                            faktiskBeløp = beregning.faktiskBeløp,
+                            samværsklasse = beregning.samværsklasse,
+                            beregnetBeløp = beregning.beregnetBeløp,
+                            løpendeBeløp = beregning.løpendeBeløp,
+                            stønadstype = beregning.stønadstype,
+                            saksnummer = beregning.saksnummer,
+                            valutakode = beregning.valutakode,
+                            valutakurs = beregning.valutakurs,
+                            reduksjonUnderholdskostnad = beregning.reduksjonUnderholdskostnad,
+                            samværsfradrag = beregning.samværsfradrag,
+                            beregnetBidrag = beregning.beregnetBidrag,
+                        )
+                    }
+                val personObjekt =
+                    personGrunnlagListe.hentPerson(gjelderBarn)
+                        ?: opprettPersonGrunnlag(gjelderBarn)
+                GrunnlagDto(
+                    referanse = grunnlagsreferanse_løpende_bidrag,
+                    gjelderReferanse = personGrunnlagListe.bidragspliktig!!.referanse,
+                    gjelderBarnReferanse = personObjekt.gjelderBarnReferanse,
+                    type = Grunnlagstype.LØPENDE_BIDRAG,
+                    innhold =
+                        POJONode(
+                            LøpendeBidragForholdsmessigFordelingGrunnlag(
+                                løpendeBidragListe = løpendeBidragBarn,
+                            ),
+                        ),
+                )
+            }
+
+    return grunnlagslistePersoner + grunnlagsliste
+}
 
 fun List<GrunnlagDto>.fjernMidlertidligPersonobjekterBMsbarn() =
     mapNotNull { grunnlag ->
