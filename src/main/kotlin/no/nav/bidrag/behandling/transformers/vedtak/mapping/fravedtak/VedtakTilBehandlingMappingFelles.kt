@@ -13,6 +13,8 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
+import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
+import no.nav.bidrag.behandling.dto.v1.beregning.BeregnetBidragBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelvedtakDto
 import no.nav.bidrag.behandling.dto.v1.beregning.KlageOmgjøringDetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegningPeriodeDto
@@ -78,6 +80,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.EtterfølgendeManuelle
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragForholdsmessigFordelingGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManueltOverstyrtGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
@@ -704,6 +707,39 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
             behandling.opprettGrunnlag(
                 Grunnlagsdatatype.MANUELLE_VEDTAK,
                 grunnlag.innholdTilObjektListe<List<ManuellVedtakGrunnlag>>(),
+                gjelder = gjelderBarnGrunnlag.personIdent!!,
+                rolleIdent = gjelderGrunnlag.personIdent!!,
+                innhentetTidspunkt = LocalDateTime.now(),
+                lesemodus = lesemodus,
+            )
+        },
+    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.LØPENDE_BIDRAG)
+        .groupBy { it.gjelderBarnReferanse }
+        .map { (gjelderBarn, grunnlagListe) ->
+            val grunnlag = grunnlagListe.first()
+            val gjelderBarnGrunnlag = hentPersonMedReferanse(gjelderBarn)!!
+            val gjelderGrunnlag = hentPersonMedReferanse(grunnlag.gjelderReferanse)!!
+            behandling.opprettGrunnlag(
+                Grunnlagsdatatype.LØPENDE_BIDRAG_OPPRETT_FORHOLDSMESSIG_FORDELING,
+                grunnlag
+                    .innholdTilObjekt<LøpendeBidragForholdsmessigFordelingGrunnlag>()
+                    .løpendeBidragListe
+                    .map { beregning ->
+                        BeregnetBidragBarnDto(
+                            periode = beregning.periode,
+                            faktiskBeløp = beregning.faktiskBeløp,
+                            samværsklasse = beregning.samværsklasse,
+                            beregnetBeløp = beregning.beregnetBeløp,
+                            løpendeBeløp = beregning.løpendeBeløp,
+                            stønadstype = beregning.stønadstype,
+                            saksnummer = beregning.saksnummer,
+                            valutakode = beregning.valutakode,
+                            valutakurs = beregning.valutakurs,
+                            reduksjonUnderholdskostnad = beregning.reduksjonUnderholdskostnad,
+                            samværsfradrag = beregning.samværsfradrag,
+                            beregnetBidrag = beregning.beregnetBidrag,
+                        )
+                    },
                 gjelder = gjelderBarnGrunnlag.personIdent!!,
                 rolleIdent = gjelderGrunnlag.personIdent!!,
                 innhentetTidspunkt = LocalDateTime.now(),

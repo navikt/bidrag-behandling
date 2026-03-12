@@ -22,11 +22,13 @@ import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingPrivateAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
 import no.nav.bidrag.behandling.service.LøpendeBidragSakPeriode
 import no.nav.bidrag.behandling.service.SakKravhaver
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.transformers.behandling.finnRolle
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
@@ -630,6 +632,7 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
     val barnFødselsnummer = kravhaver
     val enhet = sak?.eierfogd?.verdi ?: eierfogd ?: "Ukjent"
 
+    val rolle = behandling.finnRolle(barnFødselsnummer)
     val åpneBehandlinger = åpneBehandlinger.map { it.tilFFBarnDto() } + åpneSøknader.map { it.tilFFBarnDto(sak, enhet) }
     return ForholdsmessigFordelingBarnDto(
         ident = barnFødselsnummer,
@@ -638,6 +641,7 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
         saksnr = saksnummer,
         sammeSakSomBehandling = behandling.saksnummer == saksnummer,
         erRevurdering = erRevurdering,
+        harOpprettetForholdsmessigFordeling = rolle?.forholdsmessigFordeling != null,
         enhet = sak?.eierfogd?.verdi ?: eierfogd ?: "Ukjent",
         harLøpendeBidrag = løpendeBidrag,
         stønadstype = stønadstype,
@@ -650,6 +654,15 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
             },
         opphørsdato = if (løpendeBidrag) løperBidragTil else null,
         åpneBehandlinger = åpneBehandlinger,
+        privateAvtale =
+            privatAvtale?.let {
+                ForholdsmessigFordelingPrivateAvtaleDto(
+                    avtaleDato = it.avtaleDato,
+                    avtaleType = it.avtaleType,
+                    stønadstype = it.stønadstype,
+                    utenlandsk = it.utenlandsk,
+                )
+            },
         bidragsmottaker =
             RolleDto(
                 id = -1,

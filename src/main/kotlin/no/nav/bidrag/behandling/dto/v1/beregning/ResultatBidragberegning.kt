@@ -464,21 +464,23 @@ data class ForholdsmessigFordelingBidragTilFordelingBarn(
     val barn: PersoninfoDto,
 ) {
     val erBidragSomIkkeKanFordeles get() = utenlandskbidrag || oppfostringsbidrag
-
-    data class BeregnetBidragBarnDto(
-        val saksnummer: Saksnummer,
-        val løpendeBeløp: BigDecimal,
-        val indeksreguleringFaktor: BigDecimal? = null,
-        val valutakode: Valutakode = Valutakode.NOK,
-        val valutakurs: BigDecimal = BigDecimal.ONE,
-        val samværsklasse: Samværsklasse,
-        val samværsfradrag: BigDecimal,
-        val beregnetBeløp: BigDecimal,
-        val faktiskBeløp: BigDecimal,
-        val reduksjonUnderholdskostnad: BigDecimal,
-        val beregnetBidrag: BigDecimal,
-    )
 }
+
+data class BeregnetBidragBarnDto(
+    val periode: ÅrMånedsperiode,
+    val saksnummer: Saksnummer,
+    val løpendeBeløp: BigDecimal,
+    val indeksreguleringFaktor: BigDecimal? = null,
+    val valutakode: Valutakode = Valutakode.NOK,
+    val valutakurs: BigDecimal = BigDecimal.ONE,
+    val samværsklasse: Samværsklasse,
+    val samværsfradrag: BigDecimal,
+    val beregnetBeløp: BigDecimal,
+    val faktiskBeløp: BigDecimal,
+    val stønadstype: Stønadstype,
+    val reduksjonUnderholdskostnad: BigDecimal,
+    val beregnetBidrag: BigDecimal,
+)
 
 data class KlageOmgjøringDetaljer(
     val resultatFraVedtak: Int? = null,

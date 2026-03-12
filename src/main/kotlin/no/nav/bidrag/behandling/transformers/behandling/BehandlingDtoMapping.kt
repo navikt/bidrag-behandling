@@ -290,6 +290,7 @@ private fun oppdatereHusstandsmedlemmerForRoller(
             husstandsmedlem.ident = rolle.ident
             husstandsmedlem.fødselsdato = rolle.fødselsdato
             husstandsmedlem.kilde = Kilde.OFFENTLIG
+            husstandsmedlem.perioder
         }
 
     val nyeRollerSomIkkeHarHusstandsmedlemmer =

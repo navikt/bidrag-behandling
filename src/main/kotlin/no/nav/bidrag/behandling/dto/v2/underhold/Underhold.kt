@@ -48,7 +48,7 @@ data class BarnDto(
     val navn: String? = null,
     @Parameter(description = "Fødselsdato til barnet som skal legges til underholdskostnad. Påkrevd dersom barnet oppgis uten personident.")
     val fødselsdato: LocalDate? = null,
-    val stønadstype: Stønadstype? = null,
+    val stønadstype: Stønadstype? = Stønadstype.BIDRAG,
 )
 
 data class UnderholdDto(
