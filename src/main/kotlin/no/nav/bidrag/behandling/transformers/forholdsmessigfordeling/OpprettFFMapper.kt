@@ -22,6 +22,7 @@ import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingPrivateAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
 import no.nav.bidrag.behandling.service.LøpendeBidragSakPeriode
 import no.nav.bidrag.behandling.service.SakKravhaver
@@ -653,6 +654,15 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
             },
         opphørsdato = if (løpendeBidrag) løperBidragTil else null,
         åpneBehandlinger = åpneBehandlinger,
+        privateAvtale =
+            privatAvtale?.let {
+                ForholdsmessigFordelingPrivateAvtaleDto(
+                    avtaleDato = it.avtaleDato,
+                    avtaleType = it.avtaleType,
+                    stønadstype = it.stønadstype,
+                    utenlandsk = it.utenlandsk,
+                )
+            },
         bidragsmottaker =
             RolleDto(
                 id = -1,
