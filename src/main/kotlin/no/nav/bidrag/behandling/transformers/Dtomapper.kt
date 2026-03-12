@@ -1045,6 +1045,7 @@ class Dtomapper(
                     enhet = barn.enhet,
                 )
             }
+
         val identerAndreBarn = andreBarnUtenLøpendeBidrag.map { it.gjelderBarn.ident?.verdi + it.privatAvtale?.stønadstype?.name }
         val barnManueltLagtInn =
             privatAvtale
