@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagBpsBarnUtenBidragsak
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagLøpendeBidragFF
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
@@ -810,6 +811,7 @@ class Dtomapper(
                 id = id!!,
                 lasterGrunnlag = metadata?.lasterGrunnlagAsync() == true,
                 kanFatteVedtak = kanFatteVedtak(),
+                løpendeBidragBarn = grunnlag.hentSisteGrunnlagLøpendeBidragFF(this),
                 kanFatteVedtakBegrunnelse = kanFatteVedtakBegrunnelse(),
                 type = tilType(),
                 lesemodus = lesemodusVedtak,
