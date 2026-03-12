@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.dto.Sivilstand
@@ -119,6 +120,7 @@ fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderBarn(
     }
 
 fun Set<Grunnlag>.hentSisteGrunnlagLøpendeBidragFF(behandling: Behandling): List<LøpendeBidragGrunnlagForholdsmessigFordeling> {
+    if (!behandling.erBidrag() || behandling.bidragspliktig == null) return emptyList()
     val løpendeBidragListe =
         hentSisteGrunnlagSomGjelderRolleListe(
             behandling.bidragspliktig!!,
