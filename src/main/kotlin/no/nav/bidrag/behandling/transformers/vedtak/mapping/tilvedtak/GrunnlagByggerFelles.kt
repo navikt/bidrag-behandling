@@ -30,6 +30,7 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreverSøknadsbarn
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
+import no.nav.bidrag.behandling.transformers.vedtak.tilPersonGrunnlag
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -739,6 +740,27 @@ internal fun opprettGrunnlagForBostatusperioder(
         }.toSet()
 
 internal fun SluttberegningGebyr.tilResultatkode() = if (ilagtGebyr) Resultatkode.GEBYR_ILAGT else Resultatkode.GEBYR_FRITATT
+
+fun Behandling.tilPersonobjekter(
+    søknadsbarnRolle: Rolle? = null,
+    inkluderAlleSøknadsbarn: Boolean = false,
+): MutableSet<GrunnlagDto> {
+    val søknadsbarnListe =
+        if (søknadsbarnRolle != null && !inkluderAlleSøknadsbarn) {
+            listOf(søknadsbarnRolle.tilGrunnlagPerson())
+        } else {
+            søknadsbarn.map { it.tilGrunnlagPerson() }
+        }
+
+    val privatavtaleBarnSimulert = privatAvtale.filter { it.rolle == null }.map { it.tilPersonGrunnlag() }
+    val bidragsmottakere = alleBidragsmottakere.map { it.tilGrunnlagPerson() }
+    return (
+        bidragsmottakere +
+            listOf(
+                bidragspliktig?.tilGrunnlagPerson(),
+            ) + søknadsbarnListe + privatavtaleBarnSimulert
+    ).filterNotNull().toMutableSet()
+}
 
 fun List<BaseGrunnlag>.finnInntektSiste12Mnd(rolle: Rolle) =
     filter {
