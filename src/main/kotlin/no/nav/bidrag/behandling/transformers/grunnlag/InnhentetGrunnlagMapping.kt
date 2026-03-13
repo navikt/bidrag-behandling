@@ -19,6 +19,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilGrunnla
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilGrunnlagsobjektInnhold
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilPersonGrunnlag
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilPersonGrunnlagAndreBarnTilBidragsmottaker
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilPersonobjekter
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -354,6 +355,57 @@ fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<Gru
 
 /**
  * Personreferanser var formatter på følgende måte person_<type>_<fødselsdato>_<rolleId>
+ * Noen eldre referanser innholdte ikke type som fører til problem. Dette skal korrigere for det
+ */
+private fun korrigerPersonReferanseIGrunnlagsreferansen(
+    currentRef: String,
+    personobjekter: Set<GrunnlagDto>,
+): String {
+    val personRefStart = currentRef.indexOf("person_")
+    if (personRefStart == -1) return currentRef
+
+    val personRefWithPossibleSuffix = currentRef.substring(personRefStart)
+    val parts = personRefWithPossibleSuffix.split('_')
+    if (parts.size < 4) return currentRef
+
+    val type = "${parts[1]}_${parts[2]}"
+    val validTypes =
+        Grunnlagstype.entries
+            .filter { it.name.startsWith("PERSON") }
+            .map { it.name }
+            .toSet()
+    if (type !in validTypes) return currentRef
+
+    val fødselsdato = parts[3]
+    if (fødselsdato.length != 8 || !fødselsdato.all { it.isDigit() }) return currentRef
+
+    val harÅrSuffix = parts.last().length == 4 && parts.last().all { it.isDigit() }
+    val oldPersonRef =
+        if (harÅrSuffix) {
+            parts.dropLast(1).joinToString("_")
+        } else {
+            personRefWithPossibleSuffix
+        }
+
+    val personPrefix = "person_${type}_${fødselsdato}"
+
+    // If already using an existing person reference, leave it untouched.
+    if (personobjekter.any { it.referanse == oldPersonRef }) return currentRef
+
+    val correctPerson =
+        personobjekter.firstOrNull {
+            it.referanse.startsWith("${personPrefix}_")
+        }
+
+    return if (correctPerson != null) {
+        currentRef.replaceFirst(oldPersonRef, correctPerson.referanse)
+    } else {
+        currentRef
+    }
+}
+
+/**
+ * Personreferanser var formatter på følgende måte person_<type>_<fødselsdato>_<rolleId>
  * Dette kunne skape problemer ved FF mtp at person får ny rolleId. Dette korrigerer slik at riktig referanse brukes
  */
 private fun korrigerPersonReferanser(
@@ -430,6 +482,7 @@ fun Set<Grunnlag>.hentGrunnlagsreferanserForInntekt(
                 inntekt.type == it.inntektRapportering &&
                 (inntekt.gjelderBarnIdent.isNullOrEmpty() || inntekt.gjelderBarnIdent == it.gjelderBarnPersonId.trimToNull())
         }
+    val behandling = firstOrNull()?.behandling
     return if (UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled && inntekterGjelderGrunnlag != null) {
         opprettGrunnlagsreferanserForInntekt2(inntekt, inntekterGjelderGrunnlag!!.rolle.tilGrunnlagsreferanse())
     } else {
@@ -450,6 +503,8 @@ fun Set<Grunnlag>.hentGrunnlagsreferanserForInntekt(
                     )
                 }
             }
+    }.map {
+        korrigerPersonReferanseIGrunnlagsreferansen(it, personobjekter = behandling?.tilPersonobjekter() ?: emptySet())
     }
 }
 
