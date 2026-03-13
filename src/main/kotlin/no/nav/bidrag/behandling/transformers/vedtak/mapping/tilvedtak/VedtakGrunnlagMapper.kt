@@ -77,8 +77,13 @@ import java.time.YearMonth
 
 fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
     if (innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
-        val beløpshistorikk = hentGrunnlagBeløpshistorikkForRolle(søknadsbarnRolle, false).konvertereData<StønadDto>()
-        beløpshistorikk?.periodeListe?.minOfOrNull { it.periode.fom }
+        val beløpshistorikk = hentGrunnlagBeløpshistorikkForRolle(søknadsbarnRolle, false).konvertereData<StønadDto>() ?: return null
+        val sistePeriode = beløpshistorikk.periodeListe.maxByOrNull { it.periode.fom }
+        if (sistePeriode?.periode?.til != null && sistePeriode.periode.til!! <= søknadsbarnRolle.finnBeregnTil()) {
+            null
+        } else {
+            beløpshistorikk.periodeListe.minOfOrNull { it.periode.fom }
+        }
     } else {
         null
     }
