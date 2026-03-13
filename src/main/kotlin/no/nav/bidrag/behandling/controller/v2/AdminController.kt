@@ -48,6 +48,7 @@ class AdminController(
     private val behandlingService: BehandlingService,
     private val grunnlagService: GrunnlagService,
     private val privatAvtaleService: PrivatAvtaleService,
+    private val inntektService: InntektService,
     private val forholsmessigFordelingService: ForholdsmessigFordelingService,
     private val beregningService: BeregningService,
     private val vedtakService: VedtakService,
@@ -361,6 +362,7 @@ class AdminController(
 
         log.info { "DEBUG: Oppdaterer inntekter basert på siste innhentet grunnlag for behandling $behandlingId" }
         grunnlagService.oppdatereIkkeAktiveInntekterEtterEndretVirkningstidspunkt(behandling)
+        inntektService.justerInntektOffentligePerioderEtterSisteGrunnlag(behandling)
     }
 
     fun getAge(birthDate: LocalDate): Int = Period.between(birthDate.withMonth(1).withDayOfMonth(1), LocalDate.now()).years
