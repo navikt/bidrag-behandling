@@ -354,8 +354,11 @@ fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<Gru
         }.toSet()
 
 /**
- * Personreferanser var formatter på følgende måte person_<type>_<fødselsdato>_<rolleId>
- * Noen eldre referanser innholdte ikke type som fører til problem. Dette skal korrigere for det
+ * Personreferanser kan være formatert på følgende måter:
+ * - person_<type>_<fødselsdato>_<rolleId>
+ * - person_<type>_<fødselsdato>_<ekstraFelt>_<rolleId>
+ * Eksempler: person_PERSON_SØKNADSBARN_20200301_1303789909 eller person_PERSON_SØKNADSBARN_20200301_BIDRAG_2047715025
+ * Behold eventuelle suffiks som f.eks. _PENSJON.
  */
 private fun korrigerPersonReferanseIGrunnlagsreferansen(
     currentRef: String,
@@ -364,41 +367,53 @@ private fun korrigerPersonReferanseIGrunnlagsreferansen(
     val personRefStart = currentRef.indexOf("person_")
     if (personRefStart == -1) return currentRef
 
-    val personRefWithPossibleSuffix = currentRef.substring(personRefStart)
-    val parts = personRefWithPossibleSuffix.split('_')
+    val beforePersonRef = currentRef.substring(0, personRefStart)
+    val afterPersonRef = currentRef.substring(personRefStart)
+    val parts = afterPersonRef.split('_')
+    
     if (parts.size < 4) return currentRef
 
     val type = "${parts[1]}_${parts[2]}"
-    val validTypes =
-        Grunnlagstype.entries
-            .filter { it.name.startsWith("PERSON") }
-            .map { it.name }
-            .toSet()
+    val validTypes = Grunnlagstype.entries
+        .filter { it.name.startsWith("PERSON") }
+        .map { it.name }
+        .toSet()
+    
     if (type !in validTypes) return currentRef
 
     val fødselsdato = parts[3]
     if (fødselsdato.length != 8 || !fødselsdato.all { it.isDigit() }) return currentRef
 
-    val harÅrSuffix = parts.last().length == 4 && parts.last().all { it.isDigit() }
-    val oldPersonRef =
-        if (harÅrSuffix) {
-            parts.dropLast(1).joinToString("_")
-        } else {
-            personRefWithPossibleSuffix
-        }
+    // Find the roleId: it's the last numeric part with more than 8 digits
+    val roleId = parts.findLast { it.length > 8 && it.all { c -> c.isDigit() } } ?: return currentRef
+    val roleIdIndex = parts.lastIndexOf(roleId)
+    
+    // Extract any suffix after roleId
+    val suffix = if (roleIdIndex < parts.lastIndex) {
+        "_" + parts.drop(roleIdIndex + 1).joinToString("_")
+    } else {
+        ""
+    }
+    
+    // Extract any extra fields between fødselsdato and roleId (like BIDRAG)
+    val extraFields = if (roleIdIndex > 4) {
+        "_" + parts.slice(4 until roleIdIndex).joinToString("_")
+    } else {
+        ""
+    }
 
+    val oldPersonRef = "person_${type}_${fødselsdato}${extraFields}_${roleId}"
     val personPrefix = "person_${type}_${fødselsdato}"
 
-    // If already using an existing person reference, leave it untouched.
+    // If already using an existing person reference, leave it untouched
     if (personobjekter.any { it.referanse == oldPersonRef }) return currentRef
 
-    val correctPerson =
-        personobjekter.firstOrNull {
-            it.referanse.startsWith("${personPrefix}_")
-        }
+    val correctPerson = personobjekter.firstOrNull {
+        it.referanse.startsWith("${personPrefix}_")
+    }
 
     return if (correctPerson != null) {
-        currentRef.replaceFirst(oldPersonRef, correctPerson.referanse)
+        beforePersonRef + correctPerson.referanse + suffix
     } else {
         currentRef
     }
