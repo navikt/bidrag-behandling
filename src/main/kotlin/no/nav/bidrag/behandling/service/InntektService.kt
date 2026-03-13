@@ -78,7 +78,7 @@ class InntektService(
 
                 val summerteInntekter = aktiveGrunnlag.henteBearbeidaInntekterForType(type.tilGrunnlagsdataType(), rolle)
                 if (summerteInntekter != null) {
-                    val finnesMinstEnPeriodeMedAvvik =
+                    val finnesMinstEnPeriodeSomManglerBasertPåInnhentet =
                         summerteInntekter.inntekter.any { inntekt ->
                             val finnesMatchendeInntekt =
                                 inntekterRolle.any {
@@ -92,7 +92,21 @@ class InntektService(
                             }
                             return@any !finnesMatchendeInntekt
                         }
-                    if (finnesMinstEnPeriodeMedAvvik) {
+                    val finnesMinstEnPeriodeMedAvvik =
+                        inntekterRolle.filter { it.type == type }.any { inntekt ->
+                            val finnesMatchendeInntekt =
+                                summerteInntekter.inntekter.any {
+                                    inntekt.type == type && inntekt.opprinneligFom == it.periode.fom.atDay(1) &&
+                                        inntekt.opprinneligTom == it.periode.til?.atEndOfMonth()
+                                }
+                            if (!finnesMatchendeInntekt) {
+                                secureLogger.warn {
+                                    "Avvikshåndtering!: Fant inntekter som ikke matcher med siste innhentet offentlige opplysninger for type=$type rolle=${rolle.ident}, inntekt=${inntekt.periode}. Justerer periodene"
+                                }
+                            }
+                            return@any !finnesMatchendeInntekt
+                        }
+                    if (finnesMinstEnPeriodeMedAvvik || finnesMinstEnPeriodeSomManglerBasertPåInnhentet) {
                         oppdatereAutomatiskInnhentaOffentligeInntekter(
                             behandling,
                             rolle,
