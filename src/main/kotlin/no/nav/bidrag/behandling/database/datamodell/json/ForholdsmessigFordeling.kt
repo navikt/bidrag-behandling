@@ -8,7 +8,6 @@ import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
-import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -38,13 +37,16 @@ data class ForholdsmessigFordelingRolle(
     fun løperBidragEtterDato(dato: YearMonth): Boolean = løperBidragTil?.isAfter(dato) ?: true
 
     @get:JsonIgnore
-    val søknaderUnderBehandling get() = søknader.filter { it.status == Behandlingstatus.UNDER_BEHANDLING }
+    val søknaderUnderBehandling get() = søknader.filter { it.status == Behandlingstatus.UNDER_BEHANDLING || it.status == null }
 
     @get:JsonIgnore
-    val eldsteSøknad get() = søknaderUnderBehandling.filter { it.søknadFomDato != null }.minBy { it.søknadFomDato!! }
+    val eldsteSøknad get() = søknaderUnderBehandling.filter { it.søknadFomDato != null }.minByOrNull { it.søknadFomDato!! }
 
     @get:JsonIgnore
-    val søknadsid get() = eldsteSøknad.søknadsid
+    val sisteOpprettetSøknad get() = søknader.filter { it.søknadFomDato != null }.maxByOrNull { it.søknadsid!! }
+
+    @get:JsonIgnore
+    val søknadsid get() = eldsteSøknad?.søknadsid
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -63,5 +65,5 @@ data class ForholdsmessigFordelingSøknadBarn(
     val enhet: String = "9999",
     // TODO: Er dette nødvendig? Kan BM/Barn være i flere saker?
     val saksnummer: String? = null,
-    var status: Behandlingstatus = Behandlingstatus.UNDER_BEHANDLING,
+    var status: Behandlingstatus? = null,
 )

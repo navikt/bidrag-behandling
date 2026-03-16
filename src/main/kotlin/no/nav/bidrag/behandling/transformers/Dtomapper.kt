@@ -1546,6 +1546,7 @@ class Dtomapper(
 
         return HusstandsmedlemDtoV2(
             id = this.id,
+            gjelderBarn = this.rolle?.tilDto(),
             kilde = this.kilde,
             medIBehandling =
                 !this.ident.isNullOrBlank() &&

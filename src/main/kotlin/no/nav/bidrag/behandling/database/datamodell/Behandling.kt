@@ -267,11 +267,13 @@ open class Behandling(
         }
     val eldsteSøktFomDato get() =
         if (erIForholdsmessigFordeling) {
-            søknadsbarn.minOfOrNull {
-                it.forholdsmessigFordeling!!
-                    .eldsteSøknad.søknadFomDato!!
-                    .withDayOfMonth(1)
-            } ?: søktFomDato.withDayOfMonth(1)
+            søknadsbarn
+                .mapNotNull {
+                    it.forholdsmessigFordeling!!
+                        .eldsteSøknad
+                        ?.søknadFomDato
+                        ?.withDayOfMonth(1)
+                }.minOrNull() ?: søktFomDato.withDayOfMonth(1)
         } else {
             søktFomDato.withDayOfMonth(1)
         }

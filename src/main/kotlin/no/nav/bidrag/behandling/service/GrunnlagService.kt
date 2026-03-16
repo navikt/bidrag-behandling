@@ -1049,7 +1049,13 @@ class GrunnlagService(
                 Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
             ) ?: run {
                 log.warn { "Fant ingen aktive boforholdsgrunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
-                return
+                Grunnlag(
+                    behandling = behandling,
+                    type = Grunnlagsdatatype.BOFORHOLD,
+                    innhentet = LocalDateTime.now(),
+                    data = commonObjectmapper.writeValueAsString(emptyList<RelatertPersonGrunnlagDto>()),
+                    rolle = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
+                )
             }
         sisteAktiveGrunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag()
     }
@@ -1332,9 +1338,13 @@ class GrunnlagService(
             behandling.grunnlag
                 .hentSisteIkkeAktiv()
                 .filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }
-
+        val nyesteAktiverteBoforhold =
+            behandling.grunnlag
+                .hentSisteAktiv()
+                .filter { Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == it.type }
         val nyesteIkkeAktivertBearbeidetBoforhold = nyesteIkkeaktiverteBoforhold.firstOrNull { it.erBearbeidet }
-        val nyesteIkkeAktivertGrunnlagBoforhold = nyesteIkkeaktiverteBoforhold.firstOrNull { !it.erBearbeidet }
+        val nyesteIkkeAktivertGrunnlagBoforhold =
+            nyesteIkkeaktiverteBoforhold.firstOrNull { !it.erBearbeidet } ?: nyesteAktiverteBoforhold.firstOrNull { !it.erBearbeidet }
 
         if (nyesteIkkeAktivertGrunnlagBoforhold == null) {
 //            throw HttpClientErrorException(
@@ -1342,6 +1352,7 @@ class GrunnlagService(
 //                "Fant ingen grunnlag av type ${Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN}  " +
 //                    "å aktivere for BP i  behandling ${behandling.id}",
 //            )
+
             nyesteIkkeaktiverteBoforhold.forEach {
                 it.aktiv = LocalDateTime.now()
             }

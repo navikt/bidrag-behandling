@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.database.datamodell.extensions
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.hypersistence.utils.hibernate.type.ImmutableType
 import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
 import jakarta.persistence.AttributeConverter
@@ -7,10 +8,13 @@ import jakarta.persistence.Converter
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagDetaljer.Companion.lasterGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.tilÅrsakstype
+import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.transformers.toLocalDateTime
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.hibernate.engine.spi.SessionFactoryImplementor
 import org.hibernate.engine.spi.SharedSessionContractImplementor
 import java.sql.PreparedStatement
@@ -50,6 +54,9 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
         }
     }
 
+    private val opprettelseEllerOppdateringAvFFFeilet = "opprettelseEllerOppdateringAvFFFeilet"
+    private val oppdateringAvFFRollerFeilet = "oppdateringAvFFRollerFeilet"
+    private val opprettelseAvFFBehandlingFeilet = "opprettelseAvFFBehandlingFeilet"
     private val følgerAutomatiskVedtak = "følger_automatisk_vedtak"
     private val klagePåBisysVedtak = "klage_på_bisys_vedtak"
     private val lasterGrunnlagAsync = "laster_grunnlag_async_tidspunkt"
@@ -100,7 +107,41 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
         vedtaksid?.let { update(følgerAutomatiskVedtak, it.toString()) }
     }
 
+    fun leggTilOpprettelseAvBehandlingFeilet(request: OpprettBehandlingRequest): MutableSet<OpprettBehandlingRequest> =
+        getOppprettelseAvBehandlingFeilet().apply {
+            add(request)
+        }
+
+    fun setOpprettelseAvFFBehandlingFeilet(value: String) = set(opprettelseAvFFBehandlingFeilet, value)
+
+    fun setOppdateringAvFFRollerFeilet(value: String) = set(oppdateringAvFFRollerFeilet, value)
+
+    fun getOppprettelseAvBehandlingFeilet(): MutableSet<OpprettBehandlingRequest> =
+        try {
+            get(opprettelseAvFFBehandlingFeilet)?.let {
+                commonObjectmapper.readValue<MutableSet<OpprettBehandlingRequest>>(it)
+            }
+        } catch (e: Exception) {
+            mutableSetOf()
+        } ?: mutableSetOf()
+
+    fun leggTilOppdateringAvFFRollerFeilet(request: OppdaterRollerRequest): MutableSet<OppdaterRollerRequest> =
+        getOppdateringAvFFRollerFeilet().apply {
+            add(request)
+        }
+
+    fun getOppdateringAvFFRollerFeilet(): MutableSet<OppdaterRollerRequest> =
+        try {
+            get(oppdateringAvFFRollerFeilet)?.let {
+                commonObjectmapper.readValue<MutableSet<OppdaterRollerRequest>>(it)
+            }
+        } catch (e: Exception) {
+            mutableSetOf()
+        } ?: mutableSetOf()
+
     fun getFølgerAutomatiskVedtak(): Int? = get(følgerAutomatiskVedtak)?.toIntOrNull()
+
+    fun getOpprettelseEllerOppdateringAvFFFeilet(): Boolean? = get(opprettelseEllerOppdateringAvFFFeilet)?.toBooleanStrictOrNull()
 
     private fun update(
         key: String,

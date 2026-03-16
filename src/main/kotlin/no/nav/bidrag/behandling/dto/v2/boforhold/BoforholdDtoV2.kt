@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
+import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.transformers.erForskudd
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -61,4 +62,5 @@ data class HusstandsmedlemDtoV2(
     @Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val fødselsdato: LocalDate?,
+    val gjelderBarn: RolleDto?,
 )

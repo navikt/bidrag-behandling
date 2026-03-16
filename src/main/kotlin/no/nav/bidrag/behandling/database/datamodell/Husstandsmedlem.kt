@@ -28,14 +28,8 @@ open class Husstandsmedlem(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open var id: Long? = null,
-    // TODO: Migere persondata til Person-tabellen
-    @Deprecated("Migrere til Person.ident")
     open var ident: String? = null,
-    // TODO: Migere persondata til Person-tabellen
-    @Deprecated("Migrere til Person.navn")
     open var navn: String? = null,
-    // TODO: Migere persondata til Person-tabellen
-    @Deprecated("Migrere til Person.fødselsdato")
     // kan bare være null dersom koblingen mot rolle er satt
     open var fødselsdato: LocalDate? = null,
     @OneToOne(

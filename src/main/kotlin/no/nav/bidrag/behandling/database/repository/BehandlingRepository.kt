@@ -203,4 +203,25 @@ interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandl
     @Modifying
     @Query("update underholdskostnad u set rolle_id = null where u.rolle_id is not null and exists (select 1 from rolle r where r.id = u.rolle_id and r.behandling_id != u.behandling_id) and u.behandling_id = :behandling_id", nativeQuery = true)
     fun settUnderholdskostnadRolleTilNull(behandling_id: Long)
+
+    @Modifying
+    @Query(
+        "update behandling b set metadata = coalesce(b.metadata, hstore('')) || hstore('opprettelseEllerOppdateringAvFFFeilet', 'true') where b.id = :behandling_id",
+        nativeQuery = true
+    )
+    fun markerOpprettelseAvFFFeilet(behandling_id: Long)
+
+    @Modifying
+    @Query(
+        "update behandling b set metadata = coalesce(b.metadata, hstore('')) || hstore('oppdateringAvFFRollerFeilet', :data) where b.id = :behandling_id",
+        nativeQuery = true
+    )
+    fun markerOppdateringFFRollerFeilet(behandling_id: Long, data: String)
+
+    @Modifying
+    @Query(
+        "update behandling b set metadata = coalesce(b.metadata, hstore('')) || hstore('opprettelseAvFFRollerFeilet', :data) where b.id = :behandling_id",
+        nativeQuery = true
+    )
+    fun markerOpprettelseAvFFBehandlingFeilet(behandling_id: Long, data: String)
 }
