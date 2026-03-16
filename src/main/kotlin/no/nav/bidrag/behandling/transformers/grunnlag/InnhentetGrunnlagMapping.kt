@@ -358,7 +358,7 @@ fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<Gru
  * - person_<type>_<fødselsdato>_<rolleId>
  * - person_<type>_<fødselsdato>_<ekstraFelt>_<rolleId>
  * Eksempler: person_PERSON_SØKNADSBARN_20200301_1303789909 eller person_PERSON_SØKNADSBARN_20200301_BIDRAG_2047715025
- * Behold eventuelle suffiks som f.eks. _PENSJON.
+ * Behold eventuelle suffiks som f.eks. _PENSJON eller _2023.
  */
 private fun korrigerPersonReferanseIGrunnlagsreferansen(
     currentRef: String,
@@ -384,9 +384,26 @@ private fun korrigerPersonReferanseIGrunnlagsreferansen(
     val fødselsdato = parts[3]
     if (fødselsdato.length != 8 || !fødselsdato.all { it.isDigit() }) return currentRef
 
-    // Find the roleId: it's the last numeric part with more than 8 digits
-    val roleId = parts.findLast { it.length > 8 && it.all { c -> c.isDigit() } } ?: return currentRef
-    val roleIdIndex = parts.lastIndexOf(roleId)
+    val tokensAfterFødselsdato = parts.drop(4)
+    if (tokensAfterFødselsdato.isEmpty()) return currentRef
+
+    // rolleId is the first numeric token after fødselsdato that is not a 4-digit year.
+    // This keeps trailing year-suffix (e.g. _2023) outside personreferansen.
+    val roleIdRelativeIndex =
+        tokensAfterFødselsdato.indexOfFirst { token ->
+            token.all { it.isDigit() } && token.length != 4
+        }.let { index ->
+            if (index != -1) {
+                index
+            } else {
+                // Fallback for unexpected historical variants: use first numeric token.
+                tokensAfterFødselsdato.indexOfFirst { token -> token.all { it.isDigit() } }
+            }
+        }
+    if (roleIdRelativeIndex == -1) return currentRef
+
+    val roleIdIndex = 4 + roleIdRelativeIndex
+    val roleId = parts[roleIdIndex]
     
     // Extract any suffix after roleId
     val suffix = if (roleIdIndex < parts.lastIndex) {
