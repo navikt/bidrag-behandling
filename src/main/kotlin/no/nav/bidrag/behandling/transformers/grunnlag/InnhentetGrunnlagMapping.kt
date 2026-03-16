@@ -370,15 +370,16 @@ private fun korrigerPersonReferanseIGrunnlagsreferansen(
     val beforePersonRef = currentRef.substring(0, personRefStart)
     val afterPersonRef = currentRef.substring(personRefStart)
     val parts = afterPersonRef.split('_')
-    
+
     if (parts.size < 4) return currentRef
 
     val type = "${parts[1]}_${parts[2]}"
-    val validTypes = Grunnlagstype.entries
-        .filter { it.name.startsWith("PERSON") }
-        .map { it.name }
-        .toSet()
-    
+    val validTypes =
+        Grunnlagstype.entries
+            .filter { it.name.startsWith("PERSON") }
+            .map { it.name }
+            .toSet()
+
     if (type !in validTypes) return currentRef
 
     val fødselsdato = parts[3]
@@ -390,50 +391,63 @@ private fun korrigerPersonReferanseIGrunnlagsreferansen(
     // rolleId is the first numeric token after fødselsdato that is not a 4-digit year.
     // This keeps trailing year-suffix (e.g. _2023) outside personreferansen.
     val roleIdRelativeIndex =
-        tokensAfterFødselsdato.indexOfFirst { token ->
-            token.all { it.isDigit() } && token.length != 4
-        }.let { index ->
-            if (index != -1) {
-                index
-            } else {
-                // Fallback for unexpected historical variants: use first numeric token.
-                tokensAfterFødselsdato.indexOfFirst { token -> token.all { it.isDigit() } }
+        tokensAfterFødselsdato
+            .indexOfFirst { token ->
+                token.erNumeriskReferansedel() && token.length != 4
+            }.let { index ->
+                if (index != -1) {
+                    index
+                } else {
+                    // Fallback for unexpected historical variants: use first numeric token.
+                    tokensAfterFødselsdato.indexOfFirst { token -> token.erNumeriskReferansedel() }
+                }
             }
-        }
     if (roleIdRelativeIndex == -1) return currentRef
 
     val roleIdIndex = 4 + roleIdRelativeIndex
     val roleId = parts[roleIdIndex]
-    
-    // Extract any suffix after roleId
-    val suffix = if (roleIdIndex < parts.lastIndex) {
-        "_" + parts.drop(roleIdIndex + 1).joinToString("_")
-    } else {
-        ""
-    }
-    
-    // Extract any extra fields between fødselsdato and roleId (like BIDRAG)
-    val extraFields = if (roleIdIndex > 4) {
-        "_" + parts.slice(4 until roleIdIndex).joinToString("_")
-    } else {
-        ""
-    }
 
-    val oldPersonRef = "person_${type}_${fødselsdato}${extraFields}_${roleId}"
-    val personPrefix = "person_${type}_${fødselsdato}"
+    // Extract any suffix after roleId
+    val suffix =
+        if (roleIdIndex < parts.lastIndex) {
+            "_" + parts.drop(roleIdIndex + 1).joinToString("_")
+        } else {
+            ""
+        }
+
+    // Extract any extra fields between fødselsdato and roleId (like BIDRAG)
+    val extraFields =
+        if (roleIdIndex > 4) {
+            "_" + parts.slice(4 until roleIdIndex).joinToString("_")
+        } else {
+            ""
+        }
+
+    val oldPersonRef = "person_${type}_${fødselsdato}${extraFields}_$roleId"
+    val personPrefix = "person_${type}_$fødselsdato"
 
     // If already using an existing person reference, leave it untouched
     if (personobjekter.any { it.referanse == oldPersonRef }) return currentRef
 
-    val correctPerson = personobjekter.firstOrNull {
-        it.referanse.startsWith("${personPrefix}_")
-    }
+    val correctPerson =
+        personobjekter.firstOrNull {
+            it.referanse.startsWith("${personPrefix}_")
+        }
 
     return if (correctPerson != null) {
         beforePersonRef + correctPerson.referanse + suffix
     } else {
         currentRef
     }
+}
+
+/**
+ * Vurderer om en referansedel er numerisk, også når historiske rolleIder er negative.
+ */
+private fun String.erNumeriskReferansedel(): Boolean {
+    if (isEmpty()) return false
+    val verdiUtenFortegn = removePrefix("-")
+    return verdiUtenFortegn.isNotEmpty() && verdiUtenFortegn.all { it.isDigit() }
 }
 
 /**
