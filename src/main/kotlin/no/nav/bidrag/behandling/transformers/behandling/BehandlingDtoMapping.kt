@@ -1401,11 +1401,12 @@ fun List<BoforholdResponseV2>.filtrerPerioderEtterVirkningstidspunktForBMsBoforh
                     .hentIndekserEtterVirkningstidspunkt(virkningstidspunkt, null),
             )
         val cutoffPeriodeFom = finnCutoffDatoFom(virkningstidspunkt, null)
-        perioderFiltrert.map { periode ->
-            periode
-                .takeIf { it == perioderFiltrert.first() }
-                ?.copy(periodeFom = maxOf(periode.periodeFom, cutoffPeriodeFom)) ?: periode
-        }
+        perioderFiltrert
+            .map { periode ->
+                periode
+                    .takeIf { it == perioderFiltrert.first() }
+                    ?.copy(periodeFom = maxOf(periode.periodeFom, cutoffPeriodeFom)) ?: periode
+            }.filter { it.periodeTom == null || it.periodeFom < it.periodeTom }
     }
 
 fun List<BoforholdResponseV2>.filtrerPerioderEtterVirkningstidspunkt(
