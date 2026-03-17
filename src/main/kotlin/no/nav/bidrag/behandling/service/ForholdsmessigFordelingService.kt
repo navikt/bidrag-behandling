@@ -761,8 +761,10 @@ class ForholdsmessigFordelingService(
             bbmConsumer
                 .hentÅpneSøknaderForBp(behandling.bidragspliktig!!.ident!!)
                 .åpneSøknader
-                .filter { (behandling.erKlageEllerOmgjøring && it.behandlingstype.erKlage) || !it.behandlingstype.erKlage }
                 .filter {
+                    (behandling.erKlageEllerOmgjøring && it.behandlingstype.erKlageEllerOmgjøring) ||
+                        !it.behandlingstype.erKlageEllerOmgjøring
+                }.filter {
                     (behandling.erKlageEllerOmgjøring && it.referertVedtaksid == behandling.omgjøringsdetaljer?.omgjørVedtakId) ||
                         !behandling.erKlageEllerOmgjøring
                 }
