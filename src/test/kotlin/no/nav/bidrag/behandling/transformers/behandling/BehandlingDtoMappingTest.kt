@@ -359,7 +359,7 @@ class BehandlingDtoMappingTest : TestContainerRunner() {
                 .find {
                     it.status == Bostatuskode.BOR_MED_ANDRE_VOKSNE
                 }!!
-                .husstandsmedlemmer shouldHaveSize 1
+                .husstandsmedlemmer shouldHaveSize 0
         }
     }
 }

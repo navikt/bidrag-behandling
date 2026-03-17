@@ -170,7 +170,7 @@ fun Husstandsmedlem.tilBoforholdVoksneRequest(
         ).tilHusstandsmedlemmer().filtrerUtUrelevantePerioder(behandling),
     behandledeBostatusopplysninger =
         perioder.map { it.tilBostatus() }.sortedBy { it.periodeFom }.let {
-            if (it.all { it.kilde == Kilde.OFFENTLIG }) emptyList() else it
+            if (it.all { it.kilde == Kilde.OFFENTLIG } && endreBostatus == null) emptyList() else it
         },
     endreBostatus = endreBostatus,
 )
