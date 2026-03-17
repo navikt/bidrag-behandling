@@ -769,6 +769,8 @@ class ForholdsmessigFordelingService(
                         !behandling.erKlageEllerOmgjøring
                 }
 
+        leggTilRollerFraRelevanteSøknaderSomIkkeErIBehandling(behandling, alleSøknaderRelevantForBehandling)
+
         behandling.roller
             .filter { !it.erBarn }
             .forEach { rolle ->
@@ -788,12 +790,57 @@ class ForholdsmessigFordelingService(
             if (åpneSøknaderIkkeFF.isNotEmpty() && rolle.erRevurderingsbarn) {
                 håndterBarnSomSkalVæreSøknadsbarn(behandling, rolle, åpneSøknaderIkkeFF.first())
             } else if (!rolle.erRevurderingsbarn && åpneSøknaderIkkeFF.isEmpty()) {
+                LOGGER.info {
+                    "Barn ${rolle.ident} i ${behandling.id} er ikke markert som revurderingsbarn men har ingen åpne søknader." +
+                        "Oppretter eller legger til i eksisterende FF søknad og endrer barnet til revurderingsbarn"
+                }
                 // Er markert som søknadsbarn men har ingen åpne søknader. Endre til revurderingsbarn
                 håndterBarnSomSkalVæreRevurderingsbarn(behandling, rolle, lagretSøknader)
             } else if (rolle.erRevurderingsbarn && åpneSøknaderFF.isEmpty() && åpneSøknaderIkkeFF.isEmpty()) {
+                LOGGER.info {
+                    "Barn ${rolle.ident} i ${behandling.id} er markert som revurderingsbarn men har ingen åpne FF søknader." +
+                        "Oppretter eller legger til i eksisterende FF søknad"
+                }
                 // Er markert som revurderingsbarn og har ingen åpne FF søknadaer. Opprett FF søknad
                 håndterBarnSomSkalVæreRevurderingsbarn(behandling, rolle, lagretSøknader)
             }
+        }
+    }
+
+    private fun leggTilRollerFraRelevanteSøknaderSomIkkeErIBehandling(
+        behandling: Behandling,
+        alleSøknaderRelevantForBehandling: List<ÅpenSøknadDto>,
+    ) {
+        val alleIdenterIBehandling = behandling.roller.map { it.ident!! }
+        val alleRollerRelevantSomIkkeErIBehandling =
+            alleSøknaderRelevantForBehandling
+                .flatMap {
+                    it.partISøknadListe
+                        .filter { it.rolletype != Rolletype.BIDRAGSPLIKTIG }
+                        .map { it.personident!! }
+                }.distinct()
+                .filter { !alleIdenterIBehandling.contains(it) }
+
+        alleRollerRelevantSomIkkeErIBehandling.forEach { rolle ->
+            val søknad = alleSøknaderRelevantForBehandling.find { it.partISøknadListe.any { it.personident == rolle } }!!
+            leggTilEllerSlettBarnFraBehandlingSomErIFF(
+                OppdaterBarnFraFFRequest(
+                    behandling = behandling,
+                    søknadsid = søknad.søknadsid,
+                    saksnummer = søknad.saksnummer,
+                    bmIdent = søknad.partISøknadListe.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }?.personident,
+                    søktFraDato = søknad.søknadFomDato,
+                    stønadstype = søknad.behandlingstema.tilStønadstype(),
+                    rollerSomSkalLeggesTilDto =
+                        søknad.partISøknadListe.map {
+                            OpprettRolleDto(
+                                rolletype = it.rolletype,
+                                fødselsdato = hentPersonFødselsdato(it.personident!!),
+                                ident = Personident(it.personident!!),
+                            )
+                        },
+                ),
+            )
         }
     }
 
@@ -1929,6 +1976,16 @@ class ForholdsmessigFordelingService(
             if (søknad.privatAvtale != null) {
                 søknad.privatAvtale.rolle = rolle
                 søknad.privatAvtale.person = null
+            }
+            // Hvis det var en eksisterende rolle
+            if (rolle.id != null) {
+                virkningstidspunktService.oppdaterVirkningstidspunkt(
+                    rolle.id,
+                    søktFomDato.withDayOfMonth(1),
+                    behandling,
+                    true,
+                    rekalkulerOpplysningerVedEndring = false,
+                )
             }
         }
 
