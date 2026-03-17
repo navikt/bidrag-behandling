@@ -358,7 +358,7 @@ fun List<Grunnlag>.tilBeregnetInntekt(personobjekter: Set<GrunnlagDto>): Set<Gru
  * - person_<type>_<fødselsdato>_<rolleId>
  * - person_<type>_<fødselsdato>_<ekstraFelt>_<rolleId>
  * Eksempler: person_PERSON_SØKNADSBARN_20200301_1303789909 eller person_PERSON_SØKNADSBARN_20200301_BIDRAG_2047715025
- * Behold eventuelle suffiks som f.eks. _PENSJON.
+ * Behold eventuelle suffiks som f.eks. _PENSJON eller _2023.
  */
 private fun korrigerPersonReferanseIGrunnlagsreferansen(
     currentRef: String,
@@ -393,13 +393,13 @@ private fun korrigerPersonReferanseIGrunnlagsreferansen(
     val roleIdRelativeIndex =
         tokensAfterFødselsdato
             .indexOfFirst { token ->
-                token.all { it.isDigit() } && token.length != 4
+                token.erNumeriskReferansedel() && token.length != 4
             }.let { index ->
                 if (index != -1) {
                     index
                 } else {
                     // Fallback for unexpected historical variants: use first numeric token.
-                    tokensAfterFødselsdato.indexOfFirst { token -> token.all { it.isDigit() } }
+                    tokensAfterFødselsdato.indexOfFirst { token -> token.erNumeriskReferansedel() }
                 }
             }
     if (roleIdRelativeIndex == -1) return currentRef
@@ -439,6 +439,15 @@ private fun korrigerPersonReferanseIGrunnlagsreferansen(
     } else {
         currentRef
     }
+}
+
+/**
+ * Vurderer om en referansedel er numerisk, også når historiske rolleIder er negative.
+ */
+private fun String.erNumeriskReferansedel(): Boolean {
+    if (isEmpty()) return false
+    val verdiUtenFortegn = removePrefix("-")
+    return verdiUtenFortegn.isNotEmpty() && verdiUtenFortegn.all { it.isDigit() }
 }
 
 /**
