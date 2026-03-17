@@ -1705,7 +1705,8 @@ class Dtomapper(
                             },
                     )
                 }
-            }.mapIndexed { index, husstanden ->
+            }.filter { it.periode.til == null || it.periode.til!! > behandling.eldsteVirkningstidspunkt }
+            .mapIndexed { index, husstanden ->
                 if (index == 0) {
                     husstanden.copy(
                         periode = Datoperiode(behandling.eldsteVirkningstidspunkt, husstanden.periode.til),
