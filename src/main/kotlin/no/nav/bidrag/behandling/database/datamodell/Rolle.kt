@@ -148,6 +148,7 @@ open class Rolle(
         avslag == null || (behandling.erIForholdsmessigFordeling && løperBidragEtterEldsteVirkning)
     val harSøknadMedInnkreving get() = forholdsmessigFordeling?.søknaderUnderBehandling?.any { it.innkreving } == true
     val erRevurderingsbarn get() = rolletype == Rolletype.BARN && forholdsmessigFordeling != null && forholdsmessigFordeling!!.erRevurdering
+    val erBarn get() = rolletype == Rolletype.BARN
     val barn get() =
         behandling.søknadsbarn.filter {
             rolletype == Rolletype.BIDRAGSPLIKTIG ||

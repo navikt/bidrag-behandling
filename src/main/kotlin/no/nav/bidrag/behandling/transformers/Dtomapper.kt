@@ -118,6 +118,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilTotalBeregningDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.beregn.barnebidrag.BeregnBarnebidragApi
@@ -1584,22 +1585,24 @@ class Dtomapper(
                         .withDayOfMonth(1)
                         .isBefore(behandling.eldsteVirkningstidspunkt.minusYears(18))
             }?.filter {
-                it.borISammeHusstandDtoListe.any { p ->
-                    val periodeBorHosBP =
-                        if (p.periodeFra!!.withDayOfMonth(1) == p.periodeTil?.withDayOfMonth(1)) {
-                            ÅrMånedsperiode(p.periodeFra!!.withDayOfMonth(1), p.periodeTil?.withDayOfMonth(1))
-                        } else {
-                            ÅrMånedsperiode(p.periodeFra!!.withDayOfMonth(1), p.periodeTil?.withDayOfMonth(1)?.minusDays(1))
-                        }
-                    val periodeBPErInnenfor =
-                        periodeBorHosBP.fom >= periode.fom &&
-                            periodeBorHosBP.til != null &&
-                            periode.til != null &&
-                            periodeBorHosBP.tilEllerMax() <= periode.tilEllerMax()
-                    val periodeBPLøpendeErInnenfor =
-                        periodeBorHosBP.fom >= periode.fom && periodeBorHosBP.til == null && periode.til == null
-                    periode.omsluttesAv(periodeBorHosBP) || periodeBPErInnenfor || periodeBPLøpendeErInnenfor
-                }
+                it.borISammeHusstandDtoListe
+                    .filter { it.periodeFra == null || it.periodeFra!! < behandling.finnBeregnTilDato() }
+                    .any { p ->
+                        val periodeBorHosBP =
+                            if (p.periodeFra!!.withDayOfMonth(1) == p.periodeTil?.withDayOfMonth(1)) {
+                                ÅrMånedsperiode(p.periodeFra!!.withDayOfMonth(1), p.periodeTil?.withDayOfMonth(1))
+                            } else {
+                                ÅrMånedsperiode(p.periodeFra!!.withDayOfMonth(1), p.periodeTil?.withDayOfMonth(1)?.minusDays(1))
+                            }
+                        val periodeBPErInnenfor =
+                            periodeBorHosBP.fom >= periode.fom &&
+                                periodeBorHosBP.til != null &&
+                                periode.til != null &&
+                                periodeBorHosBP.tilEllerMax() <= periode.tilEllerMax()
+                        val periodeBPLøpendeErInnenfor =
+                            periodeBorHosBP.fom >= periode.fom && periodeBorHosBP.til == null && periode.til == null
+                        periode.omsluttesAv(periodeBorHosBP) || periodeBPErInnenfor || periodeBPLøpendeErInnenfor
+                    }
             }?.map { it.tilAndreVoksneIHusstandenDetaljerDto(Saksnummer(boforholdAndreVoksneIHusstanden?.behandling?.saksnummer!!)) }
             ?.sorter() ?: emptyList()
     }
@@ -1674,51 +1677,129 @@ class Dtomapper(
         val periodePeopleMap = mutableMapOf<Datoperiode, MutableList<RelatertPersonGrunnlagDto>>()
 
         filtrerteAndreVoksne.forEach { person ->
-            person.borISammeHusstandDtoListe.forEach { boStatus ->
-                val periodeTil = boStatus.periodeTil
-                val periodeFom = boStatus.periodeFra ?: return@forEach
-                val periode = Datoperiode(periodeFom, periodeTil)
-                periodePeopleMap.getOrPut(periode) { mutableListOf() }.add(person)
-            }
+            person.borISammeHusstandDtoListe
+                .filter { it.periodeFra == null || it.periodeFra!! <= behandling.finnBeregnTilDato() }
+                .forEach { boStatus ->
+                    val periodeTil = boStatus.periodeTil
+                    val periodeFom = boStatus.periodeFra ?: return@forEach
+                    val periode = Datoperiode(periodeFom, periodeTil)
+                    periodePeopleMap.getOrPut(periode) { mutableListOf() }.add(person)
+                }
         }
 
         // Create PeriodeAndreVoksneIHusstanden entries grouped by period and number of people
-        return periodePeopleMap
-            .toSortedMap(compareBy { it.fom })
-            .flatMap { (periode, people) ->
-                // Group by count of people to create separate periods if count changes
-                val countGroups = people.groupBy { people.size }
-                countGroups.map { (count, peopleInGroup) ->
-                    PeriodeAndreVoksneIHusstanden(
-                        periode = periode,
-                        status = Bostatuskode.BOR_MED_ANDRE_VOKSNE,
-                        totalAntallHusstandsmedlemmer = count,
-                        husstandsmedlemmer =
-                            peopleInGroup.mapNotNull { person ->
-                                try {
-                                    person.tilAndreVoksneIHusstandenDetaljerDto(
-                                        Saksnummer(
-                                            grunnlag
-                                                .find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN }
-                                                ?.behandling
-                                                ?.saksnummer!!,
-                                        ),
-                                    )
-                                } catch (e: Exception) {
-                                    null
-                                }
-                            },
-                    )
-                }
-            }.mapIndexed { index, husstanden ->
-                if (index == 0) {
-                    husstanden.copy(
-                        periode = Datoperiode(behandling.eldsteVirkningstidspunkt, husstanden.periode.til),
-                    )
-                } else {
-                    husstanden
-                }
-            }.toSet()
+        val perioderMedAndreVoksne =
+            periodePeopleMap
+                .toSortedMap(compareBy { it.fom })
+                .flatMap { (periode, people) ->
+                    // Group by count of people to create separate periods if count changes
+                    val countGroups = people.groupBy { people.size }
+                    countGroups.map { (count, peopleInGroup) ->
+                        PeriodeAndreVoksneIHusstanden(
+                            periode = periode,
+                            status = Bostatuskode.BOR_MED_ANDRE_VOKSNE,
+                            totalAntallHusstandsmedlemmer = count,
+                            husstandsmedlemmer =
+                                peopleInGroup.mapNotNull { person ->
+                                    try {
+                                        person.tilAndreVoksneIHusstandenDetaljerDto(
+                                            Saksnummer(
+                                                grunnlag
+                                                    .find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN }
+                                                    ?.behandling
+                                                    ?.saksnummer!!,
+                                            ),
+                                        )
+                                    } catch (e: Exception) {
+                                        null
+                                    }
+                                },
+                        )
+                    }
+                }.toSet()
+
+        return behandling.fyllInnManglendePerioderForAndreVoksneIHusstanden(perioderMedAndreVoksne)
+    }
+
+    private fun Behandling.fyllInnManglendePerioderForAndreVoksneIHusstanden(
+        perioderMedAndreVoksne: Set<PeriodeAndreVoksneIHusstanden>,
+    ): Set<PeriodeAndreVoksneIHusstanden> {
+        val beregnTilDato = finnBeregnTilDato()
+        if (beregnTilDato < eldsteVirkningstidspunkt) return emptySet()
+
+        if (perioderMedAndreVoksne.isEmpty()) {
+            return setOf(opprettTomPeriodeForAndreVoksneIHusstanden(eldsteVirkningstidspunkt, null))
+        }
+
+        val normalisertePerioder =
+            perioderMedAndreVoksne
+                .mapNotNull { it.tilPeriodeInnenforBehandling(eldsteVirkningstidspunkt, null) }
+                .sortedBy { it.periode.fom }
+
+        if (normalisertePerioder.isEmpty()) {
+            return setOf(opprettTomPeriodeForAndreVoksneIHusstanden(eldsteVirkningstidspunkt, null))
+        }
+
+        val komplettePerioder = mutableListOf<PeriodeAndreVoksneIHusstanden>()
+        var nestePeriodeFom = eldsteVirkningstidspunkt
+
+        normalisertePerioder.forEach { periode ->
+            if (nestePeriodeFom < periode.periode.fom) {
+                komplettePerioder.add(
+                    opprettTomPeriodeForAndreVoksneIHusstanden(
+                        nestePeriodeFom,
+                        periode.periode.fom.minusDays(1),
+                    ),
+                )
+            }
+            komplettePerioder.add(periode)
+            nestePeriodeFom = periode.periode.til?.plusDays(1) ?: beregnTilDato.plusDays(1)
+        }
+
+        if (nestePeriodeFom <= beregnTilDato) {
+            komplettePerioder.add(
+                opprettTomPeriodeForAndreVoksneIHusstanden(nestePeriodeFom, null),
+            )
+        }
+
+        return komplettePerioder.toSet()
+    }
+
+    private fun PeriodeAndreVoksneIHusstanden.tilPeriodeInnenforBehandling(
+        periodeFom: LocalDate,
+        periodeTil: LocalDate?,
+    ): PeriodeAndreVoksneIHusstanden? {
+        val justertFom = maxOf(periode.fom, periodeFom)
+        val justertTil = minOfNullable(periode.til ?: periodeTil, periodeTil)
+        if (justertTil != null && justertTil < justertFom) return null
+
+        return copy(
+            periode = Datoperiode(justertFom, justertTil),
+        )
+    }
+
+    private fun opprettTomPeriodeForAndreVoksneIHusstanden(
+        periodeFom: LocalDate,
+        periodeTil: LocalDate?,
+    ) = PeriodeAndreVoksneIHusstanden(
+        periode = Datoperiode(periodeFom, periodeTil),
+        status = Bostatuskode.BOR_IKKE_MED_ANDRE_VOKSNE,
+        totalAntallHusstandsmedlemmer = 0,
+        husstandsmedlemmer = emptyList(),
+    )
+
+    private fun Behandling.opprettTomPeriodeForAndreVoksneIHusstanden(): Set<PeriodeAndreVoksneIHusstanden> {
+        val beregnTilDato = finnBeregnTilDato()
+        if (beregnTilDato < eldsteVirkningstidspunkt) return emptySet()
+
+        return setOf(
+            PeriodeAndreVoksneIHusstanden(
+                periode = Datoperiode(eldsteVirkningstidspunkt, beregnTilDato),
+                status = Bostatuskode.BOR_IKKE_MED_ANDRE_VOKSNE,
+                totalAntallHusstandsmedlemmer = 0,
+                husstandsmedlemmer = emptyList(),
+            ),
+        )
     }
 
     @Deprecated("Kan fjernes i neste prodsetting")
