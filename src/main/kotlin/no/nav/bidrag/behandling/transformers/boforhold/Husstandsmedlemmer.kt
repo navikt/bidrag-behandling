@@ -168,7 +168,10 @@ fun Husstandsmedlem.tilBoforholdVoksneRequest(
         henteGjeldendeBoforholdsgrunnlagForAndreVoksneIHusstanden(
             gjelderRolle,
         ).tilHusstandsmedlemmer().filtrerUtUrelevantePerioder(behandling),
-    behandledeBostatusopplysninger = perioder.map { it.tilBostatus() }.sortedBy { it.periodeFom },
+    behandledeBostatusopplysninger =
+        perioder.map { it.tilBostatus() }.sortedBy { it.periodeFom }.let {
+            if (it.all { it.kilde == Kilde.OFFENTLIG }) emptyList() else it
+        },
     endreBostatus = endreBostatus,
 )
 

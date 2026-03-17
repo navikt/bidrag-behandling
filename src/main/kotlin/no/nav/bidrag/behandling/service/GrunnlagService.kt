@@ -1049,7 +1049,13 @@ class GrunnlagService(
                 Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
             ) ?: run {
                 log.warn { "Fant ingen aktive boforholdsgrunnlag. Oppdaterer ikke boforhold beregnet etter virkningstidspunkt ble endret" }
-                return
+                Grunnlag(
+                    behandling = behandling,
+                    type = Grunnlagsdatatype.BOFORHOLD,
+                    innhentet = LocalDateTime.now(),
+                    data = commonObjectmapper.writeValueAsString(emptyList<RelatertPersonGrunnlagDto>()),
+                    rolle = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
+                )
             }
         sisteAktiveGrunnlag.rekalkulerOgOppdaterBoforholdBearbeidetGrunnlag()
     }
@@ -1233,9 +1239,24 @@ class GrunnlagService(
                     Grunnlagstype(grunnlagsdatatype, true),
                     grunnlagsdatatype.innhentesForRolle(behandling)!!,
                 )
+            }.filter { it.grunnlagFraVedtakSomSkalOmgjøres == false }
+
+        if (grunnlagSomSkalOverskrives.isEmpty()) {
+            behandling.grunnlag.add(
+                Grunnlag(
+                    behandling = behandling,
+                    type = Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN,
+                    data = tilJson(perioder),
+                    innhentet = LocalDateTime.now(),
+                    aktiv = LocalDateTime.now(),
+                    rolle = grunnlagsdatatype.innhentesForRolle(behandling)!!,
+                    erBearbeidet = true,
+                ),
+            )
+        } else {
+            grunnlagSomSkalOverskrives.forEach {
+                it.data = tilJson(perioder)
             }
-        grunnlagSomSkalOverskrives.forEach {
-            it.data = tilJson(perioder)
         }
     }
 
