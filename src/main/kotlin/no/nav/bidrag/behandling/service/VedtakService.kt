@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.transformers.dto.PåklagetVedtak
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.OppdaterBarnFraFFRequest
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFBarnDetaljer
 import no.nav.bidrag.behandling.transformers.skalInnkrevingKunneUtsettes
 import no.nav.bidrag.behandling.transformers.tilStønadsid
@@ -243,33 +244,36 @@ class VedtakService(
                         val søknadsdetaljer = konvertertBehandlingLesemodus.tilFFBarnDetaljer()
                         val søknadsbarnIkkeRevurdering = konvertertBehandlingLesemodus.søknadsbarn.filter { !it.erRevurderingsbarn }
                         forholdsmessigFordelingService!!.leggTilEllerSlettBarnFraBehandlingSomErIFF(
-                            søknadsbarnIkkeRevurdering
-                                .map {
-                                    OpprettRolleDto(
-                                        rolletype = it.rolletype,
-                                        ident = Personident(it.ident!!),
-                                        navn = it.navn,
-                                        fødselsdato = it.fødselsdato,
-                                        harGebyrsøknad = it.harGebyrsøknad,
-                                        behandlingstatus = it.behandlingstatus,
-                                        behandlingstema = it.behandlingstema,
-                                        opprinneligVirkningstidspunkt = it.opprinneligVirkningstidspunkt,
-                                        opphørsdato = it.opphørsdato,
-                                    )
-                                },
-                            emptyList(),
-                            behandling,
-                            request.søknadsid,
-                            konvertertBehandlingLesemodus.saksnummer,
-                            bm?.ident,
-                            behandlerenhet = konvertertBehandlingLesemodus.behandlerEnhet,
-                            erRevurdering =
-                                konvertertBehandlingLesemodus.omgjøringsdetaljer?.opprinneligVedtakstype == Vedtakstype.REVURDERING,
-                            medInnkreving = konvertertBehandlingLesemodus.innkrevingstype == Innkrevingstype.MED_INNKREVING,
-                            søknadsdetaljer = søknadsdetaljer,
-                            søktFraDato = konvertertBehandlingLesemodus.søktFomDato,
-                            gebyrGjelder18År = søknadsbarnIkkeRevurdering.any { it.harGebyrsøknad },
-                            stønadstype = konvertertBehandlingLesemodus.stonadstype!!,
+                            OppdaterBarnFraFFRequest(
+                                rollerSomSkalLeggesTilDto =
+                                    søknadsbarnIkkeRevurdering
+                                        .map {
+                                            OpprettRolleDto(
+                                                rolletype = it.rolletype,
+                                                ident = Personident(it.ident!!),
+                                                navn = it.navn,
+                                                fødselsdato = it.fødselsdato,
+                                                harGebyrsøknad = it.harGebyrsøknad,
+                                                behandlingstatus = it.behandlingstatus,
+                                                behandlingstema = it.behandlingstema,
+                                                opprinneligVirkningstidspunkt = it.opprinneligVirkningstidspunkt,
+                                                opphørsdato = it.opphørsdato,
+                                            )
+                                        },
+                                rollerSomSkalSlettes = emptyList(),
+                                behandling = behandling,
+                                søknadsid = request.søknadsid,
+                                saksnummer = konvertertBehandlingLesemodus.saksnummer,
+                                bmIdent = bm?.ident,
+                                behandlerenhet = konvertertBehandlingLesemodus.behandlerEnhet,
+                                erRevurdering =
+                                    konvertertBehandlingLesemodus.omgjøringsdetaljer?.opprinneligVedtakstype == Vedtakstype.REVURDERING,
+                                medInnkreving = konvertertBehandlingLesemodus.innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                                søknadsdetaljer = søknadsdetaljer,
+                                søktFraDato = konvertertBehandlingLesemodus.søktFomDato,
+                                gebyrGjelder18År = søknadsbarnIkkeRevurdering.any { it.harGebyrsøknad },
+                                stønadstype = konvertertBehandlingLesemodus.stonadstype!!,
+                            ),
                         )
                         val revurderingsbarn = konvertertBehandlingLesemodus.roller.filter { it.erRevurderingsbarn }
                         behandling.roller.addAll(
