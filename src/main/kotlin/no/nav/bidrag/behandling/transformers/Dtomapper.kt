@@ -1028,8 +1028,9 @@ class Dtomapper(
                     )
                 }
 
+        val søknadsbarnIdent = søknadsbarn.map { it.ident }
         val andreBarnUtenLøpendeBidrag =
-            bpsBarnUtenLøpendeBidrag().map { barn ->
+            bpsBarnUtenLøpendeBidrag().filter { !søknadsbarnIdent.contains(it.ident) }.map { barn ->
                 val privatAvtale = privatAvtale.find { it.person?.ident == barn.ident }
                 PrivatAvtaleAndreBarnDtoV2(
                     PersoninfoDto(

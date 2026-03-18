@@ -279,8 +279,14 @@ private fun oppdatereHusstandsmedlemmerForRoller(
 ) {
     rollerSomLeggesTil
         .filter { it.rolletype == Rolletype.BARN }
-        .filter { nyRolle -> behandling.husstandsmedlem.any { it.erSammePerson(nyRolle.ident!!.verdi, nyRolle.stønadstype) } }
-        .forEach { nyRolle ->
+        .filter { nyRolle ->
+            behandling.husstandsmedlem.any {
+                it.erSammePerson(
+                    nyRolle.ident!!.verdi,
+                    nyRolle.stønadstype ?: behandling.stonadstype,
+                )
+            }
+        }.forEach { nyRolle ->
             val rolle = behandling.finnRolle(nyRolle.ident!!.verdi, nyRolle.stønadstype ?: behandling.stonadstype)
             // Oppdater rolle slik at husstandsmedlemmen blir låst til rollen i behandlingen
             val husstandsmedlem =
@@ -295,10 +301,8 @@ private fun oppdatereHusstandsmedlemmerForRoller(
     val nyeRollerSomIkkeHarHusstandsmedlemmer =
         rollerSomLeggesTil
             .filter { it.rolletype == Rolletype.BARN }
-            .filter { nyRolle ->
-                val stønadstype = nyRolle.stønadstype ?: behandling.stonadstype
-                behandling.husstandsmedlem.none { it.erSammePerson(nyRolle.ident!!.verdi, stønadstype) }
-            }
+            .filter { nyRolle -> behandling.husstandsmedlem.none { it.erSammePerson(nyRolle.ident!!.verdi, nyRolle.stønadstype) } }
+
     behandling.husstandsmedlem.addAll(
         nyeRollerSomIkkeHarHusstandsmedlemmer.map {
             secureLogger.debug { "Legger til husstandsmedlem med ident ${it.ident?.verdi} i behandling ${behandling.id}" }

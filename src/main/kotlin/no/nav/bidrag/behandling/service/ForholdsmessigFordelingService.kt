@@ -413,6 +413,10 @@ class ForholdsmessigFordelingService(
             }
 
             giSakTilgangTilEnhet(behandling, behandlerEnhet)
+
+            behandling.syncGebyrSøknadReferanse()
+            behandlingService.lagreBehandling(behandling)
+            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
             oppdaterBehandlingEtterOppdatertRoller(
                 behandling,
                 underholdService,
@@ -422,10 +426,6 @@ class ForholdsmessigFordelingService(
                 },
                 emptyList(),
             )
-            behandling.syncGebyrSøknadReferanse()
-            behandlingService.lagreBehandling(behandling)
-
-            grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         } catch (e: Exception) {
             secureLogger.error(e) { "Det skjedde en feil ved opprettelse eller oppdatering av FF for behandling $behandlingId" }
             behandlingRepository.markerOpprettelseAvFFFeilet(behandlingId)
