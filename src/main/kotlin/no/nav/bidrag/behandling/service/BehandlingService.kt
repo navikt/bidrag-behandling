@@ -730,7 +730,7 @@ class BehandlingService(
         return OppdaterRollerResponse(OppdaterRollerStatus.ROLLER_OPPDATERT)
     }
 
-    private fun slettRolleFraBehandling(
+    fun slettRolleFraBehandling(
         behandling: Behandling,
         rolle: Rolle,
     ) {

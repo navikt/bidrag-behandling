@@ -108,12 +108,16 @@ class VedtakHendelseListener(
                         .oppdaterBarnEtterOpphør(
                             behandling,
                             stønadsendring.kravhaver,
+                            stønadsendring.type,
                             opphørsperiode,
                         )
                 } else {
-                    if (behandling.søknadsbarn.none { it.ident == stønadsendring.kravhaver.verdi }) {
+                    if (behandling.søknadsbarn.none { it.erSammeRolle(stønadsendring.kravhaver.verdi, stønadsendring.type) }) {
                         // Henter og legger til barn som revurderingsbarn
-                        behandling.privatAvtale.removeIf { it.rolle == null && it.person?.ident == stønadsendring.kravhaver.verdi }
+                        behandling.privatAvtale.removeIf {
+                            it.rolle == null &&
+                                (it.rolle!!.erSammeRolle(stønadsendring.kravhaver.verdi, stønadsendring.type))
+                        }
                         forholdsmessigFordelingService.opprettEllerOppdaterForholdsmessigFordeling(behandling.id!!)
                     } else {
                         forholdsmessigFordelingService.oppdaterBarnEtterInnkrevingsvedtak(

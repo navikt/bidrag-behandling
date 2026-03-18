@@ -32,6 +32,7 @@ import no.nav.bidrag.behandling.transformers.behandling.finnes
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.filtrerSakerHvorPersonErBP
 import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
+import no.nav.bidrag.behandling.transformers.finnesLøpendeBidragForRolle
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.OppdaterBarnFraFFRequest
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.erFeilregistrert
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.erForholdsmessigFordeling
@@ -728,13 +729,34 @@ class ForholdsmessigFordelingService(
         }
     }
 
+    // Case 1. Slett revurderingsbarn hvis barnet har ingen bidrag som innkreves og privat avtalen slettes
+    // Case 2: Slett revurderingsbarn hvis bidraget opphøres før søkt fom dato på behandlingen.
+    // Da er det ikke behov for å revurdere barnet fordi barnet har ingen løpende bidrag eller privat avtale
+    @Transactional
+    fun slettRevurderingsbarn(
+        behandling: Behandling,
+        rolle: Rolle,
+    ) {
+        val rolleHarLøpendeBidrag =
+            (rolle.opphørsdato == null && behandling.finnesLøpendeBidragForRolle(rolle)) ||
+                (rolle.opphørsdato != null && rolle.løperBidragFørOpphør())
+        if (!rolle.erRevurderingsbarn || rolleHarLøpendeBidrag) return
+
+        feilregistrerBarnFraFFSøknad(rolle)
+        behandlingService.slettRolleFraBehandling(behandling, rolle)
+        behandling.roller.remove(rolle)
+        secureLogger.info { "Slettet revurderingsbarn ${rolle.ident} fra behandling ${behandling.id}" }
+        behandlingService.sendOppdatertHendelse(behandling.id!!, false)
+    }
+
     @Transactional
     fun oppdaterBarnEtterOpphør(
         behandling: Behandling,
         barnIdent: Personident,
+        stønadstype: Stønadstype?,
         periode: Periode,
     ) {
-        val rolle = behandling.søknadsbarn.find { it.ident == barnIdent.verdi } ?: return
+        val rolle = behandling.søknadsbarn.find { it.erSammeRolle(barnIdent.verdi, stønadstype) } ?: return
         val opphørsdato = periode.periode.fom.toLocalDate()
 
         if (rolle.virkningstidspunkt != null && rolle.virkningstidspunkt!! > opphørsdato) {
@@ -757,16 +779,25 @@ class ForholdsmessigFordelingService(
         )
 
         if (!rolle.løperBidragFørOpphør()) {
-            // Hvis det løper bidrag før opphørsdatoen i FF behandling så må saksbehandler ta stilling til evt endring før opphørsdatoen
-            // Når det er valgt avslag så fungerer virkningstidspunkt som en opphørsdato og perioder før endres ikke. Derfor må det velges en årsak med virkning og opphørsdato hvis det løper bidrag før opphørsdatoen
-            virkningstidspunktService.oppdaterAvslagÅrsak(
-                behandling,
-                OppdatereVirkningstidspunkt(
-                    årsak = null,
-                    avslag = Resultatkode.fraKode(periode.resultatkode),
-                ),
-                tvingEndring = true,
-            )
+            if (rolle.erRevurderingsbarn) {
+                secureLogger.info {
+                    "Sletter revurderingsbarn ${rolle.personident?.verdi} " +
+                        "fra behandling ${behandling.id} etter det er fattet opphør av bidrag før søkt fom dato. " +
+                        "Barnet har ingen løpende bidrag lenger og trenger derfor ikke å være revurderingsbarn"
+                }
+                slettRevurderingsbarn(behandling, rolle)
+            } else {
+                // Hvis det løper bidrag før opphørsdatoen i FF behandling så må saksbehandler ta stilling til evt endring før opphørsdatoen
+                // Når det er valgt avslag så fungerer virkningstidspunkt som en opphørsdato og perioder før endres ikke. Derfor må det velges en årsak med virkning og opphørsdato hvis det løper bidrag før opphørsdatoen
+                virkningstidspunktService.oppdaterAvslagÅrsak(
+                    behandling,
+                    OppdatereVirkningstidspunkt(
+                        årsak = null,
+                        avslag = Resultatkode.fraKode(periode.resultatkode),
+                    ),
+                    tvingEndring = true,
+                )
+            }
         }
     }
 
