@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.transformers.dato18ÅrsBidrag
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import java.time.LocalDate
 
 fun Behandling.finnRolleForPeriode(
@@ -38,10 +39,22 @@ fun Behandling.finnRolle(
     it.erSammeRolle(ident, stønadstype)
 }
 
+fun Pair<String?, Stønadstype?>.erSamme(
+    ident: String,
+    stønadstype: Stønadstype?,
+) = erSammePerson(ident, stønadstype, first, second)
+
 fun List<Pair<String?, Stønadstype?>>.finnes(
     ident: String,
     stønadstype: Stønadstype?,
 ) = any {
-    it.first == ident &&
-        (stønadstype == null || it.second == null || it.second == stønadstype)
+    it.erSamme(ident, stønadstype)
 }
+
+fun erSammePerson(
+    ident1: String?,
+    stønadstype1: Stønadstype?,
+    ident2: String?,
+    stønadstype2: Stønadstype?,
+) = ident1 == ident2 &&
+    (stønadstype1 == null || stønadstype2 == null || stønadstype1 == stønadstype2)

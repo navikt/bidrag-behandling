@@ -51,6 +51,7 @@ import no.nav.bidrag.behandling.service.hentSak
 import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.bestemRollerSomKanHaInntekter
 import no.nav.bidrag.behandling.transformers.bestemRollerSomMåHaMinstEnInntekt
+import no.nav.bidrag.behandling.transformers.boforhold.tilBostatus
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erBidrag
@@ -83,6 +84,8 @@ import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.beregn.core.util.avrundetTilToDesimaler
 import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
+import no.nav.bidrag.boforhold.BoforholdApi
+import no.nav.bidrag.boforhold.dto.BoforholdBarnRequestV3
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.service.forsendelse.bidragspliktig
 import no.nav.bidrag.commons.util.secureLogger
@@ -90,6 +93,7 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
+import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -306,6 +310,23 @@ private fun oppdatereHusstandsmedlemmerForRoller(
     behandling.husstandsmedlem.addAll(
         nyeRollerSomIkkeHarHusstandsmedlemmer.map {
             secureLogger.debug { "Legger til husstandsmedlem med ident ${it.ident?.verdi} i behandling ${behandling.id}" }
+
+//            val request =
+//                BoforholdBarnRequestV3(
+//                    gjelderPersonId = it.ident,
+//                    fødselsdato = it.fødselsdato,
+//                    relasjon = Familierelasjon.BARN,
+//                    innhentedeOffentligeOpplysninger = emptyList(),
+//                    behandledeBostatusopplysninger = emptyList(),
+//                    erSøknadsbarn = true,
+//                    endreBostatus = null,
+//                )
+//            val perioder = BoforholdApi.beregnBoforholdBarnV3(
+//                virkningstidspunkt = behandling.eldsteVirkningstidspunkt,
+//                opphørsdato = it.opphørsdato,
+//                boforholdBarnRequestV3Liste = listOf(request),
+//                typeBehandling = behandling.tilType()
+//            )
             it.toHusstandsmedlem(behandling)
         },
     )

@@ -91,7 +91,7 @@ class ForholdsmessigFordelingServiceKorrigeringTest {
         serviceSpy.korrigerFFSøknaderSomHarFeilStatusEllerErSlettet(behandling)
 
         verify(exactly = 1) {
-            serviceSpy.opprettEllerOppdaterForholdsmessigFordeling(behandling.id!!, reevaluerSøkndasbarn = barn.ident)
+            serviceSpy.opprettEllerOppdaterForholdsmessigFordeling(behandling.id!!, reevaluerSøkndasbarn = Pair(barn.ident!!, barn.stønadstype))
         }
     }
 

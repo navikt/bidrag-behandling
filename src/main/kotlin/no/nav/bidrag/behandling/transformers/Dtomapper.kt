@@ -1054,14 +1054,15 @@ class Dtomapper(
                 .filter { it.rolle == null && !identerAndreBarn.contains(it.person!!.ident!! + it.stønadstype?.name) }
                 .map { pa ->
                     val eksisterendeBarn = bpsBarnUtenLøpendeBidrag().find { it.ident == pa.personIdent }
+                    val eksisterendeSøknadsbarn = søknadsbarn.find { it.ident == pa.personIdent }
                     PrivatAvtaleAndreBarnDtoV2(
                         gjelderBarn =
                             pa.person!!.tilPersoninfoDto(kilde = Kilde.MANUELL).copy(
                                 stønadstype = pa.stønadstype,
                             ),
                         privatAvtale = pa.tilDtoV2(),
-                        saksnummer = eksisterendeBarn?.saksnummer,
-                        enhet = eksisterendeBarn?.enhet,
+                        saksnummer = eksisterendeBarn?.saksnummer ?: eksisterendeSøknadsbarn?.saksnummer,
+                        enhet = eksisterendeBarn?.enhet ?: eksisterendeSøknadsbarn?.forholdsmessigFordeling?.behandlerenhet,
                     )
                 }
         val andreBarn =

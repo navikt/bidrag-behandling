@@ -25,6 +25,8 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
 import no.nav.bidrag.behandling.transformers.barn
+import no.nav.bidrag.behandling.transformers.behandling.erSamme
+import no.nav.bidrag.behandling.transformers.behandling.erSammePerson
 import no.nav.bidrag.behandling.transformers.behandling.finnRolle
 import no.nav.bidrag.behandling.transformers.behandling.finnes
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
@@ -55,6 +57,7 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFBarnDe
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFDetaljerBM
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFDetaljerBP
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilForholdsmessigFordelingSøknad
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.`tilIdentStønadstypeNøkkel`
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilOpprettRolleDto
 import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
@@ -163,7 +166,12 @@ data class SakKravhaver(
     val åpneBehandlinger: MutableSet<Behandling> = mutableSetOf(),
     val privatAvtale: PrivatAvtale? = null,
 ) {
-    val distinctKey get() = "${kravhaver}_$stønadstype"
+    fun erSammePerson(
+        ident: String,
+        stønadstype1: Stønadstype?,
+    ) = erSammePerson(ident, stønadstype1, kravhaver, stønadstype)
+
+    val distinctKey get() = "${kravhaver}_${stønadstype ?: "null"}"
 }
 
 data class LøpendeBidragSakPeriode(
@@ -237,7 +245,7 @@ class ForholdsmessigFordelingService(
                             it.stønadstype == rb.second
                     }
                 }.map { rb ->
-                    val revurderingsbarnRolle = behandling.roller.find { it.ident == rb.first && it.stønadstype == rb.second }!!
+                    val revurderingsbarnRolle = behandling.roller.find { it.erSammeRolle(rb.first!!, rb.second) }!!
                     // Caser hvor revurderingsbarn ikke har privat avtale eller løpende bidrag
                     SakKravhaver(
                         saksnummer = revurderingsbarnRolle.saksnummer,
@@ -261,7 +269,7 @@ class ForholdsmessigFordelingService(
                 val revurderingsbarnRoller =
                     behandling.søknadsbarn.filter {
                         it.erRevurderingsbarn &&
-                            løpendebidragssaker.any { lb -> lb.kravhaver == it.ident && lb.stønadstype == it.stønadstype }
+                            løpendebidragssaker.any { lb -> lb.erSammePerson(it.ident!!, it.stønadstype) }
                     }
 
                 val søktFomDatoOpprinneligRevurderingssøknad =
@@ -305,7 +313,7 @@ class ForholdsmessigFordelingService(
     @Transactional
     fun opprettEllerOppdaterForholdsmessigFordeling(
         behandlingId: Long,
-        reevaluerSøkndasbarn: String? = null,
+        reevaluerSøkndasbarn: Pair<String, Stønadstype?>? = null,
     ) {
         try {
             if (!UnleashFeatures.TILGANG_OPPRETTE_FF.isEnabled) {
@@ -326,20 +334,28 @@ class ForholdsmessigFordelingService(
             val eksisterendeSøknadsbarn =
                 behandling.søknadsbarn
                     .filter {
-                        reevaluerSøkndasbarn == null || it.ident != reevaluerSøkndasbarn
-                    }.map { it.ident }
-            if (reevaluerSøkndasbarn != null && relevanteKravhavere.none { it.kravhaver == reevaluerSøkndasbarn }) {
-                val søknadsbarn = behandling.søknadsbarn.find { it.ident == reevaluerSøkndasbarn }
+                        reevaluerSøkndasbarn == null ||
+                            (reevaluerSøkndasbarn.erSamme(it.ident!!, it.stønadstype))
+                    }.map { it.identStønadstypeNøkkel }
+            if (reevaluerSøkndasbarn != null && relevanteKravhavere.none { reevaluerSøkndasbarn.erSamme(it.kravhaver, it.stønadstype) }) {
+                val søknadsbarn = behandling.søknadsbarn.find { it.erSammeRolle(reevaluerSøkndasbarn.first, reevaluerSøkndasbarn.second) }
                 // Antar barn har ingen løpende bidrag eller privat avtale
                 relevanteKravhavere.add(
                     SakKravhaver(
-                        kravhaver = reevaluerSøkndasbarn,
+                        kravhaver = reevaluerSøkndasbarn.first,
+                        stønadstype = reevaluerSøkndasbarn.second,
                         saksnummer = søknadsbarn!!.saksnummer,
                         bidragsmottaker = søknadsbarn.bidragsmottaker!!.ident,
                     ),
                 )
             }
-            val relevanteKravhavereIkkeSøknadsbarn = relevanteKravhavere.filter { !eksisterendeSøknadsbarn.contains(it.kravhaver) }.toSet()
+            val relevanteKravhavereIkkeSøknadsbarn =
+                relevanteKravhavere
+                    .filter {
+                        !eksisterendeSøknadsbarn.contains(
+                            it.distinctKey,
+                        )
+                    }.toSet()
             overførÅpneBehandlingTilHovedbehandling(behandling, relevanteKravhavereIkkeSøknadsbarn)
             overførÅpneBisysSøknaderTilBehandling(behandling, relevanteKravhavereIkkeSøknadsbarn)
             val bidragssakerBpUtenÅpenBehandling =
@@ -373,11 +389,11 @@ class ForholdsmessigFordelingService(
 
             oppdaterGebyrDetaljerRollerIBehandling(behandling, relevanteKravhavere)
 
-            val søknaderSøknadsbarn = relevanteKravhavere.filter { eksisterendeSøknadsbarn.contains(it.kravhaver) }.toSet()
+            val søknaderSøknadsbarn = relevanteKravhavere.filter { eksisterendeSøknadsbarn.contains(it.distinctKey) }.toSet()
 
             behandling.søknadsbarn.forEach { barn ->
                 if (barn.forholdsmessigFordeling == null) {
-                    val sakKravhaverSøknadsbarn = søknaderSøknadsbarn.find { it.kravhaver == barn.ident }
+                    val sakKravhaverSøknadsbarn = søknaderSøknadsbarn.find { it.erSammePerson(barn.ident!!, barn.stønadstype) }
 
                     val søknadsdetaljer =
                         if (sakKravhaverSøknadsbarn != null) {
@@ -395,7 +411,7 @@ class ForholdsmessigFordelingService(
                             emptyList()
                         } + behandling.tilFFBarnDetaljer()
 
-                    val løpendeBidrag = bidragssakerBpUtenÅpenBehandling.find { bs -> bs.kravhaver == barn.ident }
+                    val løpendeBidrag = bidragssakerBpUtenÅpenBehandling.find { bs -> bs.erSammePerson(barn.ident!!, barn.stønadstype) }
                     barn.forholdsmessigFordeling =
                         ForholdsmessigFordelingRolle(
                             delAvOpprinneligBehandling = true,
@@ -702,7 +718,7 @@ class ForholdsmessigFordelingService(
                 opprettRollerOgRevurderingssøknadForSak(
                     behandling,
                     behandling.saksnummer,
-                    relevanteKravhavere.filter { it.kravhaver == rolle.ident },
+                    relevanteKravhavere.filter { it.erLik(rolle.ident!!, rolle.stønadstype) },
                     behandling.behandlerEnhet,
                     rolle.stønadstype,
                     søknad.søknadFomDato!!,
@@ -879,7 +895,10 @@ class ForholdsmessigFordelingService(
                 }
 
                 sisteFfSøknad == null -> {
-                    opprettEllerOppdaterForholdsmessigFordeling(behandling.id!!, reevaluerSøkndasbarn = rolle.ident)
+                    opprettEllerOppdaterForholdsmessigFordeling(
+                        behandling.id!!,
+                        reevaluerSøkndasbarn = Pair(rolle.ident!!, rolle.stønadstype),
+                    )
                     return
                 }
 
@@ -1304,7 +1323,8 @@ class ForholdsmessigFordelingService(
         return bidraggsakerBP.any { lb ->
             val sak = sakConsumer.hentSak(lb.sak.verdi)
             val bmFødselsnummer = sak.bidragsmottaker?.fødselsnummer?.verdi
-            behandling.roller.none { it.ident == lb.kravhaver.verdi } || behandling.roller.none { it.ident == bmFødselsnummer }
+            behandling.roller.none { it.erSammeRolle(lb.kravhaver.verdi, lb.type) } ||
+                behandling.roller.none { it.ident == bmFødselsnummer }
         }
     }
 
@@ -1378,9 +1398,9 @@ class ForholdsmessigFordelingService(
                 }
         val behandlesAvEnhet = finnEnhetForBarnIBehandling(behandling)
 
-        val eksisterendeSøknadsbarn = behandling.søknadsbarn.map { it.ident }
+        val eksisterendeSøknadsbarn = behandling.søknadsbarn.map { it.identStønadstypeNøkkel }
         val relevanteKravhavere = hentAlleRelevanteKravhavere(behandling)
-        val relevanteKravhavereIkkeSøknadsbarn = relevanteKravhavere.filter { !eksisterendeSøknadsbarn.contains(it.kravhaver) }
+        val relevanteKravhavereIkkeSøknadsbarn = relevanteKravhavere.filter { !eksisterendeSøknadsbarn.contains(it.distinctKey) }
         val alleRelevanteKravhavere = relevanteKravhavereIkkeSøknadsbarn + relevanteKravhavere
         val bpsBarnMedLøpendeBidragEllerPrivatAvtale =
             if (relevanteKravhavereIkkeSøknadsbarn.isEmpty() && `finnesLøpendeBidragSomOverlapperMedEldsteVirkning`) {
@@ -1580,8 +1600,22 @@ class ForholdsmessigFordelingService(
                     )
                 }
                 åpenSøknad.barn.forEach { barn ->
-                    val løpendeBidrag = løpendeBidraggsakerBP.find { it.kravhaver.verdi == barn.personident }
-                    val åpneSøknaderRolle = åpneSøknader.filter { it.barn.any { it.personident == barn.personident } }
+                    val løpendeBidrag =
+                        løpendeBidraggsakerBP.find {
+                            erSammePerson(it.kravhaver.verdi, it.type, barn.personident, åpenSøknad.behandlingstema.tilStønadstype())
+                        }
+                    val åpneSøknaderRolle =
+                        åpneSøknader
+                            .filter { ås ->
+                                ås.barn.any {
+                                    erSammePerson(
+                                        it.personident,
+                                        ås.behandlingstema.tilStønadstype(),
+                                        barn.personident,
+                                        åpenSøknad.behandlingstema.tilStønadstype(),
+                                    )
+                                }
+                            }
                     opprettRolle(
                         behandling,
                         Rolletype.BARN,
@@ -1689,7 +1723,7 @@ class ForholdsmessigFordelingService(
             behandlingOverført.søknadsbarn.forEach { rolle ->
                 val eksisterendeRolle = behandling.søknadsbarn.find { barn -> barn.erSammeRolle(rolle.ident!!, rolle.stønadstype) }
                 if (eksisterendeRolle == null) {
-                    val løpendeBidrag = løpendeBidraggsakerBP.find { it.kravhaver.verdi == rolle.ident }
+                    val løpendeBidrag = løpendeBidraggsakerBP.find { rolle.erSammeRolle(it.kravhaver.verdi, it.type) }
                     val innkrevesFra = if (behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING) løpendeBidrag?.periodeFra else null
                     val innkrevesTil = if (behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING) løpendeBidrag?.periodeTil else null
                     val behandlingerRolle =
@@ -2044,9 +2078,9 @@ class ForholdsmessigFordelingService(
                 stønadstype = stønadstype,
             )
         if (eksisterendeSøknad != null) {
-            val søknadBarnIdenter = eksisterendeSøknad.barn.map { it.personident }
+            val søknadBarnIdenter = eksisterendeSøknad.barn.map { eksisterendeSøknad.`tilIdentStønadstypeNøkkel`(it.personident!!) }
             barnUtenSøknader
-                .filter { !søknadBarnIdenter.contains(it.kravhaver) }
+                .filter { !søknadBarnIdenter.contains(it.distinctKey) }
                 .forEach {
                     bbmConsumer.leggTilBarnISøknad(
                         LeggTilBarnIFFSøknadRequest(

@@ -69,6 +69,8 @@ data class OppdaterBarnFraFFRequest(
     val stønadstype: Stønadstype? = null,
 )
 
+fun ÅpenSøknadDto.tilIdentStønadstypeNøkkel(ident: String) = "${ident}_${behandlingstema.tilStønadstype()}"
+
 fun Rolle.tilOpprettRolleDto() =
     OpprettRolleDto(
         Rolletype.BARN,
