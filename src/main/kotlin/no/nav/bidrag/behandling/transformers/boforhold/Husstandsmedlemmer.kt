@@ -470,11 +470,16 @@ fun Husstandsmedlem.overskriveMedBearbeidaBostatusperioder(nyePerioder: List<Bos
     }
 }
 
-fun Husstandsmedlem.opprettDefaultPeriodeForOffentligHusstandsmedlem() =
-    Bostatusperiode(
+fun Husstandsmedlem.opprettDefaultPeriodeForOffentligHusstandsmedlem(): Bostatusperiode {
+    val datoFom = maxOf(behandling.virkningstidspunktEllerSøktFomDato, fødselsdato ?: rolle!!.fødselsdato).withDayOfMonth(1)
+    return Bostatusperiode(
         husstandsmedlem = this,
-        datoFom = maxOf(behandling.virkningstidspunktEllerSøktFomDato, fødselsdato ?: rolle!!.fødselsdato),
-        datoTom = rolle?.opphørTilDato ?: behandling.opphørTilDato,
+        datoFom = datoFom,
+        datoTom =
+            (rolle?.opphørTilDato ?: behandling.opphørTilDato)?.takeIf {
+                it.isAfter(datoFom)
+            },
         bostatus = Bostatuskode.IKKE_MED_FORELDER,
         kilde = Kilde.OFFENTLIG,
     )
+}

@@ -365,5 +365,27 @@ class AdminController(
         inntektService.justerInntektOffentligePerioderEtterSisteGrunnlag(behandling)
     }
 
+    @PostMapping("/admin/feilfiks/boforhold/perioder/fomtom/{behandlingId}")
+    @Operation(
+        description =
+            "Fiks manglende virkningstidspunkt/årsak/avslag i rolle tabellen for barn",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @Transactional
+    fun fiksPerioderSomHarTomFørFom(
+        @PathVariable behandlingId: Long,
+    ) {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).getOrNull() ?: behandlingNotFoundException(behandlingId)
+
+        behandling.husstandsmedlem
+            .forEach {
+                it.perioder
+                    .filter { it.datoTom != null && it.datoFom!! > it.datoTom }
+                    .forEach {
+                        it.datoTom = null
+                    }
+            }
+    }
+
     fun getAge(birthDate: LocalDate): Int = Period.between(birthDate.withMonth(1).withDayOfMonth(1), LocalDate.now()).years
 }
