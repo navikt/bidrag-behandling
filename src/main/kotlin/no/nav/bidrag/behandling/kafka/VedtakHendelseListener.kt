@@ -17,7 +17,6 @@ import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.vedtak.engangsbeløptype
 import no.nav.bidrag.behandling.transformers.vedtak.stønadstype
 import no.nav.bidrag.commons.util.secureLogger
-import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -119,6 +118,7 @@ class VedtakHendelseListener(
                                 (it.rolle!!.erSammeRolle(stønadsendring.kravhaver.verdi, stønadsendring.type))
                         }
                         forholdsmessigFordelingService.opprettEllerOppdaterForholdsmessigFordeling(behandling.id!!)
+                        forholdsmessigFordelingService.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
                     } else {
                         forholdsmessigFordelingService.oppdaterBarnEtterInnkrevingsvedtak(
                             behandling,

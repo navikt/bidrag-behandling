@@ -88,7 +88,7 @@ class ForholdsmessigFordelingServiceKorrigeringTest {
         every { serviceSpy.opprettEllerOppdaterForholdsmessigFordeling(any(), any()) } answers { }
         stubApneSoknaderTom()
 
-        serviceSpy.korrigerFFSøknaderSomHarFeilStatusEllerErSlettet(behandling)
+        serviceSpy.`synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling`(behandling)
 
         verify(exactly = 1) {
             serviceSpy.opprettEllerOppdaterForholdsmessigFordeling(behandling.id!!, reevaluerSøkndasbarn = Pair(barn.ident!!, barn.stønadstype))
@@ -116,7 +116,7 @@ class ForholdsmessigFordelingServiceKorrigeringTest {
             )
         } throws RuntimeException("Feilet feilregistrering")
 
-        service.korrigerFFSøknaderSomHarFeilStatusEllerErSlettet(behandling)
+        service.`synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling`(behandling)
 
         soknadSomFeiler.status shouldBe Behandlingstatus.UNDER_BEHANDLING
     }
@@ -142,7 +142,7 @@ class ForholdsmessigFordelingServiceKorrigeringTest {
             )
         } answers { }
 
-        service.korrigerFFSøknaderSomHarFeilStatusEllerErSlettet(behandling)
+        service.`synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling`(behandling)
 
         soknadSomSkalFeilregistreres.status shouldBe Behandlingstatus.FEILREGISTRERT
     }
@@ -162,7 +162,7 @@ class ForholdsmessigFordelingServiceKorrigeringTest {
         stubApneSoknaderTom()
         every { bbmConsumer.hentSøknad(any()) } throws RuntimeException("BBM utilgjengelig")
 
-        service.korrigerFFSøknaderSomHarFeilStatusEllerErSlettet(behandling)
+        service.`synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling`(behandling)
 
         lagretSoknad.status shouldBe Behandlingstatus.UNDER_BEHANDLING
     }

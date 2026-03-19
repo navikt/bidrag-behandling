@@ -687,7 +687,7 @@ class BehandlingService(
                         saksnummer = request.saksnummer ?: behandling.saksnummer,
                     ),
                 )
-                forholdsmessigFordelingService.korrigerFFSøknaderSomHarFeilStatusEllerErSlettet(behandling)
+                forholdsmessigFordelingService.`synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling`(behandling)
             } catch (e: Exception) {
                 log.error(e) { "Feil ved oppdatering av roller i behandling $behandlingId. Ruller tilbake til tidligere roller" }
                 val metadata = behandling.metadata ?: BehandlingMetadataDo()
