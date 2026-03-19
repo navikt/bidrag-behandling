@@ -48,6 +48,7 @@ import no.nav.bidrag.behandling.service.hentAlleSaker
 import no.nav.bidrag.behandling.service.hentAlleStønaderForBidragspliktig
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentSak
+import no.nav.bidrag.behandling.service.hentStønad
 import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.bestemRollerSomKanHaInntekter
 import no.nav.bidrag.behandling.transformers.bestemRollerSomMåHaMinstEnInntekt
@@ -103,6 +104,7 @@ import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
+import no.nav.bidrag.transport.behandling.belopshistorikk.request.HentStønadHistoriskRequest
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
@@ -405,7 +407,31 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
             return "Kan ikke fatte vedtak når BP har flere saker"
         }
         val gjeldendeSak = hentSak(saksnummer) ?: return "Kan ikke fatte vedtak for behandling som ikke inneholder alle barna i saken"
-        if (gjeldendeSak.barn.size != søknadsbarn.size) {
+        val stønaderBp =
+            hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident)
+        val barnMedLøpendeBidrag =
+            try {
+                gjeldendeSak.barn.filter { barn ->
+                    val stønadBarnInfo =
+                        stønaderBp?.stønader?.find { it.kravhaver.verdi == barn.fødselsnummer?.verdi } ?: return@filter false
+                    val stønadBarn =
+                        hentStønad(
+                            HentStønadHistoriskRequest(
+                                type = stønadBarnInfo.type,
+                                kravhaver = stønadBarnInfo.kravhaver,
+                                sak = stønadBarnInfo.sak,
+                                skyldner = bidragspliktig!!.personident,
+                            ),
+                        ) ?: return@filter true
+                    if (stønadBarn.periodeListe.isEmpty()) return@filter false
+                    val sistePeriode = stønadBarn.periodeListe.maxByOrNull { it.periode.fom } ?: return@filter true
+                    sistePeriode.periode.til == null || sistePeriode.periode.til!! > søktFomDato.toYearMonth()
+                }
+            } catch (e: Exception) {
+                gjeldendeSak.barn
+            }
+
+        if (barnMedLøpendeBidrag.size != søknadsbarn.size) {
             return "Kan ikke fatte vedtak for behandling som ikke inneholder alle barna i saken"
         }
         if (harPrivatAvtaleAndreBarn) {
