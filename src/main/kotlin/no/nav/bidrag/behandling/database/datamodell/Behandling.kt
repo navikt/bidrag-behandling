@@ -452,7 +452,12 @@ fun Behandling.finnBostatusperiode(id: Long?) = henteAlleBostatusperioder().find
 
 fun Behandling.tilBehandlingstype() = (stonadstype?.name ?: engangsbeloptype?.name)
 
-val Set<Husstandsmedlem>.barn get() = filter { it.rolle?.rolletype != Rolletype.BIDRAGSPLIKTIG }
+val Set<Husstandsmedlem>.barn get() =
+    filter { it.rolle?.rolletype != Rolletype.BIDRAGSPLIKTIG }.filter {
+        this.firstOrNull()?.behandling?.globalOpphørsdato == null ||
+            it.fødselsdato == null ||
+            it.fødselsdato!! < this.firstOrNull()?.behandling?.globalOpphørsdato
+    }
 
 val Set<Husstandsmedlem>.voksneIHusstanden get() = find { it.rolle?.rolletype == Rolletype.BIDRAGSPLIKTIG }
 

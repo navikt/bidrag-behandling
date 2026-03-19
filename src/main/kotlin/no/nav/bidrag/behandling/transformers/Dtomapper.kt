@@ -582,7 +582,8 @@ class Dtomapper(
                 opplysningerBoforhold
                     .filter {
                         it.gjelderPersonId == this.ident
-                    }.map {
+                    }.filter { it.periodeTom == null || it.periodeTom!! > behandling.eldsteVirkningstidspunkt }
+                    .map {
                         OpplysningerFraFolkeregisteret(
                             periode =
                                 ÅrMånedsperiode(
