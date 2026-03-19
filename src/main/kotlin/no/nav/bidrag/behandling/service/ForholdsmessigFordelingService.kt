@@ -1057,7 +1057,9 @@ class ForholdsmessigFordelingService(
         val eksisterendeSøknader = eksisterendeSøknaderOppdatert.map { it.søknadsid }
         val nyeSøknader =
             alleSøknaderRelevantForBehandling
+                .asSequence()
                 .filter { !eksisterendeSøknader.contains(it.søknadsid) }
+                .filter { it.behandlingstema.tilStønadstype() == rolle.stønadstype }
                 .filter { it.parterForRolle(rolle.rolletype).any { it.personident == rolle.ident } }
                 .map {
                     val partBarn = it.parterForRolle(rolle.rolletype).find { it.personident == rolle.ident }
