@@ -836,6 +836,8 @@ class ForholdsmessigFordelingService(
 
             if (åpneSøknaderIkkeFF.isNotEmpty() && rolle.erRevurderingsbarn) {
                 håndterBarnSomSkalVæreSøknadsbarn(behandling, rolle, åpneSøknaderIkkeFF.first())
+            } else if (åpneSøknaderFF.isNotEmpty() && !rolle.erRevurderingsbarn) {
+                feilregistrerSøknader(lagretSøknader, åpneSøknaderIkkeFF.map { it.søknadsid })
             } else if (!rolle.erRevurderingsbarn && åpneSøknaderIkkeFF.isEmpty()) {
                 LOGGER.info {
                     "Barn ${rolle.ident} i ${behandling.id} er ikke markert som revurderingsbarn men har ingen åpne søknader." +
@@ -968,6 +970,20 @@ class ForholdsmessigFordelingService(
             }
         rolle.forholdsmessigFordeling?.erRevurdering = true
         return søknadSomSkalBeholdes
+    }
+
+    private fun feilregistrerSøknader(
+        lagretSøknader: MutableSet<ForholdsmessigFordelingSøknadBarn>,
+        feilregistrerSøknader: List<Long>,
+    ) {
+        lagretSøknader
+            .filter { feilregistrerSøknader.contains(it.søknadsid) }
+            .forEach { søknad ->
+                val søknadsid = søknad.søknadsid ?: return@forEach
+                if (feilregistrerSøknadTrygt(søknadsid)) {
+                    søknad.status = Behandlingstatus.FEILREGISTRERT
+                }
+            }
     }
 
     private fun feilregistrerAndreSøknaderTrygt(
