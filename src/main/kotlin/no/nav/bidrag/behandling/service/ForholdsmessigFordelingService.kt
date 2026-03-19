@@ -336,7 +336,7 @@ class ForholdsmessigFordelingService(
                 behandling.søknadsbarn
                     .filter {
                         reevaluerSøkndasbarn == null ||
-                            (reevaluerSøkndasbarn.erSamme(it.ident!!, it.stønadstype))
+                            (!reevaluerSøkndasbarn.erSamme(it.ident!!, it.stønadstype))
                     }.map { it.identStønadstypeNøkkel }
             if (reevaluerSøkndasbarn != null && relevanteKravhavere.none { reevaluerSøkndasbarn.erSamme(it.kravhaver, it.stønadstype) }) {
                 val søknadsbarn = behandling.søknadsbarn.find { it.erSammeRolle(reevaluerSøkndasbarn.first, reevaluerSøkndasbarn.second) }
