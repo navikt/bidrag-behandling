@@ -1009,12 +1009,14 @@ class ForholdsmessigFordelingService(
     private fun finnApneSoknaderForBarn(
         alleSøknaderRelevantForBehandling: List<ÅpenSøknadDto>,
         rolle: Rolle,
-    ) = alleSøknaderRelevantForBehandling.filter { søknad ->
-        søknad.partISøknadListe
-            .filter { it.rolletype == Rolletype.BARN }
-            .filter { it.behandlingstatus?.erFeilregistrert != true }
-            .any { it.personident == rolle.ident }
-    }
+    ) = alleSøknaderRelevantForBehandling
+        .filter { it.behandlingstema.tilStønadstype() == rolle.stønadstype }
+        .filter { søknad ->
+            søknad.partISøknadListe
+                .filter { it.rolletype == Rolletype.BARN }
+                .filter { it.behandlingstatus?.erFeilregistrert != true }
+                .any { it.personident == rolle.ident }
+        }
 
     private fun oppdaterLagredeSoknadsstatuserFraBbm(
         lagretSøknader: MutableSet<ForholdsmessigFordelingSøknadBarn>,
