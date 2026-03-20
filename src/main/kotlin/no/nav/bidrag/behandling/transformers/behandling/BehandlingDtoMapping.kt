@@ -431,7 +431,7 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
                 gjeldendeSak.barn
             }
 
-        if (barnMedLøpendeBidrag.size != søknadsbarn.size) {
+        if (barnMedLøpendeBidrag.size > søknadsbarn.size) {
             return "Kan ikke fatte vedtak for behandling som ikke inneholder alle barna i saken"
         }
         if (harPrivatAvtaleAndreBarn) {

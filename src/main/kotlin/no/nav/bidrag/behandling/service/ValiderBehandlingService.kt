@@ -166,7 +166,7 @@ class ValiderBehandlingService(
                 HttpStatus.PRECONDITION_FAILED,
                 "Behandling kan ikke fattes i ny løsning",
                 commonObjectmapper.writeValueAsBytes(
-                    commonObjectmapper.writeValueAsBytes(KanBehandlesINyLøsningResponse(emptyList())),
+                    KanBehandlesINyLøsningResponse(listOf(behandling.kanFatteVedtakBegrunnelse() ?: "Ukjent grunn")),
                 ),
                 Charsets.UTF_8,
             )
