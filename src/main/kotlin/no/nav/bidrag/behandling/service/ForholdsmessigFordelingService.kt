@@ -822,7 +822,14 @@ class ForholdsmessigFordelingService(
             .filter { !it.erBarn }
             .forEach { rolle ->
                 val ffDetaljer = rolle.forholdsmessigFordeling ?: return@forEach
-                ffDetaljer.søknader = oppdaterLagredeSoknadsstatuserFraBbm(ffDetaljer.søknader, alleSøknaderRelevantForBehandling, rolle)
+                ffDetaljer.søknader =
+                    oppdaterLagredeSoknadsstatuserFraBbm(
+                        ffDetaljer.søknader,
+                        alleSøknaderRelevantForBehandling.filter {
+                            it.saksnummer == rolle.saksnummer
+                        },
+                        rolle,
+                    )
             }
 
         behandling.søknadsbarn.forEach { rolle ->
