@@ -615,7 +615,7 @@ class BeregningService(
             }
 
             else -> {
-                secureLogger.error(feil) { "Det skjedde en feil ved beregning" }
+                secureLogger.warn(feil) { "Det skjedde en feil ved beregning" }
                 ResultatBidragsberegningBarn(
                     ugyldigBeregning =
                         UgyldigBeregningDto(
