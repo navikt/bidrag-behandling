@@ -803,7 +803,7 @@ class ForholdsmessigFordelingService(
 
     // Feilhåndtering hvis FF søknad blir slettet manuelt eller ved feil
     @Transactional
-    fun `synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling`(behandling: Behandling) {
+    fun synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling: Behandling) {
         val alleSøknaderRelevantForBehandling =
             bbmConsumer
                 .hentÅpneSøknaderForBp(behandling.bidragspliktig!!.ident!!)
