@@ -407,33 +407,35 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
             return "Kan ikke fatte vedtak når BP har flere saker"
         }
         val gjeldendeSak = hentSak(saksnummer) ?: return "Kan ikke fatte vedtak for behandling som ikke inneholder alle barna i saken"
-        val stønaderBp =
-            hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident)
-        val barnMedLøpendeBidrag =
-            try {
-                gjeldendeSak.barn.filter { barn ->
-                    val stønadBarnInfo =
-                        stønaderBp?.stønader?.find { it.kravhaver.verdi == barn.fødselsnummer?.verdi } ?: return@filter false
-                    val stønadBarn =
-                        hentStønad(
-                            HentStønadHistoriskRequest(
-                                type = stønadBarnInfo.type,
-                                kravhaver = stønadBarnInfo.kravhaver,
-                                sak = stønadBarnInfo.sak,
-                                skyldner = bidragspliktig!!.personident,
-                            ),
-                        ) ?: return@filter true
-                    if (stønadBarn.periodeListe.isEmpty()) return@filter false
-                    val sistePeriode = stønadBarn.periodeListe.maxByOrNull { it.periode.fom } ?: return@filter true
-                    sistePeriode.periode.til == null || sistePeriode.periode.til!! > søktFomDato.toYearMonth()
-                }
-            } catch (e: Exception) {
-                gjeldendeSak.barn
-            }
-
-        if (barnMedLøpendeBidrag.size > søknadsbarn.size) {
+//        val stønaderBp =
+//            hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident)
+//        val barnMedLøpendeBidrag =
+//            try {
+//                gjeldendeSak.barn.filter { barn ->
+//                    val stønadBarnInfo =
+//                        stønaderBp?.stønader?.find { it.kravhaver.verdi == barn.fødselsnummer?.verdi } ?: return@filter false
+//                    val stønadBarn =
+//                        hentStønad(
+//                            HentStønadHistoriskRequest(
+//                                type = stønadBarnInfo.type,
+//                                kravhaver = stønadBarnInfo.kravhaver,
+//                                sak = stønadBarnInfo.sak,
+//                                skyldner = bidragspliktig!!.personident,
+//                            ),
+//                        ) ?: return@filter true
+//                    if (stønadBarn.periodeListe.isEmpty()) return@filter false
+//                    val sistePeriode = stønadBarn.periodeListe.maxByOrNull { it.periode.fom } ?: return@filter true
+//                    sistePeriode.periode.til == null || sistePeriode.periode.til!! > søktFomDato.toYearMonth()
+//                }
+//            } catch (e: Exception) {
+//                gjeldendeSak.barn
+//            }
+        if (gjeldendeSak.barn.size != søknadsbarn.size) {
             return "Kan ikke fatte vedtak for behandling som ikke inneholder alle barna i saken"
         }
+//        if (barnMedLøpendeBidrag.size > søknadsbarn.size) {
+//            return "Kan ikke fatte vedtak for behandling som ikke inneholder alle barna i saken"
+//        }
         if (harPrivatAvtaleAndreBarn) {
             return "Kan ikke fatte vedtak når det er lagt inn privat avtale for andre barn"
         }
