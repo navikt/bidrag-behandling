@@ -64,6 +64,7 @@ import no.nav.bidrag.beregn.særbidrag.core.bidragsevne.bo.BostatusVoksneIHussta
 import no.nav.bidrag.beregn.særbidrag.core.bidragsevne.bo.GrunnlagBeregning
 import no.nav.bidrag.beregn.særbidrag.core.felles.bo.SjablonListe
 import no.nav.bidrag.commons.service.sjablon.SjablonProvider
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Beregningstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvvisning
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -614,6 +615,7 @@ class BeregningService(
             }
 
             else -> {
+                secureLogger.error(feil) { "Det skjedde en feil ved beregning" }
                 ResultatBidragsberegningBarn(
                     ugyldigBeregning =
                         UgyldigBeregningDto(
