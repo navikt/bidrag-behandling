@@ -20,13 +20,16 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.extensions.hentDefaultÅrsak
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
+import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingPrivateAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
 import no.nav.bidrag.behandling.service.LøpendeBidragSakPeriode
 import no.nav.bidrag.behandling.service.SakKravhaver
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
+import no.nav.bidrag.behandling.transformers.behandling.finnRolle
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
@@ -43,17 +46,57 @@ import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.felles.toLocalDate
 import no.nav.bidrag.transport.sak.BidragssakDto
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 
+data class OppdaterBarnFraFFRequest(
+    val rollerSomSkalLeggesTilDto: List<OpprettRolleDto>,
+    val rollerSomSkalSlettes: List<OpprettRolleDto> = emptyList(),
+    val behandling: Behandling,
+    val søknadsid: Long,
+    val saksnummer: String,
+    val bmIdent: String? = null,
+    val behandlerenhet: String = behandling.behandlerEnhet,
+    val erRevurdering: Boolean = false,
+    val medInnkreving: Boolean? = null,
+    val søknadsdetaljer: ForholdsmessigFordelingSøknadBarn? = null,
+    val søktFraDato: LocalDate? = null,
+    val gebyrGjelder18År: Boolean = false,
+    val stønadstype: Stønadstype? = null,
+)
+
+fun ÅpenSøknadDto.tilIdentStønadstypeNøkkel(ident: String) = "${ident}_${behandlingstema.tilStønadstype()}"
+
+fun Rolle.tilOpprettRolleDto() =
+    OpprettRolleDto(
+        Rolletype.BARN,
+        personident!!,
+        navn,
+        fødselsdato,
+        behandlingstema =
+            behandlingstema ?: stønadstype?.tilBehandlingstema() ?: behandling.stonadstype?.tilBehandlingstema(),
+    )
+
+val BehandlingStatusType.erÅpenStatus get() =
+    listOf(
+        BehandlingStatusType.ÅPEN,
+        BehandlingStatusType.UNDER_BEHANDLING,
+    ).contains(this)
+
 val SakKravhaver.søknadsider get() = åpneSøknader.map { it.søknadsid } + åpneBehandlinger.map { it.soknadsid ?: -1 }
 val Behandlingstype.erForholdsmessigFordeling get() =
     listOf(
         Behandlingstype.FORHOLDSMESSIG_FORDELING,
         Behandlingstype.FORHOLDSMESSIG_FORDELING_KLAGE,
+    ).contains(this)
+
+val Behandlingstatus.erFeilregistrert get() =
+    listOf(
+        Behandlingstatus.FEILREGISTRERT,
     ).contains(this)
 
 fun Collection<SakKravhaver>.finnEldsteSøktFomDato(behandling: Behandling) =
@@ -194,7 +237,7 @@ fun opprettRolle(
                     val virkningstidspunkt =
                         maxOf(
                             hentPersonFødselsdato(fødselsnummer)!!.plusMonths(1).withDayOfMonth(1),
-                            ffDetaljer.eldsteSøknad.søknadFomDato ?: behandling.eldsteVirkningstidspunkt,
+                            ffDetaljer.eldsteSøknad?.søknadFomDato ?: behandling.eldsteVirkningstidspunkt,
                         )
                     if (opphørsdato != null) minOf(opphørsdato.toLocalDate(), virkningstidspunkt) else virkningstidspunkt
                 } else {
@@ -630,6 +673,7 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
     val barnFødselsnummer = kravhaver
     val enhet = sak?.eierfogd?.verdi ?: eierfogd ?: "Ukjent"
 
+    val rolle = behandling.finnRolle(barnFødselsnummer)
     val åpneBehandlinger = åpneBehandlinger.map { it.tilFFBarnDto() } + åpneSøknader.map { it.tilFFBarnDto(sak, enhet) }
     return ForholdsmessigFordelingBarnDto(
         ident = barnFødselsnummer,
@@ -638,6 +682,7 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
         saksnr = saksnummer,
         sammeSakSomBehandling = behandling.saksnummer == saksnummer,
         erRevurdering = erRevurdering,
+        harOpprettetForholdsmessigFordeling = rolle?.forholdsmessigFordeling != null,
         enhet = sak?.eierfogd?.verdi ?: eierfogd ?: "Ukjent",
         harLøpendeBidrag = løpendeBidrag,
         stønadstype = stønadstype,
@@ -650,6 +695,15 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
             },
         opphørsdato = if (løpendeBidrag) løperBidragTil else null,
         åpneBehandlinger = åpneBehandlinger,
+        privateAvtale =
+            privatAvtale?.let {
+                ForholdsmessigFordelingPrivateAvtaleDto(
+                    avtaleDato = it.avtaleDato,
+                    avtaleType = it.avtaleType,
+                    stønadstype = it.stønadstype,
+                    utenlandsk = it.utenlandsk,
+                )
+            },
         bidragsmottaker =
             RolleDto(
                 id = -1,

@@ -20,15 +20,6 @@
     </encoder>
   </appender>
 
-  <appender name="secureLog" class="ch.qos.logback.core.ConsoleAppender">
-    <filter class="no.nav.bidrag.commons.logging.BidragDebugLogFilter"/>
-    <layout class="ch.qos.logback.classic.PatternLayout">
-      <Pattern>
-        SECURE_LOG -- %d{yyyy-MM-dd HH:mm:ss} %X{correlationId} [%thread] %-5level %logger{70} - %msg%n
-      </Pattern>
-    </layout>
-  </appender>
-
   <springProfile name="nais">
     <appender name="team-logs" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
       <filter class="no.nav.bidrag.commons.logging.BidragDebugLogFilter"/>

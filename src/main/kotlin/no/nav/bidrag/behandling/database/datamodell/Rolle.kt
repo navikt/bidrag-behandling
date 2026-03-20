@@ -140,6 +140,7 @@ open class Rolle(
     // Brukes ved blant annet sortering og filtrering for å finne unik rolle.
     // Det kan hende samme rolle er i samme behandling flere ganger (18 år og ordinær bidrag samtidig ved FF)
     val identifikator get() = "${ident}_${navn}_$stønadstype"
+    val identStønadstypeNøkkel get() = "${ident}_${stønadstype ?: "null"}"
     val erDirekteAvslag get() = avslag != null
     val erAvvisning get() = avslag != null && avslag!!.erAvvisning()
     val erDirekteAvslagIkkeAvvisning get() = avslag != null && avslag!!.erDirekteAvslag() && !avslag!!.erAvvisning()
@@ -148,6 +149,7 @@ open class Rolle(
         avslag == null || (behandling.erIForholdsmessigFordeling && løperBidragEtterEldsteVirkning)
     val harSøknadMedInnkreving get() = forholdsmessigFordeling?.søknaderUnderBehandling?.any { it.innkreving } == true
     val erRevurderingsbarn get() = rolletype == Rolletype.BARN && forholdsmessigFordeling != null && forholdsmessigFordeling!!.erRevurdering
+    val erBarn get() = rolletype == Rolletype.BARN
     val barn get() =
         behandling.søknadsbarn.filter {
             rolletype == Rolletype.BIDRAGSPLIKTIG ||

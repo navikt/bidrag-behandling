@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.behandling.transformers.hentGrunnlagBeløpshistorikkForRolle
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
+import no.nav.bidrag.behandling.transformers.løperPeriodeEtterSøktFomDato
 import no.nav.bidrag.behandling.transformers.maxOfNullable
 import no.nav.bidrag.behandling.transformers.minOfNullable
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
@@ -122,6 +123,7 @@ fun Rolle.finnBeregnFra(): YearMonth =
             } else {
                 behandling
                     .finnPeriodeLøperBidrag(this)
+                    ?.takeIf { behandling.løperPeriodeEtterSøktFomDato(it) }
                     ?.fom
                     ?.let { maxOf(it, behandling.eldsteVirkningstidspunkt.toYearMonth()) }
                     ?: behandling.eldsteVirkningstidspunkt.toYearMonth()
@@ -479,6 +481,7 @@ class VedtakGrunnlagMapper(
                             }
 
                             TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> {
+                                grunnlagsliste.addAll(byggGrunnlagLøpendeBidragForholdsmessigFordeling(grunnlagsliste))
                                 grunnlagsliste.addAll(tilPrivatAvtaleGrunnlag(grunnlagsliste, søknadsbarnRolle))
                                 grunnlagsliste.addAll(
                                     opprettMidlertidligPersonobjekterBMsbarn(grunnlagsliste.filter { it.erPerson() }.toSet()),

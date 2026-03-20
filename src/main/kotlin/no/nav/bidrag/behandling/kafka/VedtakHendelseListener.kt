@@ -17,7 +17,6 @@ import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.vedtak.engangsbeløptype
 import no.nav.bidrag.behandling.transformers.vedtak.stønadstype
 import no.nav.bidrag.commons.util.secureLogger
-import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -108,13 +107,18 @@ class VedtakHendelseListener(
                         .oppdaterBarnEtterOpphør(
                             behandling,
                             stønadsendring.kravhaver,
+                            stønadsendring.type,
                             opphørsperiode,
                         )
                 } else {
-                    if (behandling.søknadsbarn.none { it.ident == stønadsendring.kravhaver.verdi }) {
+                    if (behandling.søknadsbarn.none { it.erSammeRolle(stønadsendring.kravhaver.verdi, stønadsendring.type) }) {
                         // Henter og legger til barn som revurderingsbarn
-                        behandling.privatAvtale.removeIf { it.rolle == null && it.person?.ident == stønadsendring.kravhaver.verdi }
+                        behandling.privatAvtale.removeIf {
+                            it.rolle == null &&
+                                (it.rolle!!.erSammeRolle(stønadsendring.kravhaver.verdi, stønadsendring.type))
+                        }
                         forholdsmessigFordelingService.opprettEllerOppdaterForholdsmessigFordeling(behandling.id!!)
+                        forholdsmessigFordelingService.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
                     } else {
                         forholdsmessigFordelingService.oppdaterBarnEtterInnkrevingsvedtak(
                             behandling,

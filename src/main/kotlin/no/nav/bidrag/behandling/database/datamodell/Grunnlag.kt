@@ -14,11 +14,14 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import no.nav.bidrag.behandling.database.datamodell.model.BpsBarnUtenBidragsakEllerLøpendeBidrag
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
+import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
+import no.nav.bidrag.behandling.dto.v1.beregning.BeregnetBidragBarnDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
+import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.dto.Sivilstand
@@ -116,11 +119,41 @@ fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderBarn(
             if (grunnlagFraVedtakSomSkalOmgjøres == null) true else it.grunnlagFraVedtakSomSkalOmgjøres == grunnlagFraVedtakSomSkalOmgjøres
     }
 
-fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderRolle(
+fun Set<Grunnlag>.hentSisteGrunnlagLøpendeBidragFF(behandling: Behandling): List<LøpendeBidragGrunnlagForholdsmessigFordeling> {
+    if (!behandling.erBidrag() || behandling.bidragspliktig == null) return emptyList()
+    val løpendeBidragListe =
+        hentSisteGrunnlagSomGjelderRolleListe(
+            behandling.bidragspliktig!!,
+            Grunnlagsdatatype.LØPENDE_BIDRAG_OPPRETT_FORHOLDSMESSIG_FORDELING,
+        )
+    return løpendeBidragListe.sortedBy { it.gjelder }.map {
+        LøpendeBidragGrunnlagForholdsmessigFordeling(
+            gjelderBarnIdent = it.gjelder!!,
+            løpendeBidragPerioder = it.konvertereData<List<BeregnetBidragBarnDto>>()!!,
+        )
+    }
+}
+
+fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderRolleListe(
     rolle: Rolle,
     type: Grunnlagsdatatype,
     grunnlagFraVedtakSomSkalOmgjøres: Boolean? = null,
 ) = hentSisteAktiv(true)
+    .filter {
+        it.rolle.erSammeRolle(rolle) && type == it.type &&
+            // Hvis det ikke er spesifikt valgt å hente grunnlag fra vedtak som omgjøres så hent det første som finnes. Kan hende siste grunnlag er grunnlag hentet fra vedtak som omgjøres
+            if (grunnlagFraVedtakSomSkalOmgjøres == null) {
+                true
+            } else {
+                it.grunnlagFraVedtakSomSkalOmgjøres == grunnlagFraVedtakSomSkalOmgjøres
+            }
+    }
+
+fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderRolle(
+    rolle: Rolle,
+    type: Grunnlagsdatatype,
+    grunnlagFraVedtakSomSkalOmgjøres: Boolean? = null,
+) = hentSisteAktiv(false)
     .find {
         it.rolle.erSammeRolle(rolle) && type == it.type &&
             // Hvis det ikke er spesifikt valgt å hente grunnlag fra vedtak som omgjøres så hent det første som finnes. Kan hende siste grunnlag er grunnlag hentet fra vedtak som omgjøres

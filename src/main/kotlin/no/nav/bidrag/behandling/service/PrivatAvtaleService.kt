@@ -14,6 +14,10 @@ import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleBegrunn
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.transformers.erRevurderingsbarnUtenLøpendeBidrag
+import no.nav.bidrag.behandling.transformers.finnLøperBidragFra
+import no.nav.bidrag.behandling.transformers.finnLøperBidragTil
+import no.nav.bidrag.behandling.transformers.finnesLøpendeBidragForRolle
 import no.nav.bidrag.behandling.transformers.maxOfNullable
 import no.nav.bidrag.behandling.transformers.minOfNullable
 import no.nav.bidrag.behandling.transformers.tilDato18årsBidrag
@@ -23,6 +27,7 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
+import no.nav.bidrag.transport.felles.toYearMonth
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -35,6 +40,7 @@ class PrivatAvtaleService(
     val personRepository: PersonRepository,
     val privatavtaleRepository: PrivatavtaleRepository? = null,
     val rolleRepository: RolleRepository? = null,
+    val fordelingService: ForholdsmessigFordelingService? = null,
 ) {
     @Transactional
     fun fiksReferanserPrivatAvtale() {
@@ -133,6 +139,18 @@ class PrivatAvtaleService(
             behandling.privatAvtale.find { it.id == privatavtaleId }
                 ?: ugyldigForespørsel("Fant ikke privat avtale med id $privatavtaleId i behandling $behandlingsid")
         behandling.privatAvtale.remove(privatAvtale)
+        val rolle = privatAvtale.rolle
+
+        if (behandling.erIForholdsmessigFordeling && rolle?.erRevurderingsbarn == true) {
+            if (!behandling.finnesLøpendeBidragForRolle(rolle)) {
+                secureLogger.info {
+                    "Sletter revurderingsbarn ${rolle.personident?.verdi} " +
+                        "fra behandling ${behandling.id} etter privat avtale er slettet. " +
+                        "Barnet har ingen løpende bidrag og trenger derfor ikke å være revurderingsbarn lenger"
+                }
+                fordelingService!!.slettRevurderingsbarn(behandling, rolle)
+            }
+        }
     }
 
     @Transactional

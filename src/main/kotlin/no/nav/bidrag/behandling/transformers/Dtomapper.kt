@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagBpsBarnUtenBidragsak
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagLøpendeBidragFF
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
@@ -812,6 +813,7 @@ class Dtomapper(
                 id = id!!,
                 lasterGrunnlag = metadata?.lasterGrunnlagAsync() == true,
                 kanFatteVedtak = kanFatteVedtak(),
+                løpendeBidragBarn = grunnlag.hentSisteGrunnlagLøpendeBidragFF(this),
                 kanFatteVedtakBegrunnelse = kanFatteVedtakBegrunnelse(),
                 type = tilType(),
                 lesemodus = lesemodusVedtak,
@@ -832,6 +834,7 @@ class Dtomapper(
                                     harLøpendeBidrag = barn.forholdsmessigFordeling?.harLøpendeBidrag == true,
                                     innkrevesFraDato = barn.innkrevesFraDato?.toYearMonth(),
                                     stønadstype = barn.stønadstype,
+                                    harOpprettetForholdsmessigFordeling = barn.forholdsmessigFordeling != null,
                                     opphørsdato = barn.opphørsdato?.toYearMonth(),
                                     eldsteSøktFraDato =
                                         barn.forholdsmessigFordeling!!
@@ -1026,8 +1029,9 @@ class Dtomapper(
                     )
                 }
 
+        val søknadsbarnIdent = søknadsbarn.map { it.ident }
         val andreBarnUtenLøpendeBidrag =
-            bpsBarnUtenLøpendeBidrag().map { barn ->
+            bpsBarnUtenLøpendeBidrag().filter { !søknadsbarnIdent.contains(it.ident) }.map { barn ->
                 val privatAvtale = privatAvtale.find { it.person?.ident == barn.ident }
                 PrivatAvtaleAndreBarnDtoV2(
                     PersoninfoDto(
@@ -1044,20 +1048,22 @@ class Dtomapper(
                     enhet = barn.enhet,
                 )
             }
+
         val identerAndreBarn = andreBarnUtenLøpendeBidrag.map { it.gjelderBarn.ident?.verdi + it.privatAvtale?.stønadstype?.name }
         val barnManueltLagtInn =
             privatAvtale
                 .filter { it.rolle == null && !identerAndreBarn.contains(it.person!!.ident!! + it.stønadstype?.name) }
                 .map { pa ->
                     val eksisterendeBarn = bpsBarnUtenLøpendeBidrag().find { it.ident == pa.personIdent }
+                    val eksisterendeSøknadsbarn = søknadsbarn.find { it.ident == pa.personIdent }
                     PrivatAvtaleAndreBarnDtoV2(
                         gjelderBarn =
                             pa.person!!.tilPersoninfoDto(kilde = Kilde.MANUELL).copy(
                                 stønadstype = pa.stønadstype,
                             ),
                         privatAvtale = pa.tilDtoV2(),
-                        saksnummer = eksisterendeBarn?.saksnummer,
-                        enhet = eksisterendeBarn?.enhet,
+                        saksnummer = eksisterendeBarn?.saksnummer ?: eksisterendeSøknadsbarn?.saksnummer,
+                        enhet = eksisterendeBarn?.enhet ?: eksisterendeSøknadsbarn?.forholdsmessigFordeling?.behandlerenhet,
                     )
                 }
         val andreBarn =
@@ -1544,6 +1550,7 @@ class Dtomapper(
 
         return HusstandsmedlemDtoV2(
             id = this.id,
+            gjelderBarn = this.rolle?.tilDto(),
             kilde = this.kilde,
             medIBehandling =
                 !this.ident.isNullOrBlank() &&

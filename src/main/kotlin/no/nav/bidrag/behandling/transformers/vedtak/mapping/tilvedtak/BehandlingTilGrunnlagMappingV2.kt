@@ -214,7 +214,7 @@ class BehandlingTilGrunnlagMappingV2(
 
         return if (gjelderRolle == null || gjelderRolle.id == null) {
             privatAvtale
-                .filter { it.rolle == null }
+                .filter { it.rolle == null && it.perioderInnkreving.isNotEmpty() }
                 .flatMap { pa ->
                     val gjelderBarn =
                         personobjekter.hentPerson(pa.personIdent) ?: pa.opprettPersonGrunnlag()

@@ -1135,10 +1135,12 @@ private fun Husstandsmedlem.validereNyPeriode(
     nyFomDato: LocalDate?,
     nyTomDato: LocalDate?,
 ) {
-    val kanIkkeVæreSenereEnnDato = this.senestePeriodeFomDato()
+    val kanIkkeVæreSenereEnnDato = this.senestePeriodeFomDato().plusMonths(1)
 
-    if (nyFomDato != null &&
-        nyFomDato.isAfter(kanIkkeVæreSenereEnnDato) ||
+    if ((
+            nyFomDato != null &&
+                nyFomDato.isAfter(kanIkkeVæreSenereEnnDato)
+        ) ||
         (nyTomDato != null && nyTomDato.isAfter(kanIkkeVæreSenereEnnDato.plusMonths(1).minusDays(1)))
     ) {
         oppdateringAvBoforholdFeilet(
@@ -1150,12 +1152,13 @@ private fun Husstandsmedlem.validereNyPeriode(
 
 private fun Husstandsmedlem.senestePeriodeFomDato(): LocalDate {
     val virkningsdato = this.behandling.virkningstidspunktEllerSøktFomDato
+    val opphørsdato = this.rolle?.opphørTilDato ?: behandling.opphørTilDato
     return if (virkningsdato.isAfter(LocalDate.now())) {
         maxOf(
             this.fødselsdato ?: this.rolle!!.fødselsdato,
             virkningsdato.withDayOfMonth(1),
         )
     } else {
-        minOf(LocalDate.now().withDayOfMonth(1), this.rolle?.opphørTilDato ?: behandling.opphørTilDato ?: LocalDate.MAX)
+        minOf(LocalDate.now().withDayOfMonth(1), opphørsdato ?: LocalDate.MAX)
     }
 }

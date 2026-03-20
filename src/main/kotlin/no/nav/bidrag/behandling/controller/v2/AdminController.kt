@@ -258,17 +258,6 @@ class AdminController(
         return behandlingService.opprettBehandling(request)
     }
 
-    @PostMapping("/admin/feilfiks/referanser/privatavtale")
-    @Operation(
-        description =
-            "Fikse feil i referanser ",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @Transactional
-    fun feilfiksReferanserPrivatAvtale() {
-        privatAvtaleService.fiksReferanserPrivatAvtale()
-    }
-
     @PostMapping("/admin/feilfiks/aktivering/grunnlag/{behandlingId}")
     @Operation(
         description =
@@ -332,20 +321,6 @@ class AdminController(
         }
         behandling.tilbakestilleTilOffentligSivilstandshistorikkBasertPåGrunnlag()
         grunnlagService.oppdatereAktivSivilstandEtterEndretVirkningstidspunkt(behandling)
-    }
-
-    @PostMapping("/admin/feilfiks/klage/innkreving/{behandlingId}")
-    @Operation(
-        description =
-            "Fiks manglende virkningstidspunkt/årsak/avslag i rolle tabellen for barn",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    @Transactional
-    fun fiksUnderholdskostnadSomPekerTilFeilRolle(
-        @PathVariable behandlingId: Long,
-    ) {
-        log.info { "Setter rolle til behandling $behandlingId til null hvis det ikke tilhører samme behandling" }
-        behandlingRepository.settUnderholdskostnadRolleTilNull(behandlingId)
     }
 
     @PostMapping("/admin/feilfiks/oppdaterInntekter/{behandlingId}")

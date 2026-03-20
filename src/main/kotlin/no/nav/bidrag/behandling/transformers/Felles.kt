@@ -13,7 +13,6 @@ import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
-import no.nav.bidrag.domene.enums.diverse.InntektBeløpstype
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
@@ -34,7 +33,6 @@ import no.nav.bidrag.transport.behandling.vedtak.response.erIndeksEllerAldersjus
 import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.toYearMonth
 import java.math.BigDecimal
-import java.math.MathContext
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -251,6 +249,7 @@ fun Behandling.finnPerioderHvorDetLøperBidrag(rolle: Rolle): List<ÅrMånedsper
             it.beløp != null
         }.map { it.periode }
         .mergePeriods()
+        .filter { løperPeriodeEtterSøktFomDato(it) }
 }
 
 fun List<ÅrMånedsperiode>.mergePeriods(): List<ÅrMånedsperiode> {
@@ -363,23 +362,27 @@ fun Behandling.finnSistePeriodeLøpendeForskuddPeriodeInnenforSøktFomDato(rolle
 fun Behandling.finnPeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): ÅrMånedsperiode? {
     val eksisterendeVedtak = hentGrunnlagBeløpshistorikkForRolle(rolle, false)
     val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
-    if (stønad.periodeListe.isEmpty()) {
+    val periodelisteFiltrert = stønad.periodeListe.filter { løperPeriodeEtterSøktFomDato(it.periode) }
+    if (periodelisteFiltrert.isEmpty()) {
         return null
     }
     return ÅrMånedsperiode(
-        stønad.periodeListe.minOf { it.periode.fom },
-        stønad.periodeListe
+        periodelisteFiltrert.minOf { it.periode.fom },
+        periodelisteFiltrert
             .maxByOrNull { it.periode.fom }
             ?.periode
             ?.til,
     )
 }
 
+fun Behandling.løperPeriodeEtterSøktFomDato(periode: ÅrMånedsperiode) =
+    periode.til == null || periode.til!! > YearMonth.from(eldsteSøktFomDato)
+
 fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): StønadPeriodeDto? {
     val eksisterendeVedtak = hentGrunnlagBeløpshistorikkForRolle(rolle, false)
     val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
     val sistePeriode = stønad.periodeListe.maxByOrNull { it.periode.fom } ?: return null
-    return if (sistePeriode.periode.til == null || sistePeriode.periode.til!! > YearMonth.from(eldsteSøktFomDato)) {
+    return if (løperPeriodeEtterSøktFomDato(sistePeriode.periode)) {
         sistePeriode
     } else {
         null
@@ -391,7 +394,12 @@ fun Rolle.løperBidragFørOpphør() =
         opphørsdato!! > behandling.eldsteVirkningstidspunkt &&
         opphørsdato!!.toYearMonth() > finnLøperBidragFra()!!
 
+fun Rolle.erRevurderingsbarnUtenLøpendeBidrag() =
+    finnLøperBidragFra() == null || finnLøperBidragTil() != null || finnLøperBidragTil()!! < behandling.eldsteSøktFomDato.toYearMonth()
+
 fun Rolle.finnLøperBidragFra() = behandling.finnPeriodeLøperBidrag(this)?.fom
+
+fun Rolle.finnLøperBidragTil() = behandling.finnPeriodeLøperBidrag(this)?.til
 
 fun Rolle.finnEksisterendeVedtakMedOpphørForRolle(): EksisterendeOpphørsvedtakDto? = behandling.finnEksisterendeVedtakMedOpphør(this)
 

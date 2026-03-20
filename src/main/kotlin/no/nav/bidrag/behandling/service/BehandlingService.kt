@@ -7,7 +7,6 @@ import no.nav.bidrag.behandling.async.dto.BehandlingOppdateringBestilling
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
-import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Samvær
@@ -34,11 +33,11 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
-import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilPerson
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.OppdaterBarnFraFFRequest
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.opprettForsendelse
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
@@ -64,6 +63,7 @@ import no.nav.bidrag.transport.behandling.behandling.ÅpenBehandlingBarnSøknad
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelseType
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.ifTrue
+import no.nav.bidrag.transport.felles.tilJsonString
 import org.springframework.context.annotation.Lazy
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -226,21 +226,36 @@ class BehandlingService(
                         behandlingstype = opprettBehandling.behandlingstype,
                         enhet = opprettBehandling.behandlerenhet,
                     )
-                forholdsmessigFordelingService!!.leggTilEllerSlettBarnFraBehandlingSomErIFF(
-                    opprettBehandling.roller.toList(),
-                    emptyList(),
-                    behandling,
-                    søknadsid,
-                    opprettBehandling.saksnummer,
-                    bm?.ident?.verdi,
-                    behandlerenhet = opprettBehandling.behandlerenhet,
-                    erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING,
-                    medInnkreving = opprettBehandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
-                    søknadsdetaljer = søknadsdetaljer,
-                    søktFraDato = opprettBehandling.søktFomDato,
-                    gebyrGjelder18År = opprettBehandling.gebyrGjelder18År,
-                    stønadstype = opprettBehandling.stønadstype!!,
-                )
+                try {
+                    forholdsmessigFordelingService!!.leggTilEllerSlettBarnFraBehandlingSomErIFF(
+                        OppdaterBarnFraFFRequest(
+                            rollerSomSkalLeggesTilDto = opprettBehandling.roller.toList(),
+                            rollerSomSkalSlettes = emptyList(),
+                            behandling = behandling,
+                            søknadsid = søknadsid,
+                            saksnummer = opprettBehandling.saksnummer,
+                            bmIdent = bm?.ident?.verdi,
+                            behandlerenhet = opprettBehandling.behandlerenhet,
+                            erRevurdering = opprettBehandling.vedtakstype == Vedtakstype.REVURDERING,
+                            medInnkreving = opprettBehandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                            søknadsdetaljer = søknadsdetaljer,
+                            søktFraDato = opprettBehandling.søktFomDato,
+                            gebyrGjelder18År = opprettBehandling.gebyrGjelder18År,
+                            stønadstype = opprettBehandling.stønadstype!!,
+                        ),
+                    )
+                } catch (e: Exception) {
+                    secureLogger.error(e) { "Feil ved opprettelse av behandling for $opprettBehandling for ff behandling ${behandling.id}" }
+                    val metadata = behandling.metadata ?: BehandlingMetadataDo()
+                    val data = tilJsonString(metadata.leggTilOpprettelseAvBehandlingFeilet(opprettBehandling))
+                    behandlingRepository.markerOpprettelseAvFFBehandlingFeilet(
+                        behandling.id!!,
+                        data,
+                    )
+                    metadata.setOpprettelseAvFFBehandlingFeilet(data)
+                    behandling.metadata = metadata
+                }
+
                 return OpprettBehandlingResponse(behandling.id!!)
             }
         }
@@ -603,7 +618,11 @@ class BehandlingService(
         val behandling =
             behandlingRepository.findBehandlingById(behandlingId).get().let {
                 if (it.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
-                    behandlingRepository.finnHovedbehandlingForBpVedFF(it.bidragspliktig!!.ident!!, it.vedtakstype.name)!!
+                    behandlingRepository.finnHovedbehandlingForBpVedFF(
+                        it.bidragspliktig!!.ident!!,
+                        it.vedtakstype.name,
+                        it.omgjøringsdetaljer?.opprinneligVedtakId,
+                    )!!
                 } else {
                     it
                 }
@@ -658,13 +677,28 @@ class BehandlingService(
                         val rolle = behandling.roller.find { it.ident == oppdatertRolle.ident?.verdi }
                         rolle != null && rolle.erRevurderingsbarn
                     }
-            forholdsmessigFordelingService!!.leggTilEllerSlettBarnFraBehandlingSomErIFF(
-                (rollerSomLeggesTil + revurderingsbarnSomLeggesTil).distinct(),
-                rollerSomSkalSlettes,
-                behandling,
-                request.søknadsid ?: behandling.soknadsid!!,
-                request.saksnummer ?: behandling.saksnummer,
-            )
+            try {
+                forholdsmessigFordelingService!!.leggTilEllerSlettBarnFraBehandlingSomErIFF(
+                    OppdaterBarnFraFFRequest(
+                        rollerSomSkalLeggesTilDto = (rollerSomLeggesTil + revurderingsbarnSomLeggesTil).distinct(),
+                        rollerSomSkalSlettes = rollerSomSkalSlettes,
+                        behandling = behandling,
+                        søknadsid = request.søknadsid ?: behandling.soknadsid!!,
+                        saksnummer = request.saksnummer ?: behandling.saksnummer,
+                    ),
+                )
+                forholdsmessigFordelingService.`synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling`(behandling)
+            } catch (e: Exception) {
+                log.error(e) { "Feil ved oppdatering av roller i behandling $behandlingId. Ruller tilbake til tidligere roller" }
+                val metadata = behandling.metadata ?: BehandlingMetadataDo()
+                val data = tilJsonString(metadata.leggTilOppdateringAvFFRollerFeilet(request))
+                behandlingRepository.markerOppdateringFFRollerFeilet(
+                    behandlingId,
+                    data,
+                )
+                metadata.setOppdateringAvFFRollerFeilet(data)
+                behandling.metadata = metadata
+            }
         } else {
             behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
             oppdaterBehandlingEtterOppdatertRoller(
@@ -696,7 +730,7 @@ class BehandlingService(
         return OppdaterRollerResponse(OppdaterRollerStatus.ROLLER_OPPDATERT)
     }
 
-    private fun slettRolleFraBehandling(
+    fun slettRolleFraBehandling(
         behandling: Behandling,
         rolle: Rolle,
     ) {
