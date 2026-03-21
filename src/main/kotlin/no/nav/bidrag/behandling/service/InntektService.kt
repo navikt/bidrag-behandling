@@ -451,7 +451,7 @@ class InntektService(
 
         oppdatereInntektRequest.sletteInntekt?.let {
             val inntektSomSkalSlettes =
-                behandling.inntekter.filter { Kilde.MANUELL == it.kilde }.first { i -> it == i.id }
+                behandling.inntekter.filter { Kilde.MANUELL == it.kilde }.firstOrNull { i -> it == i.id } ?: return@let
             behandling.inntekter.remove(inntektSomSkalSlettes)
             log.debug { "Slettet inntekt med id $it fra behandling ${behandling.id}." }
             return inntektSomSkalSlettes.tilInntektDtoV2()
