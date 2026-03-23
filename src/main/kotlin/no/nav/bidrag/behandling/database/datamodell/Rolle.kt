@@ -79,7 +79,7 @@ open class Rolle(
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "rolle",
-        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
+        cascade = [CascadeType.ALL],
     )
     open var grunnlag: MutableSet<Grunnlag> = mutableSetOf(),
     @OneToMany(

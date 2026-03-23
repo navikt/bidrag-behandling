@@ -32,6 +32,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.tilType
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
@@ -732,8 +733,10 @@ class BehandlingService(
         rolle: Rolle,
     ) {
         // Delete grunnlag directly without mutating the managed collection.
-        val grunnlagForRolle = behandling.grunnlag.filter { it.rolle.id == rolle.id }.toList()
-        behandling.grunnlag.removeAll(grunnlagForRolle)
+        val grunnlagMedRolle = behandling.grunnlag.filter { it.rolle.id == rolle.id }.toSet()
+
+        rolle.grunnlag.removeAll(grunnlagMedRolle) // only those actually owned by rolle
+        behandling.grunnlag.removeAll(grunnlagMedRolle)
 
         // Keep both sides in sync so JPA deletes notes instead of nulling rolle_id.
         val notaterForRolle = behandling.notater.filter { it.rolle.id == rolle.id }.toList()
