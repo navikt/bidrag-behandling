@@ -23,12 +23,8 @@ open class Samvær(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
-    @OneToOne(
-        fetch = FetchType.LAZY,
-        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
-        orphanRemoval = true,
-    )
-    @JoinColumn(name = "rolle_id", nullable = true)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "rolle_id", nullable = false)
     open val rolle: Rolle,
     @OneToMany(
         fetch = FetchType.EAGER,

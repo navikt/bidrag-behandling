@@ -361,7 +361,7 @@ fun Husstandsmedlem.overskriveMedBearbeidaPerioder(nyePerioder: List<BoforholdRe
     perioder.addAll(
         nyePerioder
             .justerBoforholdPerioderForOpphørsdatoOgBeregnTilDato(
-                rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                null, // rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(rolle),
             ).tilPerioder(this),
     )
@@ -440,7 +440,8 @@ fun Husstandsmedlem.oppdaterePerioder(
     this.overskriveMedBearbeidaPerioder(
         BoforholdApi.beregnBoforholdBarnV3(
             behandling.eldsteVirkningstidspunkt,
-            rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+            null,
+//            rolle?.opphørsdato ?: behandling.globalOpphørsdato,
             behandling.finnBeregnTilDatoBehandling(rolle),
             behandling.tilTypeBoforhold(),
             listOf(periodiseringsrequest),

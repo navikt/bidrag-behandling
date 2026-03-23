@@ -55,18 +55,10 @@ open class Inntekt(
     open var gjelderBarn: String? = null,
     open var opprinneligFom: LocalDate? = null,
     open var opprinneligTom: LocalDate? = null,
-    @OneToOne(
-        fetch = FetchType.LAZY,
-        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
-        orphanRemoval = true,
-    )
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rolle_id", nullable = true)
     open var rolle: Rolle? = null,
-    @OneToOne(
-        fetch = FetchType.LAZY,
-        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
-        orphanRemoval = true,
-    )
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gjelder_barn_rolle_id", nullable = true)
     open var gjelderBarnRolle: Rolle? = null,
 ) {

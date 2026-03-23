@@ -61,8 +61,10 @@ import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilForholds
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.`tilIdentStønadstypeNøkkel`
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilOpprettRolleDto
 import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
+import no.nav.bidrag.behandling.transformers.harLøpendeBidragFørOpphørEllerLøpende
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.løperBidragFørOpphør
+import no.nav.bidrag.behandling.transformers.løperPeriodeEtterSøktFomDato
 import no.nav.bidrag.behandling.transformers.mapTilBeregnetBidragDto
 import no.nav.bidrag.behandling.transformers.tilDato18årsBidrag
 import no.nav.bidrag.behandling.transformers.toRolle
@@ -128,7 +130,11 @@ import kotlin.collections.plus
 private val LOGGER = KotlinLogging.logger {}
 val ÅpenSøknadDto.bidragsmottaker get() = partISøknadListe.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
 val ÅpenSøknadDto.bidragspliktig get() = partISøknadListe.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
-val ÅpenSøknadDto.barn get() = partISøknadListe.filter { it.rolletype == Rolletype.BARN }
+val ÅpenSøknadDto.barn get() =
+    partISøknadListe.filter {
+        it.rolletype == Rolletype.BARN &&
+            it.behandlingstatus == Behandlingstatus.UNDER_BEHANDLING
+    }
 
 fun ÅpenSøknadDto.parterForRolle(rolletype: Rolletype) = partISøknadListe.filter { it.rolletype == rolletype }
 
@@ -737,9 +743,7 @@ class ForholdsmessigFordelingService(
         behandling: Behandling,
         rolle: Rolle,
     ) {
-        val rolleHarLøpendeBidrag =
-            (rolle.opphørsdato == null && behandling.finnesLøpendeBidragForRolle(rolle)) ||
-                (rolle.opphørsdato != null && rolle.løperBidragFørOpphør())
+        val rolleHarLøpendeBidrag = rolle.harLøpendeBidragFørOpphørEllerLøpende()
         if (!rolle.erRevurderingsbarn || rolleHarLøpendeBidrag) return
 
         feilregistrerBarnFraFFSøknad(rolle)
@@ -804,6 +808,9 @@ class ForholdsmessigFordelingService(
     // Feilhåndtering hvis FF søknad blir slettet manuelt eller ved feil
     @Transactional
     fun synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling: Behandling) {
+        val løpendeBidraggsakerBP =
+            hentSisteLøpendeStønader(Personident(behandling.bidragspliktig!!.ident!!), behandling.finnBeregningsperiode())
+
         val alleSøknaderRelevantForBehandling =
             bbmConsumer
                 .hentÅpneSøknaderForBp(behandling.bidragspliktig!!.ident!!)
@@ -834,6 +841,19 @@ class ForholdsmessigFordelingService(
 
         behandling.søknadsbarn.forEach { rolle ->
             val ffDetaljer = rolle.forholdsmessigFordeling ?: return@forEach
+            val beløpshistorikk = løpendeBidraggsakerBP.find { it.kravhaver.verdi == rolle.ident }
+            val løperBidrag =
+                if (beløpshistorikk != null) {
+                    behandling.løperPeriodeEtterSøktFomDato(
+                        ÅrMånedsperiode(beløpshistorikk.periodeFra, beløpshistorikk.periodeTil),
+                    )
+                } else {
+                    false
+                }
+            if (rolle.innkrevingstype == Innkrevingstype.UTEN_INNKREVING && løperBidrag) {
+                oppdaterBarnEtterInnkrevingsvedtak(behandling, Personident(rolle.ident!!))
+            }
+            rolle.innkrevingstype = if (løperBidrag) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
             ffDetaljer.søknader = oppdaterLagredeSoknadsstatuserFraBbm(ffDetaljer.søknader, alleSøknaderRelevantForBehandling, rolle)
 
             val lagretSøknader = ffDetaljer.søknader
@@ -859,6 +879,13 @@ class ForholdsmessigFordelingService(
                 }
                 // Er markert som revurderingsbarn og har ingen åpne FF søknadaer. Opprett FF søknad
                 håndterBarnSomSkalVæreRevurderingsbarn(behandling, rolle, lagretSøknader)
+            } else if (rolle.erRevurderingsbarn && !rolle.harLøpendeBidragFørOpphørEllerLøpende()) {
+                secureLogger.info {
+                    "Sletter revurderingsbarn ${rolle.personident?.verdi} " +
+                        "fra behandling ${behandling.id} etter da det ikke løper bidrag etter søkt fom dato. " +
+                        "Barnet har ingen løpende bidrag lenger og trenger derfor ikke å være revurderingsbarn"
+                }
+                slettRevurderingsbarn(behandling, rolle)
             }
         }
     }
@@ -2232,13 +2259,13 @@ class ForholdsmessigFordelingService(
         val åpneSøknader =
             hentÅpneSøknader(bidragspliktigFnr, behandling.behandlingstypeForFF).filter {
                 (
-                    it.behandlingstype == Behandlingstype.KLAGE && behandling.erKlageEllerOmgjøring &&
+                    it.behandlingstype.erKlageEllerOmgjøring && behandling.erKlageEllerOmgjøring &&
                         (
                             it.referertVedtaksid == behandling.omgjøringsdetaljer?.omgjørVedtakId ||
                                 it.referertSøknadsid == behandling.omgjøringsdetaljer?.soknadRefId
                         )
                 ) ||
-                    it.behandlingstype != Behandlingstype.KLAGE
+                    !it.behandlingstype.erKlageEllerOmgjøring
             }
 
         val sakKravhaverListe = mutableSetOf<SakKravhaver>()

@@ -389,6 +389,14 @@ fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle)
     }
 }
 
+fun Rolle.harLøpendeBidragFørOpphørEllerLøpende() =
+    (
+        opphørsdato == null && (
+            behandling.finnesLøpendeBidragForRolle(this) || behandling.privatAvtale.any { it.personIdent == this.ident }
+        )
+    ) ||
+        (opphørsdato != null && løperBidragFørOpphør())
+
 fun Rolle.løperBidragFørOpphør() =
     opphørsdato != null && finnLøperBidragFra() != null &&
         opphørsdato!! > behandling.eldsteVirkningstidspunkt &&

@@ -1189,7 +1189,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.eldsteVirkningstidspunkt,
-                behandling.globalOpphørsdato,
+                null, // behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(),
                 behandling.tilTypeBoforhold(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
@@ -1208,7 +1208,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.eldsteVirkningstidspunkt,
-                gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                null, // gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(gjelderRolle),
                 behandling.tilTypeBoforhold(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
@@ -1901,7 +1901,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.eldsteVirkningstidspunkt,
-                behandling.globalOpphørsdato,
+                null, // behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(),
                 behandling.tilTypeBoforhold(),
                 husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),

@@ -669,6 +669,9 @@ class BehandlingService(
         identerSomSkalSlettes.isNotEmpty().ifTrue {
             secureLogger.debug { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
         }
+
+        // IMPORTANT: Do not remove roller here.
+        // For FF-behandling, ForholdsmessigFordelingService must handle add/delete operations on a consistent graph.
         if (behandling.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
             val revurderingsbarnSomLeggesTil =
                 oppdaterRollerListe
@@ -687,17 +690,11 @@ class BehandlingService(
                         saksnummer = request.saksnummer ?: behandling.saksnummer,
                     ),
                 )
-                forholdsmessigFordelingService.`synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling`(behandling)
+                forholdsmessigFordelingService.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
             } catch (e: Exception) {
                 log.error(e) { "Feil ved oppdatering av roller i behandling $behandlingId. Ruller tilbake til tidligere roller" }
-                val metadata = behandling.metadata ?: BehandlingMetadataDo()
-                val data = tilJsonString(metadata.leggTilOppdateringAvFFRollerFeilet(request))
-                behandlingRepository.markerOppdateringFFRollerFeilet(
-                    behandlingId,
-                    data,
-                )
-                metadata.setOppdateringAvFFRollerFeilet(data)
-                behandling.metadata = metadata
+                // Fail fast so the transaction rolls back instead of flushing a broken persistence context.
+                throw e
             }
         } else {
             behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })
@@ -734,18 +731,20 @@ class BehandlingService(
         behandling: Behandling,
         rolle: Rolle,
     ) {
-        behandling.notater.removeIf {
-            it.rolle.id == rolle.id
-        }
-        behandling.grunnlag.removeIf {
-            it.rolle.id == rolle.id
-        }
+        // Delete grunnlag directly without mutating the managed collection.
+        val grunnlagForRolle = behandling.grunnlag.filter { it.rolle.id == rolle.id }.toList()
+        behandling.grunnlag.removeAll(grunnlagForRolle)
+
+        // Keep both sides in sync so JPA deletes notes instead of nulling rolle_id.
+        val notaterForRolle = behandling.notater.filter { it.rolle.id == rolle.id }.toList()
+        rolle.notat.removeAll(notaterForRolle)
+        behandling.notater.removeAll(notaterForRolle)
         behandling.inntekter.removeIf {
             it.rolle?.id == rolle.id || it.gjelderBarnRolle?.id == rolle.id
         }
 
         behandling.samvær.removeIf {
-            it.rolle?.id == rolle.id
+            it.rolle.id == rolle.id
         }
         behandling.underholdskostnader
             .filter {
