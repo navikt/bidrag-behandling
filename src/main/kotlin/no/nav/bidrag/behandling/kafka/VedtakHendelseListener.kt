@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.ForsendelseService
+import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.NotatOpplysningerService
 import no.nav.bidrag.behandling.service.OppgaveService
 import no.nav.bidrag.behandling.transformers.erBidrag
@@ -40,7 +41,7 @@ class VedtakHendelseListener(
     val forsendelseService: ForsendelseService,
     val behandlingService: BehandlingService,
     val notatOpplysningerService: NotatOpplysningerService,
-    val oppgaveService: OppgaveService,
+    val grunnlagService: GrunnlagService,
     val behandlingRepository: BehandlingRepository,
     val forholdsmessigFordelingService: ForholdsmessigFordelingService,
 ) {
@@ -112,6 +113,9 @@ class VedtakHendelseListener(
         stønadsendring: Stønadsendring,
         behandling: Behandling,
     ) {
+        // Hent grunnlag beløpshistorikk slik at det er oppdatert
+        grunnlagService.lagreBeløpshistorikkGrunnlag(behandling)
+        grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
         if (type == Vedtakstype.OPPHØR) {
             val opphørsperiode =
                 `stønadsendring`.periodeListe

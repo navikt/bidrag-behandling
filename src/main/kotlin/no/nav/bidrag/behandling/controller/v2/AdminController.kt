@@ -340,6 +340,22 @@ class AdminController(
         inntektService.justerInntektOffentligePerioderEtterSisteGrunnlag(behandling)
     }
 
+    @PostMapping("/admin/slettbarn/{behandlingId}")
+    @Operation(
+        description =
+            "Fiks manglende virkningstidspunkt/årsak/avslag i rolle tabellen for barn",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @Transactional
+    fun slettBarnFraBehandling(
+        @PathVariable behandlingId: Long,
+        @RequestBody barnIdent: String,
+    ) {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).getOrNull() ?: behandlingNotFoundException(behandlingId)
+        val rolle = behandling.roller.find { it.ident == barnIdent }
+        behandlingService.slettRolleFraBehandling(behandling, rolle!!)
+    }
+
     @PostMapping("/admin/feilfiks/boforhold/perioder/fomtom/{behandlingId}")
     @Operation(
         description =

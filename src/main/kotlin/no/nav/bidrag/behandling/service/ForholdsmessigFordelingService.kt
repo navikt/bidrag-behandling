@@ -1,10 +1,14 @@
 package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
+import no.nav.bidrag.behandling.consumer.HentetGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
@@ -24,6 +28,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
+import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.behandling.erSamme
 import no.nav.bidrag.behandling.transformers.behandling.erSammePerson
@@ -72,6 +77,8 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregn
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
+import no.nav.bidrag.commons.util.RequestContextAsyncContext
+import no.nav.bidrag.commons.util.SecurityCoroutineContext
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
@@ -810,6 +817,9 @@ class ForholdsmessigFordelingService(
     fun synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling: Behandling) {
         val løpendeBidraggsakerBP =
             hentSisteLøpendeStønader(Personident(behandling.bidragspliktig!!.ident!!), behandling.finnBeregningsperiode())
+
+        grunnlagService.lagreBeløpshistorikkGrunnlag(behandling)
+        grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
 
         val alleSøknaderRelevantForBehandling =
             bbmConsumer
