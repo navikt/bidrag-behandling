@@ -1505,7 +1505,7 @@ class GrunnlagService(
                         grunnlagsdatatype.innhentesForRolle(behandling)!!,
                         Personident(it.key!!),
                     )
-                if (nyesteGrunnlagForHusstandsmedlem?.aktiv == null) {
+                if (nyesteGrunnlagForHusstandsmedlem != null && nyesteGrunnlagForHusstandsmedlem.aktiv == null) {
                     return false
                 }
             }
