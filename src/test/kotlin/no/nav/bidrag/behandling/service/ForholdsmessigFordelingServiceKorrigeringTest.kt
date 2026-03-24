@@ -21,6 +21,7 @@ import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragPeriodeResponse
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.HentBPsÅpneSøknaderResponse
 import org.junit.jupiter.api.BeforeEach
@@ -76,6 +77,9 @@ class ForholdsmessigFordelingServiceKorrigeringTest {
                 virkningstidspunktService = virkningstidspunktService,
                 underholdService = underholdService,
             )
+        every { belopshistorikkConsumer.hentAlleLøpendeStønaderIPeriode(any()) }.returns(LøpendeBidragPeriodeResponse())
+        every { grunnlagService.lagreBeløpshistorikkGrunnlag(any()) }.returns(emptyMap())
+        every { grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(any()) }.returns(emptyMap())
     }
 
     @Test

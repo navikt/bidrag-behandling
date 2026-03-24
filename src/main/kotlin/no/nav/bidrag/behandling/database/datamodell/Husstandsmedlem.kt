@@ -32,7 +32,10 @@ open class Husstandsmedlem(
     open var navn: String? = null,
     // kan bare være null dersom koblingen mot rolle er satt
     open var fødselsdato: LocalDate? = null,
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(
+        fetch = FetchType.LAZY,
+        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
+    )
     @JoinColumn(name = "rolle_id", nullable = true)
     open var rolle: Rolle? = null,
     @OneToMany(

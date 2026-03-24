@@ -87,7 +87,6 @@ import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagD
 import no.nav.bidrag.transport.behandling.grunnlag.response.BorISammeHusstandDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
-import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
@@ -106,6 +105,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 class BehandlingServiceTest : TestContainerRunner() {
     @MockBean
@@ -2169,31 +2169,33 @@ class BehandlingServiceTest : TestContainerRunner() {
         entityManager.flush()
         entityManager.clear()
 
-        behandlingService.oppdaterRoller(
-            lagretBehandling.id!!,
-            OppdaterRollerRequest(
-                roller =
-                    listOf(
-                        OpprettRolleDto(
-                            rolletype = Rolletype.BARN,
-                            ident = Personident(barnSomSkalSlettes.ident!!),
-                            fødselsdato = barnSomSkalSlettes.fødselsdato,
-                            erSlettet = true,
+        behandlingService
+            .oppdaterRoller(
+                lagretBehandling.id!!,
+                OppdaterRollerRequest(
+                    roller =
+                        listOf(
+                            OpprettRolleDto(
+                                rolletype = Rolletype.BARN,
+                                ident = Personident(barnSomSkalSlettes.ident!!),
+                                fødselsdato = barnSomSkalSlettes.fødselsdato,
+                                erSlettet = true,
+                            ),
                         ),
-                    ),
-            ),
-        ).status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
+                ),
+            ).status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
 
         entityManager.flush()
 
         val antallNotatForSlettetRolle =
-            (entityManager
-                .createNativeQuery(
-                    "select count(*) from notat n where n.behandling_id = :behandlingId and n.rolle_id = :rolleId",
-                ).setParameter("behandlingId", lagretBehandling.id!!)
-                .setParameter("rolleId", barnSomSkalSlettes.id!!)
-                .singleResult as Number)
-                .toLong()
+            (
+                entityManager
+                    .createNativeQuery(
+                        "select count(*) from notat n where n.behandling_id = :behandlingId and n.rolle_id = :rolleId",
+                    ).setParameter("behandlingId", lagretBehandling.id!!)
+                    .setParameter("rolleId", barnSomSkalSlettes.id!!)
+                    .singleResult as Number
+            ).toLong()
 
         antallNotatForSlettetRolle shouldBe 0L
     }

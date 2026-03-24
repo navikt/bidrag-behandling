@@ -727,7 +727,7 @@ class ForholdsmessigFordelingService(
 
         if (rolle.erRevurderingsbarn) {
             val søknad = rolle.forholdsmessigFordeling!!.eldsteSøknad
-            if (søknad?.innkreving == false) {
+            if (søknad == null || søknad?.innkreving == false) {
                 feilregistrerBarnFraFFSøknad(rolle)
                 opprettRollerOgRevurderingssøknadForSak(
                     behandling,
@@ -735,7 +735,7 @@ class ForholdsmessigFordelingService(
                     relevanteKravhavere.filter { it.erLik(rolle.ident!!, rolle.stønadstype) },
                     behandling.behandlerEnhet,
                     rolle.stønadstype,
-                    søknad.søknadFomDato!!,
+                    søknad?.søknadFomDato ?: rolle.forholdsmessigFordeling?.sisteOpprettetSøknad?.søknadFomDato!!,
                     true,
                 )
             }
@@ -860,11 +860,12 @@ class ForholdsmessigFordelingService(
                 } else {
                     false
                 }
+            ffDetaljer.søknader = oppdaterLagredeSoknadsstatuserFraBbm(ffDetaljer.søknader, alleSøknaderRelevantForBehandling, rolle)
+
             if (rolle.innkrevingstype == Innkrevingstype.UTEN_INNKREVING && løperBidrag) {
                 oppdaterBarnEtterInnkrevingsvedtak(behandling, Personident(rolle.ident!!))
             }
             rolle.innkrevingstype = if (løperBidrag) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
-            ffDetaljer.søknader = oppdaterLagredeSoknadsstatuserFraBbm(ffDetaljer.søknader, alleSøknaderRelevantForBehandling, rolle)
 
             val lagretSøknader = ffDetaljer.søknader
             val søknaderForBarn = finnApneSoknaderForBarn(alleSøknaderRelevantForBehandling, rolle)
@@ -1097,6 +1098,7 @@ class ForholdsmessigFordelingService(
                     } else if (!oppslagMotBbmFeilet) {
                         lagretSøknad.status = Behandlingstatus.FEILREGISTRERT
                     }
+                    lagretSøknad.innkreving = søknad?.innkreving ?: lagretSøknad.innkreving
                     lagretSøknad
                 }.toMutableSet()
 
