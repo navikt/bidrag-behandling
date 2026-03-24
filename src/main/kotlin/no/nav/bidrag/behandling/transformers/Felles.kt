@@ -375,6 +375,10 @@ fun Behandling.finnPeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): År
     )
 }
 
+fun Rolle.løperPeriodeEtterSøktFomDato(periode: ÅrMånedsperiode) =
+    periode.til == null ||
+        periode.til!! > YearMonth.from(forholdsmessigFordeling?.eldsteSøknad?.søknadFomDato ?: behandling.eldsteSøktFomDato)
+
 fun Behandling.løperPeriodeEtterSøktFomDato(periode: ÅrMånedsperiode) =
     periode.til == null || periode.til!! > YearMonth.from(eldsteSøktFomDato)
 

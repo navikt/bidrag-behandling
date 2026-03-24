@@ -761,6 +761,30 @@ class ForholdsmessigFordelingService(
     }
 
     @Transactional
+    fun oppdaterRevurderingsbarnFraInnkrevingTilUtenInnkreving(
+        behandling: Behandling,
+        rolle: Rolle,
+    ) {
+        // Flytt revurderingsbarn fra innkrevingssøknad til uten innkreving
+        if (rolle.erRevurderingsbarn) {
+            val relevanteKravhavere = hentAlleRelevanteKravhavere(behandling)
+            val søknad = rolle.forholdsmessigFordeling!!.eldsteSøknad
+            if (søknad == null || søknad.innkreving) {
+                feilregistrerBarnFraFFSøknad(rolle)
+                opprettRollerOgRevurderingssøknadForSak(
+                    behandling,
+                    behandling.saksnummer,
+                    relevanteKravhavere.filter { it.erLik(rolle.ident!!, rolle.stønadstype) },
+                    behandling.behandlerEnhet,
+                    rolle.stønadstype,
+                    søknad?.søknadFomDato ?: rolle.forholdsmessigFordeling?.sisteOpprettetSøknad?.søknadFomDato!!,
+                    true,
+                )
+            }
+        }
+    }
+
+    @Transactional
     fun oppdaterBarnEtterOpphør(
         behandling: Behandling,
         barnIdent: Personident,
@@ -808,6 +832,7 @@ class ForholdsmessigFordelingService(
                     ),
                     tvingEndring = true,
                 )
+                oppdaterRevurderingsbarnFraInnkrevingTilUtenInnkreving(behandling, rolle)
             }
         }
     }
@@ -854,7 +879,7 @@ class ForholdsmessigFordelingService(
             val beløpshistorikk = løpendeBidraggsakerBP.find { it.kravhaver.verdi == rolle.ident }
             val løperBidrag =
                 if (beløpshistorikk != null) {
-                    behandling.løperPeriodeEtterSøktFomDato(
+                    rolle.løperPeriodeEtterSøktFomDato(
                         ÅrMånedsperiode(beløpshistorikk.periodeFra, beløpshistorikk.periodeTil),
                     )
                 } else {
@@ -862,8 +887,14 @@ class ForholdsmessigFordelingService(
                 }
             ffDetaljer.søknader = oppdaterLagredeSoknadsstatuserFraBbm(ffDetaljer.søknader, alleSøknaderRelevantForBehandling, rolle)
 
-            if (rolle.innkrevingstype == Innkrevingstype.UTEN_INNKREVING && løperBidrag) {
+            val eldsteSøknad = rolle.forholdsmessigFordeling!!.eldsteSøknad
+            val erMedInnkreving =
+                (eldsteSøknad != null && eldsteSøknad.innkreving) || rolle.innkrevingstype == Innkrevingstype.MED_INNKREVING
+            if (!erMedInnkreving && løperBidrag) {
                 oppdaterBarnEtterInnkrevingsvedtak(behandling, Personident(rolle.ident!!))
+            }
+            if (erMedInnkreving && !løperBidrag) {
+                oppdaterRevurderingsbarnFraInnkrevingTilUtenInnkreving(behandling, rolle)
             }
             rolle.innkrevingstype = if (løperBidrag) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
 
