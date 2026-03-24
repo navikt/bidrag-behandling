@@ -323,7 +323,8 @@ class BoforholdService(
                     val respons =
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.eldsteVirkningstidspunkt,
-                            behandling.globalOpphørsdato,
+                            null,
+//                            behandling.globalOpphørsdato,
                             behandling.finnBeregnTilDatoBehandling(),
                             behandling.tilTypeBoforhold(),
                             behandling
@@ -703,7 +704,7 @@ class BoforholdService(
                     ?: BoforholdApi
                         .beregnBoforholdBarnV3(
                             behandling.eldsteVirkningstidspunkt,
-                            eksisterendeHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                            null, // eksisterendeHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                             behandling.finnBeregnTilDatoBehandling(eksisterendeHusstandsmedlem.rolle),
                             behandling.tilTypeBoforhold(),
                             listOf(
@@ -767,7 +768,7 @@ class BoforholdService(
                     if (overskriveManuelleOpplysninger) {
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.eldsteVirkningstidspunkt,
-                            offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                            null, // offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                             behandling.finnBeregnTilDatoBehandling(offisieltHusstandsmedlem.rolle),
                             behandling.tilTypeBoforhold(),
                             listOf(request),
@@ -775,7 +776,7 @@ class BoforholdService(
                     } else {
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.eldsteVirkningstidspunkt,
-                            offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                            null, // offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
                             behandling.finnBeregnTilDatoBehandling(offisieltHusstandsmedlem.rolle),
                             behandling.tilTypeBoforhold(),
                             listOf(

@@ -22,4 +22,3 @@ class DefaultExceptionHandlerTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.statusCode)
     }
 }
-

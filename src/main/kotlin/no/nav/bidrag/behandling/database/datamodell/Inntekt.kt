@@ -58,14 +58,12 @@ open class Inntekt(
     @OneToOne(
         fetch = FetchType.LAZY,
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
-        orphanRemoval = true,
     )
     @JoinColumn(name = "rolle_id", nullable = true)
     open var rolle: Rolle? = null,
     @OneToOne(
         fetch = FetchType.LAZY,
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
-        orphanRemoval = true,
     )
     @JoinColumn(name = "gjelder_barn_rolle_id", nullable = true)
     open var gjelderBarnRolle: Rolle? = null,

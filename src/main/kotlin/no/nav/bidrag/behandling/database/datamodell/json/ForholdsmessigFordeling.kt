@@ -61,7 +61,7 @@ data class ForholdsmessigFordelingSøknadBarn(
     val behandlingstema: Behandlingstema?,
     val omgjørSøknadsid: Long? = null,
     val omgjørVedtaksid: Int? = null,
-    val innkreving: Boolean = true,
+    var innkreving: Boolean = true,
     val enhet: String = "9999",
     // TODO: Er dette nødvendig? Kan BM/Barn være i flere saker?
     val saksnummer: String? = null,

@@ -687,7 +687,7 @@ class BehandlingService(
                         saksnummer = request.saksnummer ?: behandling.saksnummer,
                     ),
                 )
-                forholdsmessigFordelingService.`synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling`(behandling)
+                forholdsmessigFordelingService.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
             } catch (e: Exception) {
                 log.error(e) { "Feil ved oppdatering av roller i behandling $behandlingId. Ruller tilbake til tidligere roller" }
                 val metadata = behandling.metadata ?: BehandlingMetadataDo()
@@ -734,18 +734,22 @@ class BehandlingService(
         behandling: Behandling,
         rolle: Rolle,
     ) {
-        behandling.notater.removeIf {
-            it.rolle.id == rolle.id
-        }
-        behandling.grunnlag.removeIf {
-            it.rolle.id == rolle.id
-        }
+        // Delete grunnlag directly without mutating the managed collection.
+        val grunnlagMedRolle = behandling.grunnlag.filter { it.rolle.id == rolle.id }.toSet()
+
+        rolle.grunnlag.removeAll(grunnlagMedRolle) // only those actually owned by rolle
+        behandling.grunnlag.removeAll(grunnlagMedRolle)
+
+        // Keep both sides in sync so JPA deletes notes instead of nulling rolle_id.
+        val notaterForRolle = behandling.notater.filter { it.rolle.id == rolle.id }.toList()
+        rolle.notat.removeAll(notaterForRolle)
+        behandling.notater.removeAll(notaterForRolle)
         behandling.inntekter.removeIf {
             it.rolle?.id == rolle.id || it.gjelderBarnRolle?.id == rolle.id
         }
 
         behandling.samvær.removeIf {
-            it.rolle?.id == rolle.id
+            it.rolle.id == rolle.id
         }
         behandling.underholdskostnader
             .filter {

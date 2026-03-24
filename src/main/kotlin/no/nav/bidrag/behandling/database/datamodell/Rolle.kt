@@ -80,14 +80,12 @@ open class Rolle(
         fetch = FetchType.EAGER,
         mappedBy = "rolle",
         cascade = [CascadeType.ALL],
-        orphanRemoval = true,
     )
     open var grunnlag: MutableSet<Grunnlag> = mutableSetOf(),
     @OneToMany(
         fetch = FetchType.EAGER,
         mappedBy = "rolle",
-        cascade = [CascadeType.ALL],
-        orphanRemoval = true,
+        cascade = [CascadeType.MERGE, CascadeType.PERSIST],
     )
     open var notat: MutableSet<Notat> = mutableSetOf(),
     @ManyToOne(fetch = FetchType.LAZY)

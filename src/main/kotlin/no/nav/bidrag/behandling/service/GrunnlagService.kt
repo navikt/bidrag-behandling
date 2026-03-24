@@ -254,10 +254,10 @@ class GrunnlagService(
                         hentOgLagreEtterfølgendeVedtak(behandling).lagreFeilrapportering()
                     },
                     scope.async {
-                        lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling).lagreFeilrapportering()
+                        lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlagSuspend(behandling).lagreFeilrapportering()
                     },
                     scope.async {
-                        lagreBeløpshistorikkGrunnlag(behandling).lagreFeilrapportering()
+                        lagreBeløpshistorikkGrunnlagSuspend(behandling).lagreFeilrapportering()
                     },
                     scope.async {
                         lagreBpsBarnUtenBidragsak(behandling).lagreFeilrapportering()
@@ -314,7 +314,7 @@ class GrunnlagService(
                         hentOgLagreEtterfølgendeVedtak(behandling)
                     },
                     scope.async {
-                        lagreBeløpshistorikkGrunnlag(behandling)
+                        lagreBeløpshistorikkGrunnlagSuspend(behandling)
                     },
                     scope.async {
                         lagreBpsBarnUtenBidragsak(behandling)
@@ -554,9 +554,11 @@ class GrunnlagService(
             }.sortedByDescending { it.fattetTidspunkt }
     }
 
-    suspend fun lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(
+    suspend fun lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlagSuspend(
         behandling: Behandling,
-    ): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+    ): Map<Grunnlagsdatatype, GrunnlagFeilDto> = lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
+
+    fun lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
         if (behandling.tilType() != TypeBehandling.BIDRAG || !behandling.erKlageEllerOmgjøring) return emptyMap()
 
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
@@ -652,7 +654,10 @@ class GrunnlagService(
         return emptyMap()
     }
 
-    suspend fun lagreBeløpshistorikkGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
+    suspend fun lagreBeløpshistorikkGrunnlagSuspend(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> =
+        lagreBeløpshistorikkGrunnlag(behandling)
+
+    fun lagreBeløpshistorikkGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
         if (behandling.tilType() == TypeBehandling.SÆRBIDRAG) return emptyMap()
         val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto>()
 
@@ -1189,7 +1194,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.eldsteVirkningstidspunkt,
-                behandling.globalOpphørsdato,
+                null, // behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(),
                 behandling.tilTypeBoforhold(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
@@ -1208,7 +1213,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.eldsteVirkningstidspunkt,
-                gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                null, // gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(gjelderRolle),
                 behandling.tilTypeBoforhold(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
@@ -1901,7 +1906,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.eldsteVirkningstidspunkt,
-                behandling.globalOpphørsdato,
+                null, // behandling.globalOpphørsdato,
                 behandling.finnBeregnTilDatoBehandling(),
                 behandling.tilTypeBoforhold(),
                 husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),

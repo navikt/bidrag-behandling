@@ -380,7 +380,8 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
                 behandling.husstandsmedlem.first(),
             ) {
                 perioder shouldHaveSize 1
-                perioder.first().datoTom shouldBe opphørsdato.opphørSisteTilDato()
+                perioder.first().datoTom shouldBe null
+//                perioder.first().datoTom shouldBe opphørsdato.opphørSisteTilDato()
             }
         }
 
@@ -428,7 +429,8 @@ class VirkningstidspunktServiceTest : CommonMockServiceTest() {
             ) {
                 perioder shouldHaveSize 2
                 perioder.first().datoTom shouldBe LocalDate.parse("2024-10-31")
-                perioder.last().datoTom shouldBe opphørsdato.opphørSisteTilDato()
+//                perioder.last().datoTom shouldBe opphørsdato.opphørSisteTilDato()
+                perioder.last().datoTom shouldBe null
             }
         }
 

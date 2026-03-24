@@ -35,7 +35,6 @@ open class Husstandsmedlem(
     @OneToOne(
         fetch = FetchType.LAZY,
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
-        orphanRemoval = true,
     )
     @JoinColumn(name = "rolle_id", nullable = true)
     open var rolle: Rolle? = null,
