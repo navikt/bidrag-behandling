@@ -2951,9 +2951,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 val boforhold = behandling.grunnlag.filter { it.type == Grunnlagsdatatype.BOFORHOLD }
                 assertSoftly(boforhold) { sb ->
                     sb.size shouldBe 3
-                    sb.filter { it.aktiv != null } shouldHaveSize 2
+                    sb.filter { it.aktiv != null } shouldHaveSize 3
                     sb.filter { it.erBearbeidet } shouldHaveSize 1
-                    sb.filter { !it.erBearbeidet && it.aktiv == null } shouldHaveSize 1
+                    sb.filter { !it.erBearbeidet && it.aktiv == null } shouldHaveSize 0
                     sb.filter { it.erBearbeidet && it.aktiv == null } shouldHaveSize 0
                 }
             }
