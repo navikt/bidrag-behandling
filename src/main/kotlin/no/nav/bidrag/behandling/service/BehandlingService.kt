@@ -129,6 +129,7 @@ class BehandlingService(
         } else {
             logiskSlettBehandling(behandling)
         }
+        forholdsmessigFordelingService!!.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
     }
 
     fun sendOppdatertHendelse(
@@ -245,6 +246,7 @@ class BehandlingService(
                             stønadstype = opprettBehandling.stønadstype!!,
                         ),
                     )
+                    forholdsmessigFordelingService!!.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
                 } catch (e: Exception) {
                     secureLogger.error(e) { "Feil ved opprettelse av behandling for $opprettBehandling for ff behandling ${behandling.id}" }
                     val metadata = behandling.metadata ?: BehandlingMetadataDo()

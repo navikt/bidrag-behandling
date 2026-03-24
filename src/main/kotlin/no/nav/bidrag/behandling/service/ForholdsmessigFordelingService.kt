@@ -1995,10 +1995,11 @@ class ForholdsmessigFordelingService(
                                         søktFomDato = søktFomDato,
                                         medInnkreving = false,
                                     )
-                                    // TODO: Opprett forsendelse
                                 }
                             // Antar at alle barn havner i samme søknad
-                            søknader.first().søknadsid
+                            val søknadsid = søknader.first().søknadsid
+                            opprettForsendelseForNySøknad(saksnummer, behandling, bmFødselsnummer!!, søknadsid.toString())
+                            søknadsid
                         } else {
                             opprettSøknad(
                                 behandling.bidragspliktig!!.ident!!,
@@ -2029,10 +2030,11 @@ class ForholdsmessigFordelingService(
                                 søktFomDato = søktFomDato,
                                 medInnkreving = true,
                             )
-                            // TODO: Opprett forsendelse
                         }
                     // Antar at alle barn havner i samme søknad
-                    søknader.first().søknadsid
+                    val søknadsid = søknader.first().søknadsid
+                    opprettForsendelseForNySøknad(saksnummer, behandling, bmFødselsnummer!!, søknadsid.toString())
+                    søknadsid
                 } else {
                     opprettSøknad(
                         behandling.bidragspliktig!!.ident!!,
@@ -2330,6 +2332,7 @@ class ForholdsmessigFordelingService(
                             eierfogd = behandling.behandlerEnhet,
                             løperBidragFra = løpendeBidrag?.periodeFra,
                             løperBidragTil = løpendeBidrag?.periodeTil,
+                            privatAvtale = behandling.privatAvtale.find { it.gjelderPerson(barn.ident!!, stønadstype) },
                         ),
                     )
                 }
@@ -2370,6 +2373,7 @@ class ForholdsmessigFordelingService(
                                     løperBidragTil = løpendeBidrag?.periodeTil,
                                     stønadstype = stønadstype,
                                     åpneSøknader = mutableSetOf(åpenSøknad),
+                                    privatAvtale = behandling.privatAvtale.find { it.gjelderPerson(barnFnr.personident!!, stønadstype) },
                                 ),
                             )
                         }
@@ -2388,6 +2392,7 @@ class ForholdsmessigFordelingService(
                         stønadstype = it.type,
                         løperBidragFra = it.periodeFra,
                         løperBidragTil = it.periodeTil,
+                        privatAvtale = behandling.privatAvtale.find { pa -> pa.gjelderPerson(it.kravhaver.verdi, it.type) },
                     )
                 }.distinctBy { it.distinctKey }
         val bidragsaker = løpendeBidragsaker + sakKravhaverListe
