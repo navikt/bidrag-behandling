@@ -713,40 +713,45 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 lesemodus = lesemodus,
             )
         },
-    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.LØPENDE_BIDRAG)
-        .groupBy { it.gjelderBarnReferanse }
-        .map { (gjelderBarn, grunnlagListe) ->
-            val grunnlag = grunnlagListe.first()
-            val gjelderBarnGrunnlag = hentPersonMedReferanse(gjelderBarn)!!
-            val gjelderGrunnlag = hentPersonMedReferanse(grunnlag.gjelderReferanse)!!
-            behandling.opprettGrunnlag(
-                Grunnlagsdatatype.LØPENDE_BIDRAG_OPPRETT_FORHOLDSMESSIG_FORDELING,
-                grunnlag
-                    .innholdTilObjekt<LøpendeBidragForholdsmessigFordelingGrunnlag>()
-                    .løpendeBidragListe
-                    .map { beregning ->
-                        BeregnetBidragBarnDto(
-                            periode = beregning.periode,
-                            faktiskBeløp = beregning.faktiskBeløp,
-                            samværsklasse = beregning.samværsklasse,
-                            beregnetBeløp = beregning.beregnetBeløp,
-                            løpendeBeløp = beregning.løpendeBeløp,
-                            stønadstype = beregning.stønadstype,
-                            saksnummer = beregning.saksnummer,
-                            valutakode = beregning.valutakode,
-                            valutakurs = beregning.valutakurs,
-                            reduksjonUnderholdskostnad = beregning.reduksjonUnderholdskostnad,
-                            samværsfradrag = beregning.samværsfradrag,
-                            beregnetBidrag = beregning.beregnetBidrag,
-                        )
-                    },
-                gjelder = gjelderBarnGrunnlag.personIdent!!,
-                rolleIdent = gjelderGrunnlag.personIdent!!,
-                innhentetTidspunkt = LocalDateTime.now(),
-                lesemodus = lesemodus,
-            )
-        },
-    filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.ETTERFØLGENDE_MANUELLE_VEDTAK)
+    if (behandling.erBidrag()) {
+        filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.LØPENDE_BIDRAG)
+            .groupBy { it.gjelderBarnReferanse }
+            .map { (gjelderBarn, grunnlagListe) ->
+                val grunnlag = grunnlagListe.first()
+                val gjelderBarnGrunnlag = hentPersonMedReferanse(gjelderBarn)!!
+                val gjelderGrunnlag = hentPersonMedReferanse(grunnlag.gjelderReferanse)!!
+                behandling.opprettGrunnlag(
+                    Grunnlagsdatatype.LØPENDE_BIDRAG_OPPRETT_FORHOLDSMESSIG_FORDELING,
+                    grunnlag
+                        .innholdTilObjekt<LøpendeBidragForholdsmessigFordelingGrunnlag>()
+                        .løpendeBidragListe
+                        .map { beregning ->
+                            BeregnetBidragBarnDto(
+                                periode = beregning.periode,
+                                faktiskBeløp = beregning.faktiskBeløp,
+                                samværsklasse = beregning.samværsklasse,
+                                beregnetBeløp = beregning.beregnetBeløp,
+                                løpendeBeløp = beregning.løpendeBeløp,
+                                stønadstype = beregning.stønadstype,
+                                saksnummer = beregning.saksnummer,
+                                valutakode = beregning.valutakode,
+                                valutakurs = beregning.valutakurs,
+                                reduksjonUnderholdskostnad = beregning.reduksjonUnderholdskostnad,
+                                samværsfradrag = beregning.samværsfradrag,
+                                beregnetBidrag = beregning.beregnetBidrag,
+                            )
+                        },
+                    gjelder = gjelderBarnGrunnlag.personIdent!!,
+                    rolleIdent = gjelderGrunnlag.personIdent!!,
+                    innhentetTidspunkt = LocalDateTime.now(),
+                    lesemodus = lesemodus,
+                )
+            }
+    } else {
+        null
+    },
+    filtrerBasertPåEgenReferanse
+        (grunnlagType = Grunnlagstype.ETTERFØLGENDE_MANUELLE_VEDTAK)
         .groupBy { it.gjelderBarnReferanse }
         .map { (gjelderBarn, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
