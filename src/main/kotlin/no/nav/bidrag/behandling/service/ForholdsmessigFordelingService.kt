@@ -713,7 +713,7 @@ class ForholdsmessigFordelingService(
         val barnIkkeRevurdering =
             behandling.søknadsbarn
                 .filter { slettBarn.isEmpty() || !slettBarn.mapNotNull { it.ident }.contains(it.ident) }
-                .filter { !it.forholdsmessigFordeling!!.erRevurdering }
+                .filter { it.forholdsmessigFordeling == null || !it.forholdsmessigFordeling!!.erRevurdering }
         return barnIkkeRevurdering.isEmpty()
     }
 

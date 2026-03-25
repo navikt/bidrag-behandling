@@ -109,7 +109,7 @@ data class InntektDtoV2(
                 } else if (Inntektsrapportering.BARNETILLEGG == rapporteringstype &&
                     (beløpstype == null || beløpstype == InntektBeløpstype.ÅRSBELØP)
                 ) {
-                    beløp.divide(BigDecimal(12), 0, RoundingMode.HALF_UP)
+                    beløp.divide(BigDecimal(12), 2, RoundingMode.HALF_UP)
                 } else {
                     null
                 }

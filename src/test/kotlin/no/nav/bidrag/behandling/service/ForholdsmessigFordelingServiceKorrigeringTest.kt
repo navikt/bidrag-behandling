@@ -80,6 +80,8 @@ class ForholdsmessigFordelingServiceKorrigeringTest {
         every { belopshistorikkConsumer.hentAlleLøpendeStønaderIPeriode(any()) }.returns(LøpendeBidragPeriodeResponse())
         every { grunnlagService.lagreBeløpshistorikkGrunnlag(any()) }.returns(emptyMap())
         every { grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(any()) }.returns(emptyMap())
+        every { behandlingRepository.finnÅpneBidragsbehandlingerForBp(any(), any()) }.returns(emptyList())
+        every { sakConsumer.hentSakerPerson(any()) }.returns(emptyList())
     }
 
     @Test
@@ -166,7 +168,7 @@ class ForholdsmessigFordelingServiceKorrigeringTest {
         stubApneSoknaderTom()
         every { bbmConsumer.hentSøknad(any()) } throws RuntimeException("BBM utilgjengelig")
 
-        service.`synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling`(behandling)
+        service.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
 
         lagretSoknad.status shouldBe Behandlingstatus.UNDER_BEHANDLING
     }

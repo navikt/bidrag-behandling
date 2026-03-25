@@ -2152,6 +2152,7 @@ class BehandlingServiceTest : TestContainerRunner() {
     }
 
     @Test
+    @Transactional
     fun slettRolleFraBehandling_sletterNotatUtenConstraintViolation() {
         val behandling = prepareBehandling(søknadsid = 55667788)
         behandling.roller.add(testdataBarn2.tilRolle(behandling))
