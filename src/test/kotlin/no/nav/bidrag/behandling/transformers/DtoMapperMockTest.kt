@@ -628,9 +628,9 @@ class DtoMapperMockTest {
             bt.forEach {
                 when (it.beløp) {
                     BigDecimal(-1) -> it.månedsbeløp shouldBe BigDecimal.ZERO
-                    BigDecimal.ZERO -> it.månedsbeløp shouldBe BigDecimal.ZERO
-                    BigDecimal(144) -> it.månedsbeløp shouldBe BigDecimal(12)
-                    BigDecimal(2000) -> it.månedsbeløp shouldBe BigDecimal(167)
+                    BigDecimal.ZERO -> it.månedsbeløp shouldBe BigDecimal("0.00")
+                    BigDecimal(144) -> it.månedsbeløp shouldBe BigDecimal("12.00")
+                    BigDecimal(2000) -> it.månedsbeløp shouldBe BigDecimal("166.67")
                 }
             }
         }
