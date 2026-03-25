@@ -875,6 +875,7 @@ fun Rolle.hentVirkningstidspunktValideringsfeilRolle(): VirkningstidspunktFeilV2
                 val etterfølgendeVedtak = behandling.hentNesteEtterfølgendeVedtak(this)
                 val virkningstidspunktEtterfølgendeVedtak = etterfølgendeVedtak?.virkningstidspunkt
                 virkningstidspunktEtterfølgendeVedtak != null && opphørsdato != null &&
+                    (etterfølgendeVedtak.opphørsdato == null || etterfølgendeVedtak.opphørsdato != opphørsdato!!.toYearMonth()) &&
                     opphørsdato!!.toYearMonth() > virkningstidspunktEtterfølgendeVedtak
             } else {
                 false
