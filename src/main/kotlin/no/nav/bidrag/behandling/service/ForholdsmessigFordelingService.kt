@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagLøpendeBid
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
+import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.leggTilGebyr
 import no.nav.bidrag.behandling.database.datamodell.tilBehandlingstype
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -213,7 +214,12 @@ class ForholdsmessigFordelingService(
     @Transactional
     fun lukkAllFFSaker(behandlingsid: Long) {
         val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
-        val åpneSaker = hentÅpneSøknader(behandling.bidragspliktig!!.ident!!, behandling.behandlingstypeForFF)
+        val åpneSaker =
+            hentÅpneSøknader(
+                behandling.bidragspliktig!!.ident!!,
+                behandling.behandlingstypeForFF,
+                omgjøringsdetaljer = behandling.omgjøringsdetaljer,
+            )
         åpneSaker.filter { it.behandlingstype == behandling.behandlingstypeForFF }.forEach {
             bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(it.søknadsid))
         }
@@ -847,16 +853,7 @@ class ForholdsmessigFordelingService(
         grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
 
         val alleSøknaderRelevantForBehandling =
-            bbmConsumer
-                .hentÅpneSøknaderForBp(behandling.bidragspliktig!!.ident!!)
-                .åpneSøknader
-                .filter {
-                    (behandling.erKlageEllerOmgjøring && it.behandlingstype.erKlageEllerOmgjøring) ||
-                        !it.behandlingstype.erKlageEllerOmgjøring
-                }.filter {
-                    (behandling.erKlageEllerOmgjøring && it.referertVedtaksid == behandling.omgjøringsdetaljer?.omgjørVedtakId) ||
-                        !behandling.erKlageEllerOmgjøring
-                }
+            hentÅpneSøknader(behandling.bidragspliktig!!.ident!!, behandling.behandlingstypeForFF, behandling.omgjøringsdetaljer)
 
         leggTilRollerFraRelevanteSøknaderSomIkkeErIBehandling(behandling, alleSøknaderRelevantForBehandling)
 
@@ -1371,6 +1368,7 @@ class ForholdsmessigFordelingService(
                 saksnummer = saksnummer,
                 søktFomDato = søktFomDato,
                 stønadstype = stønadstype,
+                omgjøringsdetaljer = behandling.omgjøringsdetaljer,
             )
 
         if (åpenFFSøknad != null) {
@@ -1775,7 +1773,9 @@ class ForholdsmessigFordelingService(
         saksnummer: String,
         søktFomDato: LocalDate,
         stønadstype: Stønadstype?,
-    ) = hentÅpneSøknader(bidragspliktigFnr, behandlingstype).find {
+        omgjøringsdetaljer: Omgjøringsdetaljer?,
+        erKlageEllerOmgjøring: Boolean = omgjøringsdetaljer != null,
+    ) = hentÅpneSøknader(bidragspliktigFnr, behandlingstype, omgjøringsdetaljer, erKlageEllerOmgjøring).find {
         (it.innkreving == medInnkreving) &&
             it.behandlingsid == behandlingsid &&
             it.saksnummer == saksnummer &&
@@ -1785,11 +1785,22 @@ class ForholdsmessigFordelingService(
     private fun hentÅpneSøknader(
         bidragspliktigFnr: String,
         behandlingstypeForFF: Behandlingstype,
+        omgjøringsdetaljer: Omgjøringsdetaljer?,
+        erKlageEllerOmgjøring: Boolean = omgjøringsdetaljer != null,
     ) = bbmConsumer
         .hentÅpneSøknaderForBp(bidragspliktigFnr)
         .åpneSøknader
         .filter { !behandlingstyperSomIkkeSkalInkluderesIFF.contains(it.behandlingstype) }
-        .sortedWith(
+        .filter {
+            (erKlageEllerOmgjøring && it.behandlingstype.erKlageEllerOmgjøring) ||
+                !it.behandlingstype.erKlageEllerOmgjøring
+        }.filter {
+            (
+                erKlageEllerOmgjøring &&
+                    (it.referertVedtaksid == omgjøringsdetaljer?.omgjørVedtakId || it.referertSøknadsid == omgjøringsdetaljer?.soknadRefId)
+            ) ||
+                !erKlageEllerOmgjøring
+        }.sortedWith(
             compareByDescending<ÅpenSøknadDto> { it.behandlingstype == behandlingstypeForFF }
                 .thenBy { it.søknadFomDato },
         )
@@ -2198,6 +2209,7 @@ class ForholdsmessigFordelingService(
                 saksnummer = saksnummer,
                 søktFomDato = søktFomDato,
                 stønadstype = stønadstype,
+                omgjøringsdetaljer = behandling.omgjøringsdetaljer,
             )
         if (eksisterendeSøknad != null) {
             val søknadBarnIdenter = eksisterendeSøknad.barn.map { eksisterendeSøknad.`tilIdentStønadstypeNøkkel`(it.personident!!) }
@@ -2308,16 +2320,11 @@ class ForholdsmessigFordelingService(
                         it.vedtakstype != Vedtakstype.KLAGE
                 }
         val åpneSøknader =
-            hentÅpneSøknader(bidragspliktigFnr, behandling.behandlingstypeForFF).filter {
-                (
-                    it.behandlingstype.erKlageEllerOmgjøring && behandling.erKlageEllerOmgjøring &&
-                        (
-                            it.referertVedtaksid == behandling.omgjøringsdetaljer?.omgjørVedtakId ||
-                                it.referertSøknadsid == behandling.omgjøringsdetaljer?.soknadRefId
-                        )
-                ) ||
-                    !it.behandlingstype.erKlageEllerOmgjøring
-            }
+            hentÅpneSøknader(
+                bidragspliktigFnr,
+                behandling.behandlingstypeForFF,
+                omgjøringsdetaljer = behandling.omgjøringsdetaljer,
+            )
 
         val sakKravhaverListe = mutableSetOf<SakKravhaver>()
 
