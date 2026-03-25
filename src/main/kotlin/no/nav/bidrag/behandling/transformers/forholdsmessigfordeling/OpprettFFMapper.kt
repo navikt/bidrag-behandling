@@ -48,6 +48,7 @@ import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.felles.toLocalDate
+import no.nav.bidrag.transport.felles.toYearMonth
 import no.nav.bidrag.transport.sak.BidragssakDto
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -239,7 +240,11 @@ fun opprettRolle(
                             hentPersonFødselsdato(fødselsnummer)!!.plusMonths(1).withDayOfMonth(1),
                             ffDetaljer.eldsteSøknad?.søknadFomDato ?: behandling.eldsteVirkningstidspunkt,
                         )
-                    if (opphørsdato != null) minOf(opphørsdato.toLocalDate(), virkningstidspunkt) else virkningstidspunkt
+                    if (opphørsdato != null && !ffDetaljer.erRevurdering) {
+                        minOf(opphørsdato.toLocalDate(), virkningstidspunkt)
+                    } else {
+                        virkningstidspunkt
+                    }
                 } else {
                     null
                 },
@@ -693,7 +698,7 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
             } else {
                 null
             },
-        opphørsdato = if (løpendeBidrag) løperBidragTil else null,
+        opphørsdato = if (løpendeBidrag) løperBidragTil else opphørsdato,
         åpneBehandlinger = åpneBehandlinger,
         privateAvtale =
             privatAvtale?.let {

@@ -177,6 +177,7 @@ data class SakKravhaver(
     val løperBidragFra: YearMonth? = null,
     val løperBidragTil: YearMonth? = null,
     val stønadstype: Stønadstype? = null,
+    val opphørsdato: YearMonth? = null,
     val åpneSøknader: MutableSet<ÅpenSøknadDto> = mutableSetOf(),
     val åpneBehandlinger: MutableSet<Behandling> = mutableSetOf(),
     val privatAvtale: PrivatAvtale? = null,
@@ -1581,14 +1582,16 @@ class ForholdsmessigFordelingService(
                     val barnFødselsdato = hentPersonFødselsdato(it.personIdent!!)
                     val dato18ÅrsBidrag = barnFødselsdato!!.tilDato18årsBidrag()
                     val er18EtterSøktFom = søktFomDatoRevurdering > dato18ÅrsBidrag
+                    val stønadstype = it.stønadstype ?: if (er18EtterSøktFom) Stønadstype.BIDRAG18AAR else Stønadstype.BIDRAG
                     SakKravhaver(
                         kravhaver = it.personIdent!!,
                         saksnummer = null,
                         løperBidragFra = null,
-                        stønadstype = it.stønadstype ?: if (er18EtterSøktFom) Stønadstype.BIDRAG18AAR else Stønadstype.BIDRAG,
+                        stønadstype = stønadstype,
                         eierfogd = null,
                         bidragsmottaker = null,
                         privatAvtale = it,
+                        opphørsdato = behandling.finnOpphørsdato(stønadstype, it.personIdent!!),
                     )
                 }
         val barnMedBidragssakSomHarPrivatAvtale =
@@ -1650,6 +1653,7 @@ class ForholdsmessigFordelingService(
                                         eierfogd = sak.eierfogd.verdi,
                                         bidragsmottaker = sak.bidragsmottaker?.fødselsnummer?.verdi,
                                         privatAvtale = privatAvtale,
+                                        opphørsdato = behandling.finnOpphørsdato(stønadstypeBeregnet!!, b.fødselsnummer!!.verdi),
                                     )
                                 }
                         }.filterNotNull()
@@ -2131,7 +2135,7 @@ class ForholdsmessigFordelingService(
                     stønadstype = stønadstype ?: Stønadstype.BIDRAG,
                     innkrevesFraDato = if (skalInnkreves) søknad.løperBidragFra else null,
                     medInnkreving = skalInnkreves,
-                    opphørsdato = søknad.løperBidragTil,
+                    opphørsdato = søknad.løperBidragTil ?: søknad.opphørsdato,
                     ffDetaljer =
                         ffDetaljer.copy(
                             løperBidragFra = søknad.løperBidragFra,
@@ -2345,6 +2349,7 @@ class ForholdsmessigFordelingService(
                             eierfogd = behandling.behandlerEnhet,
                             løperBidragFra = løpendeBidrag?.periodeFra,
                             løperBidragTil = løpendeBidrag?.periodeTil,
+                            opphørsdato = barn.opphørsdato?.toYearMonth(),
                             privatAvtale = behandling.privatAvtale.find { it.gjelderPerson(barn.ident!!, stønadstype) },
                         ),
                     )
@@ -2385,6 +2390,7 @@ class ForholdsmessigFordelingService(
                                     løperBidragFra = løpendeBidrag?.periodeFra,
                                     løperBidragTil = løpendeBidrag?.periodeTil,
                                     stønadstype = stønadstype,
+                                    opphørsdato = behandling.finnOpphørsdato(stønadstype!!, barnFnr.personident!!),
                                     åpneSøknader = mutableSetOf(åpenSøknad),
                                     privatAvtale = behandling.privatAvtale.find { it.gjelderPerson(barnFnr.personident!!, stønadstype) },
                                 ),
@@ -2405,6 +2411,7 @@ class ForholdsmessigFordelingService(
                         stønadstype = it.type,
                         løperBidragFra = it.periodeFra,
                         løperBidragTil = it.periodeTil,
+                        opphørsdato = behandling.finnOpphørsdato(it.type, it.kravhaver.verdi),
                         privatAvtale = behandling.privatAvtale.find { pa -> pa.gjelderPerson(it.kravhaver.verdi, it.type) },
                     )
                 }.distinctBy { it.distinctKey }
@@ -2420,6 +2427,18 @@ class ForholdsmessigFordelingService(
                 }
             }.distinctBy { it.saksnummer to it.distinctKey }
             .toSet()
+    }
+
+    private fun Behandling.finnOpphørsdato(
+        stønadstype: Stønadstype,
+        barnFnr: String,
+    ): YearMonth? {
+        val fødselsdato = hentPersonFødselsdato(barnFnr)
+        return if (fødselsdato != null && stønadstype == Stønadstype.BIDRAG) {
+            fødselsdato.tilDato18årsBidrag().takeIf { it <= finnBeregnTilDato() }?.toYearMonth()
+        } else {
+            null
+        }
     }
 }
 

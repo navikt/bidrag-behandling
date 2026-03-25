@@ -357,13 +357,21 @@ class BeregningService(
                             søknadsbarn!!.finnBeregnFra(),
                             behandling.finnBeregnTilDatoBehandling(søknadsbarn, beregningTilDato).toYearMonth(),
                         )
+
                     // Avvisning - opphørsdato = opphør fra historikk
                     // Avslag - opphørsdato = beregn til
                     val virkningstidspunktBeregning =
-                        maxOfNullable(
-                            minOfNullable(søknadsbarn.virkningstidspunkt?.toYearMonth(), it.beregnGrunnlag.opphørsdato),
-                            it.beregnGrunnlag.periode.fom,
-                        )!!
+                        if (søknadsbarn.erRevurderingsbarn) {
+                            søknadsbarn.virkningstidspunkt?.toYearMonth()!!
+                        } else {
+                            maxOfNullable(
+                                minOfNullable(
+                                    søknadsbarn.virkningstidspunkt?.toYearMonth(),
+                                    it.beregnGrunnlag.opphørsdato,
+                                ),
+                                it.beregnGrunnlag.periode.fom,
+                            )!!
+                        }
                     BeregningGrunnlagV2(
                         søknadsbarnreferanse = it.beregnGrunnlag.søknadsbarnReferanse,
                         periode = it.beregnGrunnlag.periode,
