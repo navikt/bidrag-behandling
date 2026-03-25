@@ -1158,7 +1158,13 @@ class ForholdsmessigFordelingService(
 
     @Transactional
     fun leggTilEllerSlettBarnFraBehandlingSomErIFF(request: OppdaterBarnFraFFRequest) {
-        val søknad = bbmConsumer.hentSøknad(request.søknadsid)?.søknad
+        val søknad =
+            try {
+                bbmConsumer.hentSøknad(request.søknadsid)?.søknad
+            } catch (e: Exception) {
+                LOGGER.error(e) { "Det skjedde en feil ved henting av søknad ${request.søknadsid}" }
+                return
+            }
         // Skal ikke trigge noe endringer for FF søknad
         if (søknad?.behandlingstype?.erForholdsmessigFordeling == true) {
             return

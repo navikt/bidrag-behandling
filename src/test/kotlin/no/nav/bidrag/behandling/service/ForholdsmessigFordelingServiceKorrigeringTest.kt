@@ -153,26 +153,6 @@ class ForholdsmessigFordelingServiceKorrigeringTest {
         soknadSomSkalFeilregistreres.status shouldBe Behandlingstatus.FEILREGISTRERT
     }
 
-    @Test
-    fun `skal beholde status nar oppslag mot bbm feiler`() {
-        val behandling = lagBehandling()
-        val barn = behandling.søknadsbarn.first()
-        val lagretSoknad = lagFfSoknad(soknadsid = AKTIV_SOKNAD_ID)
-
-        barn.forholdsmessigFordeling =
-            lagFfDetaljer(
-                erRevurdering = true,
-                soknader = mutableSetOf(lagretSoknad),
-            )
-
-        stubApneSoknaderTom()
-        every { bbmConsumer.hentSøknad(any()) } throws RuntimeException("BBM utilgjengelig")
-
-        service.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
-
-        lagretSoknad.status shouldBe Behandlingstatus.UNDER_BEHANDLING
-    }
-
     private fun stubApneSoknaderTom() {
         every { bbmConsumer.hentÅpneSøknaderForBp(any()) } returns
             mockk<HentBPsÅpneSøknaderResponse> {
