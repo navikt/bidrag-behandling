@@ -111,7 +111,7 @@ fun OppdaterOpphørsdatoRequestDto.valider(behandling: Behandling) {
     if (opphørsdato == virkningstidspunkt) {
         feilliste.add("Opphørsdato kan ikke settes lik virkningstidspunkt")
     }
-    if (opphørsdato.isBefore(virkningstidspunkt)) {
+    if ((rolle == null || !rolle.erRevurderingsbarn) && opphørsdato.isBefore(virkningstidspunkt)) {
         feilliste.add("Opphørsdato kan ikke settes til før virkningstidspunkt")
     }
 

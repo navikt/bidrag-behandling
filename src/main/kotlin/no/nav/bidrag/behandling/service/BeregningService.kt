@@ -358,8 +358,9 @@ class BeregningService(
                             behandling.finnBeregnTilDatoBehandling(søknadsbarn, beregningTilDato).toYearMonth(),
                         )
 
-                    // Avvisning - opphørsdato = opphør fra historikk
-                    // Avslag - opphørsdato = beregn til
+                    // Hacks
+                    // Avvisning:  opphørsdato = settes til opphørsdato fra beløpshistorikk
+                    // Avslag: - opphørsdato = beregn til
                     val virkningstidspunktBeregning =
                         if (søknadsbarn.erRevurderingsbarn) {
                             søknadsbarn.virkningstidspunkt?.toYearMonth()!!
