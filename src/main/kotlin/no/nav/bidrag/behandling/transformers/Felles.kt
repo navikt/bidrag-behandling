@@ -285,7 +285,7 @@ fun Behandling.hentNesteEtterfølgendeVedtakFelles(): EtterfølgendeVedtakDto? {
     val grunnlag = søknadsbarn.mapNotNull { hentNesteEtterfølgendeVedtak(it) }
     return grunnlag.sortedByDescending { it.virkningstidspunkt }.find {
         val vedtak = hentVedtak(it.vedtaksid)
-        val kravhavere = vedtak?.stønadsendringListe?.map { hentNyesteIdent(it.kravhaver.verdi) } ?: emptyList()
+        val kravhavere = vedtak?.stønadsendringListe?.map { hentNyesteIdent(it.kravhaver.verdi)?.verdi } ?: emptyList()
 
         val søknadsbarnIdenter = søknadsbarn.map { it.ident }
         søknadsbarnIdenter.sortedBy { it }.toSet() == kravhavere.sortedBy { it }.toSet()
