@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.transformers.behandling.finnRolle
 import no.nav.bidrag.behandling.transformers.behandling.mapTilInntektspostEndringer
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erHistorisk
+import no.nav.bidrag.behandling.transformers.minOfNullable
 import no.nav.bidrag.behandling.transformers.nærmesteHeltall
 import no.nav.bidrag.behandling.transformers.skattefaktorTilProsent
 import no.nav.bidrag.behandling.transformers.skatteprosentTilFaktor
@@ -71,8 +72,7 @@ fun Inntekt.bestemDatoTomForOffentligInntekt() =
             if (tom.plusMonths(1).isAfter(maxDate)) {
                 justerPeriodeTomOpphørsdato(opphørsdato)
             } else {
-                justerPeriodeTomOpphørsdato(opphørsdato)
-                    ?: tom
+                minOfNullable(justerPeriodeTomOpphørsdato(opphørsdato), tom)
             }
         }
     }
