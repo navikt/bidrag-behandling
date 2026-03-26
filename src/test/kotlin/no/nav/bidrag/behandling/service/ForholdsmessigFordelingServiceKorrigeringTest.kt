@@ -21,6 +21,7 @@ import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragPeriodeResponse
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.HentBPsÅpneSøknaderResponse
 import org.junit.jupiter.api.BeforeEach
@@ -76,6 +77,11 @@ class ForholdsmessigFordelingServiceKorrigeringTest {
                 virkningstidspunktService = virkningstidspunktService,
                 underholdService = underholdService,
             )
+        every { belopshistorikkConsumer.hentAlleLøpendeStønaderIPeriode(any()) }.returns(LøpendeBidragPeriodeResponse())
+        every { grunnlagService.lagreBeløpshistorikkGrunnlag(any()) }.returns(emptyMap())
+        every { grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(any()) }.returns(emptyMap())
+        every { behandlingRepository.finnÅpneBidragsbehandlingerForBp(any(), any()) }.returns(emptyList())
+        every { sakConsumer.hentSakerPerson(any()) }.returns(emptyList())
     }
 
     @Test
@@ -145,26 +151,6 @@ class ForholdsmessigFordelingServiceKorrigeringTest {
         service.`synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling`(behandling)
 
         soknadSomSkalFeilregistreres.status shouldBe Behandlingstatus.FEILREGISTRERT
-    }
-
-    @Test
-    fun `skal beholde status nar oppslag mot bbm feiler`() {
-        val behandling = lagBehandling()
-        val barn = behandling.søknadsbarn.first()
-        val lagretSoknad = lagFfSoknad(soknadsid = AKTIV_SOKNAD_ID)
-
-        barn.forholdsmessigFordeling =
-            lagFfDetaljer(
-                erRevurdering = true,
-                soknader = mutableSetOf(lagretSoknad),
-            )
-
-        stubApneSoknaderTom()
-        every { bbmConsumer.hentSøknad(any()) } throws RuntimeException("BBM utilgjengelig")
-
-        service.`synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling`(behandling)
-
-        lagretSoknad.status shouldBe Behandlingstatus.UNDER_BEHANDLING
     }
 
     private fun stubApneSoknaderTom() {

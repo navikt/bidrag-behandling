@@ -285,7 +285,7 @@ fun Behandling.hentNesteEtterfølgendeVedtakFelles(): EtterfølgendeVedtakDto? {
     val grunnlag = søknadsbarn.mapNotNull { hentNesteEtterfølgendeVedtak(it) }
     return grunnlag.sortedByDescending { it.virkningstidspunkt }.find {
         val vedtak = hentVedtak(it.vedtaksid)
-        val kravhavere = vedtak?.stønadsendringListe?.map { hentNyesteIdent(it.kravhaver.verdi) } ?: emptyList()
+        val kravhavere = vedtak?.stønadsendringListe?.map { hentNyesteIdent(it.kravhaver.verdi)?.verdi } ?: emptyList()
 
         val søknadsbarnIdenter = søknadsbarn.map { it.ident }
         søknadsbarnIdenter.sortedBy { it }.toSet() == kravhavere.sortedBy { it }.toSet()
@@ -375,6 +375,10 @@ fun Behandling.finnPeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): År
     )
 }
 
+fun Rolle.løperPeriodeEtterSøktFomDato(periode: ÅrMånedsperiode) =
+    periode.til == null ||
+        periode.til!! > YearMonth.from(forholdsmessigFordeling?.eldsteSøknad?.søknadFomDato ?: behandling.eldsteSøktFomDato)
+
 fun Behandling.løperPeriodeEtterSøktFomDato(periode: ÅrMånedsperiode) =
     periode.til == null || periode.til!! > YearMonth.from(eldsteSøktFomDato)
 
@@ -388,6 +392,14 @@ fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle)
         null
     }
 }
+
+fun Rolle.harLøpendeBidragFørOpphørEllerLøpende() =
+    (
+        opphørsdato == null && (
+            behandling.finnesLøpendeBidragForRolle(this) || behandling.privatAvtale.any { it.personIdent == this.ident }
+        )
+    ) ||
+        (opphørsdato != null && løperBidragFørOpphør())
 
 fun Rolle.løperBidragFørOpphør() =
     opphørsdato != null && finnLøperBidragFra() != null &&

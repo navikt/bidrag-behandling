@@ -4,12 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.KunneIkkeLeseMeldingFraHendelse
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.ForsendelseService
+import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.NotatOpplysningerService
 import no.nav.bidrag.behandling.service.OppgaveService
 import no.nav.bidrag.behandling.transformers.erBidrag
@@ -20,6 +22,7 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.transport.behandling.vedtak.Stønadsendring
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import no.nav.bidrag.transport.behandling.vedtak.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.erDelvedtak
@@ -38,7 +41,7 @@ class VedtakHendelseListener(
     val forsendelseService: ForsendelseService,
     val behandlingService: BehandlingService,
     val notatOpplysningerService: NotatOpplysningerService,
-    val oppgaveService: OppgaveService,
+    val grunnlagService: GrunnlagService,
     val behandlingRepository: BehandlingRepository,
     val forholdsmessigFordelingService: ForholdsmessigFordelingService,
 ) {
@@ -46,6 +49,8 @@ class VedtakHendelseListener(
     @Transactional
     fun prossesserVedtakHendelse(melding: ConsumerRecord<String, String>) {
         val vedtak = parseVedtakHendelse(melding)
+        vedtak.oppdaterÅpenFFBehandlingHvisOpphørEllerInnkreving()
+
         if (!vedtak.erFattetGjennomBidragBehandling()) {
             log.info {
                 "Mottok hendelse for vedtak ${vedtak.id} med type ${vedtak.type}. " +
@@ -83,49 +88,62 @@ class VedtakHendelseListener(
             vedtaksid = vedtak.id,
             vedtak.enhetsnummer?.verdi ?: behandling.behandlerEnhet,
         )
-
-        vedtak.oppdaterÅpenFFBehandlingHvisOpphørEllerInnkreving()
     }
 
     private fun VedtakHendelse.oppdaterÅpenFFBehandlingHvisOpphørEllerInnkreving() {
-        if (type != Vedtakstype.OPPHØR && type != Vedtakstype.INNKREVING) return
+        if ((type != Vedtakstype.OPPHØR && type != Vedtakstype.INNKREVING) ||
+            !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled
+        ) {
+            return
+        }
         val stønadsendringerBidrag =
             stønadsendringListe?.filter { it.type == Stønadstype.BIDRAG || it.type == Stønadstype.BIDRAG18AAR } ?: emptyList()
         if (stønadsendringerBidrag.isEmpty()) return
         stønadsendringerBidrag.forEach { stønadsendring ->
 
             val bp = stønadsendring.skyldner
-            behandlingRepository.finnHovedbehandlingForBpVedFF(bp.verdi, type.name)?.let { behandling ->
-                if (type == Vedtakstype.OPPHØR) {
-                    val opphørsperiode =
-                        stønadsendring.periodeListe
-                            .filter { it.beløp == null }
-                            .maxByOrNull {
-                                it.periode.fom
-                            } ?: return@let
-                    forholdsmessigFordelingService
-                        .oppdaterBarnEtterOpphør(
-                            behandling,
-                            stønadsendring.kravhaver,
-                            stønadsendring.type,
-                            opphørsperiode,
-                        )
-                } else {
-                    if (behandling.søknadsbarn.none { it.erSammeRolle(stønadsendring.kravhaver.verdi, stønadsendring.type) }) {
-                        // Henter og legger til barn som revurderingsbarn
-                        behandling.privatAvtale.removeIf {
-                            it.rolle == null &&
-                                (it.rolle!!.erSammeRolle(stønadsendring.kravhaver.verdi, stønadsendring.type))
-                        }
-                        forholdsmessigFordelingService.opprettEllerOppdaterForholdsmessigFordeling(behandling.id!!)
-                        forholdsmessigFordelingService.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
-                    } else {
-                        forholdsmessigFordelingService.oppdaterBarnEtterInnkrevingsvedtak(
-                            behandling,
-                            stønadsendring.kravhaver,
-                        )
-                    }
+            val behandlinger = behandlingRepository.finnÅpneBidragsbehandlingerForBpMedFF(bp.verdi)
+            behandlinger.forEach { behandling ->
+                behandleBehandlingHvisOpphorEllerInnkreving(stønadsendring, behandling)
+            }
+        }
+    }
+
+    private fun VedtakHendelse.behandleBehandlingHvisOpphorEllerInnkreving(
+        stønadsendring: Stønadsendring,
+        behandling: Behandling,
+    ) {
+        // Hent grunnlag beløpshistorikk slik at det er oppdatert
+        grunnlagService.lagreBeløpshistorikkGrunnlag(behandling)
+        grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
+        if (type == Vedtakstype.OPPHØR) {
+            val opphørsperiode =
+                `stønadsendring`.periodeListe
+                    .filter { it.beløp == null }
+                    .maxByOrNull {
+                        it.periode.fom
+                    } ?: return
+            forholdsmessigFordelingService
+                .oppdaterBarnEtterOpphør(
+                    behandling,
+                    `stønadsendring`.kravhaver,
+                    `stønadsendring`.type,
+                    opphørsperiode,
+                )
+        } else {
+            if (behandling.søknadsbarn.none { it.erSammeRolle(`stønadsendring`.kravhaver.verdi, `stønadsendring`.type) }) {
+                // Henter og legger til barn som revurderingsbarn
+                behandling.privatAvtale.removeIf {
+                    it.rolle == null &&
+                        (it.rolle!!.erSammeRolle(`stønadsendring`.kravhaver.verdi, `stønadsendring`.type))
                 }
+                forholdsmessigFordelingService.opprettEllerOppdaterForholdsmessigFordeling(behandling.id!!)
+                forholdsmessigFordelingService.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
+            } else {
+                forholdsmessigFordelingService.oppdaterBarnEtterInnkrevingsvedtak(
+                    behandling,
+                    `stønadsendring`.kravhaver,
+                )
             }
         }
     }

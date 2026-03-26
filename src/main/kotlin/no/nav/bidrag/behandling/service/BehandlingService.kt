@@ -32,6 +32,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.tilType
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
@@ -124,6 +125,7 @@ class BehandlingService(
                         .filter { it.forholdsmessigFordeling!!.søknaderUnderBehandling.any { it.søknadsid == søknadsid } }
                 forholdsmessigFordelingService!!.slettBarnEllerBehandling(barnSomSkalSlettes, behandling, søknadsid)
                 behandling.bidragspliktig?.fjernGebyr(søknadsid)
+                forholdsmessigFordelingService!!.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
             }
         } else {
             logiskSlettBehandling(behandling)
@@ -244,6 +246,7 @@ class BehandlingService(
                             stønadstype = opprettBehandling.stønadstype!!,
                         ),
                     )
+                    forholdsmessigFordelingService!!.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
                 } catch (e: Exception) {
                     secureLogger.error(e) { "Feil ved opprettelse av behandling for $opprettBehandling for ff behandling ${behandling.id}" }
                     val metadata = behandling.metadata ?: BehandlingMetadataDo()
@@ -669,6 +672,9 @@ class BehandlingService(
         identerSomSkalSlettes.isNotEmpty().ifTrue {
             secureLogger.debug { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
         }
+
+        // IMPORTANT: Do not remove roller here.
+        // For FF-behandling, ForholdsmessigFordelingService must handle add/delete operations on a consistent graph.
         if (behandling.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
             val revurderingsbarnSomLeggesTil =
                 oppdaterRollerListe
@@ -690,14 +696,8 @@ class BehandlingService(
                 forholdsmessigFordelingService.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
             } catch (e: Exception) {
                 log.error(e) { "Feil ved oppdatering av roller i behandling $behandlingId. Ruller tilbake til tidligere roller" }
-                val metadata = behandling.metadata ?: BehandlingMetadataDo()
-                val data = tilJsonString(metadata.leggTilOppdateringAvFFRollerFeilet(request))
-                behandlingRepository.markerOppdateringFFRollerFeilet(
-                    behandlingId,
-                    data,
-                )
-                metadata.setOppdateringAvFFRollerFeilet(data)
-                behandling.metadata = metadata
+                // Fail fast so the transaction rolls back instead of flushing a broken persistence context.
+                throw e
             }
         } else {
             behandling.roller.addAll(rollerSomLeggesTil.map { it.toRolle(behandling) })

@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
@@ -104,6 +105,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
+import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 class BehandlingServiceTest : TestContainerRunner() {
     @MockBean
@@ -2147,6 +2149,56 @@ class BehandlingServiceTest : TestContainerRunner() {
 
         assertEquals(3L, realCount)
         assertEquals(1L, deletedCount)
+    }
+
+    @Test
+    @Transactional
+    fun slettRolleFraBehandling_sletterNotatUtenConstraintViolation() {
+        val behandling = prepareBehandling(søknadsid = 55667788)
+        behandling.roller.add(testdataBarn2.tilRolle(behandling))
+        val barnSomSkalSlettes = behandling.søknadsbarn.first()
+        behandling.notater.add(
+            Notat(
+                behandling = behandling,
+                rolle = barnSomSkalSlettes,
+                type = Notattype.INNTEKT,
+                innhold = "regresjonstest-notat",
+            ),
+        )
+
+        val lagretBehandling = behandlingRepository.save(behandling)
+        entityManager.flush()
+        entityManager.clear()
+
+        behandlingService
+            .oppdaterRoller(
+                lagretBehandling.id!!,
+                OppdaterRollerRequest(
+                    roller =
+                        listOf(
+                            OpprettRolleDto(
+                                rolletype = Rolletype.BARN,
+                                ident = Personident(barnSomSkalSlettes.ident!!),
+                                fødselsdato = barnSomSkalSlettes.fødselsdato,
+                                erSlettet = true,
+                            ),
+                        ),
+                ),
+            ).status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
+
+        entityManager.flush()
+
+        val antallNotatForSlettetRolle =
+            (
+                entityManager
+                    .createNativeQuery(
+                        "select count(*) from notat n where n.behandling_id = :behandlingId and n.rolle_id = :rolleId",
+                    ).setParameter("behandlingId", lagretBehandling.id!!)
+                    .setParameter("rolleId", barnSomSkalSlettes.id!!)
+                    .singleResult as Number
+            ).toLong()
+
+        antallNotatForSlettetRolle shouldBe 0L
     }
 
     companion object {

@@ -136,6 +136,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrun
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottakerReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.byggSluttberegningBarnebidragDetaljer
+import no.nav.bidrag.transport.behandling.felles.grunnlag.erIndeksEllerAldersjustering
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrenseForPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erSluttberegningGammelStruktur
@@ -143,6 +144,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenRe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanser
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnDelberegningSjekkGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnDelberegningSjekkGrensePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
@@ -592,7 +594,11 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                         avslagskode,
                                         p.grunnlagsreferanseListe,
                                         resultat.ugyldigBeregning,
-                                        grunnlagslisteRV.erResultatEndringUnderGrense(resultat.barn.referanse, p.grunnlagsreferanseListe),
+                                        grunnlagslisteRV.erResultatEndringUnderGrenseForPeriode(
+                                            p.periode,
+                                            resultat.barn.referanse,
+                                            p.grunnlagsreferanseListe,
+                                        ),
                                         delvedtak?.vedtakstype ?: rv.vedtakstype,
                                         resultat.barn.ident!!,
                                         erEndeligVedtak = erEndeligVedtak,
@@ -886,7 +892,7 @@ private fun byggPeriodeBeregningDtoForResultatFraAnnenVedtak(
             Resultatkode.fraKode(vedtakPeriode.resultatkode),
             vedtakPeriode.grunnlagReferanseListe,
             null,
-            barn?.let { vedtak.grunnlagListe.erResultatEndringUnderGrense(barn.referanse) } ?: false,
+            barn?.let { vedtak.grunnlagListe.erResultatEndringUnderGrenseForPeriode(vedtakPeriode.periode, barn.referanse) } ?: false,
             vedtakstype,
             barnIdent,
         ).copy(
