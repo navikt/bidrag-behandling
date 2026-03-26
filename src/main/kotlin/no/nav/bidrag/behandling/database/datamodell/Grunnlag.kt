@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.database.datamodell.model.BpsBarnUtenBidragsakEl
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
 import no.nav.bidrag.behandling.dto.v1.beregning.BeregnetBidragBarnDto
+import no.nav.bidrag.behandling.dto.v1.grunnlag.BpsBarnUtenLøpendeBidragDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
@@ -148,6 +149,21 @@ fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderRolleListe(
                 it.grunnlagFraVedtakSomSkalOmgjøres == grunnlagFraVedtakSomSkalOmgjøres
             }
     }
+
+fun Behandling.bpsBarnUtenLøpendeBidrag(): Set<BpsBarnUtenLøpendeBidragDto> =
+    grunnlag
+        .hentSisteGrunnlagBpsBarnUtenBidragsak()
+        ?.map {
+            BpsBarnUtenLøpendeBidragDto(
+                ident = it.ident.verdi,
+                fødselsdato = it.fødselsdato,
+                navn = it.navn,
+                saksnummer = it.saksnummer,
+                enhet = it.enhet,
+                beløpshistorikkBidrag = it.beløpshistorikkBidrag,
+                beløpshistorikkBidrag18År = it.beløpshistorikkBidrag18År,
+            )
+        }?.toSet() ?: emptySet()
 
 fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderRolle(
     rolle: Rolle,

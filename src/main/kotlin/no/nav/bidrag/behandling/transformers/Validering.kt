@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.database.datamodell.bpsBarnUtenLøpendeBidrag
 import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.henteAlleBostatusperioder
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
@@ -421,6 +422,15 @@ fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
                     },
                     rolle!!,
                 )
+            } else if (personIdent != null) {
+                behandling
+                    .finnPerioderSomOverlapperMedLøpendeBidragForAndreBarn(
+                        perioder.map {
+                            it.tilDatoperiode()
+                        },
+                        personIdent!!,
+                        stønadstype ?: Stønadstype.BIDRAG,
+                    )
             } else {
                 emptySet()
             },
@@ -565,6 +575,23 @@ fun Behandling.manglerLøpendePeriode(
     val ikkeLøpendePeriode = perioder.maxByOrNull { it.fom }?.tom
     val sistePeriodeEr18Årsdag = ikkeLøpendePeriode != null && ikkeLøpendePeriode == fødselsdato18År
     return !løperBidrag && (!harLøpendePrivatAvtale && !sistePeriodeEr18Årsdag)
+}
+
+fun Behandling.finnPerioderSomOverlapperMedLøpendeBidragForAndreBarn(
+    perioder: List<Datoperiode>,
+    barnIdent: String,
+    stønadstype: Stønadstype,
+): Set<Datoperiode> {
+    val løpendeBidrag =
+        bpsBarnUtenLøpendeBidrag()
+            .find { it.ident == barnIdent }
+            ?.finnBeløpshistorikk(stønadstype)
+            ?.periodeListe ?: emptyList()
+    return perioder
+        .sortedBy { it.fom }
+        .filter {
+            løpendeBidrag.any { lb -> it.overlapper(Datoperiode(lb.periode.fom, lb.periode.til?.minusMonths(1))) }
+        }.toSet()
 }
 
 fun Behandling.finnPerioderSomOverlapperMedLøpendeBidrag(

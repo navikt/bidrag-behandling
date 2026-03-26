@@ -437,16 +437,34 @@ fun Husstandsmedlem.oppdaterePerioder(
 
     val periodiseringsrequest = tilBoforholdBarnRequest(endreBostatus)
 
-    this.overskriveMedBearbeidaPerioder(
-        BoforholdApi.beregnBoforholdBarnV3(
-            behandling.eldsteVirkningstidspunkt,
-            null,
+    try {
+        this.overskriveMedBearbeidaPerioder(
+            BoforholdApi.beregnBoforholdBarnV3(
+                behandling.eldsteVirkningstidspunkt,
+                null,
 //            rolle?.opphørsdato ?: behandling.globalOpphørsdato,
-            behandling.finnBeregnTilDatoBehandling(rolle),
-            behandling.tilTypeBoforhold(),
-            listOf(periodiseringsrequest),
-        ),
-    )
+                behandling.finnBeregnTilDatoBehandling(rolle),
+                behandling.tilTypeBoforhold(),
+                listOf(periodiseringsrequest),
+            ),
+        )
+    } catch (_: NullPointerException) {
+        // Noen caser hvor det er skjedd en feil i periodiseringen pga ugydlig data eller bug. Ruller tilbake til offentlige opplysninger
+        this.overskriveMedBearbeidaPerioder(
+            BoforholdApi.beregnBoforholdBarnV3(
+                behandling.eldsteVirkningstidspunkt,
+                null,
+//            rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                behandling.finnBeregnTilDatoBehandling(rolle),
+                behandling.tilTypeBoforhold(),
+                listOf(
+                    periodiseringsrequest.copy(
+                        behandledeBostatusopplysninger = emptyList(),
+                    ),
+                ),
+            ),
+        )
+    }
 }
 
 fun Husstandsmedlem.overskriveAndreVoksneIHusstandMedBearbeidaPerioder(nyePerioder: List<Bostatus>) {
