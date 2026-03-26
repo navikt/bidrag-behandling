@@ -584,7 +584,7 @@ class BehandlingService(
                 .findBehandlingById(behandlingId)
                 .orElseThrow { behandlingNotFoundException(behandlingId) }
                 .let {
-                    if (it.forholdsmessigFordeling != null &&
+                    if (it.erIForholdsmessigFordeling &&
                         it.forholdsmessigFordeling?.erHovedbehandling == false
                     ) {
                         behandlingRepository.findBehandlingById(it.forholdsmessigFordeling!!.behandlesAvBehandling!!).getOrNull()

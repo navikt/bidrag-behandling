@@ -324,7 +324,7 @@ class BeregningService(
         val grunnlagslisteSøknadsbarn = grunnlagslisteBarn.flatMap { it.beregnGrunnlag.grunnlagListe }.toSet().toList()
         val grunnlagslisteSimulertPrivatAvtale =
             mapper.run {
-                byggGrunnlagForSimulering(behandling, grunnlagslisteSøknadsbarn.toSet())
+                byggGrunnlagForSimuleringPrivatAvtale(behandling, grunnlagslisteSøknadsbarn.toSet())
             }
         return BidragsberegningOrkestratorRequestV2(
             skalHensyntaLøpendeBidrag = UnleashFeatures.BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG.isEnabled,

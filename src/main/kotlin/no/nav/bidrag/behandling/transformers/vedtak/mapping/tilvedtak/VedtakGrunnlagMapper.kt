@@ -25,7 +25,6 @@ import no.nav.bidrag.behandling.transformers.hentGrunnlagBeløpshistorikkForRoll
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.løperPeriodeEtterSøktFomDato
 import no.nav.bidrag.behandling.transformers.maxOfNullable
-import no.nav.bidrag.behandling.transformers.minOfNullable
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.vedtakmappingFeilet
@@ -391,7 +390,7 @@ class VedtakGrunnlagMapper(
         }
     }
 
-    fun byggGrunnlagForSimulering(
+    fun byggGrunnlagForSimuleringPrivatAvtale(
         behandling: Behandling,
         grunnlagsliste: Set<GrunnlagDto>,
     ): Set<GrunnlagDto> =
