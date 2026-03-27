@@ -215,7 +215,7 @@ class BehandlingTilGrunnlagMappingV2(
             privatAvtale
                 .filter {
                     it.rolle == null && it.perioderInnkreving.isNotEmpty() &&
-                        (gjelderRolle == null || it.gjelderPerson(gjelderRolle.ident!!, gjelderRolle.stønadstype))
+                        (gjelderRolle == null || it.gjelderPerson(gjelderRolle.ident ?: "", gjelderRolle.stønadstype))
                 }.flatMap { pa ->
                     val gjelderBarn =
                         personobjekter.hentPerson(pa.personIdent) ?: pa.opprettPersonGrunnlag()
