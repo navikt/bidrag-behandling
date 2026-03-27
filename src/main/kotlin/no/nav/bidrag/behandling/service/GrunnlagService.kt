@@ -87,6 +87,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
 import no.nav.bidrag.behandling.transformers.inntekt.opprettTransformerInntekterRequest
 import no.nav.bidrag.behandling.transformers.inntekt.tilAinntektsposter
+import no.nav.bidrag.behandling.transformers.konverterTilStønadDto
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.opprettHentGrunnlagDto
 import no.nav.bidrag.behandling.transformers.tilType
@@ -767,7 +768,7 @@ class GrunnlagService(
                         .hentBeløpshistorikk(behandling, sb, stønadstype, fraOpprinneligVedtakstidspunkt)
                         ?.korrigerIndeksår(sb)
                 if ((eksisterendeGrunnlag == null && respons != null) ||
-                    (respons != null && eksisterendeGrunnlag.konvertereData<StønadDto>() != respons)
+                    (respons != null && eksisterendeGrunnlag.konverterTilStønadDto() != respons)
                 ) {
                     secureLogger.debug {
                         "Lagrer ny grunnlag beløpshistorikk for type $type med respons $respons hvor siste aktive grunnlag var $eksisterendeGrunnlag"
