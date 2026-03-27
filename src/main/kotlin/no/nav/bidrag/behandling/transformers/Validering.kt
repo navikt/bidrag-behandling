@@ -44,6 +44,8 @@ import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.behandling.ressursHarFeilKildeException
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.ressursIkkeTilknyttetBehandling
+import no.nav.bidrag.behandling.transformers.behandling.finnOpphørsdatoBoforhold
+import no.nav.bidrag.behandling.transformers.behandling.finnVirkningstidspunktBeregningBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.kategorierSomKreverType
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
@@ -498,13 +500,14 @@ fun Husstandsmedlem.validereBoforhold(
     valideringsfeil: MutableList<BoforholdPeriodeseringsfeil>,
     validerePerioder: Boolean = true,
 ): Set<BoforholdPeriodeseringsfeil> {
-    val opphørsdato = rolle?.opphørsdato ?: behandling.globalOpphørsdato
+    val beregnFraDato = rolle?.finnVirkningstidspunktBeregningBoforhold() ?: virkniningstidspunkt
+    val opphørsdato = rolle?.finnOpphørsdatoBoforhold()
 
     val hullIPerioder =
         this.perioder
             .map {
                 Datoperiode(it.datoFom!!, it.datoTom)
-            }.finnHullIPerioder(maxOf(virkniningstidspunkt, this.fødselsdato ?: this.rolle!!.fødselsdato), opphørsdato)
+            }.finnHullIPerioder(maxOf(beregnFraDato, this.fødselsdato ?: this.rolle!!.fødselsdato), opphørsdato)
     if (validerePerioder) {
         valideringsfeil.add(
             BoforholdPeriodeseringsfeil(
