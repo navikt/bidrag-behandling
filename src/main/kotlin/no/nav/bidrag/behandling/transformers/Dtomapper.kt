@@ -86,6 +86,8 @@ import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.erLik
+import no.nav.bidrag.behandling.transformers.behandling.finnOpphørsdatoBoforhold
+import no.nav.bidrag.behandling.transformers.behandling.finnVirkningstidspunktBeregningBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
 import no.nav.bidrag.behandling.transformers.behandling.hentVirkningstidspunktValideringsfeil
@@ -1548,6 +1550,8 @@ class Dtomapper(
             id = this.id,
             gjelderBarn = this.rolle?.tilDto(),
             kilde = this.kilde,
+            beregnFra = rolle?.finnVirkningstidspunktBeregningBoforhold(),
+            beregnTil = rolle?.finnOpphørsdatoBoforhold() ?: behandling.finnBeregnTilDato(),
             medIBehandling =
                 !this.ident.isNullOrBlank() &&
                     behandling.søknadsbarn
