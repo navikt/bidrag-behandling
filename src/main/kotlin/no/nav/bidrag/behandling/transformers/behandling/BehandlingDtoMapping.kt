@@ -529,16 +529,19 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
             },
     )
 
-fun Person.tilRolle(behandling: Behandling) =
-    Rolle(
-        behandling,
-        Rolletype.BARN,
-        ident,
-        fødselsdato,
-        LocalDateTime.now(),
-        null,
-        navn ?: hentPersonVisningsnavn(ident),
-    )
+fun Person.tilRolle(
+    behandling: Behandling,
+    stønadstype: Stønadstype?,
+) = Rolle(
+    behandling,
+    Rolletype.BARN,
+    ident,
+    fødselsdato,
+    LocalDateTime.now(),
+    null,
+    navn ?: hentPersonVisningsnavn(ident),
+    stønadstype = stønadstype,
+)
 
 fun Person.tilDto(stønadstype: Stønadstype? = null) =
     RolleDto(

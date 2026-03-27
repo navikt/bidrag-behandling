@@ -9,7 +9,6 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.PersonService
-import no.nav.bidrag.behandling.transformers.behandling.tilRolle
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.tilBeregnetInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
@@ -214,8 +213,10 @@ class BehandlingTilGrunnlagMappingV2(
 
         return if (gjelderRolle == null || gjelderRolle.id == null) {
             privatAvtale
-                .filter { it.rolle == null && it.perioderInnkreving.isNotEmpty() }
-                .flatMap { pa ->
+                .filter {
+                    it.rolle == null && it.perioderInnkreving.isNotEmpty() &&
+                        (gjelderRolle == null || it.gjelderPerson(gjelderRolle.ident!!, gjelderRolle.stønadstype))
+                }.flatMap { pa ->
                     val gjelderBarn =
                         personobjekter.hentPerson(pa.personIdent) ?: pa.opprettPersonGrunnlag()
                     val gjelderBarnReferanse = gjelderBarn.referanse

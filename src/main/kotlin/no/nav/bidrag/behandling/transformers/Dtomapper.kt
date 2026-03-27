@@ -1370,7 +1370,7 @@ class Dtomapper(
                 if (skalIndeksreguleres &&
                     perioderInnkreving.isNotEmpty()
                 ) {
-                    behandling.tilBeregnetPrivatAvtale(rolle ?: person?.tilRolle(behandling)!!, false)
+                    behandling.tilBeregnetPrivatAvtale(rolle ?: person?.tilRolle(behandling, stønadstype)!!, false)
                 } else {
                     null
                 },
@@ -1432,7 +1432,7 @@ class Dtomapper(
                 if (skalIndeksreguleres &&
                     perioderInnkreving.isNotEmpty()
                 ) {
-                    behandling.tilBeregnetPrivatAvtale(rolle ?: person?.tilRolle(behandling)!!, false)
+                    behandling.tilBeregnetPrivatAvtale(rolle ?: person?.tilRolle(behandling, stønadstype)!!, false)
                 } else {
                     null
                 },
