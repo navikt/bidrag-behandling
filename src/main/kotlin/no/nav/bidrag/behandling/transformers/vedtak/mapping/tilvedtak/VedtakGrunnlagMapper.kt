@@ -338,7 +338,7 @@ class VedtakGrunnlagMapper(
     ): List<GrunnlagDto> {
         return if (behandling.grunnlagslisteFraVedtak.isNullOrEmpty()) {
             if (behandling.privatAvtale
-                    .find { it.gjelderPerson(gjelderBarn.ident!!, gjelderBarn.stønadstype) }
+                    .find { it.gjelderPerson(gjelderBarn.ident ?: "", gjelderBarn.stønadstype) }
                     ?.perioderInnkreving
                     ?.isEmpty() == true
             ) {
