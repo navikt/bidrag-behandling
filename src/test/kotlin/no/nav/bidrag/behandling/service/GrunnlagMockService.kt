@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.konverterTilStønadDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
@@ -745,7 +746,7 @@ class GrunnlagMockService {
         assertSoftly(grunnlagsliste.filter { it.type == Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG }) {
             shouldHaveSize(2)
             val sisteGrunnlag = maxBy { it.aktiv!! }
-            val innhold = sisteGrunnlag.konvertereData<StønadDto>()!!
+            val innhold = sisteGrunnlag.konverterTilStønadDto()!!
             innhold.periodeListe shouldHaveSize 1
             innhold.periodeListe.first().beløp shouldBe BigDecimal(200)
         }
