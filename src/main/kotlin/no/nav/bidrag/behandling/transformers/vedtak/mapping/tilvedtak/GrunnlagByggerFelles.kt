@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligInntekt
 import no.nav.bidrag.behandling.transformers.kanSkriveVurderingAvSkolegangAlle
+import no.nav.bidrag.behandling.transformers.konverterTilStønadDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.vedtak.inntektsrapporteringSomKreverSøknadsbarn
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
@@ -964,7 +965,7 @@ fun Behandling.byggGrunnlagBeløpshistorikkBidrag(søknadsbarn: Rolle): Grunnlag
         grunnlag
             .hentSisteGrunnlagSomGjelderRolle(søknadsbarn, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG)
     return grunnlagBh
-        .konvertereData<StønadDto>()
+        .konverterTilStønadDto()
         .tilGrunnlagBeløpshistorikk(
             kravhaver = søknadsbarn.ident!!,
             skyldner = bidragspliktig!!.ident!!,
@@ -980,7 +981,7 @@ fun Behandling.byggGrunnlagBeløpshistorikkBidrag18År(søknadsbarn: Rolle): Gru
         grunnlag
             .hentSisteGrunnlagSomGjelderRolle(søknadsbarn, Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG_18_ÅR)
     return grunnlagBh
-        .konvertereData<StønadDto>()
+        .konverterTilStønadDto()
         .tilGrunnlagBeløpshistorikk(
             kravhaver = søknadsbarn.ident!!,
             skyldner = bidragspliktig!!.ident!!,
@@ -996,7 +997,7 @@ fun Behandling.byggGrunnlagBeløpshistorikkForskudd(søknadsbarn: Rolle): Grunnl
         grunnlag
             .hentSisteGrunnlagSomGjelderRolle(søknadsbarn, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD)
     return grunnlagBh
-        .konvertereData<StønadDto>()
+        .konverterTilStønadDto()
         .tilGrunnlagBeløpshistorikk(
             kravhaver = søknadsbarn.ident!!,
             skyldner = personIdentNav.verdi,

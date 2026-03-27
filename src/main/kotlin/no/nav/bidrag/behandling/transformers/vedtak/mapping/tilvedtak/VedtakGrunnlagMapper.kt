@@ -23,9 +23,9 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
 import no.nav.bidrag.behandling.transformers.hentGrunnlagBeløpshistorikkForRolle
 import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
+import no.nav.bidrag.behandling.transformers.konverterTilStønadDto
 import no.nav.bidrag.behandling.transformers.løperPeriodeEtterSøktFomDato
 import no.nav.bidrag.behandling.transformers.maxOfNullable
-import no.nav.bidrag.behandling.transformers.minOfNullable
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.vedtakmappingFeilet
@@ -78,7 +78,7 @@ import java.time.YearMonth
 
 fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
     if (innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
-        val beløpshistorikk = hentGrunnlagBeløpshistorikkForRolle(søknadsbarnRolle, false).konvertereData<StønadDto>() ?: return null
+        val beløpshistorikk = hentGrunnlagBeløpshistorikkForRolle(søknadsbarnRolle, false).konverterTilStønadDto() ?: return null
         val sistePeriode = beløpshistorikk.periodeListe.maxByOrNull { it.periode.fom }
         if (sistePeriode?.periode?.til != null && sistePeriode.periode.til!! <= søknadsbarnRolle.finnBeregnTil()) {
             null

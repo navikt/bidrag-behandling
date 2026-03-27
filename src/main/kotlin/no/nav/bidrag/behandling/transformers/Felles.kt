@@ -1,6 +1,8 @@
 package no.nav.bidrag.behandling.transformers
 
+import com.fasterxml.jackson.module.kotlin.KotlinInvalidNullException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderRolle
@@ -12,6 +14,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -243,7 +246,7 @@ fun Behandling.finnPeriodeLøperBidrag(rolle: Rolle): ÅrMånedsperiode? {
 
 fun Behandling.finnPerioderHvorDetLøperBidrag(rolle: Rolle): List<ÅrMånedsperiode> {
     val eksisterendeVedtak = hentGrunnlagBeløpshistorikkForRolle(rolle, erKlageEllerOmgjøring) ?: return emptyList()
-    val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return emptyList()
+    val stønad = eksisterendeVedtak.konverterTilStønadDto() ?: return emptyList()
     return stønad.periodeListe
         .filter {
             it.beløp != null
@@ -350,7 +353,7 @@ fun Behandling.finnSistePeriodeLøpendeForskuddPeriodeInnenforSøktFomDato(rolle
     val eksisterendeVedtak =
         grunnlag.hentSisteGrunnlagSomGjelderBarn(rolle.ident!!, Grunnlagsdatatype.BELØPSHISTORIKK_FORSKUDD, false)
             ?: return null
-    val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
+    val stønad = eksisterendeVedtak.konverterTilStønadDto() ?: return null
     val sistePeriode = stønad.periodeListe.maxByOrNull { it.periode.fom } ?: return null
     return if (sistePeriode.periode.til == null || sistePeriode.periode.til!! > YearMonth.from(søktFomDato)) {
         sistePeriode
@@ -361,7 +364,7 @@ fun Behandling.finnSistePeriodeLøpendeForskuddPeriodeInnenforSøktFomDato(rolle
 
 fun Behandling.finnPeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): ÅrMånedsperiode? {
     val eksisterendeVedtak = hentGrunnlagBeløpshistorikkForRolle(rolle, false)
-    val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
+    val stønad = eksisterendeVedtak.konverterTilStønadDto() ?: return null
     val periodelisteFiltrert = stønad.periodeListe.filter { løperPeriodeEtterSøktFomDato(it.periode) }
     if (periodelisteFiltrert.isEmpty()) {
         return null
@@ -384,7 +387,8 @@ fun Behandling.løperPeriodeEtterSøktFomDato(periode: ÅrMånedsperiode) =
 
 fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): StønadPeriodeDto? {
     val eksisterendeVedtak = hentGrunnlagBeløpshistorikkForRolle(rolle, false)
-    val stønad = eksisterendeVedtak.konvertereData<StønadDto>() ?: return null
+    val stønad = eksisterendeVedtak.konverterTilStønadDto() ?: return null
+
     val sistePeriode = stønad.periodeListe.maxByOrNull { it.periode.fom } ?: return null
     return if (løperPeriodeEtterSøktFomDato(sistePeriode.periode)) {
         sistePeriode
@@ -392,6 +396,14 @@ fun Behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle)
         null
     }
 }
+
+fun Grunnlag?.konverterTilStønadDto() =
+    try {
+        konvertereData<StønadDto>()
+    } catch (e: KotlinInvalidNullException) {
+        secureLogger.warn(e) { "Det skjedde en feil ved konvertering av beløpshistorikk ${this?.data}" }
+        null
+    }
 
 fun Rolle.harLøpendeBidragFørOpphørEllerLøpende() =
     (
