@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.service.BoforholdService.Companion.tilbakestilleTilOffentligSivilstandshistorikkBasertPåGrunnlag
@@ -18,9 +19,11 @@ import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.InntektService
 import no.nav.bidrag.behandling.service.PrivatAvtaleService
+import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
+import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -47,7 +50,7 @@ class AdminController(
     private val behandlingRepository: BehandlingRepository,
     private val behandlingService: BehandlingService,
     private val grunnlagService: GrunnlagService,
-    private val privatAvtaleService: PrivatAvtaleService,
+    private val underholdService: UnderholdService,
     private val inntektService: InntektService,
     private val forholsmessigFordelingService: ForholdsmessigFordelingService,
     private val beregningService: BeregningService,
@@ -376,6 +379,31 @@ class AdminController(
                         it.datoTom = null
                     }
             }
+    }
+
+    @PostMapping("/admin/feilfiks/underholdskostnad/{behandlingId}")
+    @Transactional
+    fun opprettUnderholdskostnadForBarnHvisMangler(
+        @PathVariable behandlingId: Long,
+    ) {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).getOrNull() ?: behandlingNotFoundException(behandlingId)
+
+        behandling.søknadsbarn.forEach { barn ->
+            val underholdskostnad = behandling.underholdskostnader.find { it.rolle != null && it.rolle?.id == barn.id }
+            if (underholdskostnad == null) {
+                val underholdskostnadAnnenBarn = behandling.underholdskostnader.find { it.personIdent == barn.ident }
+                if (underholdskostnadAnnenBarn != null) {
+                    underholdskostnadAnnenBarn.rolle = barn
+                    underholdskostnadAnnenBarn.person = null
+                    underholdskostnadAnnenBarn.kilde = Kilde.OFFENTLIG
+                } else {
+                    underholdService.oppretteUnderholdskostnad(
+                        behandling,
+                        gjelderBarn = BarnDto(personident = barn.personident, stønadstype = barn.stønadstype),
+                    )
+                }
+            }
+        }
     }
 
     fun getAge(birthDate: LocalDate): Int = Period.between(birthDate.withMonth(1).withDayOfMonth(1), LocalDate.now()).years
