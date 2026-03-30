@@ -20,7 +20,6 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.barn
-import no.nav.bidrag.behandling.database.datamodell.bpsBarnUtenLøpendeBidrag
 import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagDetaljer.Companion.erBestilt
 import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagDetaljer.Companion.lasterGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
@@ -50,7 +49,6 @@ import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype.Companion.sk
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.getOrMigrate
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
-import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.tilGrunnlagFeilDto
@@ -77,7 +75,6 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdVoksneRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.cuttoffBidrag18ÅrAlder
-import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelserGrunnlagsdatatype
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erOverAntallÅrGammel
@@ -89,7 +86,6 @@ import no.nav.bidrag.behandling.transformers.grunnlag.inntekterOgYtelser
 import no.nav.bidrag.behandling.transformers.grunnlag.summertAinntektstyper
 import no.nav.bidrag.behandling.transformers.grunnlag.summertSkattegrunnlagstyper
 import no.nav.bidrag.behandling.transformers.inntekt.opprettTransformerInntekterRequest
-import no.nav.bidrag.behandling.transformers.inntekt.tilAinntektsposter
 import no.nav.bidrag.behandling.transformers.konverterTilStønadDto
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.opprettHentGrunnlagDto
@@ -141,7 +137,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenRe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilResultatVisningsnavn
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.FeilrapporteringDto
@@ -593,10 +588,12 @@ class GrunnlagService(
             sakConsumer!!
                 .hentSakerPerson(bidragspliktigIdent)
                 .filtrerSakerHvorPersonErBP(bidragspliktigIdent)
-        val barnBpMedÅpenSøknad =
+        val barnBpMedÅpenSøknadEllerLøpendeBidrag =
             åpneSakerBp
-                .filter { it.løperBidragFra == null || it.løperBidragFra > behandling.søktFomDato.toYearMonth() }
-                .map { it.kravhaver } + behandling.søknadsbarn.map { it.ident!! }
+                .filter {
+                    (it.løperBidragFra != null && it.løperBidragTil == null) ||
+                        (it.løperBidragFra != null && it.løperBidragTil != null && it.løperBidragTil > behandling.søktFomDato.toYearMonth())
+                }.map { it.kravhaver } + behandling.søknadsbarn.map { it.ident!! }
         val barnBpMedBidragssak =
             sakerBp.flatMap {
                 it.roller
@@ -607,7 +604,7 @@ class GrunnlagService(
             }
         val barnMedBidragssakUtenLøpendeBidrag =
             barnBpMedBidragssak.filter {
-                !barnBpMedÅpenSøknad.contains(it) &&
+                !barnBpMedÅpenSøknadEllerLøpendeBidrag.contains(it) &&
                     !søknadsbarnIdenter.contains(it)
             }
         val barnUtenBidragsak =

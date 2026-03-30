@@ -45,12 +45,12 @@ open class PrivatAvtale(
     open var stønadstype: Stønadstype? = null,
     open var skalIndeksreguleres: Boolean = true,
     @ManyToOne(
-        fetch = FetchType.LAZY,
+        fetch = FetchType.EAGER,
         cascade = [CascadeType.PERSIST],
     )
     @JoinColumn(name = "person_id", nullable = false)
     open var person: Person? = null,
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "rolle_id", nullable = true)
     open var rolle: Rolle? = null,
     @OneToMany(
