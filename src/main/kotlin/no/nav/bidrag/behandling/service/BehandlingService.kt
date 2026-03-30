@@ -345,7 +345,7 @@ class BehandlingService(
         behandling.roller.addAll(
             HashSet(
                 opprettBehandling.roller.map {
-                    it.toRolle(behandling)
+                    it.toRolle(behandling, stønadstype = opprettBehandling.stønadstype)
                 },
             ),
         )
@@ -367,7 +367,7 @@ class BehandlingService(
             // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
             opprettBehandling.roller.filter { Rolletype.BARN == it.rolletype }.forEach {
                 behandling.underholdskostnader.add(
-                    underholdService.oppretteUnderholdskostnad(behandling, BarnDto(personident = it.ident)),
+                    underholdService.oppretteUnderholdskostnad(behandling, BarnDto(personident = it.ident, stønadstype = it.stønadstype)),
                 )
             }
         }
