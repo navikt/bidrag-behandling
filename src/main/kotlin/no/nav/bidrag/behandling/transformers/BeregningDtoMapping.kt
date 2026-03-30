@@ -1602,13 +1602,14 @@ fun List<GrunnlagDto>.finnBarnetillegg(
 
 fun List<GrunnlagDto>.periodeHarSlåttUtTilFF(periode: ÅrMånedsperiode) = perioderSlåttUtTilFF().map { it.periode }.contains(periode)
 
-fun List<GrunnlagDto>.perioderSlåttUtTilFF(): List<PeriodeSlåttUtTilFF> {
+fun List<GrunnlagDto>.perioderSlåttUtTilFF(søknadsbarnReferanse: String? = null): List<PeriodeSlåttUtTilFF> {
     val andelBidragsevne =
         filtrerOgKonverterBasertPåFremmedReferanse<DelberegningAndelAvBidragsevne>(
             Grunnlagstype.DELBEREGNING_ANDEL_AV_BIDRAGSEVNE,
-        )
+        ).filter { søknadsbarnReferanse == null || it.gjelderBarnReferanse == søknadsbarnReferanse }
 
-    val finnesFlereBarnIBeregning = andelBidragsevne.mapNotNull { it.gjelderBarnReferanse }.distinct().size > 1
+    val finnesFlereBarnIBeregning =
+        søknadsbarnReferanse != null || andelBidragsevne.mapNotNull { it.gjelderBarnReferanse }.distinct().size > 1
     return andelBidragsevne
         .filter {
             finnesFlereBarnIBeregning && !it.innhold.harBPFullEvne
@@ -1642,7 +1643,8 @@ fun List<GrunnlagDto>.harOpprettetForholdsmessigFordeling(): Boolean =
         // Flere søknader = Opprettet FF vanligvis
         hentSøknader().size > 1
 
-fun List<GrunnlagDto>.harSlåttUtTilForholdsmessigFordeling(): Boolean = perioderSlåttUtTilFF().isNotEmpty()
+fun List<GrunnlagDto>.harSlåttUtTilForholdsmessigFordeling(søknadsbarnReferanse: String? = null): Boolean =
+    perioderSlåttUtTilFF(søknadsbarnReferanse).isNotEmpty()
 
 fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,

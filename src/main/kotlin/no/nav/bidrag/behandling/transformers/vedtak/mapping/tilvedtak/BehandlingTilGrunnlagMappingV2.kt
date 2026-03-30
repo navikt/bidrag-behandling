@@ -158,6 +158,7 @@ class BehandlingTilGrunnlagMappingV2(
                             } else {
                                 true
                             },
+                        stønadstype = if (rolletype == Rolletype.BARN) stønadstype else null,
                         fødselsdato =
                             finnFødselsdato(
                                 ident,
