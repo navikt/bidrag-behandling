@@ -2216,7 +2216,7 @@ class ForholdsmessigFordelingService(
                 omgjøringsdetaljer = behandling.omgjøringsdetaljer,
             )
         if (eksisterendeSøknad != null) {
-            val søknadBarnIdenter = eksisterendeSøknad.barn.map { eksisterendeSøknad.`tilIdentStønadstypeNøkkel`(it.personident!!) }
+            val søknadBarnIdenter = eksisterendeSøknad.barn.map { eksisterendeSøknad.tilIdentStønadstypeNøkkel(it.personident!!) }
             barnUtenSøknader
                 .filter { !søknadBarnIdenter.contains(it.distinctKey) }
                 .forEach {

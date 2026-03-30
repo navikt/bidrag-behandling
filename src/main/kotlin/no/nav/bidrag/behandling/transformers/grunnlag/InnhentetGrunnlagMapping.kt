@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
+import no.nav.bidrag.behandling.transformers.vedtak.hentPersonerNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilGrunnlagsobjekt
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilGrunnlagsobjektInnhold
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilPersonGrunnlag
@@ -45,6 +46,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSkattegrunnlagG
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSmåbarnstilleggGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettUtvidetbarnetrygGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.felles.grunnlag.stønadstype
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
@@ -154,19 +156,23 @@ fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(
         val gjelder = personobjekter.hentPersonNyesteIdent(partPersonId)!!
         return husstandsmedlemList
             .groupBy { it.gjelderPersonId }
-            .map { (relatertPersonPersonId, relatertPersonListe) ->
-                val relatertPersonObjekt =
-                    (personobjekter + personobjekterInnhentetHusstandsmedlem).hentPersonNyesteIdent(
-                        relatertPersonPersonId,
-                    )
-                        ?: relatertPersonListe[0].opprettPersonGrunnlag()
+            .flatMap { (relatertPersonPersonId, relatertPersonListe) ->
+                val relatertPersonObjekter =
+                    (personobjekter + personobjekterInnhentetHusstandsmedlem)
+                        .hentPersonerNyesteIdent(
+                            relatertPersonPersonId,
+                        ).ifEmpty {
+                            listOf(relatertPersonListe[0].opprettPersonGrunnlag())
+                        }
                 if (relatertPersonListe.size > 1) innhentetGrunnlagHarFlereRelatertePersonMedSammeId()
 
-                relatertPersonListe.first().tilGrunnlagsobjekt(
-                    grunnlag.innhentet,
-                    gjelder.referanse,
-                    relatertPersonObjekt.referanse,
-                )
+                relatertPersonObjekter.map { relatertPersonObjekt ->
+                    relatertPersonListe.first().tilGrunnlagsobjekt(
+                        grunnlag.innhentet,
+                        gjelder.referanse,
+                        relatertPersonObjekt.referanse,
+                    )
+                }
             }
     }
     val innhentetHusstandsmedlemGrunnlagListe =
@@ -235,7 +241,9 @@ fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
             .filter { sb ->
                 innhentetHusstandsmedlemGrunnlagsliste.filter { it.type == Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM }.none {
                     val barnReferanse = it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.gjelderPerson
-                    personobjekter.hentPersonMedReferanse(barnReferanse)?.personIdent == sb.ident
+                    val person = personobjekter.hentPersonMedReferanse(barnReferanse)
+                    person?.personIdent == sb.ident &&
+                        (person?.stønadstype == null || sb.stønadstype == null || person?.stønadstype == sb.stønadstype)
                 }
             }.map {
                 RelatertPersonGrunnlagDto(
@@ -248,7 +256,7 @@ fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
                 ).tilGrunnlagsobjekt(
                     LocalDateTime.now().withSecond(0).withNano(0),
                     personobjektInnhentesForRolle.referanse,
-                    personobjekter.hentPersonNyesteIdent(it.ident)!!.referanse,
+                    personobjekter.hentPersonNyesteIdent(it.ident, it.stønadstype)!!.referanse,
                 )
             }
     val husstandsmedlemSomManglerInnhentetGrunnlag =

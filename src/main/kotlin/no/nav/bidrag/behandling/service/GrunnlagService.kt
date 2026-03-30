@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.barn
+import no.nav.bidrag.behandling.database.datamodell.bpsBarnUtenLøpendeBidrag
 import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagDetaljer.Companion.erBestilt
 import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagDetaljer.Companion.lasterGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
@@ -64,6 +65,8 @@ import no.nav.bidrag.behandling.transformers.behandling.erDetSammeSom
 import no.nav.bidrag.behandling.transformers.behandling.filtrerPerioderEtterVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.behandling.filtrerSivilstandBeregnetEtterVirkningstidspunktV2
 import no.nav.bidrag.behandling.transformers.behandling.finnEndringerBoforhold
+import no.nav.bidrag.behandling.transformers.behandling.finnOpphørsdatoBoforhold
+import no.nav.bidrag.behandling.transformers.behandling.finnVirkningstidspunktBeregningBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
 import no.nav.bidrag.behandling.transformers.behandling.henteAktiverteGrunnlag
@@ -620,12 +623,40 @@ class GrunnlagService(
         val barnUtenBidragssak =
             barnUtenBidragsakEllerUtenLøpendeBidrag.map { barn ->
                 val sak = sakerBp.find { it.roller.any { it.fødselsnummer?.verdi == barn && it.type == Rolletype.BARN } }
+                val beløpshistorikkBidrag =
+                    if (sak != null) {
+                        barnebidragGrunnlagInnhenting
+                            .hentBeløpshistorikk(
+                                behandling,
+                                barn,
+                                sak.saksnummer.verdi,
+                                Stønadstype.BIDRAG,
+                                behandling.erKlageEllerOmgjøring,
+                            )
+                    } else {
+                        null
+                    }
+                val beløpshistorikkBidrag18År =
+                    if (sak != null) {
+                        barnebidragGrunnlagInnhenting
+                            .hentBeløpshistorikk(
+                                behandling,
+                                barn,
+                                sak.saksnummer.verdi,
+                                Stønadstype.BIDRAG18AAR,
+                                behandling.erKlageEllerOmgjøring,
+                            )
+                    } else {
+                        null
+                    }
                 BpsBarnUtenBidragsakEllerLøpendeBidrag(
                     Personident(barn),
                     hentPersonVisningsnavn(barn),
                     hentPersonFødselsdato(barn) ?: LocalDate.now(),
                     sak?.eierfogd?.verdi ?: EnhetProvider.hentGeografiskTilknytningPerson(barn),
                     sak?.saksnummer?.verdi,
+                    beløpshistorikkBidrag,
+                    beløpshistorikkBidrag18År,
                 )
             }
 
@@ -765,7 +796,7 @@ class GrunnlagService(
                 }
                 val respons =
                     barnebidragGrunnlagInnhenting
-                        .hentBeløpshistorikk(behandling, sb, stønadstype, fraOpprinneligVedtakstidspunkt)
+                        .hentBeløpshistorikk(behandling, sb.ident!!, sb.saksnummer, stønadstype, fraOpprinneligVedtakstidspunkt)
                         ?.korrigerIndeksår(sb)
                 if ((eksisterendeGrunnlag == null && respons != null) ||
                     (respons != null && eksisterendeGrunnlag.konverterTilStønadDto() != respons)
@@ -1195,7 +1226,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.eldsteVirkningstidspunkt,
-                null, // behandling.globalOpphørsdato,
+                null,
                 behandling.finnBeregnTilDatoBehandling(),
                 behandling.tilTypeBoforhold(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
@@ -1213,8 +1244,8 @@ class GrunnlagService(
         val gjelderRolle = behandling.søknadsbarn.find { it.ident == gjelder }
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
-                behandling.eldsteVirkningstidspunkt,
-                null, // gjelderRolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                rolle.finnVirkningstidspunktBeregningBoforhold() ?: behandling.eldsteVirkningstidspunkt,
+                rolle.finnOpphørsdatoBoforhold(),
                 behandling.finnBeregnTilDatoBehandling(gjelderRolle),
                 behandling.tilTypeBoforhold(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
@@ -1907,7 +1938,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             BoforholdApi.beregnBoforholdBarnV3(
                 behandling.eldsteVirkningstidspunkt,
-                null, // behandling.globalOpphørsdato,
+                null,
                 behandling.finnBeregnTilDatoBehandling(),
                 behandling.tilTypeBoforhold(),
                 husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),

@@ -533,6 +533,9 @@ class BehandlingService(
     ): Behandling {
         val behandling = hentBehandlingById(behandlingsid)
         if (!ikkeHentGrunnlag) {
+            if (behandling.erIForholdsmessigFordeling) {
+                forholdsmessigFordelingService?.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
+            }
             grunnlagService.oppdaterGrunnlagForBehandlingAsync(behandling)
         }
         virkningstidspunktService.run {

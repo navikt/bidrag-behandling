@@ -338,7 +338,7 @@ class VedtakGrunnlagMapper(
     ): List<GrunnlagDto> {
         return if (behandling.grunnlagslisteFraVedtak.isNullOrEmpty()) {
             if (behandling.privatAvtale
-                    .find { it.personIdent == gjelderBarn.ident }
+                    .find { it.gjelderPerson(gjelderBarn.ident ?: "", gjelderBarn.stønadstype) }
                     ?.perioderInnkreving
                     ?.isEmpty() == true
             ) {
@@ -365,7 +365,7 @@ class VedtakGrunnlagMapper(
     ): BeregnGrunnlag {
         mapper.run {
             behandling.run {
-                val privatAvtale = behandling.privatAvtale.find { it.personIdent == person.ident }!!
+                val privatAvtale = behandling.privatAvtale.find { it.gjelderPerson(person.ident!!, person.stønadstype) }!!
                 val minPeriode =
                     privatAvtale.perioderInnkreving.minOfOrNull { it.fom } ?: vedtakmappingFeilet("Mangler periode for privat avtale")
                 val maxPeriode = privatAvtale.perioderInnkreving.maxBy { it.fom }.tom
@@ -391,7 +391,7 @@ class VedtakGrunnlagMapper(
         }
     }
 
-    fun byggGrunnlagForSimulering(
+    fun byggGrunnlagForSimuleringPrivatAvtale(
         behandling: Behandling,
         grunnlagsliste: Set<GrunnlagDto>,
     ): Set<GrunnlagDto> =
