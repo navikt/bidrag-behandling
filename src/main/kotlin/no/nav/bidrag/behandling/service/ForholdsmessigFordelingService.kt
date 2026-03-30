@@ -928,6 +928,11 @@ class ForholdsmessigFordelingService(
                 slettRevurderingsbarn(behandling, rolle)
             }
         }
+
+        val hovedsøknad = bbmConsumer.hentSøknad(behandling.soknadsid!!)
+        if (hovedsøknad != null && hovedsøknad.søknad.behandlingStatusType == BehandlingStatusType.AVBRUTT) {
+            endreHovedsøknadIFFEtterHovedsøknadBleSlettet(behandling, hovedsøknad.søknad.søknadsid)
+        }
     }
 
     private fun leggTilRollerFraRelevanteSøknaderSomIkkeErIBehandling(
@@ -1301,7 +1306,33 @@ class ForholdsmessigFordelingService(
             behandlingService.logiskSlettBehandling(behandling)
         } else {
             slettBarn.forEach { slettBarnFraBehandlingFF(it, behandling, søknadsid) }
+            endreHovedsøknadIFFEtterHovedsøknadBleSlettet(behandling, søknadsid)
             behandlingService.sendOppdatertHendelse(behandling.id!!, false)
+        }
+    }
+
+    private fun endreHovedsøknadIFFEtterHovedsøknadBleSlettet(
+        behandling: Behandling,
+        søknadSomBleSlettet: Long,
+    ) {
+        if (!behandling.erIForholdsmessigFordeling ||
+            behandling.forholdsmessigFordeling == null || !behandling.forholdsmessigFordeling!!.erHovedbehandling
+        ) {
+            return
+        }
+
+        if (behandling.soknadsid == søknadSomBleSlettet) {
+            val søknadsbarnIkkeRevurdering =
+                behandling.søknadsbarn
+                    .filter { !it.erRevurderingsbarn && it.forholdsmessigFordeling?.søknadsid != null }
+            val søknadsidMedFlestBarn =
+                søknadsbarnIkkeRevurdering
+                    .groupBy { it.forholdsmessigFordeling!!.søknadsid!! }
+                    .maxByOrNull { (_, barn) -> barn.size }
+                    ?.key
+            behandling.soknadsid = søknadsidMedFlestBarn ?: behandling.soknadsid
+            LOGGER.info { "Oppdaterer hovedsøknad i behandling ${behandling.id} fra $søknadSomBleSlettet til $søknadsidMedFlestBarn" }
+            bbmConsumer.oppdaterHoveddsøknad(behandling.id!!, behandling.soknadsid!!)
         }
     }
 

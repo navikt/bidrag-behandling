@@ -183,4 +183,20 @@ class BidragBBMConsumer(
                 throw e
             }
         }
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun oppdaterHoveddsøknad(
+        behandlingId: Long,
+        søknadsid: Long,
+    ) {
+    }
+
+//    = postForEntity<Unit>(
+//        bidragBBMUri.pathSegment("oppdaterHovedsoknad").build().toUri(),
+//        mapOf("behandlingId" to behandlingId, "søknadsid" to søknadsid),
+//    )
 }
