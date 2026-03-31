@@ -841,7 +841,7 @@ fun opprettPeriodeOpphør(
         søknadsbarn.opphørsdato?.let {
             val opphørsmåned = YearMonth.from(it)
             val sistePeriode = periodeliste.maxBy { it.periode.fom }
-            if (sistePeriode.periode.til != opphørsmåned) {
+            if (sistePeriode.periode.til != opphørsmåned && sistePeriode.beløp != null) {
                 ugyldigForespørsel("Siste periode i beregningen $sistePeriode er ikke lik opphørsdato $opphørsmåned")
             }
             OpprettPeriodeRequestDto(

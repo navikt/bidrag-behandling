@@ -717,7 +717,7 @@ class GrunnlagService(
             try {
                 val eksisterendeGrunnlag =
                     behandling.grunnlag.hentSisteGrunnlagSomGjelderBarn(sb.personident!!.verdi, type)
-                val opprinneligVedtakstidspunkt = behandling.omgjøringsdetaljer!!.minsteVedtakstidspunkt
+                val opprinneligVedtakstidspunkt = behandling.omgjøringsdetaljer?.minsteVedtakstidspunkt
                 val respons =
                     vedtakService!!
                         .hentAlleVedtakForStønad(
