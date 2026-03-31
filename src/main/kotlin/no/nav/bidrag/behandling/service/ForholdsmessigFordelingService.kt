@@ -891,10 +891,10 @@ class ForholdsmessigFordelingService(
             if (!erMedInnkreving && løperBidrag) {
                 oppdaterBarnEtterInnkrevingsvedtak(behandling, Personident(rolle.ident!!))
             }
-            if (erMedInnkreving && !løperBidrag) {
+            if (erMedInnkreving && !løperBidrag && rolle.erRevurderingsbarn) {
                 oppdaterRevurderingsbarnFraInnkrevingTilUtenInnkreving(behandling, rolle)
+                rolle.innkrevingstype = Innkrevingstype.UTEN_INNKREVING
             }
-            rolle.innkrevingstype = if (løperBidrag) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
 
             val lagretSøknader = ffDetaljer.søknader
             val søknaderForBarn = finnApneSoknaderForBarn(alleSøknaderRelevantForBehandling, rolle)
