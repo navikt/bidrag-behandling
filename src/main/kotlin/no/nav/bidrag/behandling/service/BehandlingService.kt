@@ -345,7 +345,7 @@ class BehandlingService(
         behandling.roller.addAll(
             HashSet(
                 opprettBehandling.roller.map {
-                    it.toRolle(behandling, stønadstype = opprettBehandling.stønadstype)
+                    it.toRolle(behandling, stønadstype = opprettBehandling.stønadstype, søktFraDato = opprettBehandling.søktFomDato)
                 },
             ),
         )

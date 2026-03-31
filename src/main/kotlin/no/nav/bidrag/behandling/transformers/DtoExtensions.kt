@@ -37,7 +37,8 @@ fun Behandling.tilForsendelseRolleDto(saksnummer: String) =
 
 fun OpprettRolleDto.toRolle(
     behandling: Behandling,
-    stønadstype: Stønadstype? = null,
+    `stønadstype`: Stønadstype? = null,
+    søktFraDato: LocalDate? = behandling.søktFomDato,
 ): Rolle {
     val fødselsdatoPerson =
         fødselsdato ?: hentPersonFødselsdato(ident?.verdi)
@@ -63,7 +64,7 @@ fun OpprettRolleDto.toRolle(
         opphørsdato = opphørsdato,
         virkningstidspunkt =
             if (rolletype == Rolletype.BARN) {
-                maxOf(fødselsdatoPerson.withDayOfMonth(1), behandling.eldsteVirkningstidspunkt)
+                maxOfNullable(fødselsdatoPerson.withDayOfMonth(1), behandling.eldsteVirkningstidspunkt, søktFraDato)
             } else {
                 null
             },

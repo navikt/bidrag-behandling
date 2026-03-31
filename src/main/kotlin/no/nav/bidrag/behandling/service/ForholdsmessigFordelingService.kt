@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.consumer.HentetGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
@@ -1207,7 +1208,7 @@ class ForholdsmessigFordelingService(
                         it.erLik(nyRolle.ident.verdi, stønadstypeBeregnet)
                     }
                 if (eksisterendeRolle == null) {
-                    val rolle = nyRolle.toRolle(request.behandling, stønadstypeBeregnet)
+                    val rolle = nyRolle.toRolle(request.behandling, stønadstypeBeregnet, request.søktFraDato)
                     val løperBidrag =
                         løpendeBidragRolle?.løperBidragEtterDato(request.søknadsdetaljer!!.søknadFomDato!!.toYearMonth()) == true
                     rolle.forholdsmessigFordeling =
@@ -1222,6 +1223,19 @@ class ForholdsmessigFordelingService(
                             Innkrevingstype.UTEN_INNKREVING
                         }
                     rolle.opphørsdato = if (løperBidrag) løpendeBidragRolle.løperBidragTil?.toLocalDate() else null
+                    if (nyRolle.harGebyrsøknad) {
+                        val gebyr = GebyrRolle()
+                        gebyr.gebyrSøknader.add(
+                            GebyrRolleSøknad(
+                                gjelder18ÅrSøknad = request.gebyrGjelder18År,
+                                saksnummer = request.saksnummer,
+                                søknadsid = request.søknadsid,
+                                referanse = nyRolle.referanseGebyr,
+                            ),
+                        )
+                        rolle.gebyr = gebyr
+                        rolle.harGebyrsøknad = true
+                    }
                     rollerSomSkalLeggesTil.add(rolle)
                 } else {
                     if (eksisterendeRolle.forholdsmessigFordeling == null) {
@@ -1257,8 +1271,8 @@ class ForholdsmessigFordelingService(
                         }
                     }
 
-                    val gebyr = eksisterendeRolle.hentEllerOpprettGebyr()
                     if (nyRolle.harGebyrsøknad) {
+                        val gebyr = eksisterendeRolle.hentEllerOpprettGebyr()
                         gebyr.gebyrSøknader.add(
                             GebyrRolleSøknad(
                                 gjelder18ÅrSøknad = request.gebyrGjelder18År,
