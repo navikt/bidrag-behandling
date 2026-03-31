@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.beregning.EvnevurderingBeregningResultat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.dato18ÅrsBidrag
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erDirekteAvslag
 import no.nav.bidrag.behandling.transformers.erForskudd
@@ -125,8 +126,25 @@ fun Rolle.finnBeregnFra(): YearMonth =
                     .finnPeriodeLøperBidrag(this)
                     ?.takeIf { behandling.løperPeriodeEtterSøktFomDato(it) }
                     ?.fom
-                    ?.let { maxOf(it, behandling.eldsteVirkningstidspunkt.toYearMonth()) }
-                    ?: behandling.eldsteVirkningstidspunkt.toYearMonth()
+                    ?.let {
+                        val tidligsteBeregnFra =
+                            if (stønadstype == Stønadstype.BIDRAG18AAR) {
+                                maxOf(fødselsdato.dato18ÅrsBidrag.toYearMonth(), behandling.eldsteVirkningstidspunkt.toYearMonth())
+                            } else {
+                                behandling.eldsteVirkningstidspunkt.toYearMonth()
+                            }
+                        maxOf(
+                            it,
+                            tidligsteBeregnFra,
+                        )
+                    }
+                    ?: run {
+                        if (stønadstype == Stønadstype.BIDRAG18AAR) {
+                            maxOf(fødselsdato.dato18ÅrsBidrag.toYearMonth(), behandling.eldsteVirkningstidspunkt.toYearMonth())
+                        } else {
+                            behandling.eldsteVirkningstidspunkt.toYearMonth()
+                        }
+                    }
             }
         } else {
             virkningstidspunktRolle.toYearMonth()

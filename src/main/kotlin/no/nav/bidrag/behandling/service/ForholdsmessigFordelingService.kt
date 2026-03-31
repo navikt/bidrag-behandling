@@ -1106,18 +1106,21 @@ class ForholdsmessigFordelingService(
     ): MutableSet<ForholdsmessigFordelingSøknadBarn> {
         val eksisterendeSøknaderOppdatert =
             lagretSøknader
-                .map { lagretSøknad ->
+                .mapNotNull { lagretSøknad ->
                     val søknad = `alleSøknaderRelevantForBehandling`.find { it.søknadsid == lagretSøknad.søknadsid }
                     var oppslagMotBbmFeilet = false
 
                     val partISøknad =
                         if (søknad == null) {
                             try {
-                                bbmConsumer
-                                    .hentSøknad(lagretSøknad.søknadsid!!)
-                                    ?.søknad
-                                    ?.partISøknadListe
-                                    ?.find { it.personident == rolle.ident }
+                                val søknad =
+                                    bbmConsumer
+                                        .hentSøknad(lagretSøknad.søknadsid!!)
+                                        ?.søknad
+                                        ?.takeIf {
+                                            (rolle.stønadstype == null || it.behandlingstema.tilStønadstype() == rolle.stønadstype)
+                                        }
+                                søknad?.partISøknadListe?.find { it.personident == rolle.ident }
                             } catch (e: Exception) {
                                 oppslagMotBbmFeilet = true
                                 LOGGER.warn(e) { "Kunne ikke hente søknad ${lagretSøknad.søknadsid} fra BBM" }
@@ -1126,6 +1129,10 @@ class ForholdsmessigFordelingService(
                         } else {
                             søknad.partISøknadListe.find { it.personident == rolle.ident }
                         }
+
+                    if (partISøknad == null && !oppslagMotBbmFeilet) {
+                        return@mapNotNull null
+                    }
 
                     if (partISøknad != null) {
                         lagretSøknad.status = partISøknad.behandlingstatus ?: lagretSøknad.status
