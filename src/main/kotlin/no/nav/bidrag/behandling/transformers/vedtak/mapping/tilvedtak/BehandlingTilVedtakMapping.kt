@@ -1133,7 +1133,7 @@ class BehandlingTilVedtakMapping(
                     sak == null || it.forholdsmessigFordeling == null ||
                         it.forholdsmessigFordeling!!.tilhørerSak == sak
                 }.flatMap { rolle ->
-                    rolle.gebyrSøknader.map {
+                    rolle.gebyrSøknader.distinctBy { it.referanse }.map {
                         val grunnlagslisteGebyrRolle =
                             grunnlagsliste + setOfNotNull(rolle.byggGrunnlagManueltOverstyrtGebyrRolle(it.søknadsid))
                         val beregning = mapper.beregnGebyr(this, rolle, grunnlagslisteGebyrRolle)
@@ -1162,7 +1162,7 @@ class BehandlingTilVedtakMapping(
         val gebyrBp =
             if (bidragspliktig!!.harGebyrsøknad) {
                 val rolle = bidragspliktig!!
-                rolle.gebyrSøknader.map {
+                rolle.gebyrSøknader.distinctBy { it.referanse }.map {
                     val grunnlagslisteGebyrRolle =
                         grunnlagsliste + setOfNotNull(rolle.byggGrunnlagManueltOverstyrtGebyrRolle(it.søknadsid))
                     val beregning = mapper.beregnGebyr(this, bidragspliktig!!, grunnlagslisteGebyrRolle)
