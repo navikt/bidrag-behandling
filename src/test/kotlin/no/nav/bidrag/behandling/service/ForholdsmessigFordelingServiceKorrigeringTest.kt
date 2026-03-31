@@ -115,12 +115,12 @@ class ForholdsmessigFordelingServiceKorrigeringTest {
             )
 
         stubApneSoknaderTom()
-        every { bbmConsumer.hentSøknad(any()) } throws RuntimeException("BBM utilgjengelig")
+        every { bbmConsumer.hentSøknad(any()) }.throws(RuntimeException("BBM utilgjengelig"))
         every {
             bbmConsumer.feilregistrerSøknad(
                 match { request -> request == FeilregistrerSøknadRequest(SOKNAD_SOM_SKAL_FEILREGISTRERES) },
             )
-        } throws RuntimeException("Feilet feilregistrering")
+        }.throws(RuntimeException("Feilet feilregistrering"))
 
         service.`synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling`(behandling)
 
@@ -141,7 +141,7 @@ class ForholdsmessigFordelingServiceKorrigeringTest {
             )
 
         stubApneSoknaderTom()
-        every { bbmConsumer.hentSøknad(any()) } throws RuntimeException("BBM utilgjengelig")
+        every { bbmConsumer.hentSøknad(any()) }.throws(RuntimeException("BBM utilgjengelig"))
         every {
             bbmConsumer.feilregistrerSøknad(
                 match { request -> request == FeilregistrerSøknadRequest(SOKNAD_SOM_SKAL_FEILREGISTRERES) },
