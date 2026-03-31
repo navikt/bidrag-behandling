@@ -789,9 +789,9 @@ class BehandlingService(
     ) {
         oppdaterRollerListe
             .filter { !it.erSlettet }
-            .filter { roller.any { br -> br.ident == it.ident?.verdi } }
+            .filter { roller.any { br -> br.erSammeRolle(it.ident!!.verdi, it.stønadstype) } }
             .forEach {
-                roller.find { br -> br.ident == it.ident?.verdi }?.let { eksisterendeRolle ->
+                roller.find { br -> br.erSammeRolle(it.ident!!.verdi, it.stønadstype) }?.let { eksisterendeRolle ->
                     eksisterendeRolle.innbetaltBeløp = it.innbetaltBeløp
                     // Skal ikke være mulig å fjerne gebyrsøknad fra rolle
                     eksisterendeRolle.harGebyrsøknad = if (eksisterendeRolle.harGebyrsøknad) true else it.harGebyrsøknad
