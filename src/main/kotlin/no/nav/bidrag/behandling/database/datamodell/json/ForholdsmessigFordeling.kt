@@ -51,14 +51,14 @@ data class ForholdsmessigFordelingRolle(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class ForholdsmessigFordelingSøknadBarn(
-    val mottattDato: LocalDate,
+    var mottattDato: LocalDate,
     var søknadFomDato: LocalDate? = null,
-    val søktAvType: SøktAvType,
+    var søktAvType: SøktAvType,
     var søknadsid: Long? = null,
     // Flagg om det er overført fra påklaget vedtak. Fjerner søknadene etter opprettelse
     var erFraPåklagetVedtak: Boolean = false,
-    val behandlingstype: Behandlingstype?,
-    val behandlingstema: Behandlingstema?,
+    var behandlingstype: Behandlingstype?,
+    var behandlingstema: Behandlingstema?,
     val omgjørSøknadsid: Long? = null,
     val omgjørVedtaksid: Int? = null,
     var innkreving: Boolean = true,

@@ -1140,6 +1140,11 @@ class ForholdsmessigFordelingService(
                     } else if (!oppslagMotBbmFeilet) {
                         lagretSøknad.status = Behandlingstatus.FEILREGISTRERT
                     }
+                    lagretSøknad.søknadFomDato = søknad?.søknadFomDato ?: lagretSøknad.søknadFomDato
+                    lagretSøknad.behandlingstema = søknad?.behandlingstema ?: lagretSøknad.behandlingstema
+                    lagretSøknad.søktAvType = søknad?.søktAvType ?: lagretSøknad.søktAvType
+                    lagretSøknad.behandlingstype = søknad?.behandlingstype ?: lagretSøknad.behandlingstype
+                    lagretSøknad.mottattDato = søknad?.søknadMottattDato ?: lagretSøknad.mottattDato
                     lagretSøknad.innkreving = søknad?.innkreving ?: lagretSøknad.innkreving
                     lagretSøknad
                 }.toMutableSet()

@@ -455,7 +455,7 @@ fun Rolle.leggTilGebyr(fraRolle: Rolle) {
 }
 
 fun Rolle.leggTilGebyr(gebyrSøknader: List<GebyrRolleSøknad>) {
-    val gebyr = hentEllerOpprettGebyr()
+    val gebyr = this.gebyr ?: GebyrRolle()
     this@leggTilGebyr.gebyr =
         gebyr.let {
             it.gebyrSøknader.addAll(
