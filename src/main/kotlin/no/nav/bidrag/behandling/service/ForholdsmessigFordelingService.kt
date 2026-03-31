@@ -1272,7 +1272,7 @@ class ForholdsmessigFordelingService(
                     }
 
                     if (nyRolle.harGebyrsøknad) {
-                        val gebyr = eksisterendeRolle.hentEllerOpprettGebyr()
+                        val gebyr = eksisterendeRolle.gebyr ?: GebyrRolle()
                         gebyr.gebyrSøknader.add(
                             GebyrRolleSøknad(
                                 gjelder18ÅrSøknad = request.gebyrGjelder18År,
