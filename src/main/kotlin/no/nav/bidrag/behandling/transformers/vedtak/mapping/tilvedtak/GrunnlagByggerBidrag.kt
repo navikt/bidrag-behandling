@@ -357,7 +357,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
     erEndeligVedtak: Boolean = true,
 ): StønadsendringPeriode {
     val søknadsbarn =
-        behandling.søknadsbarn.find { it.ident == søknadsbarn.ident!!.verdi }
+        behandling.søknadsbarn.find { it.erSammeRolle(søknadsbarn.ident!!.verdi, søknadsbarn.stønadstype) }
             ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!)
 
     val grunnlagListe = grunnlagListe.toSet()
