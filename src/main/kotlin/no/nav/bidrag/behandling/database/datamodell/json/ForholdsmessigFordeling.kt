@@ -34,7 +34,7 @@ data class ForholdsmessigFordelingRolle(
     var bidragsmottaker: String?,
     var søknader: MutableSet<ForholdsmessigFordelingSøknadBarn> = mutableSetOf(),
 ) {
-    fun løperBidragEtterDato(dato: YearMonth): Boolean = løperBidragTil?.isAfter(dato) ?: true
+    fun løperBidragEtterDato(dato: YearMonth): Boolean = løperBidragFra != null && (løperBidragTil == null || løperBidragTil.isAfter(dato))
 
     @get:JsonIgnore
     val søknaderUnderBehandling get() = søknader.filter { it.status == Behandlingstatus.UNDER_BEHANDLING || it.status == null }
