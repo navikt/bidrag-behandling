@@ -49,9 +49,11 @@ import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatVedtak
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettEngangsbeløpRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
@@ -1127,6 +1129,7 @@ class BehandlingTilVedtakMapping(
         val gebyrGrunnlagsliste: MutableSet<BaseGrunnlag> = mutableSetOf()
         val barnMedGebyr = søknadsbarn.filter { it.harGebyrsøknad }
         val bmMedGebyr = alleBidragsmottakere.filter { it.harGebyrsøknad }
+        val søknadGrunnlagLister = byggGrunnlagSøknad()
         val gebyrMottakere =
             (bmMedGebyr + barnMedGebyr)
                 .filter {
@@ -1140,6 +1143,10 @@ class BehandlingTilVedtakMapping(
                         gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
                         val ilagtGebyr = beregning.ilagtGebyr
                         val skyldner = Personident(rolle.ident!!)
+                        val søknadGrunnlag =
+                            søknadGrunnlagLister.find { sg ->
+                                sg.innholdTilObjekt<SøknadGrunnlag>().søknadsid == it.søknadsid
+                            }
                         OpprettEngangsbeløpRequestDto(
                             type = Engangsbeløptype.GEBYR_MOTTAKER,
                             beløp = if (ilagtGebyr) beregning.beløpGebyrsats else null,
@@ -1149,7 +1156,8 @@ class BehandlingTilVedtakMapping(
                                 it.referanse ?: hentUnikReferanseEngangsbeløp(personIdentNav, Engangsbeløptype.GEBYR_MOTTAKER, skyldner),
                             eksternReferanse = null,
                             beslutning = Beslutningstype.ENDRING,
-                            grunnlagReferanseListe = beregning.grunnlagsreferanseListeEngangsbeløp,
+                            grunnlagReferanseListe =
+                                beregning.grunnlagsreferanseListeEngangsbeløp + listOfNotNull(søknadGrunnlag?.referanse),
                             innkreving = Innkrevingstype.MED_INNKREVING,
                             skyldner = skyldner,
                             kravhaver = personIdentNav,
@@ -1169,6 +1177,10 @@ class BehandlingTilVedtakMapping(
                     gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
                     val ilagtGebyr = beregning.ilagtGebyr
                     val skyldner = Personident(bidragspliktig!!.ident!!)
+                    val søknadGrunnlag =
+                        søknadGrunnlagLister.find { sg ->
+                            sg.innholdTilObjekt<SøknadGrunnlag>().søknadsid == it.søknadsid
+                        }
                     OpprettEngangsbeløpRequestDto(
                         type = Engangsbeløptype.GEBYR_SKYLDNER,
                         beløp = if (ilagtGebyr) beregning.beløpGebyrsats else null,
@@ -1182,7 +1194,8 @@ class BehandlingTilVedtakMapping(
                                 skyldner,
                             ),
                         beslutning = Beslutningstype.ENDRING,
-                        grunnlagReferanseListe = beregning.grunnlagsreferanseListeEngangsbeløp,
+                        grunnlagReferanseListe =
+                            beregning.grunnlagsreferanseListeEngangsbeløp + listOfNotNull(søknadGrunnlag?.referanse),
                         innkreving = Innkrevingstype.MED_INNKREVING,
                         skyldner = skyldner,
                         kravhaver = personIdentNav,
