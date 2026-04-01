@@ -1858,7 +1858,13 @@ class ForholdsmessigFordelingService(
         }.filter {
             (
                 erKlageEllerOmgjøring &&
-                    (it.referertVedtaksid == omgjøringsdetaljer?.omgjørVedtakId || it.referertSøknadsid == omgjøringsdetaljer?.soknadRefId)
+                    // TODO: Dette fungerer ikke nå pga BBM ikke returnerer ref
+                    // TODO: Løses med refsøknader
+
+                    (
+                        (it.referertVedtaksid == null || it.referertVedtaksid == omgjøringsdetaljer?.omgjørVedtakId) ||
+                            (it.referertSøknadsid == null || it.referertSøknadsid == omgjøringsdetaljer?.soknadRefId)
+                    )
             ) ||
                 !erKlageEllerOmgjøring
         }.sortedWith(
