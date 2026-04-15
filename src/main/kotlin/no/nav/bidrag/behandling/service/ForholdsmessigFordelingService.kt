@@ -1271,7 +1271,6 @@ class ForholdsmessigFordelingService(
                                 eksisterendeRolle.id,
                                 request.søktFraDato.withDayOfMonth(1),
                                 request.behandling,
-                                forrigeVirkningstidspunkt = request.behandling.eldsteVirkningstidspunkt,
                             )
                         }
                     }
