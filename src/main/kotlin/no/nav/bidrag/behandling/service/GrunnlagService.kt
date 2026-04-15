@@ -43,6 +43,7 @@ import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.GrunnlagRepository
+import no.nav.bidrag.behandling.dto.grunnlag.PersonStønad
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype.Companion.skalInnhentesForBehandling
@@ -194,16 +195,16 @@ class GrunnlagService(
 
     private suspend fun hentGrunnlag(
         behandling: Behandling,
-        gjelder: Personident,
+        gjelder: PersonStønad,
         request: List<GrunnlagRequestDto>,
-    ): Pair<Personident, HentetGrunnlag> {
+    ): Pair<PersonStønad, HentetGrunnlag> {
         val formål =
             when (behandling.tilType()) {
                 TypeBehandling.BIDRAG, TypeBehandling.BIDRAG_18_ÅR -> Formål.BIDRAG
                 TypeBehandling.FORSKUDD -> Formål.FORSKUDD
                 TypeBehandling.SÆRBIDRAG -> Formål.SÆRBIDRAG
             }
-        secureLogger.debug { "Henter grunnlag for ${gjelder.verdi}: $request" }
+        secureLogger.debug { "Henter grunnlag for ${gjelder.personident.verdi}: $request" }
         val hentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(request, formål)
         return gjelder to hentetGrunnlag
     }
@@ -243,7 +244,7 @@ class GrunnlagService(
             sjekkOgOppdaterIdenter(behandling)
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
 
-            fun Map<Grunnlagsdatatype, GrunnlagFeilDto>.lagreFeilrapportering(): Pair<Personident, HentetGrunnlag>? {
+            fun Map<Grunnlagsdatatype, GrunnlagFeilDto>.lagreFeilrapportering(): Pair<PersonStønad, HentetGrunnlag>? {
                 feilrapporteringer += this
                 return null
             }
@@ -1595,7 +1596,7 @@ class GrunnlagService(
 
     private fun lagreGrunnlag(
         behandling: Behandling,
-        input: Pair<Personident, HentetGrunnlag>,
+        input: Pair<PersonStønad, HentetGrunnlag>,
     ): Map<Grunnlagsdatatype, GrunnlagFeilDto?> {
         val (gjelder, innhentetGrunnlag) = input
         val feilrapporteringer: Map<Grunnlagsdatatype, GrunnlagFeilDto?> =
@@ -1606,7 +1607,7 @@ class GrunnlagService(
                     .filterNot { it.value == null }
             } ?: Grunnlagsdatatype.gjeldende().associateWith { null }
 
-        val rolleInnhentetFor = behandling.roller.find { it.ident == gjelder.verdi }!!
+        val rolleInnhentetFor = behandling.roller.find { it.erSammeRolle(gjelder.personident.verdi, gjelder.stønadstype) }!!
         innhentetGrunnlag.hentGrunnlagDto?.let {
             lagreGrunnlagHvisEndret(behandling, rolleInnhentetFor, it, feilrapporteringer)
         }
@@ -1669,7 +1670,7 @@ class GrunnlagService(
                         !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
                 )
             if (behandling.søknadsbarn.isNotEmpty() && innhentingBoforholdUtenFeil &&
-                boforholdInnhentesForRolle?.ident == gjelder.verdi
+                boforholdInnhentesForRolle?.ident == gjelder.personident.verdi
             ) {
                 periodisereOgLagreBoforhold(
                     behandling,
@@ -1705,7 +1706,7 @@ class GrunnlagService(
                             !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
                     )
             if (behandling.søknadsbarn.isNotEmpty() && innhentingBmBoforholdUtenFeil &&
-                grunnlagBoforholdTilBMInnhentesForRolle?.ident == gjelder.verdi
+                grunnlagBoforholdTilBMInnhentesForRolle?.ident == gjelder.personident.verdi
             ) {
                 periodisereOgLagreBoforhold(
                     behandling,
@@ -1713,7 +1714,7 @@ class GrunnlagService(
                     Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN,
                 )
             }
-            if (Grunnlagsdatatype.ANDRE_BARN.innhentesForRolle(behandling)?.ident == gjelder.verdi) {
+            if (Grunnlagsdatatype.ANDRE_BARN.innhentesForRolle(behandling)?.ident == gjelder.personident.verdi) {
                 lagreAndreBarnTilBMGrunnlag(
                     behandling,
                     it.husstandsmedlemmerOgEgneBarnListe.toSet(),
@@ -2716,7 +2717,7 @@ class GrunnlagService(
 
     private fun hentFeilrapporteringForGrunnlag(
         grunnlagsdatatype: Grunnlagsdatatype,
-        innhentetFor: Personident,
+        innhentetFor: PersonStønad,
         innhentetGrunnlag: HentGrunnlagDto,
     ): FeilrapporteringDto? =
         when (grunnlagsdatatype) {
@@ -2807,9 +2808,9 @@ class GrunnlagService(
 
     private fun HentGrunnlagDto.hentFeilFor(
         type: GrunnlagRequestType,
-        personident: Personident,
+        personident: PersonStønad,
     ) = feilrapporteringListe.find {
-        it.grunnlagstype == type && it.personId == personident.verdi
+        it.grunnlagstype == type && it.personId == personident.personident.verdi
     }
 
     private fun lagreGrunnlagHvisEndret(

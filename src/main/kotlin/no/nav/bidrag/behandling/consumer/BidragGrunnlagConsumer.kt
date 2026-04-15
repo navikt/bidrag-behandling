@@ -2,12 +2,14 @@ package no.nav.bidrag.behandling.consumer
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.dto.grunnlag.PersonStønad
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.grunnlag.GrunnlagRequestType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Formål
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.grunnlag.request.GrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.grunnlag.request.HentGrunnlagRequestDto
@@ -32,15 +34,13 @@ class BidragGrunnlagConsumer(
     private val bidragGrunnlagUri get() = UriComponentsBuilder.fromUri(bidragGrunnlagUrl)
 
     companion object {
-        fun henteGrunnlagRequestobjekterForBehandling(behandling: Behandling): MutableMap<Personident, List<GrunnlagRequestDto>> {
+        fun henteGrunnlagRequestobjekterForBehandling(behandling: Behandling): MutableMap<PersonStønad, List<GrunnlagRequestDto>> {
             val behandlingstype = behandling.tilType()
 
-            val requestobjekterGrunnlag: MutableMap<Personident, List<GrunnlagRequestDto>> =
+            val requestobjekterGrunnlag: MutableMap<PersonStønad, List<GrunnlagRequestDto>> =
                 behandling.alleBidragsmottakere
                     .associate {
-                        Personident(
-                            it.ident!!,
-                        ) to
+                        PersonStønad(Personident(it.ident!!), it.stønadstype) to
                             oppretteGrunnlagsobjekter(
                                 Personident(it.ident!!),
                                 Rolletype.BIDRAGSMOTTAKER,
@@ -49,7 +49,7 @@ class BidragGrunnlagConsumer(
                     }.toMutableMap()
 
             if (listOf(TypeBehandling.BIDRAG, TypeBehandling.SÆRBIDRAG).contains(behandlingstype)) {
-                requestobjekterGrunnlag[Personident(behandling.bidragspliktig!!.ident!!)] =
+                requestobjekterGrunnlag[PersonStønad(Personident(behandling.bidragspliktig!!.ident!!), null)] =
                     oppretteGrunnlagsobjekter(
                         Personident(behandling.bidragspliktig!!.ident!!),
                         Rolletype.BIDRAGSPLIKTIG,
@@ -59,11 +59,11 @@ class BidragGrunnlagConsumer(
 
             behandling.søknadsbarn
                 .filter { sb -> sb.ident != null }
-                .map { Personident(it.ident!!) }
+                .map { PersonStønad(Personident(it.ident!!), it.stønadstype) }
                 .forEach {
                     requestobjekterGrunnlag[it] =
                         oppretteGrunnlagsobjekter(
-                            Personident(it.verdi),
+                            Personident(it.personident.verdi),
                             Rolletype.BARN,
                             behandling,
                         )
@@ -107,8 +107,14 @@ class BidragGrunnlagConsumer(
             val fradato = setOf(LocalDate.now(), virkningstidspunktEllerSøktFra).min()
 
             return when (type) {
-                GrunnlagRequestType.SKATTEGRUNNLAG -> fradato.minusYears(3).withMonth(1).withDayOfMonth(1)
-                GrunnlagRequestType.AINNTEKT -> fradato.minusYears(1).withMonth(1).withDayOfMonth(1)
+                GrunnlagRequestType.SKATTEGRUNNLAG -> {
+                    fradato.minusYears(3).withMonth(1).withDayOfMonth(1)
+                }
+
+                GrunnlagRequestType.AINNTEKT -> {
+                    fradato.minusYears(1).withMonth(1).withDayOfMonth(1)
+                }
+
                 GrunnlagRequestType.UTVIDET_BARNETRYGD_OG_SMÅBARNSTILLEGG -> {
                     if (fradato.isBefore(LocalDate.now().minusYears(5))) {
                         LocalDate.now().minusYears(5)
@@ -117,7 +123,9 @@ class BidragGrunnlagConsumer(
                     }
                 }
 
-                else -> fradato
+                else -> {
+                    fradato
+                }
             }
         }
     }
