@@ -1693,7 +1693,7 @@ class Dtomapper(
         // Create PeriodeAndreVoksneIHusstanden entries grouped by period and number of people
         val perioderMedAndreVoksne =
             periodePeopleMap
-                .toSortedMap(compareBy { it.fom })
+                .toSortedMap(compareBy<Datoperiode> { it.fom }.thenBy { it.til ?: LocalDate.MAX })
                 .flatMap { (periode, people) ->
                     // Group by count of people to create separate periods if count changes
                     val countGroups = people.groupBy { people.size }
