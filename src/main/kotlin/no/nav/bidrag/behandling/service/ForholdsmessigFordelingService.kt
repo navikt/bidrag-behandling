@@ -1449,6 +1449,7 @@ class ForholdsmessigFordelingService(
                     OpprettSøknadRequest(
                         saksnummer = saksnummer,
                         behandlingsid = behandling.id,
+                        refVedtaksid = behandling.omgjøringsdetaljer?.omgjørVedtakId,
                         behandlingstype = behandling.behandlingstypeForFF,
                         behandlerenhet = behandling.behandlerEnhet,
                         behandlingstema =
@@ -1861,8 +1862,8 @@ class ForholdsmessigFordelingService(
                     // TODO: Løses med refsøknader
 
                     (
-                        (it.referertVedtaksid == null || it.referertVedtaksid == omgjøringsdetaljer?.omgjørVedtakId) ||
-                            (it.referertSøknadsid == null || it.referertSøknadsid == omgjøringsdetaljer?.soknadRefId)
+                        (it.refVedtaksid == null || it.refVedtaksid == omgjøringsdetaljer?.omgjørVedtakId) ||
+                            (it.refSøknadsid == null || it.refSøknadsid == omgjøringsdetaljer?.soknadRefId)
                     )
             ) ||
                 !erKlageEllerOmgjøring

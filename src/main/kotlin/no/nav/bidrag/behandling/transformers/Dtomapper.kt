@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.transformers
 
 import com.fasterxml.jackson.core.type.TypeReference
+import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
@@ -176,6 +177,7 @@ class Dtomapper(
     @Lazy
     val beregningService: BeregningService? = null,
     val vedtakTilBehandlingMapping: VedtakTilBehandlingMapping? = null,
+    val bidragSakConsumer: BidragSakConsumer? = null,
 ) {
     fun tilDto(
         behandling: Behandling,
@@ -1034,11 +1036,13 @@ class Dtomapper(
                     )
                 }
 
+        val bpsSaker = bidragSakConsumer!!.hentSakerPerson(bidragspliktig!!.ident!!)
         val søknadsbarnIdent = søknadsbarn.map { it.ident }
         val andreBarnUtenLøpendeBidrag =
             bpsBarnUtenLøpendeBidrag().filter { !søknadsbarnIdent.contains(it.ident) }.map { barn ->
                 val privatAvtale = privatAvtale.find { it.person?.ident == barn.ident }
                 val beløpshistorikk = barn.finnBeløpshistorikk(privatAvtale?.stønadstype)
+                val sakForBarn = bpsSaker.find { it.barn.any { it.fødselsnummer?.verdi == barn.ident } }
                 PrivatAvtaleAndreBarnDtoV2(
                     PersoninfoDto(
                         null,
@@ -1051,8 +1055,8 @@ class Dtomapper(
                     ),
                     privatAvtale?.tilDtoV2(),
                     perioderLøperBidrag = beløpshistorikk?.periodeListe?.map { it.periode } ?: emptyList(),
-                    saksnummer = barn.saksnummer,
-                    enhet = barn.enhet,
+                    saksnummer = barn.saksnummer ?: sakForBarn?.saksnummer?.verdi,
+                    enhet = barn.enhet ?: sakForBarn?.eierfogd?.verdi,
                 )
             }
 
