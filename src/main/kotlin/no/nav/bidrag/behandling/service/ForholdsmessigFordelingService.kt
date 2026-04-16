@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.OpprettFFRequest
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.transformers.barn
@@ -336,6 +337,7 @@ class ForholdsmessigFordelingService(
     fun opprettEllerOppdaterForholdsmessigFordeling(
         behandlingId: Long,
         reevaluerSøkndasbarn: Pair<String, Stønadstype?>? = null,
+        request: OpprettFFRequest? = null,
     ) {
         try {
             if (!UnleashFeatures.TILGANG_OPPRETTE_FF.isEnabled) {
@@ -400,7 +402,8 @@ class ForholdsmessigFordelingService(
                         løpendebidragssaker,
                         behandlerEnhet,
                         saksnummerLøpendeBidrag.second,
-                        relevanteKravhavereIkkeSøknadsbarn.finnSøktFomRevurderingSøknad(behandling),
+                        request?.revurderingFraDato
+                            ?: relevanteKravhavereIkkeSøknadsbarn.finnSøktFomRevurderingSøknad(behandling),
                         erOppdateringAvBehandlingSomErIFF,
                     )
                 }
