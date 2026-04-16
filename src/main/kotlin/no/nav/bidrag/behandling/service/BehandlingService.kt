@@ -656,7 +656,7 @@ class BehandlingService(
         val rollerSomLeggesTil =
             oppdaterRollerNyesteIdent
                 .filter { !it.erSlettet }
-                .filter { !eksisterendeRoller.any { br -> br.ident == it.ident?.verdi } }
+                .filter { !eksisterendeRoller.any { br -> br.erSammeRolle(it.ident!!.verdi, it.stønadstype) } }
                 .distinct()
 
         val identerSomSkalLeggesTil = rollerSomLeggesTil.mapNotNull { it.ident?.verdi }.distinct()
@@ -669,10 +669,6 @@ class BehandlingService(
         }
 
         val rollerSomSkalSlettes = oppdaterRollerListe.filter { r -> r.erSlettet }.distinct()
-        val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }.distinct()
-        identerSomSkalSlettes.isNotEmpty().ifTrue {
-            secureLogger.debug { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
-        }
 
         // IMPORTANT: Do not remove roller here.
         // For FF-behandling, ForholdsmessigFordelingService must handle add/delete operations on a consistent graph.
@@ -681,7 +677,7 @@ class BehandlingService(
                 oppdaterRollerListe
                     .filter { r -> !r.erSlettet }
                     .filter { oppdatertRolle ->
-                        val rolle = behandling.roller.find { it.ident == oppdatertRolle.ident?.verdi }
+                        val rolle = behandling.roller.find { it.erSammeRolle(oppdatertRolle.ident!!.verdi, oppdatertRolle.stønadstype) }
                         rolle != null && rolle.erRevurderingsbarn
                     }
             try {
@@ -710,7 +706,7 @@ class BehandlingService(
                 rollerSomSkalSlettes,
             )
             behandling.roller.removeIf { r ->
-                if (identerSomSkalSlettes.contains(r.ident)) {
+                if (rollerSomSkalSlettes.any { r.erSammeRolle(it.ident!!.verdi, it.stønadstype) }) {
                     log.debug { "Sletter rolle ${r.id} fra behandling $behandlingId" }
                     slettRolleFraBehandling(behandling, r)
                     true
