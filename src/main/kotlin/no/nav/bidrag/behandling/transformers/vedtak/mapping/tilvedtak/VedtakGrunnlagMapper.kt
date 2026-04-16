@@ -116,35 +116,31 @@ fun Rolle.finnBeregnTil(): YearMonth =
 
 fun Rolle.finnBeregnFra(): YearMonth =
     if (behandling.erBidrag()) {
+        val tidligsteBeregnFra =
+            if (stønadstype == Stønadstype.BIDRAG18AAR) {
+                maxOf(fødselsdato.dato18ÅrsBidrag.toYearMonth(), behandling.eldsteVirkningstidspunkt.toYearMonth())
+            } else {
+                behandling.eldsteVirkningstidspunkt.toYearMonth()
+            }
         if (behandling.erIForholdsmessigFordeling) {
             if (rolletype == Rolletype.BIDRAGSMOTTAKER) {
                 behandling.søknadsbarn.filter { it.bidragsmottaker != null && it.bidragsmottaker?.ident == ident }.minOfOrNull {
                     it.finnBeregnFra()
                 } ?: behandling.eldsteVirkningstidspunkt.toYearMonth()
-            } else {
+            } else if (erRevurderingsbarn) {
                 behandling
                     .finnPeriodeLøperBidrag(this)
                     ?.takeIf { behandling.løperPeriodeEtterSøktFomDato(it) }
                     ?.fom
                     ?.let {
-                        val tidligsteBeregnFra =
-                            if (stønadstype == Stønadstype.BIDRAG18AAR) {
-                                maxOf(fødselsdato.dato18ÅrsBidrag.toYearMonth(), behandling.eldsteVirkningstidspunkt.toYearMonth())
-                            } else {
-                                behandling.eldsteVirkningstidspunkt.toYearMonth()
-                            }
                         maxOf(
                             it,
                             tidligsteBeregnFra,
                         )
                     }
-                    ?: run {
-                        if (stønadstype == Stønadstype.BIDRAG18AAR) {
-                            maxOf(fødselsdato.dato18ÅrsBidrag.toYearMonth(), behandling.eldsteVirkningstidspunkt.toYearMonth())
-                        } else {
-                            behandling.eldsteVirkningstidspunkt.toYearMonth()
-                        }
-                    }
+                    ?: run { tidligsteBeregnFra }
+            } else {
+                tidligsteBeregnFra
             }
         } else {
             virkningstidspunktRolle.toYearMonth()
