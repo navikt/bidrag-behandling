@@ -49,6 +49,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.hentSøkna
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnInnkrevesFraDato
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnSkalInnkrevesPeriode
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -228,6 +229,7 @@ fun mapTilBeregningresultatBarn(
                 .finnBeregnTilDatoBehandling(`søknadsbarn`)
                 ?.toYearMonth(),
         innkrevesFraDato = behandling.finnInnkrevesFraDato(`søknadsbarn`),
+        innkrevesFraPerioder = behandling.finnSkalInnkrevesPeriode(søknadsbarn),
         opphørsdato = `søknadsbarn`.opphørsdato?.toYearMonth(),
         `løperBidrag` = behandling.løperBidragEtterEldsteVirkning(søknadsbarn),
         resultat =
@@ -427,6 +429,7 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                     ResultatBidragsberegningBarnDto(
                         barn = resultat.barn,
                         innkrevesFraDato = resultat.innkrevesFraDato,
+                        innkrevesFraPerioder = resultat.innkrevesFraPerioder,
                         ugyldigBeregning = resultat.ugyldigBeregning,
                         erAvvistRevurdering = resultat.erAvvistRevurdering,
                         medInnkreving = resultat.medInnkreving,
