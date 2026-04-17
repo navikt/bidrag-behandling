@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.transformers.hentNesteEtterfølgendeVedtak
 import no.nav.bidrag.behandling.transformers.konverterTilStønadDto
 import no.nav.bidrag.behandling.transformers.løperPeriodeEtterSøktFomDato
 import no.nav.bidrag.behandling.transformers.maxOfNullable
+import no.nav.bidrag.behandling.transformers.minOfNullable
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.vedtakmappingFeilet
@@ -80,7 +81,13 @@ fun Behandling.finnSkalInnkrevesPeriode(søknadsbarnRolle: Rolle): List<ÅrMåne
         val beløpshistorikk = hentGrunnlagBeløpshistorikkForRolle(søknadsbarnRolle, false).konverterTilStønadDto() ?: return emptyList()
         val sistePeriode = beløpshistorikk.periodeListe.maxByOrNull { it.periode.fom }
         val virkningstidspunkt = søknadsbarnRolle.virkningstidspunktRolle.toYearMonth()
-        if (sistePeriode?.periode?.til != null && sistePeriode.periode.til!! <= søknadsbarnRolle.finnBeregnTil()) {
+        val beregnTil = søknadsbarnRolle.finnBeregnTil()
+        val harPerioderUtenInnkreving =
+            beløpshistorikk.periodeListe
+                .map {
+                    it.periode
+                }.inneholderPerioderUtenInnkreving(virkningstidspunkt, beregnTil)
+        if (sistePeriode?.periode?.til != null && sistePeriode.periode.til!! <= beregnTil && !harPerioderUtenInnkreving) {
             emptyList()
         } else {
             beløpshistorikk.periodeListe
@@ -94,19 +101,88 @@ fun Behandling.finnSkalInnkrevesPeriode(søknadsbarnRolle: Rolle): List<ÅrMåne
                 .minByOrNull { it.periode.fom }
                 ?.periode
                 ?.fom
-        val virkningstidspunkt = søknadsbarnRolle.virkningstidspunktRolle.toYearMonth()
+        val virkningstidspunkt = maxOf(søknadsbarnRolle.virkningstidspunktRolle.toYearMonth(), søknadsbarnRolle.finnBeregnFra())
+        val harPerioderUtenInnkreving =
+            beløpshistorikk.periodeListe
+                .map { it.periode }
+                .inneholderPerioderUtenInnkreving(virkningstidspunkt, søknadsbarnRolle.finnBeregnTil())
         // Hvis det skal innkreves fra virkningtidspunkt så returnerer metoden null mtp at det er med innkreving
         // Dette brukes for å innkreve deler av periodene
-        if (førstePeriodeFom == null || virkningstidspunkt > førstePeriodeFom) {
+        if (førstePeriodeFom == null || !harPerioderUtenInnkreving) {
             emptyList()
         } else {
             beløpshistorikk.periodeListe
                 .filter { it.periode.fom >= virkningstidspunkt }
-                .map { it.periode }
+                .map {
+                    ÅrMånedsperiode(
+                        it.periode.fom,
+                        minOfNullable(it.periode.til, søknadsbarnRolle.opphørsdato?.toYearMonth()) ?: it.periode.til,
+                    )
+                }.slåSammenEtterfølgendePerioder()
         }
     } else {
         emptyList()
     }
+
+internal fun List<ÅrMånedsperiode>.inneholderPerioderUtenInnkreving(
+    fraOgMed: YearMonth,
+    tilOgMed: YearMonth,
+): Boolean {
+    var nesteMånedSomMåDekkes = fraOgMed
+    val relevantePerioder =
+        sortedBy { it.fom }
+            .filter { periode ->
+                periode.til == null || periode.til!! > fraOgMed
+            }
+
+    for (periode in relevantePerioder) {
+        if (periode.fom > nesteMånedSomMåDekkes) {
+            return true
+        }
+
+        if (periode.til == null) {
+            return false
+        }
+
+        if (periode.til!! > nesteMånedSomMåDekkes) {
+            nesteMånedSomMåDekkes = periode.til!!
+        }
+
+        if (nesteMånedSomMåDekkes > tilOgMed) {
+            return false
+        }
+    }
+
+    return nesteMånedSomMåDekkes <= tilOgMed
+}
+
+internal fun List<ÅrMånedsperiode>.slåSammenEtterfølgendePerioder(): List<ÅrMånedsperiode> {
+    if (isEmpty()) {
+        return emptyList()
+    }
+
+    val sammenslåttePerioder = mutableListOf<ÅrMånedsperiode>()
+
+    sortedBy { it.fom }.forEach { periode ->
+        val forrigePeriode = sammenslåttePerioder.lastOrNull()
+        if (forrigePeriode == null) {
+            sammenslåttePerioder.add(periode)
+        } else if (forrigePeriode.til == null || forrigePeriode.til == periode.fom) {
+            sammenslåttePerioder[sammenslåttePerioder.lastIndex] =
+                ÅrMånedsperiode(
+                    forrigePeriode.fom,
+                    when {
+                        forrigePeriode.til == null || periode.til == null -> null
+                        else -> maxOf(forrigePeriode.til!!, periode.til!!)
+                    },
+                )
+        } else {
+            sammenslåttePerioder.add(periode)
+        }
+    }
+
+    return sammenslåttePerioder
+}
 
 fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) = finnSkalInnkrevesPeriode(søknadsbarnRolle).firstOrNull()?.fom
 

@@ -26,10 +26,12 @@ import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.sjablon.SjablonTallNavn
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import java.math.BigDecimal
+import java.time.YearMonth
 
 @ExtendWith(MockKExtension::class)
 class VedtakGrunnlagMapperTest {
@@ -206,5 +208,70 @@ class VedtakGrunnlagMapperTest {
             grunnlagsliste.validerHarGrunnlag(Grunnlagstype.SJABLON_SJABLONTALL, antall = 1)
             grunnlagsliste.validerHarReferanseTilSjablon(SjablonTallNavn.FASTSETTELSESGEBYR_BELØP)
         }
+    }
+
+    @Test
+    fun `skal returnere false når perioder dekker hele intervallet uten hull`() {
+        val perioder =
+            listOf(
+                ÅrMånedsperiode(YearMonth.of(2025, 1), YearMonth.of(2025, 4)),
+                ÅrMånedsperiode(YearMonth.of(2025, 4), YearMonth.of(2025, 7)),
+            )
+
+        val harHull = perioder.inneholderPerioderUtenInnkreving(YearMonth.of(2025, 1), YearMonth.of(2025, 6))
+
+        harHull shouldBe false
+    }
+
+    @Test
+    fun `skal returnere true når perioder har hull i intervallet`() {
+        val perioder =
+            listOf(
+                ÅrMånedsperiode(YearMonth.of(2025, 1), YearMonth.of(2025, 3)),
+                ÅrMånedsperiode(YearMonth.of(2025, 4), YearMonth.of(2025, 7)),
+            )
+
+        val harHull = perioder.inneholderPerioderUtenInnkreving(YearMonth.of(2025, 1), YearMonth.of(2025, 6))
+
+        harHull shouldBe true
+    }
+
+    @Test
+    fun `skal returnere true når perioder ikke dekker frem til beregnTil`() {
+        val perioder =
+            listOf(
+                ÅrMånedsperiode(YearMonth.of(2025, 1), YearMonth.of(2025, 3)),
+            )
+
+        val harHull = perioder.inneholderPerioderUtenInnkreving(YearMonth.of(2025, 1), YearMonth.of(2025, 6))
+
+        harHull shouldBe true
+    }
+
+    @Test
+    fun `skal slå sammen perioder som er rett etter hverandre`() {
+        val perioder =
+            listOf(
+                ÅrMånedsperiode(YearMonth.of(2025, 4), YearMonth.of(2025, 6)),
+                ÅrMånedsperiode(YearMonth.of(2025, 1), YearMonth.of(2025, 4)),
+                ÅrMånedsperiode(YearMonth.of(2025, 6), YearMonth.of(2025, 8)),
+            )
+
+        val sammenslåttePerioder = perioder.`slåSammenEtterfølgendePerioder`()
+
+        sammenslåttePerioder shouldBe listOf(ÅrMånedsperiode(YearMonth.of(2025, 1), YearMonth.of(2025, 8)))
+    }
+
+    @Test
+    fun `skal ikke slå sammen perioder når det er hull mellom dem`() {
+        val perioder =
+            listOf(
+                ÅrMånedsperiode(YearMonth.of(2025, 1), YearMonth.of(2025, 3)),
+                ÅrMånedsperiode(YearMonth.of(2025, 4), YearMonth.of(2025, 6)),
+            )
+
+        val sammenslåttePerioder = perioder.`slåSammenEtterfølgendePerioder`()
+
+        sammenslåttePerioder shouldBe perioder
     }
 }
