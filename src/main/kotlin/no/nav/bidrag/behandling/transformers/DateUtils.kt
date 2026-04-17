@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers
 
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -31,3 +32,16 @@ fun String?.toLocalDateTime(): LocalDateTime {
         OffsetDateTime.parse(formatted).toLocalDateTime()
     }
 }
+
+fun List<ÅrMånedsperiode>.filtrerMatchendePeriode(periode: ÅrMånedsperiode) =
+    filterIndexed { index, it ->
+        val nextPeriod =
+            if (this.size < index + 1) {
+                this.getOrNull(index + 1)
+            } else {
+                null
+            }
+        it.fom >= periode.fom &&
+            (periode.til == null || nextPeriod == null || periode.til!! < nextPeriod.fom) &&
+            (periode.til == null || periode.til!! > it.fom)
+    }

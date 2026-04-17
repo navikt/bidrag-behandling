@@ -3,7 +3,6 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.fantIkkeRolleISak
 import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
@@ -50,7 +49,6 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
-import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BidragsberegningOrkestratorRequest
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.OmgjøringOrkestratorGrunnlag
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.OmgjøringorkestratorManuellAldersjustering
@@ -77,18 +75,40 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 
-fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) =
-    if (innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
-        val beløpshistorikk = hentGrunnlagBeløpshistorikkForRolle(søknadsbarnRolle, false).konverterTilStønadDto() ?: return null
+fun Behandling.finnSkalInnkrevesPeriode(søknadsbarnRolle: Rolle): List<ÅrMånedsperiode> =
+    if (innkrevingstype == Innkrevingstype.UTEN_INNKREVING && !søknadsbarnRolle.erRevurderingsbarn) {
+        val beløpshistorikk = hentGrunnlagBeløpshistorikkForRolle(søknadsbarnRolle, false).konverterTilStønadDto() ?: return emptyList()
         val sistePeriode = beløpshistorikk.periodeListe.maxByOrNull { it.periode.fom }
+        val virkningstidspunkt = søknadsbarnRolle.virkningstidspunktRolle.toYearMonth()
         if (sistePeriode?.periode?.til != null && sistePeriode.periode.til!! <= søknadsbarnRolle.finnBeregnTil()) {
-            null
+            emptyList()
         } else {
-            beløpshistorikk.periodeListe.minOfOrNull { it.periode.fom }
+            beløpshistorikk.periodeListe
+                .filter { it.periode.fom >= virkningstidspunkt }
+                .map { it.periode }
+        }
+    } else if (søknadsbarnRolle.erRevurderingsbarn) {
+        val beløpshistorikk = hentGrunnlagBeløpshistorikkForRolle(søknadsbarnRolle, false).konverterTilStønadDto() ?: return emptyList()
+        val førstePeriodeFom =
+            beløpshistorikk.periodeListe
+                .minByOrNull { it.periode.fom }
+                ?.periode
+                ?.fom
+        val virkningstidspunkt = søknadsbarnRolle.virkningstidspunktRolle.toYearMonth()
+        // Hvis det skal innkreves fra virkningtidspunkt så returnerer metoden null mtp at det er med innkreving
+        // Dette brukes for å innkreve deler av periodene
+        if (førstePeriodeFom == null || virkningstidspunkt > førstePeriodeFom) {
+            emptyList()
+        } else {
+            beløpshistorikk.periodeListe
+                .filter { it.periode.fom >= virkningstidspunkt }
+                .map { it.periode }
         }
     } else {
-        null
+        emptyList()
     }
+
+fun Behandling.finnInnkrevesFraDato(søknadsbarnRolle: Rolle) = finnSkalInnkrevesPeriode(søknadsbarnRolle).firstOrNull()?.fom
 
 fun Behandling.finnBeregningsperiode() =
     ÅrMånedsperiode(
