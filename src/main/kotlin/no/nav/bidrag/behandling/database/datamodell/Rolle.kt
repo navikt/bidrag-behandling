@@ -156,6 +156,11 @@ open class Rolle(
     val stønadstypeBarnEllerBehandling get() = stønadstype ?: behandling.stonadstype
     val virkningstidspunktRolle get() = virkningstidspunkt ?: behandling.virkningstidspunktEllerSøktFomDato
 
+    fun harSøknad(søknadsid: Long) =
+        forholdsmessigFordeling
+            ?.søknaderUnderBehandling
+            ?.any { it.søknadsid == søknadsid } == true
+
     fun sakForSøknad(søknadsid: Long) =
         forholdsmessigFordeling
             ?.søknader

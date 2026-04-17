@@ -13,7 +13,6 @@ import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.ForsendelseService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.NotatOpplysningerService
-import no.nav.bidrag.behandling.service.OppgaveService
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.vedtak.engangsbeløptype
@@ -170,25 +169,28 @@ class VedtakHendelseListener(
         if (vedtak.type == Vedtakstype.ALDERSJUSTERING) return
         behandling.saker.forEach { sak ->
             val søknader = behandling.søknadForSak(sak)
-            val opprettForSøknad = søknader.minByOrNull { it.behandlingstype != behandling.behandlingstypeForFF }!!
-            forsendelseService.slettEllerOpprettForsendelse(
-                InitalizeForsendelseRequest(
-                    saksnummer = sak,
-                    enhet = vedtak.enhetsnummer?.verdi ?: behandling.behandlerEnhet,
-                    behandlingInfo =
-                        BehandlingInfoDto(
-                            soknadId = opprettForSøknad.søknadsid.toString(),
-                            vedtakId = vedtak.id.toString(),
-                            behandlingId = behandling.id!!.toString(),
-                            soknadFra = opprettForSøknad.søktAvType,
-                            stonadType = vedtak.stønadstype,
-                            engangsBelopType = if (vedtak.stønadstype == null) vedtak.engangsbeløptype else null,
-                            erFattetBeregnet = true,
-                            vedtakType = vedtak.type,
-                        ),
-                    roller = behandling.tilForsendelseRolleDto(sak),
-                ),
-            )
+
+            søknader.forEach { opprettForSøknad ->
+
+                forsendelseService.slettEllerOpprettForsendelse(
+                    InitalizeForsendelseRequest(
+                        saksnummer = sak,
+                        enhet = vedtak.enhetsnummer?.verdi ?: behandling.behandlerEnhet,
+                        behandlingInfo =
+                            BehandlingInfoDto(
+                                soknadId = opprettForSøknad.søknadsid.toString(),
+                                vedtakId = vedtak.id.toString(),
+                                behandlingId = behandling.id!!.toString(),
+                                soknadFra = opprettForSøknad.søktAvType,
+                                stonadType = vedtak.stønadstype,
+                                engangsBelopType = if (vedtak.stønadstype == null) vedtak.engangsbeløptype else null,
+                                erFattetBeregnet = true,
+                                vedtakType = vedtak.type,
+                            ),
+                        roller = behandling.tilForsendelseRolleDto(sak, opprettForSøknad),
+                    ),
+                )
+            }
         }
     }
 

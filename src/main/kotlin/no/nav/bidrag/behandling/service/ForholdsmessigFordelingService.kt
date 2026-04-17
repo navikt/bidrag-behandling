@@ -1,14 +1,10 @@
 package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
-import no.nav.bidrag.behandling.consumer.HentetGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
@@ -31,7 +27,6 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.OpprettFFRequest
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
-import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
 import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.behandling.erSamme
 import no.nav.bidrag.behandling.transformers.behandling.erSammePerson
@@ -40,7 +35,6 @@ import no.nav.bidrag.behandling.transformers.behandling.finnes
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.filtrerSakerHvorPersonErBP
 import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
-import no.nav.bidrag.behandling.transformers.finnesLøpendeBidragForRolle
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.OppdaterBarnFraFFRequest
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.erFeilregistrert
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.erForholdsmessigFordeling
@@ -80,8 +74,6 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregn
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
-import no.nav.bidrag.commons.util.RequestContextAsyncContext
-import no.nav.bidrag.commons.util.SecurityCoroutineContext
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
@@ -769,6 +761,17 @@ class ForholdsmessigFordelingService(
         behandling.roller.remove(rolle)
         secureLogger.info { "Slettet revurderingsbarn ${rolle.ident} fra behandling ${behandling.id}" }
         behandlingService.sendOppdatertHendelse(behandling.id!!, false)
+        // Opprett forsendelse for varsling av at revurdering er trukket for barn
+        opprettForsendelseForNySøknad(
+            rolle.saksnummer,
+            behandling,
+            rolle.bidragsmottaker!!.ident!!,
+            rolle.forholdsmessigFordeling!!
+                .eldsteSøknad!!
+                .søknadsid!!
+                .toString(),
+            listOf(SakKravhaver(kravhaver = rolle.ident!!, saksnummer = rolle.saksnummer)),
+        )
     }
 
     @Transactional
@@ -2085,7 +2088,7 @@ class ForholdsmessigFordelingService(
                                 }
                             // Antar at alle barn havner i samme søknad
                             val søknadsid = søknader.first().søknadsid
-                            opprettForsendelseForNySøknad(saksnummer, behandling, bmFødselsnummer!!, søknadsid.toString())
+                            opprettForsendelseForNySøknad(saksnummer, behandling, bmFødselsnummer!!, søknadsid.toString(), barn)
                             søknadsid
                         } else {
                             opprettSøknad(
@@ -2120,7 +2123,7 @@ class ForholdsmessigFordelingService(
                         }
                     // Antar at alle barn havner i samme søknad
                     val søknadsid = søknader.first().søknadsid
-                    opprettForsendelseForNySøknad(saksnummer, behandling, bmFødselsnummer!!, søknadsid.toString())
+                    opprettForsendelseForNySøknad(saksnummer, behandling, bmFødselsnummer!!, søknadsid.toString(), barnMedInnkreving)
                     søknadsid
                 } else {
                     opprettSøknad(
@@ -2311,15 +2314,16 @@ class ForholdsmessigFordelingService(
 
         val søknadsid = response.søknadsid
 
-        opprettForsendelseForNySøknad(saksnummer, behandling, bmFødselsnummer, søknadsid.toString())
+        opprettForsendelseForNySøknad(saksnummer, behandling, bmFødselsnummer, søknadsid.toString(), barnUtenSøknader)
         return søknadsid
     }
 
     private fun opprettForsendelseForNySøknad(
         saksnummer: String,
         behandling: Behandling,
-        bmFødselsnummer: String,
-        søknadsid: String,
+        `bmFødselsnummer`: String,
+        `søknadsid`: String,
+        barn: List<SakKravhaver>,
     ) {
         forsendelseService.slettEllerOpprettForsendelse(
             no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest(
@@ -2335,7 +2339,13 @@ class ForholdsmessigFordelingService(
                             fødselsnummer = Personident(behandling.bidragspliktig!!.ident!!),
                             type = Rolletype.BIDRAGSPLIKTIG,
                         ),
-                    ),
+                    ) +
+                        barn.map {
+                            ForsendelseRolleDto(
+                                fødselsnummer = Personident(it.kravhaver),
+                                type = Rolletype.BARN,
+                            )
+                        },
                 behandlingInfo =
                     BehandlingInfoDto(
                         behandlingId = behandling.id?.toString(),
