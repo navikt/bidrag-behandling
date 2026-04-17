@@ -756,6 +756,7 @@ class ForholdsmessigFordelingService(
         val rolleHarLøpendeBidrag = rolle.harLøpendeBidragFørOpphørEllerLøpende()
         if (!rolle.erRevurderingsbarn || rolleHarLøpendeBidrag) return
 
+        val eldsteSøknad = rolle.forholdsmessigFordeling!!.eldsteSøknad
         feilregistrerBarnFraFFSøknad(rolle)
         behandlingService.slettRolleFraBehandling(behandling, rolle)
         behandling.roller.remove(rolle)
@@ -766,8 +767,7 @@ class ForholdsmessigFordelingService(
             rolle.saksnummer,
             behandling,
             rolle.bidragsmottaker!!.ident!!,
-            rolle.forholdsmessigFordeling!!
-                .eldsteSøknad!!
+            eldsteSøknad!!
                 .søknadsid!!
                 .toString(),
             listOf(SakKravhaver(kravhaver = rolle.ident!!, saksnummer = rolle.saksnummer)),
