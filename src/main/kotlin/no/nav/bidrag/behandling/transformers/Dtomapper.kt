@@ -1036,7 +1036,7 @@ class Dtomapper(
                     )
                 }
 
-        val bpsSaker = bidragSakConsumer!!.hentSakerPerson(bidragspliktig!!.ident!!)
+        val bpsSaker = bidragSakConsumer?.hentSakerPerson(bidragspliktig!!.ident!!) ?: emptyList()
         val søknadsbarnIdent = søknadsbarn.map { it.ident }
         val andreBarnUtenLøpendeBidrag =
             bpsBarnUtenLøpendeBidrag().filter { !søknadsbarnIdent.contains(it.ident) }.map { barn ->

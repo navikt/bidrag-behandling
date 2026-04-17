@@ -95,7 +95,7 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
                 Bostatusperiode(
                     husstandsmedlem = husstandsmedlemSøknadsbarn,
                     datoFom = behandling.virkningstidspunkt,
-                    datoTom = behandling.søknadsbarn.first().opphørsdato,
+                    datoTom = null,
                     bostatus = Bostatuskode.MED_FORELDER,
                     kilde = Kilde.MANUELL,
                     id = 2,
@@ -110,17 +110,7 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
                         .minusDays(1)
             }
         }
-        behandling.husstandsmedlem.forEach {
-            it.perioder.forEach { p ->
-                if (p.datoTom == null) {
-                    p.datoTom =
-                        behandling.søknadsbarn
-                            .first()
-                            .opphørsdato!!
-                            .minusDays(1)
-                }
-            }
-        }
+
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
             NotatType.INNTEKT,
