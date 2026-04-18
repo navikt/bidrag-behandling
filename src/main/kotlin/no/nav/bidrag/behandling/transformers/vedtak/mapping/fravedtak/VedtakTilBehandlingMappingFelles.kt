@@ -99,6 +99,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.stønadstype
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.vedtak.response.StønadsendringDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
@@ -441,12 +442,12 @@ internal fun List<GrunnlagDto>.mapRoller(
     opprinneligVirkningstidspunkt: LocalDate,
 ): MutableSet<Rolle> =
     filter { grunnlagstyperRolle.contains(it.type) }
-        .distinctBy { it.personIdent }
+        .distinctBy { it.personIdent to it.stønadstype }
         .mapIndexed { i, rolle ->
             val stønadsendring =
                 vedtak.stønadsendringListe.find {
                     if (rolle.type == Grunnlagstype.PERSON_SØKNADSBARN) {
-                        it.kravhaver.verdi == rolle.personIdent
+                        it.kravhaver.verdi == rolle.personIdent && it.type == rolle.stønadstype
                     } else if (rolle.type == Grunnlagstype.PERSON_BIDRAGSMOTTAKER) {
                         it.mottaker.verdi == rolle.personIdent
                     } else {
