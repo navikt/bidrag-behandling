@@ -157,7 +157,7 @@ open class Rolle(
     val virkningstidspunktRolle get() = virkningstidspunkt ?: behandling.virkningstidspunktEllerSøktFomDato
 
     fun harSøknad(søknadsid: Long) =
-        forholdsmessigFordeling
+        !behandling.erIForholdsmessigFordeling || forholdsmessigFordeling
             ?.søknaderUnderBehandling
             ?.any { it.søknadsid == søknadsid } == true
 
