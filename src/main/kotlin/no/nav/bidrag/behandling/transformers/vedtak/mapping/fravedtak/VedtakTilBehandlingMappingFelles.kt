@@ -69,6 +69,7 @@ import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
@@ -574,7 +575,7 @@ internal fun List<GrunnlagDto>.oppdaterRolleGebyr(behandling: Behandling) =
         .groupBy { it.gjelderReferanse }
         .forEach { (gjelderReferanse, grunnlag) ->
             val person = hentPersonMedReferanse(gjelderReferanse)!!
-            val rolle = behandling.roller.find { it.ident == person.personIdent }!!
+            val rolle = behandling.roller.find { it.erSammeRolle(person.personIdent!!, person.stønadstype) }!!
             rolle.harGebyrsøknad = true
             val sluttberegning = grunnlag.first().innholdTilObjekt<SluttberegningGebyr>()
             val manueltOverstyrtGebyr =
@@ -712,6 +713,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 rolleIdent = gjelderGrunnlag.personIdent!!,
                 innhentetTidspunkt = LocalDateTime.now(),
                 lesemodus = lesemodus,
+                rolleStønadstype = gjelderGrunnlag.stønadstype,
             )
         },
     if (behandling.erBidrag()) {
@@ -746,6 +748,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                     rolleIdent = gjelderGrunnlag.personIdent!!,
                     innhentetTidspunkt = LocalDateTime.now(),
                     lesemodus = lesemodus,
+                    rolleStønadstype = gjelderGrunnlag.stønadstype,
                 )
             }
     } else {
@@ -765,6 +768,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 rolleIdent = gjelderGrunnlag.personIdent!!,
                 innhentetTidspunkt = LocalDateTime.now(),
                 lesemodus = lesemodus,
+                rolleStønadstype = gjelderGrunnlag.stønadstype,
             )
         },
     if ((behandling.vedtakstype == Vedtakstype.KLAGE && !lesemodus) || lesemodus) {
@@ -787,6 +791,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                                 ?: grunnlag?.innhold?.tidspunktInnhentet
                                 ?: LocalDateTime.now(),
                         lesemodus = lesemodus,
+                        rolleStønadstype = gjelder?.stønadstype,
                     )
                 }
         }
@@ -1069,6 +1074,7 @@ fun Behandling.opprettGrunnlag(
     lesemodus: Boolean,
     erBearbeidet: Boolean = false,
     gjelder: String? = null,
+    rolleStønadstype: Stønadstype? = null,
 ) = Grunnlag(
     behandling = this,
     id = if (lesemodus) 1 else null,
@@ -1079,7 +1085,7 @@ fun Behandling.opprettGrunnlag(
     gjelder = gjelder,
     grunnlagFraVedtakSomSkalOmgjøres = !lesemodus,
     aktiv = innhentetTidspunkt,
-    rolle = roller.find { it.ident == rolleIdent }!!,
+    rolle = roller.find { it.erSammeRolle(rolleIdent, rolleStønadstype) }!!,
 )
 
 internal fun VedtakDto.notatMedTypeBegge(
@@ -1275,8 +1281,8 @@ private fun BaseGrunnlag.tilInntekt(
                     null
                 },
             ident = gjelder.personIdent!!,
-            rolle = behandling.finnRolle(gjelder.personIdent!!),
-            gjelderBarnRolle = gjelderBarn?.let { behandling.finnRolle(it.personIdent!!) },
+            rolle = behandling.finnRolle(gjelder.personIdent!!, gjelder.stønadstype),
+            gjelderBarnRolle = gjelderBarn?.let { behandling.finnRolle(it.personIdent!!, it.stønadstype) },
             kilde = if (inntektPeriode.manueltRegistrert) Kilde.MANUELL else Kilde.OFFENTLIG,
             behandling = behandling,
         )
