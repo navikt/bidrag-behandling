@@ -407,7 +407,7 @@ fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
     val notatPrivatAvtale =
         behandling.notater.find {
             it.type == NotatGrunnlag.NotatType.PRIVAT_AVTALE &&
-                if (rolle == null) it.rolle.ident == behandling.bidragspliktig?.ident else rolle?.ident == it.rolle?.ident
+                if (rolle == null) it.rolle.ident == behandling.bidragspliktig?.ident else rolle?.erSammeRolle(it.rolle) == true
         }
     return PrivatAvtaleValideringsfeilDto(
         privatAvtaleId = id!!,
