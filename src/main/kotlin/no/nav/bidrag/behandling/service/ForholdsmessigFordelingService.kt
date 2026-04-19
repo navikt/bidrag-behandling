@@ -863,7 +863,9 @@ class ForholdsmessigFordelingService(
         val alleSøknaderRelevantForBehandling =
             hentÅpneSøknader(behandling.bidragspliktig!!.ident!!, behandling.behandlingstypeForFF, behandling.omgjøringsdetaljer)
 
-        leggTilRollerFraRelevanteSøknaderSomIkkeErIBehandling(behandling, alleSøknaderRelevantForBehandling)
+        if (!behandling.erKlageEllerOmgjøring) {
+            leggTilRollerFraRelevanteSøknaderSomIkkeErIBehandling(behandling, alleSøknaderRelevantForBehandling)
+        }
 
         behandling.roller
             .filter { !it.erBarn }
@@ -1564,7 +1566,7 @@ class ForholdsmessigFordelingService(
     @Transactional
     fun sjekkSkalOppretteForholdsmessigFordeling(behandlingId: Long): SjekkForholdmessigFordelingResponse {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
-        if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
+        if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING || behandling.erKlageEllerOmgjøring) {
             return SjekkForholdmessigFordelingResponse(
                 skalBehandlesAvEnhet = "",
                 eldsteSøktFraDato = behandling.søktFomDato,
