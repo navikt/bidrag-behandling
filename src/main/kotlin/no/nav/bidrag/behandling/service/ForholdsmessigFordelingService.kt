@@ -175,6 +175,7 @@ data class SakKravhaver(
     val åpneSøknader: MutableSet<ÅpenSøknadDto> = mutableSetOf(),
     val åpneBehandlinger: MutableSet<Behandling> = mutableSetOf(),
     val privatAvtale: PrivatAvtale? = null,
+    val perioderLøperBidrag: List<ÅrMånedsperiode> = emptyList(),
 ) {
     fun erSammePerson(
         ident: String,
@@ -191,6 +192,7 @@ data class LøpendeBidragSakPeriode(
     val valutakode: String,
     val periodeFra: YearMonth,
     val periodeTil: YearMonth?,
+    val perioderLøperBidrag: List<ÅrMånedsperiode> = emptyList(),
 )
 
 @Service
@@ -2381,6 +2383,7 @@ class ForholdsmessigFordelingService(
                         sak.periodeListe
                             .maxBy { it.periode.fom }
                             .periode.til,
+                    perioderLøperBidrag = sak.periodeListe.map { it.periode },
                 )
             }
 
@@ -2429,6 +2432,7 @@ class ForholdsmessigFordelingService(
                             løperBidragTil = løpendeBidrag?.periodeTil,
                             opphørsdato = barn.opphørsdato?.toYearMonth(),
                             privatAvtale = behandling.privatAvtale.find { it.gjelderPerson(barn.ident!!, stønadstype) },
+                            perioderLøperBidrag = løpendeBidrag?.perioderLøperBidrag ?: emptyList(),
                         ),
                     )
                 }

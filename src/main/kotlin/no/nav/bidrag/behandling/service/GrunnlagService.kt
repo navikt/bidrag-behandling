@@ -99,6 +99,7 @@ import no.nav.bidrag.behandling.transformers.underhold.tilBarnetilsyn
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTil
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.inneholderPerioderUtenInnkreving
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.behandling.transformers.vedtakstyperIkkeBeregning
 import no.nav.bidrag.beregn.barnebidrag.service.external.VedtakService
@@ -128,6 +129,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi
@@ -590,12 +592,16 @@ class GrunnlagService(
             sakConsumer!!
                 .hentSakerPerson(bidragspliktigIdent)
                 .filtrerSakerHvorPersonErBP(bidragspliktigIdent)
-        val barnBpMedÅpenSøknadEllerLøpendeBidrag =
+        val barnBPMedLøpendeBidragOverHelePerioden =
             åpneSakerBp
                 .filter {
-                    (it.løperBidragFra != null && it.løperBidragTil == null) ||
-                        (it.løperBidragFra != null && it.løperBidragTil != null && it.løperBidragTil > behandling.søktFomDato.toYearMonth())
-                }.map { it.kravhaver } + behandling.søknadsbarn.map { it.ident!! }
+                    !it.perioderLøperBidrag.inneholderPerioderUtenInnkreving(
+                        behandling.søktFomDato.toYearMonth(),
+                        behandling.finnBeregnTilDato().toYearMonth(),
+                    )
+                }.map { it.kravhaver }
+
+        val barnBpMedÅpenSøknadEllerLøpendeBidrag = barnBPMedLøpendeBidragOverHelePerioden + behandling.søknadsbarn.map { it.ident!! }
         val barnBpMedBidragssak =
             sakerBp.flatMap {
                 it.roller
@@ -1250,7 +1256,7 @@ class GrunnlagService(
                 boforhold.tilBoforholdBarnRequest(behandling, true),
             )
         val boforholdPeriodisertBarn = boforholdPeriodisert.filter { it.gjelderPersonId == gjelderRolle?.ident }.distinct()
-        overskrivBearbeidetBoforholdGrunnlag(behandling, boforholdPeriodisertBarn, rekalkulerOgOverskriveAktiverte, gjelderRolle!!)
+        overskrivBearbeidetBoforholdGrunnlag(behandling, boforholdPeriodisertBarn, rekalkulerOgOverskriveAktiverte, gjelderRolle)
     }
 
     private fun overskrivBearbeidetAndreVoksneIHusstandenGrunnlag(
@@ -1322,7 +1328,7 @@ class GrunnlagService(
         behandling: Behandling,
         perioder: List<BoforholdResponseV2>,
         rekalkulerOgOverskriveAktiverte: Boolean = true,
-        gjelderBarn: Rolle,
+        gjelderBarn: Rolle? = null,
     ) {
         val grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD
 
@@ -1342,7 +1348,7 @@ class GrunnlagService(
             }
         val grunnlagSomSkalOverskrivesGjelder =
             grunnlagSomSkalOverskrives.find {
-                if (it.gjelderBarnRolle != null) {
+                if (it.gjelderBarnRolle != null && gjelderBarn != null) {
                     it.gjelderBarnRolle!!.erSammeRolle(gjelderBarn)
                 } else {
                     it.gjelder == gjelderBarn?.ident
