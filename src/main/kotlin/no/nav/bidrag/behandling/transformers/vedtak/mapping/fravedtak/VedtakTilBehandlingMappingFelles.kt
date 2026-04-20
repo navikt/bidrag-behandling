@@ -1211,7 +1211,10 @@ internal fun List<BaseGrunnlag>.tilHusstandsmedlem(
 
     val gjelderRolle =
         behandling.roller
-            .find { it.erSammeRolle(hentNyesteIdent(gjelderPerson.ident?.verdi)!!.verdi, gjelderPerson.stønadstype) }
+            .find {
+                val ident = hentNyesteIdent(gjelderPerson.ident?.verdi)
+                ident != null && it.erSammeRolle(ident.verdi, gjelderPerson.stønadstype)
+            }
     val erBmBpBosstatus =
         gjelderRolle?.let { listOf(Rolletype.BIDRAGSPLIKTIG, Rolletype.BIDRAGSMOTTAKER).contains(it.rolletype) }
             ?: false
