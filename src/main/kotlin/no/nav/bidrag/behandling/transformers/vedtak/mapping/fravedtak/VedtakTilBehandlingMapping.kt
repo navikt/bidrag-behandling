@@ -775,7 +775,7 @@ class VedtakTilBehandlingMapping(
         underholdskostnad.tilleggsstønad.addAll(
             filtrerBasertPåEgenReferanse(Grunnlagstype.TILLEGGSSTØNAD_PERIODE)
                 .filter {
-                    val personGrunnlag = hentPersonMedReferanse(it.referanse)!!
+                    val personGrunnlag = hentPersonMedReferanse(it.gjelderBarnReferanse)!!
                     rolle.erSammeRolle(personGrunnlag.personIdent!!, personGrunnlag.stønadstype)
                 }.map { it.innholdTilObjekt<TilleggsstønadPeriode>() }
                 .mapTillegsstønad(underholdskostnad, lesemodus)
@@ -785,7 +785,7 @@ class VedtakTilBehandlingMapping(
         underholdskostnad.faktiskeTilsynsutgifter.addAll(
             filtrerBasertPåEgenReferanse(Grunnlagstype.FAKTISK_UTGIFT_PERIODE)
                 .filter {
-                    val personGrunnlag = hentPersonMedReferanse(it.referanse)!!
+                    val personGrunnlag = hentPersonMedReferanse(it.gjelderBarnReferanse)!!
                     rolle.erSammeRolle(personGrunnlag.personIdent!!, personGrunnlag.stønadstype)
                 }.map { it.innholdTilObjekt<FaktiskUtgiftPeriode>() }
                 .mapFaktiskTilsynsutgift(underholdskostnad, lesemodus)
@@ -795,7 +795,7 @@ class VedtakTilBehandlingMapping(
         underholdskostnad.barnetilsyn.addAll(
             filtrerBasertPåEgenReferanse(Grunnlagstype.BARNETILSYN_MED_STØNAD_PERIODE)
                 .filter { ts ->
-                    val personGrunnlag = hentPersonMedReferanse(ts.referanse)!!
+                    val personGrunnlag = hentPersonMedReferanse(ts.gjelderBarnReferanse)!!
                     rolle.erSammeRolle(personGrunnlag.personIdent!!, personGrunnlag.stønadstype)
                 }.map { it.innholdTilObjekt<BarnetilsynMedStønadPeriode>() }
                 .mapBarnetilsyn(underholdskostnad, lesemodus)
