@@ -449,7 +449,7 @@ fun Husstandsmedlem.oppdaterePerioder(
                 listOf(periodiseringsrequest),
             ),
         )
-    } catch (_: NullPointerException) {
+    } catch (_: Exception) {
         // Noen caser hvor det er skjedd en feil i periodiseringen pga ugydlig data eller bug. Ruller tilbake til offentlige opplysninger
         this.overskriveMedBearbeidaPerioder(
             BoforholdApi.beregnBoforholdBarnV3(

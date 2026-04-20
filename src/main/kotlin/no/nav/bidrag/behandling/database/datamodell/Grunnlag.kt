@@ -50,6 +50,9 @@ open class Grunnlag(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rolle_id", nullable = false)
     open var rolle: Rolle,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "gjelder_barn_rolle_id", nullable = false)
+    open var gjelderBarnRolle: Rolle? = null,
     open var gjelder: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -63,8 +66,10 @@ open class Grunnlag(
             "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet, gjelder=$gjelder)"
         }
 
-    val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder
-    val identifikatorAlle get() = type.name + rolle.ident + erBearbeidet + gjelder + grunnlagFraVedtakSomSkalOmgjøres
+    val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder + gjelderBarnRolle?.identifikator
+    val identifikatorAlle get() =
+        type.name + rolle.ident + erBearbeidet + gjelder + grunnlagFraVedtakSomSkalOmgjøres +
+            gjelderBarnRolle?.identifikator
 }
 
 fun Set<Grunnlag>.hentAlleIkkeAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
@@ -197,8 +202,16 @@ fun Set<Grunnlag>.henteSisteSivilstand(erBearbeidet: Boolean) =
 fun Husstandsmedlem.hentSisteBearbeidetBoforhold() =
     behandling.grunnlag
         .hentSisteAktiv()
-        .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD && it.gjelder == this.ident }
-        .konvertereData<List<BoforholdResponseV2>>()
+        .find {
+            it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD &&
+                (
+                    (
+                        it.gjelderBarnRolle != null && this.rolle != null &&
+                            it.gjelderBarnRolle!!.erSammeRolle(this.rolle!!)
+                    ) ||
+                        (it.gjelderBarnRolle == null && it.gjelder == this.ident)
+                )
+        }.konvertereData<List<BoforholdResponseV2>>()
 
 fun Underholdskostnad.hentSisteBearbeidetBarnetilsyn() =
     behandling.grunnlag

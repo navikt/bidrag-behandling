@@ -23,12 +23,15 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.ainntekt12Og3MånederFraOpprinneligVedtakstidspunkt
+import no.nav.bidrag.behandling.transformers.behandling.finnOpphørsdatoBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.finnRolle
+import no.nav.bidrag.behandling.transformers.behandling.finnVirkningstidspunktBeregningBoforhold
 import no.nav.bidrag.behandling.transformers.boforhold.tilBoforholdBarnRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilHusstandsmedlemmer
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
@@ -54,6 +57,7 @@ import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
+import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
@@ -71,6 +75,7 @@ import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
@@ -917,7 +922,6 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
     hentInnhentetHusstandsmedlem()
         .groupBy { it.partPersonId }
         .flatMap { (innhentetForIdent, grunnlag) ->
-
             val grunnlagsdatatype =
                 if (behandling.tilType() != TypeBehandling.FORSKUDD &&
                     behandling.alleBidragsmottakere.any { it.ident == innhentetForIdent }
@@ -926,37 +930,72 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 } else {
                     Grunnlagsdatatype.BOFORHOLD
                 }
-            val boforholdPeriodisert =
-                BoforholdApi.beregnBoforholdBarnV3(
-                    behandling.virkningstidspunktEllerSøktFomDato,
-                    null,
-                    behandling.finnBeregnTilDatoBehandling(),
-                    behandling.tilTypeBoforhold(),
-                    grunnlag.tilBoforholdBarnRequest(behandling, true),
+            val grunnlagInnhentet =
+                listOf(
+                    behandling.opprettGrunnlag(
+                        grunnlagsdatatype,
+                        grunnlag,
+                        innhentetForIdent!!,
+                        innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
+                        lesemodus,
+                    ),
                 )
-            listOf(
-                behandling.opprettGrunnlag(
-                    grunnlagsdatatype,
-                    grunnlag,
-                    innhentetForIdent!!,
-                    innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
-                    lesemodus,
-                ),
-            ) +
-                boforholdPeriodisert
-                    .filter { it.gjelderPersonId != null }
-                    .groupBy { it.gjelderPersonId }
-                    .map {
-                        behandling.opprettGrunnlag(
-                            grunnlagsdatatype,
-                            it.value,
-                            grunnlag.firstOrNull()?.partPersonId!!,
-                            innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
-                            lesemodus,
-                            true,
-                            gjelder = it.key!!,
-                        )
+
+            val grunnlagBearbeidet =
+                grunnlag
+                    .map { it.gjelderPersonId }
+                    .distinct()
+                    .flatMap { gjelderPersonIdent ->
+                        // Tilfeller hvor det er 18 år og under 18 bidrag for samme barn i samme behandling så kan det være flere roller med samme ident
+                        val roller = behandling.roller.filter { it.ident == gjelderPersonIdent }
+                        if (roller.isNotEmpty()) {
+                            roller.map { rolle ->
+                                val resultat =
+                                    BoforholdApi.beregnBoforholdBarnV3(
+                                        rolle.finnVirkningstidspunktBeregningBoforhold() ?: behandling.eldsteVirkningstidspunkt,
+                                        rolle.finnOpphørsdatoBoforhold(),
+                                        behandling.finnBeregnTilDatoBehandling(rolle),
+                                        behandling.tilTypeBoforhold(),
+                                        grunnlag.tilBoforholdBarnRequest(behandling, true),
+                                    )
+                                val resultatPerson = resultat.filter { it.gjelderPersonId == gjelderPersonIdent }.distinct()
+                                behandling.opprettGrunnlag(
+                                    grunnlagsdatatype,
+                                    resultatPerson,
+                                    grunnlag.firstOrNull()?.partPersonId!!,
+                                    innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
+                                    lesemodus,
+                                    true,
+                                    gjelder = gjelderPersonIdent,
+                                    gjelderBarnRolle = rolle,
+                                )
+                            }
+                        } else {
+                            val boforholdPeriodisert =
+                                BoforholdApi.beregnBoforholdBarnV3(
+                                    behandling.eldsteVirkningstidspunkt,
+                                    null,
+                                    behandling.finnBeregnTilDatoBehandling(),
+                                    behandling.tilTypeBoforhold(),
+                                    grunnlag.tilBoforholdBarnRequest(behandling, true),
+                                )
+                            val resultatPerson = boforholdPeriodisert.filter { it.gjelderPersonId == gjelderPersonIdent }
+
+                            listOf(
+                                behandling.opprettGrunnlag(
+                                    grunnlagsdatatype,
+                                    resultatPerson,
+                                    grunnlag.firstOrNull()?.partPersonId!!,
+                                    innhentetTidspunkt(Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM),
+                                    lesemodus,
+                                    true,
+                                    gjelder = gjelderPersonIdent,
+                                ),
+                            )
+                        }
                     }
+
+            grunnlagInnhentet + grunnlagBearbeidet
         },
 ).flatten()
 
@@ -1075,6 +1114,7 @@ fun Behandling.opprettGrunnlag(
     erBearbeidet: Boolean = false,
     gjelder: String? = null,
     rolleStønadstype: Stønadstype? = null,
+    gjelderBarnRolle: Rolle? = null,
 ) = Grunnlag(
     behandling = this,
     id = if (lesemodus) 1 else null,
@@ -1083,6 +1123,7 @@ fun Behandling.opprettGrunnlag(
     type = type,
     erBearbeidet = erBearbeidet,
     gjelder = gjelder,
+    gjelderBarnRolle = gjelderBarnRolle,
     grunnlagFraVedtakSomSkalOmgjøres = !lesemodus,
     aktiv = innhentetTidspunkt,
     rolle = roller.find { it.erSammeRolle(rolleIdent, rolleStønadstype) }!!,
@@ -1170,7 +1211,7 @@ internal fun List<BaseGrunnlag>.tilHusstandsmedlem(
 
     val gjelderRolle =
         behandling.roller
-            .find { hentNyesteIdent(it.ident) == hentNyesteIdent(gjelderPerson.ident?.verdi) }
+            .find { it.erSammeRolle(hentNyesteIdent(gjelderPerson.ident?.verdi)!!.verdi, gjelderPerson.stønadstype) }
     val erBmBpBosstatus =
         gjelderRolle?.let { listOf(Rolletype.BIDRAGSPLIKTIG, Rolletype.BIDRAGSMOTTAKER).contains(it.rolletype) }
             ?: false

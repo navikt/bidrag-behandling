@@ -8,7 +8,6 @@ import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
-import no.nav.bidrag.behandling.transformers.behandling.finnRolle
 import no.nav.bidrag.behandling.transformers.behandling.finnRolleForPeriode
 import no.nav.bidrag.behandling.transformers.erUnder12År
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoFomForOffentligInntekt
@@ -167,16 +166,27 @@ fun Behandling.henteNyesteGrunnlag(
         }.toSet()
         .maxByOrNull { it.innhentet }
 
+fun Grunnlag.finnRolleGrunnlagGjelder(): Rolle? =
+    behandling.søknadsbarn.find {
+        if (gjelderBarnRolle != null) {
+            it.erSammeRolle(gjelderBarnRolle!!)
+        } else {
+            it.ident == gjelder
+        }
+    }
+
 fun Behandling.henteNyesteGrunnlag(
     grunnlagstype: Grunnlagstype,
     rolle: Rolle,
     gjelder: Personident?,
+    gjelderBarnRolle: Rolle?,
 ): Grunnlag? =
     grunnlag
         .filter {
             it.type == grunnlagstype.type &&
                 it.rolle.id == rolle.id &&
                 grunnlagstype.erBearbeidet == it.erBearbeidet &&
+                (gjelderBarnRolle == null || gjelderBarnRolle.id == it.gjelderBarnRolle?.id) &&
                 it.gjelder == gjelder?.verdi
         }.toSet()
         .maxByOrNull { it.innhentet }
