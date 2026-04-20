@@ -289,27 +289,32 @@ class ForholdsmessigFordelingService(
                             løpendebidragssaker.any { lb -> lb.erSammePerson(it.ident!!, it.stønadstype) }
                     }
 
-                val søktFomDatoOpprinneligRevurderingssøknad =
-                    revurderingsbarnRoller
-                        .first()
-                        .forholdsmessigFordeling
-                        ?.søknader
-                        ?.find { it.behandlingstype?.erForholdsmessigFordeling == true }
-                        ?.søknadFomDato ?: relevanteKravhavereRevurderingsbarn.finnSøktFomRevurderingSøknad(behandling)
+                revurderingsbarnRoller
+                    .groupBy {
+                        it.forholdsmessigFordeling
+                            ?.søknader
+                            ?.find { it.behandlingstype?.erForholdsmessigFordeling == true }
+                            ?.søknadFomDato ?: relevanteKravhavereRevurderingsbarn.finnSøktFomRevurderingSøknad(behandling)
+                    }.forEach { søktFomDato, roller ->
 
-                revurderingsbarnRoller.forEach {
-                    // Slett forholdsmessig fordeling info. Dette er fra påklaget vedtak. Oppretter nye søknader
-                    it.forholdsmessigFordeling!!.søknader.clear()
-                }
-                opprettRollerOgRevurderingssøknadForSak(
-                    behandling,
-                    saksnummer,
-                    løpendebidragssaker,
-                    behandlerEnhet,
-                    saksnummerLøpendeBidrag.second,
-                    søktFomDatoOpprinneligRevurderingssøknad,
-                    true,
-                )
+                        roller.forEach {
+                            // Slett forholdsmessig fordeling info. Dette er fra påklaget vedtak. Oppretter nye søknader
+                            it.forholdsmessigFordeling!!.søknader.clear()
+                        }
+                        opprettRollerOgRevurderingssøknadForSak(
+                            behandling,
+                            saksnummer,
+                            løpendebidragssaker.filter {
+                                roller.any { r ->
+                                    r.ident == it.kravhaver && r.stønadstype == r.stønadstype
+                                }
+                            },
+                            behandlerEnhet,
+                            saksnummerLøpendeBidrag.second,
+                            søktFomDato,
+                            true,
+                        )
+                    }
             }
         val søknadsdetaljer = behandling.tilFFBarnDetaljer()
         behandling.søknadsbarn

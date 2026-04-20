@@ -1952,8 +1952,7 @@ class GrunnlagService(
         val boforholdPeriodisert =
             husstandsmedlemmerOgEgneBarn
                 .flatMap { hm ->
-                    val roller =
-                        hm.gjelderPersonId.let { gp -> behandling.roller.filter { it.ident == gp } }
+                    val roller = behandling.roller.filter { it.ident == hm.gjelderPersonId }
                     // Tilfeller hvor det er 18 år og under 18 bidrag for samme barn i samme behandling så kan det være flere roller med samme ident
                     if (roller.isNotEmpty()) {
                         roller.map { rolle ->
@@ -1965,7 +1964,7 @@ class GrunnlagService(
                                     behandling.tilTypeBoforhold(),
                                     husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),
                                 )
-                            val resultatPerson = resultat.filter { it.gjelderPersonId == rolle.ident }
+                            val resultatPerson = resultat.filter { it.gjelderPersonId == rolle.ident }.distinct()
                             lagreGrunnlagHvisEndret<BoforholdResponseV2>(
                                 behandling = behandling,
                                 innhentetForRolle = grunnlagsdatatype.innhentesForRolle(behandling)!!,
@@ -1974,7 +1973,7 @@ class GrunnlagService(
                                 gjelderPerson = Personident(hm.gjelderPersonId!!),
                                 gjelderBarnRolle = rolle,
                             )
-                            resultat
+                            resultatPerson
                         }
                     } else {
                         val boforholdPeriodisert =
@@ -1985,19 +1984,15 @@ class GrunnlagService(
                                 behandling.tilTypeBoforhold(),
                                 husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),
                             )
-                        boforholdPeriodisert
-                            .filter { it.gjelderPersonId != null }
-                            .groupBy { it.gjelderPersonId }
-                            .forEach {
-                                lagreGrunnlagHvisEndret<BoforholdResponseV2>(
-                                    behandling = behandling,
-                                    innhentetForRolle = grunnlagsdatatype.innhentesForRolle(behandling)!!,
-                                    grunnlagstype = Grunnlagstype(grunnlagsdatatype, true),
-                                    innhentetGrunnlag = it.value.toSet(),
-                                    gjelderPerson = Personident(it.key!!),
-                                )
-                            }
-                        listOf(boforholdPeriodisert)
+                        val resultatPerson = boforholdPeriodisert.filter { it.gjelderPersonId == hm.gjelderPersonId }.distinct()
+                        lagreGrunnlagHvisEndret<BoforholdResponseV2>(
+                            behandling = behandling,
+                            innhentetForRolle = grunnlagsdatatype.innhentesForRolle(behandling)!!,
+                            grunnlagstype = Grunnlagstype(grunnlagsdatatype, true),
+                            innhentetGrunnlag = resultatPerson.toSet(),
+                            gjelderPerson = Personident(hm.gjelderPersonId!!),
+                        )
+                        listOf(resultatPerson)
                     }
                 }.flatten()
 
