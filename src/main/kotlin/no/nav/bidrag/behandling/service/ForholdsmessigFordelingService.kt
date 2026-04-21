@@ -1432,11 +1432,10 @@ class ForholdsmessigFordelingService(
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
 
         val åpenFFSøknad =
-            hentÅpenSøknadFor(
+            `hentÅpenSøknadFFFor`(
                 bidragspliktigFnr,
                 behandlingstype = behandling.behandlingstypeForFF,
                 medInnkreving = medInnkreving,
-                behandlingsid = behandling.id!!,
                 saksnummer = saksnummer,
                 søktFomDato = søktFomDato,
                 stønadstype = stønadstype,
@@ -1452,7 +1451,11 @@ class ForholdsmessigFordelingService(
                     ),
                 )
             }
-
+            if (åpenFFSøknad.behandlingsid != behandling.id) {
+                bbmConsumer.lagreBehandlingsid(
+                    OppdaterBehandlingsidRequest(åpenFFSøknad.søknadsid, åpenFFSøknad.behandlingsid, behandling.id!!),
+                )
+            }
             return åpenFFSøknad.tilForholdsmessigFordelingSøknad().copy(
                 søktAvType = SøktAvType.NAV_BIDRAG,
                 behandlingstype = behandling.behandlingstypeForFF,
@@ -1841,22 +1844,24 @@ class ForholdsmessigFordelingService(
             }
     }
 
-    private fun hentÅpenSøknadFor(
+    private fun hentÅpenSøknadFFFor(
         bidragspliktigFnr: String,
         behandlingstype: Behandlingstype,
         medInnkreving: Boolean,
-        behandlingsid: Long,
         saksnummer: String,
         søktFomDato: LocalDate,
         stønadstype: Stønadstype?,
         omgjøringsdetaljer: Omgjøringsdetaljer?,
         erKlageEllerOmgjøring: Boolean = omgjøringsdetaljer != null,
-    ) = hentÅpneSøknader(bidragspliktigFnr, behandlingstype, omgjøringsdetaljer, erKlageEllerOmgjøring).find {
-        (it.innkreving == medInnkreving) &&
-            it.behandlingsid == behandlingsid &&
-            it.saksnummer == saksnummer &&
-            it.søknadFomDato == søktFomDato && it.behandlingstema.tilStønadstype() == stønadstype
-    }
+    ) = hentÅpneSøknader(bidragspliktigFnr, behandlingstype, omgjøringsdetaljer, erKlageEllerOmgjøring)
+        .filter { it.behandlingstype.erForholdsmessigFordeling }
+        .find {
+            (it.innkreving == medInnkreving) &&
+                // TODO: Bør filteret være mer spesifikk? Andre kriterier som bør legges til her?
+                it.saksnummer == saksnummer &&
+                it.søknadFomDato == søktFomDato &&
+                it.behandlingstema.tilStønadstype() == stønadstype
+        }
 
     private fun hentÅpneSøknader(
         bidragspliktigFnr: String,
@@ -2283,11 +2288,10 @@ class ForholdsmessigFordelingService(
                 )
             }
         val eksisterendeSøknad =
-            hentÅpenSøknadFor(
+            `hentÅpenSøknadFFFor`(
                 bidragspliktigFnr = bidragspliktigFnr,
                 behandlingstype = behandling.behandlingstypeForFF,
                 medInnkreving = medInnkreving,
-                behandlingsid = behandling.id!!,
                 saksnummer = saksnummer,
                 søktFomDato = søktFomDato,
                 stønadstype = stønadstype,
@@ -2305,6 +2309,11 @@ class ForholdsmessigFordelingService(
                         ),
                     )
                 }
+            if (eksisterendeSøknad.behandlingsid != behandling.id) {
+                bbmConsumer.lagreBehandlingsid(
+                    OppdaterBehandlingsidRequest(eksisterendeSøknad.søknadsid, eksisterendeSøknad.behandlingsid, behandling.id!!),
+                )
+            }
             return eksisterendeSøknad.søknadsid
         }
         val response =
