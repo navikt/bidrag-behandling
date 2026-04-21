@@ -399,10 +399,11 @@ class VedtakGrunnlagMapper(
         behandling: Behandling,
         rolle: Rolle,
         grunnlagsliste: List<GrunnlagDto> = behandling.gebyrGrunnlagslisteDefaultVerdi(rolle),
+        referanse: String? = null,
     ): BeregnGebyrResultat {
         val gebyrBeregning =
             if (behandling.avslag != null) {
-                beregnGebyrApi.beregnGebyr(grunnlagsliste, rolle.tilGrunnlagsreferanse()) +
+                beregnGebyrApi.beregnGebyr(grunnlagsliste, rolle.tilGrunnlagsreferanse(), referanse) +
                     mapper.run {
                         val grunnlagSkatteGrunnlag = behandling.tilGrunnlagInntektSiste12Mnd(rolle)
                         if (grunnlagSkatteGrunnlag != null) {
@@ -416,7 +417,7 @@ class VedtakGrunnlagMapper(
                         }
                     }
             } else {
-                beregnGebyrApi.beregnGebyr(grunnlagsliste, rolle.tilGrunnlagsreferanse())
+                beregnGebyrApi.beregnGebyr(grunnlagsliste, rolle.tilGrunnlagsreferanse(), referanse)
             }
         val delberegningSumInntekt = gebyrBeregning.gebyrDelberegningSumInntekt
         val inntektSiste12Mnd = gebyrBeregning.finnInntektSiste12Mnd(rolle)

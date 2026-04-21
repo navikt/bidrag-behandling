@@ -219,6 +219,7 @@ class ForholdsmessigFordelingService(
             )
         åpneSaker.filter { it.behandlingstype == behandling.behandlingstypeForFF }.forEach {
             bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(it.søknadsid))
+            bbmConsumer.fjernSammeknytning(it.søknadsid)
         }
     }
 
@@ -700,6 +701,7 @@ class ForholdsmessigFordelingService(
             LOGGER.info { "Feilregistrerer søknad $søknadsid i behandling ${rolle.behandling.id}" }
             try {
                 bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(søknadsid!!))
+                bbmConsumer.fjernSammeknytning(søknadsid!!)
                 søknad.status = Behandlingstatus.FEILREGISTRERT
                 if (rolle.bidragsmottaker != null) {
                     rolle.bidragsmottaker!!
@@ -1086,6 +1088,7 @@ class ForholdsmessigFordelingService(
     private fun feilregistrerSøknadTrygt(søknadsid: Long): Boolean =
         try {
             bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(søknadsid))
+            bbmConsumer.fjernSammeknytning(søknadsid)
             true
         } catch (e: Exception) {
             LOGGER.warn(e) { "Kunne ikke feilregistrere søknad $søknadsid i BBM" }
@@ -1344,6 +1347,7 @@ class ForholdsmessigFordelingService(
         if (kanBehandlingSlettes(behandling, slettBarn)) {
             avsluttForholdsmessigFordeling(behandling, slettBarn, søknadsid)
             behandlingService.logiskSlettBehandling(behandling)
+            bbmConsumer.fjernSammeknytningHovedsøknad(behandling.soknadsid!!)
         } else {
             slettBarn.forEach { slettBarnFraBehandlingFF(it, behandling, søknadsid) }
             endreHovedsøknadIFFEtterHovedsøknadBleSlettet(behandling, søknadsid)
@@ -1372,7 +1376,24 @@ class ForholdsmessigFordelingService(
                     ?.key
             behandling.soknadsid = søknadsidMedFlestBarn ?: behandling.soknadsid
             LOGGER.info { "Oppdaterer hovedsøknad i behandling ${behandling.id} fra $søknadSomBleSlettet til $søknadsidMedFlestBarn" }
-            bbmConsumer.oppdaterHoveddsøknad(behandling.id!!, behandling.soknadsid!!)
+            val søknader =
+                behandling.søknadsbarn
+                    .mapNotNull { it.forholdsmessigFordeling?.søknaderUnderBehandling?.map { it.søknadsid } }
+                    .flatten()
+                    .filterNotNull()
+                    .distinct()
+
+            søknader.filter { it != behandling.soknadsid }.forEach {
+                LOGGER.info { "Endrer knytning av søknad $it til ny hovedssøknad ${behandling.soknadsid}" }
+                val sammenknytning = bbmConsumer.endreSammenknytningSøknad(behandling.soknadsid!!, it)
+                if (sammenknytning == null) {
+                    LOGGER.info {
+                        "Det var ingen sammenknytning av søknad $it. Oppretter ny sammenknytning til ${behandling.soknadsid} i behandling ${behandling.id}"
+                    }
+                    val sammenkytningNy = bbmConsumer.sammeknyttSøknader(behandling.soknadsid!!, it)
+                    LOGGER.info { "Opprettet sammenknytning med respons $sammenkytningNy" }
+                }
+            }
         }
     }
 
@@ -2288,7 +2309,7 @@ class ForholdsmessigFordelingService(
                 )
             }
         val eksisterendeSøknad =
-            `hentÅpenSøknadFFFor`(
+            hentÅpenSøknadFFFor(
                 bidragspliktigFnr = bidragspliktigFnr,
                 behandlingstype = behandling.behandlingstypeForFF,
                 medInnkreving = medInnkreving,
@@ -2325,6 +2346,7 @@ class ForholdsmessigFordelingService(
                     behandlingstema = stønadstype?.tilBehandlingstema() ?: Behandlingstema.BIDRAG,
                     søknadFomDato = søktFomDato,
                     barnListe = opprettSøknader,
+                    hovedsøknadsid = behandling.soknadsid,
                     innkreving = medInnkreving,
                     behandlingstype = behandling.behandlingstypeForFF,
                 ),

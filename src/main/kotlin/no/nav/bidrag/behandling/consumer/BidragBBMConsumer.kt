@@ -2,6 +2,10 @@ package no.nav.bidrag.behandling.consumer
 
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.BBM_ALLE_BEREGNINGER_CACHE
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.BBM_BEREGNING_CACHE
+import no.nav.bidrag.behandling.consumer.dto.DeaktiverHovedsøknadRequest
+import no.nav.bidrag.behandling.consumer.dto.SammenknyttSøknaderRequest
+import no.nav.bidrag.behandling.consumer.dto.SlettSammenknytningForSøknadRequest
+import no.nav.bidrag.behandling.consumer.dto.SøknadsknytningResponse
 import no.nav.bidrag.beregn.barnebidrag.service.external.BeregningBBMConsumer
 import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.util.secureLogger
@@ -19,14 +23,11 @@ import no.nav.bidrag.transport.behandling.beregning.felles.HentSøknadResponse
 import no.nav.bidrag.transport.behandling.beregning.felles.LeggTilBarnIFFSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlerenhetRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlingsidRequest
-import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterReferanseGebyrRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadResponse
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.HttpStatus
-import org.springframework.http.HttpStatusCode
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Component
@@ -189,14 +190,48 @@ class BidragBBMConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
-    fun oppdaterHoveddsøknad(
-        behandlingId: Long,
+    fun endreSammenknytningSøknad(
+        hovedsøknadsid: Long,
         søknadsid: Long,
-    ) {
-    }
+    ): SøknadsknytningResponse? =
+        postForEntity<SøknadsknytningResponse>(
+            bidragBBMUri.pathSegment("endresammenknytningsoknad").build().toUri(),
+            SammenknyttSøknaderRequest(hovedsøknadsid, søknadsid),
+        )
 
-//    = postForEntity<Unit>(
-//        bidragBBMUri.pathSegment("oppdaterHovedsoknad").build().toUri(),
-//        mapOf("behandlingId" to behandlingId, "søknadsid" to søknadsid),
-//    )
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun sammeknyttSøknader(
+        hovedsøknadsid: Long,
+        søknadsid: Long,
+    ): SøknadsknytningResponse? =
+        postForEntity<SøknadsknytningResponse>(
+            bidragBBMUri.pathSegment("sammenknyttsoknader").build().toUri(),
+            SammenknyttSøknaderRequest(hovedsøknadsid, søknadsid),
+        )
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun fjernSammeknytning(søknadsid: Long) =
+        postForEntity<Unit>(
+            bidragBBMUri.pathSegment("deaktiversammenknytningsoknad").build().toUri(),
+            SlettSammenknytningForSøknadRequest(søknadsid),
+        )
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun fjernSammeknytningHovedsøknad(søknadsid: Long) =
+        postForEntity<Unit>(
+            bidragBBMUri.pathSegment("deaktiverhovedsoknad").build().toUri(),
+            SlettSammenknytningForSøknadRequest(søknadsid),
+        )
 }

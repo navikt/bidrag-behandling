@@ -1188,7 +1188,7 @@ class BehandlingTilVedtakMapping(
                     rolle.gebyrSøknader.distinctBy { it.referanse }.map {
                         val grunnlagslisteGebyrRolle =
                             grunnlagsliste + setOfNotNull(rolle.byggGrunnlagManueltOverstyrtGebyrRolle(it.søknadsid))
-                        val beregning = mapper.beregnGebyr(this, rolle, grunnlagslisteGebyrRolle)
+                        val beregning = mapper.beregnGebyr(this, rolle, grunnlagslisteGebyrRolle, it.referanse)
                         gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
                         val ilagtGebyr = beregning.ilagtGebyr
                         val skyldner = Personident(rolle.ident!!)
@@ -1222,7 +1222,7 @@ class BehandlingTilVedtakMapping(
                 rolle.gebyrSøknader.distinctBy { it.referanse }.map {
                     val grunnlagslisteGebyrRolle =
                         grunnlagsliste + setOfNotNull(rolle.byggGrunnlagManueltOverstyrtGebyrRolle(it.søknadsid))
-                    val beregning = mapper.beregnGebyr(this, bidragspliktig!!, grunnlagslisteGebyrRolle)
+                    val beregning = mapper.beregnGebyr(this, bidragspliktig!!, grunnlagslisteGebyrRolle, it.referanse)
                     gebyrGrunnlagsliste.addAll(beregning.grunnlagsliste)
                     val ilagtGebyr = beregning.ilagtGebyr
                     val skyldner = Personident(bidragspliktig!!.ident!!)
