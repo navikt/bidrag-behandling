@@ -973,6 +973,22 @@ class ForholdsmessigFordelingService(
                 LOGGER.info { "Knytter sammen søknad $it til hovedsøknad ${behandling.soknadsid} i behandling ${behandling.id}" }
                 bbmConsumer.sammeknyttSøknader(behandling.soknadsid!!, it)
             }
+
+        alleSøknadsknytninger.søknader
+            .filter { it.søknadsid != behandling.soknadsid }
+            .filter { søknad ->
+                alleSøknader.none { it == søknad.søknadsid }
+            }.forEach {
+                LOGGER.info {
+                    "Slett søknadsknytning for søknad ${it.søknadsid} fra hovedsøknad ${behandling.soknadsid} i behandling ${behandling.id}"
+                }
+                bbmConsumer.fjernSammeknytning(it.søknadsid)
+            }
+
+        if (alleSøknadsknytninger.søknader.none { it.søknadsid == behandling.soknadsid }) {
+            LOGGER.info { "Mangler hovedsøknad i sammenknytningen. Legger til" }
+            bbmConsumer.endreSammenknytningSøknad(behandling.soknadsid!!, behandling.soknadsid!!)
+        }
     }
 
     private fun leggTilRollerFraRelevanteSøknaderSomIkkeErIBehandling(
