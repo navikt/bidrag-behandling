@@ -480,52 +480,90 @@ class BehandlingTilVedtakMapping(
         beregningBarn: ResultatBidragsberegningBarn,
         klagevedtakErEnesteVedtak: Boolean,
     ): List<Pair<ResultatRolle, ResultatDelvedtak>> {
-        return beregningBarn
-            .resultatVedtak!!
-            .resultatVedtakListe
-            .filter { !it.endeligVedtak }
-            .mapIndexed { index, resultatVedtak ->
-                // Ikke fatte vedtak for gjenopprettet beløpshistorikk
-                if (!resultatVedtak.beregnet) {
-                    val resultatFraVedtakGrunnlag = resultatVedtak.resultat.grunnlagListe.finnResultatFraAnnenVedtak(finnFørsteTreff = true)
-                    return@mapIndexed beregningBarn.barn to
-                        ResultatDelvedtak(
-                            vedtaksid = resultatFraVedtakGrunnlag?.vedtaksid,
-                            omgjøringsvedtak = false,
-                            beregnet = false,
-                            request = null,
-                            type = resultatVedtak.vedtakstype,
-                            resultat = resultatVedtak.resultat,
-                            vedtakstidspunkt = resultatFraVedtakGrunnlag?.vedtakstidspunkt,
-                        )
-                }
-
-                val stønadsendringPerioder =
-                    listOf(
-                        resultatVedtak.resultat,
-                    ).map { it.byggStønadsendringerForVedtak(behandling, beregningBarn.barn, klagevedtakErEnesteVedtak) }
-                val innkreving = if (klagevedtakErEnesteVedtak) behandling.innkrevingstype!! else Innkrevingstype.UTEN_INNKREVING
+        return if (beregningBarn.erAvvistRevurdering) {
+            val stønadsendringPerioder =
+                listOf(
+                    beregningBarn.resultatVedtak!!
+                        .resultatVedtakListe
+                        .first()
+                        .resultat,
+                ).map { it.byggStønadsendringerForVedtak(behandling, beregningBarn.barn, klagevedtakErEnesteVedtak) }
+            listOf(
                 beregningBarn.barn to
                     ResultatDelvedtak(
                         vedtaksid = null,
-                        omgjøringsvedtak = resultatVedtak.omgjøringsvedtak,
-                        beregnet = true,
-                        type = resultatVedtak.vedtakstype,
+                        omgjøringsvedtak = true,
+                        beregnet = false,
                         request =
                             byggVedtakForKlage(
                                 behandling,
                                 sak,
-                                resultatVedtak,
+                                beregningBarn
+                                    .resultatVedtak
+                                    .resultatVedtakListe
+                                    .find { it.endeligVedtak }!!,
                                 enhet,
                                 stønadsendringPerioder,
                                 beregningBarn.barn,
-                                innkreving,
-                                if (klagevedtakErEnesteVedtak) Beslutningstype.ENDRING else Beslutningstype.DELVEDTAK,
+                                Innkrevingstype.UTEN_INNKREVING,
+                                Beslutningstype.AVVIST,
                             ),
-                        resultat = resultatVedtak.resultat,
+                        type = null,
+                        resultat = beregningBarn.resultat,
                         vedtakstidspunkt = null,
-                    )
-            }
+                    ),
+            )
+        } else {
+            beregningBarn
+                .resultatVedtak!!
+                .resultatVedtakListe
+                .filter { !it.endeligVedtak }
+                .map { resultatVedtak ->
+                    // Ikke fatte vedtak for gjenopprettet beløpshistorikk
+                    if (!resultatVedtak.beregnet) {
+                        val resultatFraVedtakGrunnlag =
+                            resultatVedtak.resultat.grunnlagListe.finnResultatFraAnnenVedtak(
+                                finnFørsteTreff = true,
+                            )
+                        return@map beregningBarn.barn to
+                            ResultatDelvedtak(
+                                vedtaksid = resultatFraVedtakGrunnlag?.vedtaksid,
+                                omgjøringsvedtak = false,
+                                beregnet = false,
+                                request = null,
+                                type = resultatVedtak.vedtakstype,
+                                resultat = resultatVedtak.resultat,
+                                vedtakstidspunkt = resultatFraVedtakGrunnlag?.vedtakstidspunkt,
+                            )
+                    }
+
+                    val stønadsendringPerioder =
+                        listOf(
+                            resultatVedtak.resultat,
+                        ).map { it.byggStønadsendringerForVedtak(behandling, beregningBarn.barn, klagevedtakErEnesteVedtak) }
+                    val innkreving = if (klagevedtakErEnesteVedtak) behandling.innkrevingstype!! else Innkrevingstype.UTEN_INNKREVING
+                    beregningBarn.barn to
+                        ResultatDelvedtak(
+                            vedtaksid = null,
+                            omgjøringsvedtak = resultatVedtak.omgjøringsvedtak,
+                            beregnet = true,
+                            type = resultatVedtak.vedtakstype,
+                            request =
+                                byggVedtakForKlage(
+                                    behandling,
+                                    sak,
+                                    resultatVedtak,
+                                    enhet,
+                                    stønadsendringPerioder,
+                                    beregningBarn.barn,
+                                    innkreving,
+                                    if (klagevedtakErEnesteVedtak) Beslutningstype.ENDRING else Beslutningstype.DELVEDTAK,
+                                ),
+                            resultat = resultatVedtak.resultat,
+                            vedtakstidspunkt = null,
+                        )
+                }
+        }
     }
 
     fun opprettVedtakRequestDelvedtakV2(
@@ -695,8 +733,8 @@ class BehandlingTilVedtakMapping(
                                     .reelMottakerEllerBidragsmottaker(
                                         sak.hentRolleMedFnr(it.barn.ident!!),
                                     ),
-                            sak = Saksnummer(behandling.saksnummer),
-                            type = behandling.stonadstype!!,
+                            sak = Saksnummer(it.barn.saksnummer),
+                            type = it.barn.stønadstypeBarnEllerBehandling!!,
                             beslutning = beslutningstype,
                             grunnlagReferanseListe =
                                 stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),

@@ -1282,7 +1282,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 // så
                 assertSoftly(behandling.grunnlag) { g ->
-                    g.size shouldBe 12
+                    g.size shouldBe 10
                     g.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 3
                     g.filter { it.aktiv == null && it.erBearbeidet } shouldHaveSize 3
                     g.filter { !it.erBearbeidet } shouldHaveSize 5
