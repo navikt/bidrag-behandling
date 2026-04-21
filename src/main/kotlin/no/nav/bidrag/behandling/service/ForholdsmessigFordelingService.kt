@@ -951,6 +951,28 @@ class ForholdsmessigFordelingService(
         if (hovedsøknad != null && hovedsøknad.søknad.behandlingStatusType == BehandlingStatusType.AVBRUTT) {
             endreHovedsøknadIFFEtterHovedsøknadBleSlettet(behandling, hovedsøknad.søknad.søknadsid)
         }
+
+        knyttSammenManglendeSøknadsknytningerIBehandling(behandling)
+    }
+
+    private fun knyttSammenManglendeSøknadsknytningerIBehandling(behandling: Behandling) {
+        if (!behandling.erIForholdsmessigFordeling) return
+        val alleSøknadsknytninger = bbmConsumer.finnSammenknytningerHovedsøknad(behandling.soknadsid!!)
+
+        val alleSøknader =
+            behandling.søknadsbarn
+                .mapNotNull {
+                    it.forholdsmessigFordeling?.søknaderUnderBehandling?.mapNotNull { it.søknadsid }
+                }.flatten()
+                .distinct()
+
+        alleSøknader
+            .filter { søknadsid ->
+                alleSøknadsknytninger.søknader.none { it.søknadsid == søknadsid }
+            }.forEach {
+                LOGGER.info { "Knytter sammen søknad $it til hovedsøknad ${behandling.soknadsid} i behandling ${behandling.id}" }
+                bbmConsumer.sammeknyttSøknader(behandling.soknadsid!!, it)
+            }
     }
 
     private fun leggTilRollerFraRelevanteSøknaderSomIkkeErIBehandling(
@@ -1202,6 +1224,9 @@ class ForholdsmessigFordelingService(
         // Skal ikke trigge noe endringer for FF søknad
         if (søknad?.behandlingstype?.erForholdsmessigFordeling == true) {
             return
+        }
+        if (request.behandling.soknadsid != request.søknadsid) {
+            bbmConsumer.sammeknyttSøknader(request.behandling.soknadsid!!, request.søknadsid)
         }
         val identerSomSkalSlettes = request.rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
         feilregistrerRevurderingsbarnFraFFSøknad(request.behandling, request.rollerSomSkalLeggesTilDto)

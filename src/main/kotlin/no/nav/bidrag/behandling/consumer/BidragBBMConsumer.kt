@@ -3,6 +3,8 @@ package no.nav.bidrag.behandling.consumer
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.BBM_ALLE_BEREGNINGER_CACHE
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.BBM_BEREGNING_CACHE
 import no.nav.bidrag.behandling.consumer.dto.DeaktiverHovedsøknadRequest
+import no.nav.bidrag.behandling.consumer.dto.FinnSammenknytningerHovedsøknadRequest
+import no.nav.bidrag.behandling.consumer.dto.FinnSammenknytningerHovedsøknadResponse
 import no.nav.bidrag.behandling.consumer.dto.SammenknyttSøknaderRequest
 import no.nav.bidrag.behandling.consumer.dto.SlettSammenknytningForSøknadRequest
 import no.nav.bidrag.behandling.consumer.dto.SøknadsknytningResponse
@@ -233,5 +235,16 @@ class BidragBBMConsumer(
         postForEntity<Unit>(
             bidragBBMUri.pathSegment("deaktiverhovedsoknad").build().toUri(),
             SlettSammenknytningForSøknadRequest(søknadsid),
+        )
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun finnSammenknytningerHovedsøknad(søknadsid: Long) =
+        postForNonNullEntity<FinnSammenknytningerHovedsøknadResponse>(
+            bidragBBMUri.pathSegment("finnsammenknytningerhovedsoknad").build().toUri(),
+            FinnSammenknytningerHovedsøknadRequest(søknadsid),
         )
 }

@@ -4,6 +4,7 @@ import jakarta.persistence.Column
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import no.nav.bidrag.transport.behandling.beregning.felles.HentSøknad
 import java.time.LocalDateTime
 
 data class SammenknyttSøknaderRequest(
@@ -26,4 +27,12 @@ data class SøknadsknytningResponse(
     val status: String? = null,
     val søknadKnytningstype: String? = null,
     val opprettetTidspunkt: LocalDateTime? = null,
+)
+
+data class FinnSammenknytningerHovedsøknadResponse(
+    val søknader: List<HentSøknad>,
+)
+
+data class FinnSammenknytningerHovedsøknadRequest(
+    val søknadsid: Long,
 )
