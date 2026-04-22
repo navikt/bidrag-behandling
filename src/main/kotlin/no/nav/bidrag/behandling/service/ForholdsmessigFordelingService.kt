@@ -1395,10 +1395,10 @@ class ForholdsmessigFordelingService(
             bbmConsumer.fjernSammeknytningHovedsøknad(behandling.soknadsid!!)
         } else {
             slettBarn.forEach { slettBarnFraBehandlingFF(it, behandling, søknadsid) }
-            endreHovedsøknadIFFEtterHovedsøknadBleSlettet(behandling, søknadsid)
             behandlingService.sendOppdatertHendelse(behandling.id!!, false)
         }
         if (søknadBleSlettet) {
+            endreHovedsøknadIFFEtterHovedsøknadBleSlettet(behandling, søknadsid)
             bbmConsumer.fjernSammeknytning(søknadsid)
         }
     }
