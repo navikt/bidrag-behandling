@@ -122,7 +122,12 @@ class BehandlingService(
                 val barnSomSkalSlettes =
                     behandling.søknadsbarn
                         .filter { it.forholdsmessigFordeling!!.søknaderUnderBehandling.any { it.søknadsid == søknadsid } }
-                forholdsmessigFordelingService!!.slettBarnEllerBehandling(barnSomSkalSlettes, behandling, søknadsid)
+                forholdsmessigFordelingService!!.slettBarnEllerBehandling(
+                    barnSomSkalSlettes,
+                    behandling,
+                    søknadsid,
+                    søknadBleSlettet = true,
+                )
                 behandling.bidragspliktig?.fjernGebyr(søknadsid)
             }
         } else {

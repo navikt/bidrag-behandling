@@ -701,7 +701,7 @@ class ForholdsmessigFordelingService(
             LOGGER.info { "Feilregistrerer søknad $søknadsid i behandling ${rolle.behandling.id}" }
             try {
                 bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(søknadsid!!))
-                bbmConsumer.fjernSammeknytning(søknadsid!!)
+                bbmConsumer.fjernSammeknytning(søknadsid)
                 søknad.status = Behandlingstatus.FEILREGISTRERT
                 if (rolle.bidragsmottaker != null) {
                     rolle.bidragsmottaker!!
@@ -930,7 +930,10 @@ class ForholdsmessigFordelingService(
                 }
                 // Er markert som søknadsbarn men har ingen åpne søknader. Endre til revurderingsbarn
                 håndterBarnSomSkalVæreRevurderingsbarn(behandling, rolle, lagretSøknader)
-            } else if (rolle.erRevurderingsbarn && åpneSøknaderFF.isEmpty() && åpneSøknaderIkkeFF.isEmpty()) {
+            } else if (rolle.erRevurderingsbarn && åpneSøknaderFF.isEmpty() &&
+                åpneSøknaderIkkeFF.isEmpty() &&
+                rolle.harLøpendeBidragFørOpphørEllerLøpende()
+            ) {
                 LOGGER.info {
                     "Barn ${rolle.ident} i ${behandling.id} er markert som revurderingsbarn men har ingen åpne FF søknader." +
                         "Oppretter eller legger til i eksisterende FF søknad"
@@ -1384,6 +1387,7 @@ class ForholdsmessigFordelingService(
         slettBarn: List<Rolle>,
         behandling: Behandling,
         søknadsid: Long,
+        søknadBleSlettet: Boolean = false,
     ) {
         if (kanBehandlingSlettes(behandling, slettBarn)) {
             avsluttForholdsmessigFordeling(behandling, slettBarn, søknadsid)
@@ -1393,6 +1397,9 @@ class ForholdsmessigFordelingService(
             slettBarn.forEach { slettBarnFraBehandlingFF(it, behandling, søknadsid) }
             endreHovedsøknadIFFEtterHovedsøknadBleSlettet(behandling, søknadsid)
             behandlingService.sendOppdatertHendelse(behandling.id!!, false)
+        }
+        if (søknadBleSlettet) {
+            bbmConsumer.fjernSammeknytning(søknadsid)
         }
     }
 
@@ -1508,7 +1515,7 @@ class ForholdsmessigFordelingService(
             if (åpenFFSøknad.barn.none { it.personident == barnIdent }) {
                 bbmConsumer.leggTilBarnISøknad(
                     LeggTilBarnIFFSøknadRequest(
-                        `åpenFFSøknad`.søknadsid,
+                        åpenFFSøknad.søknadsid,
                         barnIdent,
                     ),
                 )
@@ -1532,6 +1539,7 @@ class ForholdsmessigFordelingService(
                         refVedtaksid = behandling.omgjøringsdetaljer?.omgjørVedtakId,
                         behandlingstype = behandling.behandlingstypeForFF,
                         behandlerenhet = behandling.behandlerEnhet,
+                        hovedsøknadsid = behandling.soknadsid,
                         behandlingstema =
                             if (stønadstype == Stønadstype.BIDRAG18AAR) {
                                 Behandlingstema.BIDRAG_18_ÅR
