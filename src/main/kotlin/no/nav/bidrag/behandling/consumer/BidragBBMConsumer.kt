@@ -222,7 +222,7 @@ class BidragBBMConsumer(
     )
     fun fjernSammeknytning(søknadsid: Long) =
         postForEntity<Unit>(
-            bidragBBMUri.pathSegment("deaktiversammenknytningsoknad").build().toUri(),
+            bidragBBMUri.pathSegment("slettsammenknytningsoknad").build().toUri(),
             SlettSammenknytningForSøknadRequest(søknadsid),
         )
 
@@ -233,7 +233,7 @@ class BidragBBMConsumer(
     )
     fun fjernSammeknytningHovedsøknad(søknadsid: Long) =
         postForEntity<Unit>(
-            bidragBBMUri.pathSegment("deaktiverhovedsoknad").build().toUri(),
+            bidragBBMUri.pathSegment("sletthovedsoknad").build().toUri(),
             SlettSammenknytningForSøknadRequest(søknadsid),
         )
 
