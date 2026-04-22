@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -12,6 +13,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
 import no.nav.bidrag.behandling.database.datamodell.model.BpsBarnUtenBidragsakEllerLøpendeBidrag
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
@@ -51,7 +53,7 @@ open class Grunnlag(
     @JoinColumn(name = "rolle_id", nullable = false)
     open var rolle: Rolle,
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "gjelder_barn_rolle_id", nullable = false)
+    @JoinColumn(name = "gjelder_barn_rolle_id", nullable = true)
     open var gjelderBarnRolle: Rolle? = null,
     open var gjelder: String? = null,
     @Id

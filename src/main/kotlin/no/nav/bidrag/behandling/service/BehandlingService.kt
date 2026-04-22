@@ -730,11 +730,19 @@ class BehandlingService(
         behandling: Behandling,
         rolle: Rolle,
     ) {
-        // Delete grunnlag directly without mutating the managed collection.
-        val grunnlagMedRolle = behandling.grunnlag.filter { it.rolle.id == rolle.id }.toSet()
+        val grunnlagSomSkalSlettes =
+            behandling.grunnlag
+                .filter {
+                    it.gjelderBarnRolle?.id == rolle.id || it.gjelder == rolle.ident
+                        || it.rolle.id == rolle.id
+                }.toSet()
 
-        rolle.grunnlag.removeAll(grunnlagMedRolle) // only those actually owned by rolle
-        behandling.grunnlag.removeAll(grunnlagMedRolle)
+        // Hold both in-memory sides consistent before orphanRemoval on behandling.grunnlag.
+        grunnlagSomSkalSlettes.forEach {
+            it.rolle.grunnlag.remove(it)
+            it.gjelderBarnRolle?.grunnlagGjelderBarn?.remove(it)
+        }
+        behandling.grunnlag.removeAll(grunnlagSomSkalSlettes)
 
         // Keep both sides in sync so JPA deletes notes instead of nulling rolle_id.
         val notaterForRolle = behandling.notater.filter { it.rolle.id == rolle.id }.toList()

@@ -82,6 +82,12 @@ open class Rolle(
     open var grunnlag: MutableSet<Grunnlag> = mutableSetOf(),
     @OneToMany(
         fetch = FetchType.EAGER,
+        mappedBy = "gjelderBarnRolle",
+        cascade = [CascadeType.ALL],
+    )
+    open var grunnlagGjelderBarn: MutableSet<Grunnlag> = mutableSetOf(),
+    @OneToMany(
+        fetch = FetchType.EAGER,
         mappedBy = "rolle",
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
     )
