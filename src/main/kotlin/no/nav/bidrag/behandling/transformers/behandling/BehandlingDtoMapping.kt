@@ -224,10 +224,17 @@ private fun slettGrunnlagSomTilhørerRolleSomSlettes(
     rollerSomSkalSlettes: List<OpprettRolleDto>,
 ) {
     rollerSomSkalSlettes.forEach { rolle ->
-        behandling.grunnlag.removeIf {
-            it.rolle.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype) ||
-                it.gjelder == rolle.ident.verdi
+        val grunnlagSomSkalSlettes =
+            behandling.grunnlag.filter {
+                it.rolle.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype) ||
+                    it.gjelder == rolle.ident.verdi
+            }
+
+        grunnlagSomSkalSlettes.forEach {
+            it.rolle.grunnlag.remove(it)
+            it.gjelderBarnRolle?.grunnlagGjelderBarn?.remove(it)
         }
+        behandling.grunnlag.removeAll(grunnlagSomSkalSlettes)
     }
 }
 

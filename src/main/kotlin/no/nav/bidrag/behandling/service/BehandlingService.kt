@@ -733,8 +733,8 @@ class BehandlingService(
         val grunnlagSomSkalSlettes =
             behandling.grunnlag
                 .filter {
-                    it.gjelderBarnRolle?.id == rolle.id || it.gjelder == rolle.ident
-                        || it.rolle.id == rolle.id
+                    it.gjelderBarnRolle?.id == rolle.id || it.gjelder == rolle.ident ||
+                        it.rolle.id == rolle.id
                 }.toSet()
 
         // Hold both in-memory sides consistent before orphanRemoval on behandling.grunnlag.
@@ -743,11 +743,14 @@ class BehandlingService(
             it.gjelderBarnRolle?.grunnlagGjelderBarn?.remove(it)
         }
         behandling.grunnlag.removeAll(grunnlagSomSkalSlettes)
+        rolle.grunnlag.clear()
+        rolle.grunnlagGjelderBarn.clear()
 
         // Keep both sides in sync so JPA deletes notes instead of nulling rolle_id.
         val notaterForRolle = behandling.notater.filter { it.rolle.id == rolle.id }.toList()
         rolle.notat.removeAll(notaterForRolle)
         behandling.notater.removeAll(notaterForRolle)
+        rolle.notat.clear()
         behandling.inntekter.removeIf {
             it.rolle?.id == rolle.id || it.gjelderBarnRolle?.id == rolle.id
         }
@@ -762,7 +765,7 @@ class BehandlingService(
                 underholdService.fjernRolleFraUnderholdskostnad(it)
             }
         behandling.privatAvtale.removeIf { it.rolle?.id == rolle.id }
-        behandling.husstandsmedlem.find { it.rolle?.id == rolle.id }?.let {
+        behandling.husstandsmedlem.filter { it.rolle?.id == rolle.id }.forEach {
             it.rolle = null
             it.ident = rolle.ident
             it.navn = rolle.navn
