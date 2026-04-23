@@ -1423,24 +1423,20 @@ class ForholdsmessigFordelingService(
                     .maxByOrNull { (_, barn) -> barn.size }
                     ?.key
             behandling.soknadsid = søknadsidMedFlestBarn ?: behandling.soknadsid
-            LOGGER.info { "Oppdaterer hovedsøknad i behandling ${behandling.id} fra $søknadSomBleSlettet til $søknadsidMedFlestBarn" }
+            val hovedsøknadsid = behandling.soknadsid!!
             val søknader =
                 behandling.søknadsbarn
                     .mapNotNull { it.forholdsmessigFordeling?.søknaderUnderBehandling?.map { it.søknadsid } }
                     .flatten()
                     .filterNotNull()
                     .distinct()
+            LOGGER.info { "Oppdaterer hovedsøknad i behandling ${behandling.id} fra $søknadSomBleSlettet til $søknadsidMedFlestBarn" }
             bbmConsumer.fjernSammeknytningHovedsøknad(søknadSomBleSlettet)
-            bbmConsumer.endreSammenknytningSøknad(behandling.soknadsid!!, behandling.soknadsid!!)
-            søknader.filter { it != behandling.soknadsid }.forEach {
-                LOGGER.info { "Endrer knytning av søknad $it til ny hovedssøknad ${behandling.soknadsid}" }
-                val sammenknytning = bbmConsumer.endreSammenknytningSøknad(behandling.soknadsid!!, it)
-                if (sammenknytning == null) {
-                    LOGGER.info {
-                        "Det var ingen sammenknytning av søknad $it. Oppretter ny sammenknytning til ${behandling.soknadsid} i behandling ${behandling.id}"
-                    }
-                    val sammenkytningNy = bbmConsumer.sammeknyttSøknader(behandling.soknadsid!!, it)
-                    LOGGER.info { "Opprettet sammenknytning med respons $sammenkytningNy" }
+            bbmConsumer.sammeknyttSøknader(hovedsøknadsid, hovedsøknadsid)
+            søknader.filter { it != hovedsøknadsid }.forEach {
+                val sammenknytning = bbmConsumer.sammeknyttSøknader(hovedsøknadsid, it)
+                LOGGER.info {
+                    "Opprettet sammenknytning med respons $sammenknytning i søknad $it til ny hovedssøknad $hovedsøknadsid"
                 }
             }
         }
