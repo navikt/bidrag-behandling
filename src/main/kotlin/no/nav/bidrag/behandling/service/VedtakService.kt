@@ -305,12 +305,12 @@ class VedtakService(
                         val opphørsdato = if (it.isAfter(behandlingDo.virkningstidspunkt!!)) it else null
                         if (opphørsdato != null) {
                             virkningstidspunktService.oppdaterOpphørsdato(
-                                behandlingDo.id!!,
                                 OppdaterOpphørsdatoRequestDto(
                                     rolle.id!!,
                                     opphørsdato,
                                     true,
                                 ),
+                                behandlingDo,
                             )
                         }
                     }

@@ -770,12 +770,18 @@ class BehandlingService(
                 underholdService.fjernRolleFraUnderholdskostnad(it)
             }
         behandling.privatAvtale.removeIf { it.rolle?.id == rolle.id }
-        behandling.husstandsmedlem.filter { it.rolle?.id == rolle.id }.forEach {
-            it.rolle = null
-            it.ident = rolle.ident
-            it.navn = rolle.navn
-            it.fødselsdato = rolle.fødselsdato
+        val hustandsmedlemSlettetRolle = behandling.husstandsmedlem.find { it.rolle?.id == rolle.id }
+        if (behandling.husstandsmedlem.filter { it.ident == rolle.ident }.size > 1) {
+            behandling.husstandsmedlem.remove(hustandsmedlemSlettetRolle)
+        } else {
+            hustandsmedlemSlettetRolle?.let {
+                it.rolle = null
+                it.ident = rolle.ident
+                it.navn = rolle.navn
+                it.fødselsdato = rolle.fødselsdato
+            }
         }
+
         rolle.deleted = true
     }
 
