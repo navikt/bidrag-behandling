@@ -383,11 +383,11 @@ class BehandlingService(
                 val opphørsdato = if (it.opphørsdato.isAfter(behandling.virkningstidspunkt!!)) it.opphørsdato else null
                 if (opphørsdato != null) {
                     virkningstidspunktService.oppdaterOpphørsdato(
-                        behandling.id!!,
                         OppdaterOpphørsdatoRequestDto(
                             rolle.id!!,
                             opphørsdato,
                         ),
+                        behandling,
                     )
                 }
             }

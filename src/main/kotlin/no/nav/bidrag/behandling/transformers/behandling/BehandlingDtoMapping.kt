@@ -274,11 +274,11 @@ private fun oppdaterOpphørForRoller(
                 val opphørsdato = if (it.opphørsdato.isAfter(rolle.virkningstidspunktRolle)) it.opphørsdato else null
                 if (opphørsdato != null) {
                     virkningstidspunktService.oppdaterOpphørsdato(
-                        behandling.id!!,
                         OppdaterOpphørsdatoRequestDto(
                             rolle.id!!,
                             opphørsdato,
                         ),
+                        behandling,
                     )
                 }
             }
