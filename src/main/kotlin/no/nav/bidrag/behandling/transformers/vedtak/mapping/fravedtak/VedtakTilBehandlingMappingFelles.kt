@@ -59,6 +59,7 @@ import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
+import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -121,6 +122,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.løpteBidragEllerForsk
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.toYearMonth
+import no.nav.bidrag.transport.sak.BidragssakDto
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -446,6 +448,7 @@ internal fun List<GrunnlagDto>.mapRoller(
     behandling: Behandling,
     lesemodus: Boolean,
     opprinneligVirkningstidspunkt: LocalDate,
+    sak: BidragssakDto? = null,
 ): MutableSet<Rolle> =
     filter { grunnlagstyperRolle.contains(it.type) }
         .distinctBy { it.personIdent to it.stønadstype }
@@ -461,6 +464,7 @@ internal fun List<GrunnlagDto>.mapRoller(
                         it.kravhaver.verdi == rolle.personIdent
                     }
                 }
+            val bidragsmottakerSak = sak?.bidragsmottaker?.fødselsnummer?.verdi
             val resultatFraVedtak =
                 stønadsendring?.let { finnResultatFraAnnenVedtak(stønadsendring.grunnlagReferanseListe) }?.let {
                     GrunnlagFraVedtak(
@@ -478,6 +482,7 @@ internal fun List<GrunnlagDto>.mapRoller(
                 opprinneligVirkningstidspunkt,
                 lesemodus,
                 resultatFraVedtak,
+                bidragsmottakerSak,
             )
         }.toMutableSet()
         .ifEmpty {
@@ -1356,6 +1361,7 @@ private fun GrunnlagDto.tilRolle(
     opprinneligVirkningstidspunkt: LocalDate,
     lesemodus: Boolean,
     resultatFraVedtakVedInnkrevingsgrunnlag: GrunnlagFraVedtak? = null,
+    bidragsmottakerSakIdent: String? = null,
 ): Rolle {
     val virkningstidspunktGrunnlag = grunnlagsliste.hentVirkningstidspunkt(referanse)
 
@@ -1367,33 +1373,34 @@ private fun GrunnlagDto.tilRolle(
         }
     val søknadGrunnlag = søknader.filter { it.søknadsid != null }.maxByOrNull { it.søknadsid!! }
     val aldersjustering = grunnlagsliste.hentAldersjusteringDetaljerForBarn(referanse)
+    val rolletype =
+        when (type) {
+            Grunnlagstype.PERSON_SØKNADSBARN -> {
+                Rolletype.BARN
+            }
+
+            Grunnlagstype.PERSON_BIDRAGSMOTTAKER -> {
+                Rolletype.BIDRAGSMOTTAKER
+            }
+
+            Grunnlagstype.PERSON_REELL_MOTTAKER -> {
+                Rolletype.REELMOTTAKER
+            }
+
+            Grunnlagstype.PERSON_BIDRAGSPLIKTIG -> {
+                Rolletype.BIDRAGSPLIKTIG
+            }
+
+            else -> {
+                vedtakmappingFeilet(
+                    "Ukjent rolletype $type",
+                )
+            }
+        }
     return Rolle(
         behandling,
         id = id,
-        rolletype =
-            when (type) {
-                Grunnlagstype.PERSON_SØKNADSBARN -> {
-                    Rolletype.BARN
-                }
-
-                Grunnlagstype.PERSON_BIDRAGSMOTTAKER -> {
-                    Rolletype.BIDRAGSMOTTAKER
-                }
-
-                Grunnlagstype.PERSON_REELL_MOTTAKER -> {
-                    Rolletype.REELMOTTAKER
-                }
-
-                Grunnlagstype.PERSON_BIDRAGSPLIKTIG -> {
-                    Rolletype.BIDRAGSPLIKTIG
-                }
-
-                else -> {
-                    vedtakmappingFeilet(
-                        "Ukjent rolletype $type",
-                    )
-                }
-            },
+        rolletype = rolletype,
         ident = personIdent,
         opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
         virkningstidspunkt = virkningstidspunktGrunnlag?.virkningstidspunkt ?: opprinneligVirkningstidspunkt,
@@ -1416,12 +1423,22 @@ private fun GrunnlagDto.tilRolle(
                 val personGrunnlag = grunnlagsliste.hentPerson(personIdent)?.personObjekt!!
                 val erRevurdering = søknader.all { it.behandlingstype?.erForholdsmessigFordeling == true }
                 val førsteSøknad = søknader.first()
+                val bidragsmottakerIdent =
+                    if (rolletype == Rolletype.BARN) {
+                        when {
+                            stønadsendring?.mottaker?.verdi != personIdent -> stønadsendring?.mottaker?.verdi
+                            else -> bidragsmottakerSakIdent
+                        }
+                    } else {
+                        null
+                    }
+
                 ForholdsmessigFordelingRolle(
                     tilhørerSak = stønadsendring?.sak?.verdi ?: førsteSøknad.saksnummer ?: behandling.saksnummer,
                     behandlerenhet = behandling.behandlerEnhet,
                     delAvOpprinneligBehandling = personGrunnlag.delAvOpprinneligBehandling,
                     erRevurdering = erRevurdering,
-                    bidragsmottaker = stønadsendring?.mottaker?.verdi,
+                    bidragsmottaker = bidragsmottakerIdent,
                     søknader =
                         søknader
                             .map { søknadGrunnlag ->

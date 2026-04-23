@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.LesemodusVedtak
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.service.UnderholdService
+import no.nav.bidrag.behandling.service.hentSak
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilNotat
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
@@ -193,6 +194,7 @@ class VedtakTilBehandlingMapping(
                     },
             )
 
+        val sak = hentSak(behandling.saksnummer)
         behandling.roller = grunnlagListe.mapRoller(påklagetVedtak ?: this, behandling, lesemodus, omgjortVedtakVirkningstidspunkt)
 
         behandling.omgjøringsdetaljer =
