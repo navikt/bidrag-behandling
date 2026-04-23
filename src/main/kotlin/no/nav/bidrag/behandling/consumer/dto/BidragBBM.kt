@@ -13,7 +13,7 @@ data class SammenknyttSøknaderRequest(
 )
 
 data class SlettHovedsøknadRequest(
-    val søknadsid: Long,
+    val eksisterendeHovedsøknadsid: Long,
     val nyHovedsøknadsid: Long? = null,
 )
 
