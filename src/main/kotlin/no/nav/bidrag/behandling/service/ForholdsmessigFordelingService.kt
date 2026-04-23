@@ -1430,7 +1430,8 @@ class ForholdsmessigFordelingService(
                     .flatten()
                     .filterNotNull()
                     .distinct()
-
+            bbmConsumer.fjernSammeknytningHovedsøknad(søknadSomBleSlettet)
+            bbmConsumer.endreSammenknytningSøknad(behandling.soknadsid!!, behandling.soknadsid!!)
             søknader.filter { it != behandling.soknadsid }.forEach {
                 LOGGER.info { "Endrer knytning av søknad $it til ny hovedssøknad ${behandling.soknadsid}" }
                 val sammenknytning = bbmConsumer.endreSammenknytningSøknad(behandling.soknadsid!!, it)
