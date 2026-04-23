@@ -1424,21 +1424,8 @@ class ForholdsmessigFordelingService(
                     ?.key
             behandling.soknadsid = søknadsidMedFlestBarn ?: behandling.soknadsid
             val hovedsøknadsid = behandling.soknadsid!!
-            val søknader =
-                behandling.søknadsbarn
-                    .mapNotNull { it.forholdsmessigFordeling?.søknaderUnderBehandling?.map { it.søknadsid } }
-                    .flatten()
-                    .filterNotNull()
-                    .distinct()
-            LOGGER.info { "Oppdaterer hovedsøknad i behandling ${behandling.id} fra $søknadSomBleSlettet til $søknadsidMedFlestBarn" }
-            bbmConsumer.fjernSammeknytningHovedsøknad(søknadSomBleSlettet)
-            bbmConsumer.sammeknyttSøknader(hovedsøknadsid, hovedsøknadsid)
-            søknader.filter { it != hovedsøknadsid }.forEach {
-                val sammenknytning = bbmConsumer.sammeknyttSøknader(hovedsøknadsid, it)
-                LOGGER.info {
-                    "Opprettet sammenknytning med respons $sammenknytning i søknad $it til ny hovedssøknad $hovedsøknadsid"
-                }
-            }
+            LOGGER.info { "Oppdaterer hovedsøknad i behandling ${behandling.id} fra $søknadSomBleSlettet til $hovedsøknadsid" }
+            bbmConsumer.fjernSammeknytningHovedsøknad(søknadSomBleSlettet, hovedsøknadsid)
         }
     }
 
