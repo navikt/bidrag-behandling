@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.consumer.dto.DeaktiverHovedsøknadRequest
 import no.nav.bidrag.behandling.consumer.dto.FinnSammenknytningerHovedsøknadRequest
 import no.nav.bidrag.behandling.consumer.dto.FinnSammenknytningerHovedsøknadResponse
 import no.nav.bidrag.behandling.consumer.dto.SammenknyttSøknaderRequest
+import no.nav.bidrag.behandling.consumer.dto.SlettHovedsøknadRequest
 import no.nav.bidrag.behandling.consumer.dto.SlettSammenknytningForSøknadRequest
 import no.nav.bidrag.behandling.consumer.dto.SøknadsknytningResponse
 import no.nav.bidrag.beregn.barnebidrag.service.external.BeregningBBMConsumer
@@ -231,11 +232,13 @@ class BidragBBMConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
-    fun fjernSammeknytningHovedsøknad(søknadsid: Long) =
-        postForEntity<Unit>(
-            bidragBBMUri.pathSegment("sletthovedsoknad").build().toUri(),
-            SlettSammenknytningForSøknadRequest(søknadsid),
-        )
+    fun fjernSammeknytningHovedsøknad(
+        søknadsid: Long,
+        nyHovedsøknadsid: Long? = null,
+    ) = postForEntity<Unit>(
+        bidragBBMUri.pathSegment("sletthovedsoknad").build().toUri(),
+        SlettHovedsøknadRequest(søknadsid, nyHovedsøknadsid),
+    )
 
     @Retryable(
         value = [Exception::class],

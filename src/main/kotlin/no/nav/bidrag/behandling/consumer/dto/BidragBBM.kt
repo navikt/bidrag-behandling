@@ -12,6 +12,11 @@ data class SammenknyttSøknaderRequest(
     val referertSøknadsid: Long,
 )
 
+data class SlettHovedsøknadRequest(
+    val søknadsid: Long,
+    val nyHovedsøknadsid: Long? = null,
+)
+
 data class SlettSammenknytningForSøknadRequest(
     val søknadsid: Long,
 )
