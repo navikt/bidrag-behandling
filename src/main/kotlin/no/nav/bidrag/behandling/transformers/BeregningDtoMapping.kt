@@ -594,7 +594,8 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                         avslagskode,
                                         p.grunnlagsreferanseListe,
                                         resultat.ugyldigBeregning,
-                                        grunnlagslisteRV.erResultatEndringUnderGrense(
+                                        grunnlagslisteRV.erResultatEndringUnderGrenseForPeriode(
+                                            p.periode,
                                             resultat.barn.referanse,
                                             p.grunnlagsreferanseListe,
                                         ),

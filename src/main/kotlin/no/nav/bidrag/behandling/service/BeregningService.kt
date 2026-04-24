@@ -468,7 +468,7 @@ class BeregningService(
                     avslagskode = søknasdbarn.avslag,
                     resultat = BeregnetBarnebidragResultat(),
                     opphørsdato = null,
-                    `løperBidrag` = behandling.finnesLøpendeBidragForRolle(søknasdbarn),
+                    løperBidrag = behandling.finnesLøpendeBidragForRolle(søknasdbarn),
                 )
             }
 
@@ -536,7 +536,7 @@ class BeregningService(
                             ?.toYearMonth(),
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     opphørsdato = søknadsbarn.opphørsdato?.toYearMonth(),
-                    `løperBidrag` = behandling.finnesLøpendeBidragForRolle(søknadsbarn),
+                    løperBidrag = behandling.finnesLøpendeBidragForRolle(søknadsbarn),
                     resultat =
                         if (endeligResultat != null) {
                             BeregnetBarnebidragResultat(
@@ -568,7 +568,7 @@ class BeregningService(
                     omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     opphørsdato = søknadsbarn.opphørsdato?.toYearMonth(),
-                    `løperBidrag` = behandling.finnesLøpendeBidragForRolle(søknadsbarn),
+                    løperBidrag = behandling.finnesLøpendeBidragForRolle(søknadsbarn),
                     resultat =
                         feil.data.copy(
                             grunnlagListe =
@@ -600,7 +600,7 @@ class BeregningService(
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     opphørsdato = søknadsbarn.opphørsdato?.toYearMonth(),
                     resultat = BeregnetBarnebidragResultat(),
-                    `løperBidrag` = behandling.finnesLøpendeBidragForRolle(søknadsbarn),
+                    løperBidrag = behandling.finnesLøpendeBidragForRolle(søknadsbarn),
                 )
             }
 
@@ -611,7 +611,7 @@ class BeregningService(
                     omgjøringsdetaljer = behandling.omgjøringsdetaljer,
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     opphørsdato = søknadsbarn.opphørsdato?.toYearMonth(),
-                    `løperBidrag` = behandling.finnesLøpendeBidragForRolle(søknadsbarn),
+                    løperBidrag = behandling.finnesLøpendeBidragForRolle(søknadsbarn),
                     resultat =
                         feil.data.copy(
                             grunnlagListe =
@@ -637,7 +637,7 @@ class BeregningService(
                     innkrevesFraDato = behandling.finnInnkrevesFraDato(søknadsbarn),
                     opphørsdato = søknadsbarn.opphørsdato?.toYearMonth(),
                     resultat = BeregnetBarnebidragResultat(),
-                    `løperBidrag` = behandling.finnesLøpendeBidragForRolle(søknadsbarn),
+                    løperBidrag = behandling.finnesLøpendeBidragForRolle(søknadsbarn),
                 )
             }
         }

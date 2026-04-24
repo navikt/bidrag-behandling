@@ -1,9 +1,6 @@
 package no.nav.bidrag.behandling.service
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
@@ -1801,7 +1798,7 @@ class ForholdsmessigFordelingService(
         }.filter {
             (
                 erKlageEllerOmgjøring &&
-                    (it.referertVedtaksid == omgjøringsdetaljer?.omgjørVedtakId || it.referertSøknadsid == omgjøringsdetaljer?.soknadRefId)
+                    (it.refVedtaksid == omgjøringsdetaljer?.omgjørVedtakId || it.refSøknadsid == omgjøringsdetaljer?.soknadRefId)
             ) ||
                 !erKlageEllerOmgjøring
         }.sortedWith(
