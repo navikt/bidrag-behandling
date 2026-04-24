@@ -919,35 +919,7 @@ class ForholdsmessigFordelingService(
             val åpneSøknaderIkkeFF = søknaderForBarn.filter { !it.behandlingstype.erForholdsmessigFordeling }
             val åpneSøknaderFF = søknaderForBarn.filter { it.behandlingstype.erForholdsmessigFordeling }
 
-            if (åpneSøknaderIkkeFF.isNotEmpty() && rolle.erRevurderingsbarn) {
-                håndterBarnSomSkalVæreSøknadsbarn(behandling, rolle, åpneSøknaderIkkeFF.first())
-            } else if (åpneSøknaderFF.isNotEmpty() && !rolle.erRevurderingsbarn) {
-                feilregistrerBarnFraFFSøknad(rolle)
-            } else if (!rolle.erRevurderingsbarn && åpneSøknaderIkkeFF.isEmpty()) {
-                LOGGER.info {
-                    "Barn ${rolle.ident} i ${behandling.id} er ikke markert som revurderingsbarn men har ingen åpne søknader." +
-                        "Oppretter eller legger til i eksisterende FF søknad og endrer barnet til revurderingsbarn"
-                }
-                // Er markert som søknadsbarn men har ingen åpne søknader. Endre til revurderingsbarn
-                håndterBarnSomSkalVæreRevurderingsbarn(behandling, rolle, lagretSøknader)
-            } else if (rolle.erRevurderingsbarn && åpneSøknaderFF.isEmpty() &&
-                åpneSøknaderIkkeFF.isEmpty() &&
-                rolle.harLøpendeBidragFørOpphørEllerLøpende()
-            ) {
-                LOGGER.info {
-                    "Barn ${rolle.ident} i ${behandling.id} er markert som revurderingsbarn men har ingen åpne FF søknader." +
-                        "Oppretter eller legger til i eksisterende FF søknad"
-                }
-                // Er markert som revurderingsbarn og har ingen åpne FF søknadaer. Opprett FF søknad
-                håndterBarnSomSkalVæreRevurderingsbarn(behandling, rolle, lagretSøknader)
-            } else if (rolle.erRevurderingsbarn && !rolle.harLøpendeBidragFørOpphørEllerLøpende()) {
-                secureLogger.info {
-                    "Sletter revurderingsbarn ${rolle.personident?.verdi} " +
-                        "fra behandling ${behandling.id} etter da det ikke løper bidrag etter søkt fom dato. " +
-                        "Barnet har ingen løpende bidrag lenger og trenger derfor ikke å være revurderingsbarn"
-                }
-                slettRevurderingsbarn(behandling, rolle)
-            }
+            sjekkOgOppdaterStatusPåRevurderingOgSøknadsbarn(åpneSøknaderIkkeFF, rolle, behandling, åpneSøknaderFF, lagretSøknader)
         }
 
         val hovedsøknad = bbmConsumer.hentSøknad(behandling.soknadsid!!)
@@ -956,6 +928,60 @@ class ForholdsmessigFordelingService(
         }
 
         knyttSammenManglendeSøknadsknytningerIBehandling(behandling)
+    }
+
+    private fun sjekkOgOppdaterStatusPåRevurderingOgSøknadsbarn(
+        åpneSøknaderIkkeFF: List<ÅpenSøknadDto>,
+        rolle: Rolle,
+        behandling: Behandling,
+        åpneSøknaderFF: List<ÅpenSøknadDto>,
+        lagretSøknader: MutableSet<ForholdsmessigFordelingSøknadBarn>,
+    ) {
+        if (behandling.erKlageEllerOmgjøring) {
+            // For klage så skal ikke barne endres fra revurderingsbarn -> søknadsbarn eller at revurderingsbarn skal slettes
+            // Derfor er eneste feilhåndtering å opprette FF søknad
+            if (rolle.erRevurderingsbarn && åpneSøknaderFF.isEmpty()) {
+                LOGGER.info {
+                    "Barn ${rolle.ident} i ${behandling.id} er markert som revurderingsbarn men har ingen åpne FF søknader." +
+                        "Oppretter eller legger til i eksisterende FF søknad"
+                }
+                // Er markert som revurderingsbarn og har ingen åpne FF søknadaer. Opprett FF søknad
+                håndterBarnSomSkalVæreRevurderingsbarn(behandling, rolle, lagretSøknader)
+            }
+            return
+        }
+
+        if (åpneSøknaderIkkeFF.isNotEmpty() && rolle.erRevurderingsbarn) {
+            // Revurderingsbarn har åpne søknader som ikke er FF. Da skal barnet være en søknadsbarn og ikke revurderingsbarn
+            håndterBarnSomSkalVæreSøknadsbarn(behandling, rolle, åpneSøknaderIkkeFF.first())
+        } else if (åpneSøknaderFF.isNotEmpty() && !rolle.erRevurderingsbarn) {
+            // Barn som er søknadsbarn har ingen åpne søknader. Da må barnet endres til en revurderingsbarn
+            feilregistrerBarnFraFFSøknad(rolle)
+        } else if (!rolle.erRevurderingsbarn && åpneSøknaderIkkeFF.isEmpty()) {
+            LOGGER.info {
+                "Barn ${rolle.ident} i ${behandling.id} er ikke markert som revurderingsbarn men har ingen åpne søknader." +
+                    "Oppretter eller legger til i eksisterende FF søknad og endrer barnet til revurderingsbarn"
+            }
+            // Er markert som søknadsbarn men har ingen åpne søknader. Endre til revurderingsbarn
+            håndterBarnSomSkalVæreRevurderingsbarn(behandling, rolle, lagretSøknader)
+        } else if (rolle.erRevurderingsbarn && åpneSøknaderFF.isEmpty() &&
+            åpneSøknaderIkkeFF.isEmpty() &&
+            rolle.harLøpendeBidragFørOpphørEllerLøpende()
+        ) {
+            LOGGER.info {
+                "Barn ${rolle.ident} i ${behandling.id} er markert som revurderingsbarn men har ingen åpne FF søknader." +
+                    "Oppretter eller legger til i eksisterende FF søknad"
+            }
+            // Er markert som revurderingsbarn og har ingen åpne FF søknadaer. Opprett FF søknad
+            håndterBarnSomSkalVæreRevurderingsbarn(behandling, rolle, lagretSøknader)
+        } else if (rolle.erRevurderingsbarn && !rolle.harLøpendeBidragFørOpphørEllerLøpende()) {
+            secureLogger.info {
+                "Sletter revurderingsbarn ${rolle.personident?.verdi} " +
+                    "fra behandling ${behandling.id} etter da det ikke løper bidrag etter søkt fom dato. " +
+                    "Barnet har ingen løpende bidrag lenger og trenger derfor ikke å være revurderingsbarn"
+            }
+            slettRevurderingsbarn(behandling, rolle)
+        }
     }
 
     private fun knyttSammenManglendeSøknadsknytningerIBehandling(behandling: Behandling) {
