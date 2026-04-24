@@ -176,10 +176,10 @@ fun ÅpenSøknadDto.tilForholdsmessigFordelingSøknad() =
         søknadFomDato = søknadFomDato,
         søktAvType = søktAvType,
         søknadsid = søknadsid,
-        omgjørVedtaksid = referertVedtaksid,
+        omgjørVedtaksid = refVedtaksid,
         innkreving = innkreving,
         enhet = behandlerenhet ?: "9999",
-        omgjørSøknadsid = referertSøknadsid,
+        omgjørSøknadsid = refSøknadsid,
         saksnummer = saksnummer,
     )
 
