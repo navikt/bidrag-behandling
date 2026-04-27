@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessi
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegning
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -887,6 +888,7 @@ class ForholdsmessigFordelingService(
         val rolle = behandling.søknadsbarn.find { it.ident == barnIdent.verdi } ?: return
         val relevanteKravhavere = hentAlleRelevanteKravhavere(behandling)
 
+        val rollerRevurderingsbarn = behandling.søknadsbarn.filter { it.erRevurderingsbarn }.map { it.ident!! }
         if (rolle.erRevurderingsbarn) {
             val søknad = rolle.forholdsmessigFordeling!!.eldsteSøknad
             if (søknad == null || !søknad.innkreving) {
@@ -897,7 +899,11 @@ class ForholdsmessigFordelingService(
                     relevanteKravhavere.filter { it.erLik(rolle.ident!!, rolle.stønadstype) },
                     behandling.behandlerEnhet,
                     rolle.stønadstype,
-                    søknad?.søknadFomDato ?: rolle.forholdsmessigFordeling?.sisteOpprettetSøknad?.søknadFomDato!!,
+                    søknad?.søknadFomDato ?: rolle.forholdsmessigFordeling?.sisteOpprettetSøknad?.søknadFomDato
+                        ?: relevanteKravhavere
+                            .filter {
+                                rollerRevurderingsbarn.contains(it.kravhaver)
+                            }.finnSøktFomRevurderingSøknad(behandling),
                     true,
                 )
             }
@@ -1010,15 +1016,9 @@ class ForholdsmessigFordelingService(
         }
     }
 
-    // Feilhåndtering hvis FF søknad blir slettet manuelt eller ved feil
     @Transactional
-    fun synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling: Behandling) {
-        val løpendeBidraggsakerBP =
-            hentSisteLøpendeStønader(Personident(behandling.bidragspliktig!!.ident!!), behandling.finnBeregningsperiode())
-
-        grunnlagService.lagreBeløpshistorikkGrunnlag(behandling)
-        grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
-
+    fun oppdaterSøknadStatuserForAlleRoller(behandling: Behandling) {
+        if (!behandling.erIForholdsmessigFordeling) return
         val alleSøknaderRelevantForBehandling =
             hentÅpneSøknader(behandling.bidragspliktig!!.ident!!, behandling.behandlingstypeForFF, behandling.omgjøringsdetaljer)
 
@@ -1034,6 +1034,21 @@ class ForholdsmessigFordelingService(
                         rolle,
                     )
             }
+    }
+
+    // Feilhåndtering hvis FF søknad blir slettet manuelt eller ved feil
+    @Transactional
+    fun synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling: Behandling) {
+        val løpendeBidraggsakerBP =
+            hentSisteLøpendeStønader(Personident(behandling.bidragspliktig!!.ident!!), behandling.finnBeregningsperiode())
+
+        grunnlagService.lagreBeløpshistorikkGrunnlag(behandling)
+        grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
+
+        val alleSøknaderRelevantForBehandling =
+            hentÅpneSøknader(behandling.bidragspliktig!!.ident!!, behandling.behandlingstypeForFF, behandling.omgjøringsdetaljer)
+
+        oppdaterSøknadStatuserForAlleRoller(behandling)
 
         if (behandling.erKlageEllerOmgjøring) {
             opprettSøknaderForKlageEllerOmgjøring(behandling, behandling.soknadsid!!)
@@ -1756,7 +1771,12 @@ class ForholdsmessigFordelingService(
 
     private fun sjekkBeregningKreverForholdsmessigFordeling(behandling: Behandling): FFBeregningResultat =
         try {
-            val resultat = beregningService.beregneBidrag(behandling, true, simulerBeregning = true)
+            val resultat =
+                try {
+                    beregningService.beregneBidrag(behandling, true, simulerBeregning = true)
+                } catch (e: Exception) {
+                    ResultatBidragsberegning(vedtakstype = behandling.vedtakstype)
+                }
             val resultatBarn = resultat.resultatBarn
             val lagretLøpendeBidrag = behandling.grunnlag.hentSisteGrunnlagLøpendeBidragFF(behandling) ?: emptyList()
             val grunnlagsliste = resultat.grunnlagsliste.toSet().toList()

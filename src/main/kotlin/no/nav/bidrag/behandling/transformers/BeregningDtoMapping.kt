@@ -480,7 +480,11 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                                             avslagskode,
                                             it.grunnlagsreferanseListe,
                                             resultat.ugyldigBeregning,
-                                            grunnlagsListe.erResultatEndringUnderGrense(resultat.barn.referanse),
+                                            grunnlagsListe.erResultatEndringUnderGrenseForPeriode(
+                                                it.periode,
+                                                resultat.barn.referanse,
+                                                it.grunnlagsreferanseListe,
+                                            ),
                                             vedtakstype,
                                             resultat.barn.ident!!,
                                         )

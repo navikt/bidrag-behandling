@@ -115,6 +115,7 @@ class VedtakHendelseListener(
         // Hent grunnlag beløpshistorikk slik at det er oppdatert
         grunnlagService.lagreBeløpshistorikkGrunnlag(behandling)
         grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
+        forholdsmessigFordelingService.oppdaterSøknadStatuserForAlleRoller(behandling)
         if (type == Vedtakstype.OPPHØR) {
             val opphørsperiode =
                 stønadsendring.periodeListe
