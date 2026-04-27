@@ -7,7 +7,6 @@ import no.nav.bidrag.behandling.transformers.dato18ÅrsBidrag
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
-import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import java.time.LocalDate
 
 fun Behandling.finnRolleForPeriode(

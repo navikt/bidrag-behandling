@@ -117,7 +117,7 @@ class VedtakHendelseListener(
         grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
         if (type == Vedtakstype.OPPHØR) {
             val opphørsperiode =
-                `stønadsendring`.periodeListe
+                stønadsendring.periodeListe
                     .filter { it.beløp == null }
                     .maxByOrNull {
                         it.periode.fom
@@ -125,23 +125,23 @@ class VedtakHendelseListener(
             forholdsmessigFordelingService
                 .oppdaterBarnEtterOpphør(
                     behandling,
-                    `stønadsendring`.kravhaver,
-                    `stønadsendring`.type,
+                    stønadsendring.kravhaver,
+                    stønadsendring.type,
                     opphørsperiode,
                 )
         } else {
-            if (behandling.søknadsbarn.none { it.erSammeRolle(`stønadsendring`.kravhaver.verdi, `stønadsendring`.type) }) {
+            if (behandling.søknadsbarn.none { it.erSammeRolle(stønadsendring.kravhaver.verdi, stønadsendring.type) }) {
                 // Henter og legger til barn som revurderingsbarn
                 behandling.privatAvtale.removeIf {
                     it.rolle == null &&
-                        (it.rolle!!.erSammeRolle(`stønadsendring`.kravhaver.verdi, `stønadsendring`.type))
+                        (it.rolle!!.erSammeRolle(stønadsendring.kravhaver.verdi, stønadsendring.type))
                 }
                 forholdsmessigFordelingService.opprettEllerOppdaterForholdsmessigFordeling(behandling.id!!)
                 forholdsmessigFordelingService.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
             } else {
                 forholdsmessigFordelingService.oppdaterBarnEtterInnkrevingsvedtak(
                     behandling,
-                    `stønadsendring`.kravhaver,
+                    stønadsendring.kravhaver,
                 )
             }
         }

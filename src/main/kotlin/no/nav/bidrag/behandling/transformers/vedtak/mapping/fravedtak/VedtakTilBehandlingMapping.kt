@@ -195,7 +195,7 @@ class VedtakTilBehandlingMapping(
             )
 
         val sak = hentSak(behandling.saksnummer)
-        behandling.roller = grunnlagListe.mapRoller(påklagetVedtak ?: this, behandling, lesemodus, omgjortVedtakVirkningstidspunkt)
+        behandling.roller = grunnlagListe.mapRoller(påklagetVedtak ?: this, behandling, lesemodus, omgjortVedtakVirkningstidspunkt, sak)
 
         behandling.omgjøringsdetaljer =
             if (!lesemodus || inkluderKlagedetaljer || opprinneligVedtak != omgjørVedtakId) {

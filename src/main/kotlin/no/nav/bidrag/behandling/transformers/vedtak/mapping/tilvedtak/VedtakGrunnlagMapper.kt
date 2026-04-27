@@ -539,7 +539,7 @@ class VedtakGrunnlagMapper(
                         behandling.eldsteVirkningstidspunkt
                     } ?: vedtakmappingFeilet("Virkningstidspunkt må settes for beregning")
 
-                val beregningTilDato = finnBeregnTilDatoBehandling(søknadsbarnRolle)
+                val beregningTilDato = finnBeregnTilDatoBehandling(søknadsbarnRolle, senesteBeregnTil = beregnFraDato)
                 val opphørsdato =
                     if (søknadsbarnRolle.avslag != null && søknadsbarnRolle.avslag!!.erAvvisning()) {
                         finnEksisterendeVedtakMedOpphør(søknadsbarnRolle)?.opphørsdato
@@ -550,7 +550,7 @@ class VedtakGrunnlagMapper(
                     }
                 val beregningsperiode =
                     ÅrMånedsperiode(
-                        beregnFraDato,
+                        minOf(beregnFraDato, beregningTilDato),
                         beregningTilDato,
                     )
                 val søknadsbarn = søknadsbarnRolle.tilGrunnlagPerson()

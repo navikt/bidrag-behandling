@@ -129,7 +129,6 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
-import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.inntekt.InntektApi
 import no.nav.bidrag.sivilstand.SivilstandApi

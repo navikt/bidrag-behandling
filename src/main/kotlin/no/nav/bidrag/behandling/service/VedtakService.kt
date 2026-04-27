@@ -12,7 +12,6 @@ import no.nav.bidrag.behandling.dto.internal.vedtak.BeregningVedtakResultat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
-import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
@@ -27,7 +26,6 @@ import no.nav.bidrag.behandling.transformers.dto.PåklagetVedtak
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
-import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.OppdaterBarnFraFFRequest
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFBarnDetaljer
 import no.nav.bidrag.behandling.transformers.skalInnkrevingKunneUtsettes
 import no.nav.bidrag.behandling.transformers.tilStønadsid
@@ -51,7 +49,6 @@ import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
-import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
@@ -237,49 +234,8 @@ class VedtakService(
                 behandlingRepository!!
                     .finnHovedbehandlingForBpVedFF(bp!!.ident!!, konvertertBehandlingLesemodus.vedtakstype.name, påklagetVedtak)
                     ?.let { behandling ->
-                        val bm = konvertertBehandlingLesemodus.roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
-                        val søknadsdetaljer = konvertertBehandlingLesemodus.tilFFBarnDetaljer()
-                        val søknadsbarnIkkeRevurdering = konvertertBehandlingLesemodus.søknadsbarn.filter { !it.erRevurderingsbarn }
-                        forholdsmessigFordelingService!!.leggTilEllerSlettBarnFraBehandlingSomErIFF(
-                            OppdaterBarnFraFFRequest(
-                                rollerSomSkalLeggesTilDto =
-                                    søknadsbarnIkkeRevurdering
-                                        .map {
-                                            OpprettRolleDto(
-                                                rolletype = it.rolletype,
-                                                ident = Personident(it.ident!!),
-                                                navn = it.navn,
-                                                fødselsdato = it.fødselsdato,
-                                                harGebyrsøknad = it.harGebyrsøknad,
-                                                behandlingstatus = it.behandlingstatus,
-                                                behandlingstema = it.behandlingstema,
-                                                opprinneligVirkningstidspunkt = it.opprinneligVirkningstidspunkt,
-                                                opphørsdato = it.opphørsdato,
-                                            )
-                                        },
-                                rollerSomSkalSlettes = emptyList(),
-                                behandling = behandling,
-                                søknadsid = request.søknadsid,
-                                saksnummer = konvertertBehandlingLesemodus.saksnummer,
-                                bmIdent = bm?.ident,
-                                behandlerenhet = konvertertBehandlingLesemodus.behandlerEnhet,
-                                erRevurdering =
-                                    konvertertBehandlingLesemodus.omgjøringsdetaljer?.opprinneligVedtakstype == Vedtakstype.REVURDERING,
-                                medInnkreving = konvertertBehandlingLesemodus.innkrevingstype == Innkrevingstype.MED_INNKREVING,
-                                søknadsdetaljer = søknadsdetaljer,
-                                søktFraDato = konvertertBehandlingLesemodus.søktFomDato,
-                                gebyrGjelder18År = søknadsbarnIkkeRevurdering.any { it.harGebyrsøknad },
-                                stønadstype = konvertertBehandlingLesemodus.stonadstype!!,
-                            ),
-                        )
-                        val revurderingsbarn = konvertertBehandlingLesemodus.roller.filter { it.erRevurderingsbarn }
-                        behandling.roller.addAll(
-                            revurderingsbarn.map {
-                                it.copy(behandling)
-                            },
-                        )
 
-                        forholdsmessigFordelingService!!.opprettRevurderingssøknaderForKlageEllerOmgjøring(behandling)
+                        forholdsmessigFordelingService!!.opprettSøknaderForKlageEllerOmgjøring(behandling, request.søknadsid)
 
                         return OpprettBehandlingResponse(behandling.id!!)
                     }
@@ -290,7 +246,7 @@ class VedtakService(
                     ?: throw RuntimeException("Fant ikke vedtak for vedtakid $refVedtaksid")
 
             if (konvertertBehandling.erIForholdsmessigFordeling) {
-                forholdsmessigFordelingService!!.opprettRevurderingssøknaderForKlageEllerOmgjøring(konvertertBehandling)
+                forholdsmessigFordelingService!!.opprettSøknaderForKlageEllerOmgjøring(konvertertBehandling, request.søknadsid)
             }
             konvertertBehandling.roller.forEach {
                 it.forholdsmessigFordeling?.søknader?.removeIf { it.erFraPåklagetVedtak }

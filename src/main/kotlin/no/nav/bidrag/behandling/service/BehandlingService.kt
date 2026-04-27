@@ -111,7 +111,9 @@ class BehandlingService(
         søknadsid: Long? = null,
     ) {
         if (behandling.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
-            if (søknadsid == null) {
+            if (behandling.erKlageEllerOmgjøring) {
+                forholdsmessigFordelingService!!.slettEllerGjennopprettKlageSøknader(behandling, søknadsid ?: behandling.soknadsid!!)
+            } else if (søknadsid == null) {
                 forholdsmessigFordelingService!!.avsluttForholdsmessigFordeling(
                     behandling,
                     behandling.søknadsbarnForSøknad(behandling.soknadsid!!),

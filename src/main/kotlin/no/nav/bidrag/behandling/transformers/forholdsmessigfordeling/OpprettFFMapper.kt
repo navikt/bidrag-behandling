@@ -44,11 +44,10 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
+import no.nav.bidrag.transport.behandling.beregning.felles.HentSøknad
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.felles.toLocalDate
-import no.nav.bidrag.transport.felles.toYearMonth
 import no.nav.bidrag.transport.sak.BidragssakDto
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -70,7 +69,7 @@ data class OppdaterBarnFraFFRequest(
     val stønadstype: Stønadstype? = null,
 )
 
-fun ÅpenSøknadDto.tilIdentStønadstypeNøkkel(ident: String) = "${ident}_${behandlingstema.tilStønadstype()}"
+fun HentSøknad.tilIdentStønadstypeNøkkel(ident: String) = "${ident}_${behandlingstema.tilStønadstype()}"
 
 fun Rolle.tilOpprettRolleDto() =
     OpprettRolleDto(
@@ -107,6 +106,8 @@ fun Collection<SakKravhaver>.finnEldsteSøktFomDato(behandling: Behandling) =
                 it.åpneSøknader.filter { it.søknadFomDato != null }.map { it.søknadFomDato!! }
         } + listOf(behandling.søktFomDato)
     ).min()
+
+fun LøpendeBidragSakPeriode.løperBidragEtterDato(fraDato: YearMonth) = (periodeTil == null || periodeTil > fraDato)
 
 fun SakKravhaver.løperBidragEtterDato(fraDato: YearMonth) =
     (løperBidragFra != null && løperBidragTil == null) ||
@@ -168,7 +169,7 @@ fun Behandling.tilFFBarnDetaljer() =
         saksnummer = saksnummer,
     )
 
-fun ÅpenSøknadDto.tilForholdsmessigFordelingSøknad() =
+fun HentSøknad.tilForholdsmessigFordelingSøknad() =
     ForholdsmessigFordelingSøknadBarn(
         behandlingstype = behandlingstype,
         behandlingstema = behandlingstema,
@@ -738,7 +739,7 @@ private fun Behandling.tilFFBarnDto() =
         behandlingstema = behandlingstema,
     )
 
-private fun ÅpenSøknadDto.tilFFBarnDto(
+private fun HentSøknad.tilFFBarnDto(
     sak: BidragssakDto?,
     eierfogd: String,
 ) = ForholdsmessigFordelingÅpenBehandlingDto(

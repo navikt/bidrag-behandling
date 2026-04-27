@@ -19,8 +19,6 @@ import no.nav.bidrag.behandling.transformers.finnIndeksår
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.hentRolleMedFnr
-import no.nav.bidrag.behandling.transformers.maxOfNullable
-import no.nav.bidrag.behandling.transformers.minOfNullable
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
@@ -386,29 +384,26 @@ class BehandlingTilVedtakMapping(
 
                         val periodeliste =
                             it.periodeListe
-                                .filter { periode ->
-                                    innkrevingsperioder.filtrerMatchendePeriode(periode.periode).isNotEmpty()
-                                }.map { periode ->
-                                    val innkrevingsperioderMatcherPeriode =
-                                        innkrevingsperioder.filtrerMatchendePeriode(periode.periode)
+                                .flatMap { periode ->
                                     val referanseSøknadsbarn = søknadsbarn.tilGrunnlagsreferanse()
                                     val periodeVirkningstidspunktGrunnlag =
                                         virkningstidspunktGrunnlag.find { it.gjelderBarnReferanse == referanseSøknadsbarn }
-                                    val periodeFra = innkrevingsperioderMatcherPeriode.minOfOrNull { it.fom }
-                                    val periodeTil = innkrevingsperioderMatcherPeriode.maxByOrNull { it.fom }?.til
-                                    periode.copy(
-                                        periode =
-                                            periode.periode.copy(
-                                                fom = maxOfNullable(periodeFra, periode.periode.fom)!!,
-                                                til = minOfNullable(periodeTil, periode.periode.til),
-                                            ),
-                                        grunnlagReferanseListe =
-                                            listOfNotNull(
-                                                resultatFraGrunnlag.referanse,
-                                                periodeVirkningstidspunktGrunnlag?.referanse,
-                                            ),
-                                    )
+                                    innkrevingsperioder
+                                        .filtrerMatchendePeriode(periode.periode)
+                                        .mapNotNull { innkrevingsperiode ->
+                                            periode.periode.klippTilPeriode(innkrevingsperiode)?.let { klippetPeriode ->
+                                                periode.copy(
+                                                    periode = klippetPeriode,
+                                                    grunnlagReferanseListe =
+                                                        listOfNotNull(
+                                                            resultatFraGrunnlag.referanse,
+                                                            periodeVirkningstidspunktGrunnlag?.referanse,
+                                                        ),
+                                                )
+                                            }
+                                        }
                                 }
+                                .fyllMellomromMedOpphørsperioder()
                         val opphørPeriode =
                             if (periodeliste.isNotEmpty() && søknadsbarn.opphørsdato != null &&
                                 søknadsbarn.opphørsdato!!.toYearMonth() != periodeliste.last().periode.fom
@@ -1643,6 +1638,29 @@ class BehandlingTilVedtakMapping(
             null
         } else {
             ÅrMånedsperiode(klippetFom, klippetTom)
+        }
+    }
+
+    private fun List<OpprettPeriodeRequestDto>.fyllMellomromMedOpphørsperioder(): List<OpprettPeriodeRequestDto> {
+        if (size <= 1) return this
+
+        val sortertPeriodeliste = sortedBy { it.periode.fom }
+        return buildList {
+            sortertPeriodeliste.forEachIndexed { index, periode ->
+                add(periode)
+                val nestePeriode = sortertPeriodeliste.getOrNull(index + 1) ?: return@forEachIndexed
+                val opphørFom = periode.periode.til
+                if (opphørFom != null && opphørFom < nestePeriode.periode.fom) {
+                    add(
+                        OpprettPeriodeRequestDto(
+                            periode = ÅrMånedsperiode(opphørFom, nestePeriode.periode.fom),
+                            resultatkode = Resultatkode.OPPHØR.name,
+                            beløp = null,
+                            grunnlagReferanseListe = periode.grunnlagReferanseListe,
+                        ),
+                    )
+                }
+            }
         }
     }
 

@@ -819,17 +819,6 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                 lesemodus,
             )
         },
-    hentGrunnlagArbeidsforhold()
-        .groupBy { it.partPersonId }
-        .map { (gjelderIdent, grunnlag) ->
-            behandling.opprettGrunnlag(
-                Grunnlagsdatatype.ARBEIDSFORHOLD,
-                grunnlag,
-                gjelderIdent,
-                innhentetTidspunkt(Grunnlagstype.INNHENTET_ARBEIDSFORHOLD),
-                lesemodus,
-            )
-        },
     hentInnhentetSivilstand()
         .groupBy { it.personId }
         .flatMap { (gjelderIdent, grunnlag) ->

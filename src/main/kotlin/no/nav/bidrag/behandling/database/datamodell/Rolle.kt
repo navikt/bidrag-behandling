@@ -160,10 +160,12 @@ open class Rolle(
     val stønadstypeBarnEllerBehandling get() = stønadstype ?: behandling.stonadstype
     val virkningstidspunktRolle get() = virkningstidspunkt ?: behandling.virkningstidspunktEllerSøktFomDato
 
-    fun harSøknad(søknadsid: Long) =
-        !behandling.erIForholdsmessigFordeling || forholdsmessigFordeling
+    fun finnSøknad(søknadsid: Long) =
+        forholdsmessigFordeling
             ?.søknaderUnderBehandling
-            ?.any { it.søknadsid == søknadsid } == true
+            ?.find { it.søknadsid == søknadsid }
+
+    fun harSøknad(søknadsid: Long) = !behandling.erIForholdsmessigFordeling || finnSøknad(søknadsid) != null
 
     fun sakForSøknad(søknadsid: Long) =
         forholdsmessigFordeling
