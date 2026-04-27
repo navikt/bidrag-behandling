@@ -263,7 +263,7 @@ class ForholdsmessigFordelingService(
                     }
                 }
                 bbmConsumer.fjernSammeknytningHovedsøknad(søknadsidSomSlettes)
-                behandlingService.slettBehandling(behandling)
+                behandlingService.slettBehandling(behandling, behandling.soknadsid)
             }
         } else {
             val søknadSomSlettes = bbmConsumer.hentSøknad(søknadsidSomSlettes)!!.søknad
