@@ -15,7 +15,7 @@
   <name>bidrag-behandling</name>
   <properties>
     <java.version>21</java.version>
-    <kotlin.version>2.2.10</kotlin.version>
+    <kotlin.version>2.3.20</kotlin.version>
     <bidrag-felles.version>2026.04.23.143047</bidrag-felles.version>
     <bidrag-beregn-felles.version>2026.04.23.151933</bidrag-beregn-felles.version>
     <h2.version>2.3.232</h2.version>
