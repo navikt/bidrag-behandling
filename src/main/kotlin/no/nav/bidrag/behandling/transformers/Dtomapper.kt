@@ -1,3 +1,4 @@
+
 package no.nav.bidrag.behandling.transformers
 
 import com.fasterxml.jackson.core.type.TypeReference

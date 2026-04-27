@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.transformers.dato18ÅrsBidrag
 import no.nav.bidrag.behandling.transformers.erBidrag
+import no.nav.bidrag.behandling.transformers.minOfNullable
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import java.time.LocalDate
@@ -48,7 +49,7 @@ fun Rolle.finnVirkningstidspunktBeregningBoforhold(): LocalDate? =
 fun Rolle.finnOpphørsdatoBoforhold(): LocalDate? =
     if (behandling.roller.filter { it.ident == ident }.size > 1) {
         if (stønadstype == Stønadstype.BIDRAG) {
-            fødselsdato.dato18ÅrsBidrag
+            minOfNullable(opphørsdato, fødselsdato.dato18ÅrsBidrag)
         } else {
             null
         }

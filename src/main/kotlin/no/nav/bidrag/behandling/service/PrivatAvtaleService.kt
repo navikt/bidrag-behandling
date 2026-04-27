@@ -157,7 +157,7 @@ class PrivatAvtaleService(
         nyBegrunnelse: String,
     ) {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
-        val rolle = behandling.roller.find { it.ident == barnIdent || it.id == barnId }
+        val rolle = behandling.roller.find { (barnId == null && it.ident == barnIdent) || it.id == barnId }
         val privatAvtale =
             if (privatavtaleId != null) {
                 behandling.privatAvtale.find { it.id == privatavtaleId }
