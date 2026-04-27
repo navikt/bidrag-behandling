@@ -539,6 +539,7 @@ class BehandlingService(
         if (!ikkeHentGrunnlag) {
             if (behandling.erIForholdsmessigFordeling) {
                 forholdsmessigFordelingService?.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
+                behandlingRepository.save(behandling)
             }
             grunnlagService.oppdaterGrunnlagForBehandlingAsync(behandling)
         }
