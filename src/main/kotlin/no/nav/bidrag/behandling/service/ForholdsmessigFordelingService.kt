@@ -398,6 +398,15 @@ class ForholdsmessigFordelingService(
             )
 
         giSakTilgangTilEnhet(behandling, behandlerEnhet)
+        oppdaterBehandlingEtterOppdatertRoller(
+            behandling,
+            underholdService,
+            virkningstidspunktService,
+            behandling.søknadsbarn.map {
+                it.tilOpprettRolleDto()
+            },
+            emptyList(),
+        )
     }
 
     private fun opprettKlageSøknad(
@@ -1053,6 +1062,7 @@ class ForholdsmessigFordelingService(
         if (behandling.erKlageEllerOmgjøring) {
             opprettSøknaderForKlageEllerOmgjøring(behandling, behandling.soknadsid!!)
             knyttSammenManglendeSøknadsknytningerIBehandling(behandling)
+
             return
         }
 
@@ -1440,13 +1450,13 @@ class ForholdsmessigFordelingService(
         if (request.behandling.soknadsid != request.søknadsid) {
             bbmConsumer.sammeknyttSøknader(request.behandling.soknadsid!!, request.søknadsid)
         }
-        val identerSomSkalSlettes = request.rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
-        feilregistrerRevurderingsbarnFraFFSøknad(request.behandling, request.rollerSomSkalLeggesTilDto)
-        val relevanteKravhavere = hentAlleRelevanteKravhavere(request.behandling)
         val stønadstypeBeregnet =
             request.stønadstype ?: søknad
                 ?.behandlingstema
                 ?.tilStønadstype()
+        val identerSomSkalSlettes = request.rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
+        feilregistrerRevurderingsbarnFraFFSøknad(request.behandling, request.rollerSomSkalLeggesTilDto, stønadstypeBeregnet)
+        val relevanteKravhavere = hentAlleRelevanteKravhavere(request.behandling)
 
         val rollerSomSkalLeggesTil = mutableSetOf<Rolle>()
         request.rollerSomSkalLeggesTilDto
@@ -1565,10 +1575,11 @@ class ForholdsmessigFordelingService(
     private fun feilregistrerRevurderingsbarnFraFFSøknad(
         behandling: Behandling,
         barn: List<OpprettRolleDto>,
+        stønadstype: Stønadstype?,
     ) {
         barn
             .filter { it.rolletype == Rolletype.BARN }
-            .mapNotNull { nyRolle -> behandling.roller.find { it.ident == nyRolle.ident!!.verdi } }
+            .mapNotNull { nyRolle -> behandling.roller.find { it.erSammeRolle(nyRolle.ident!!.verdi, stønadstype) } }
             .filter { it.forholdsmessigFordeling?.erRevurdering == true }
             .forEach {
                 feilregistrerBarnFraFFSøknad(it)
@@ -1828,7 +1839,7 @@ class ForholdsmessigFordelingService(
     @Transactional
     fun sjekkSkalOppretteForholdsmessigFordeling(behandlingId: Long): SjekkForholdmessigFordelingResponse {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
-        if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING || behandling.erKlageEllerOmgjøring) {
+        if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
             return SjekkForholdmessigFordelingResponse(
                 skalBehandlesAvEnhet = "",
                 eldsteSøktFraDato = behandling.søktFomDato,

@@ -33,15 +33,10 @@ fun String?.toLocalDateTime(): LocalDateTime {
     }
 }
 
-fun List<ÅrMånedsperiode>.filtrerMatchendePeriode(periode: ÅrMånedsperiode) =
-    filterIndexed { index, it ->
-        val nextPeriod =
-            if (this.size < index + 1) {
-                this.getOrNull(index + 1)
-            } else {
-                null
-            }
-        it.fom >= periode.fom &&
-            (periode.til == null || nextPeriod == null || periode.til!! < nextPeriod.fom) &&
-            (periode.til == null || periode.til!! > it.fom)
-    }
+fun List<ÅrMånedsperiode>.filtrerMatchendePeriode(periode: ÅrMånedsperiode) = filter { it.overlapperMed(periode) }
+
+private fun ÅrMånedsperiode.overlapperMed(annenPeriode: ÅrMånedsperiode): Boolean {
+    val starterFørEllerNårAndreSlutter = annenPeriode.til == null || fom < annenPeriode.til
+    val slutterEtterEllerNårAndreStarter = til == null || til!! > annenPeriode.fom
+    return starterFørEllerNårAndreSlutter && slutterEtterEllerNårAndreStarter
+}

@@ -91,7 +91,7 @@ fun Behandling.finnSkalInnkrevesPeriode(søknadsbarnRolle: Rolle): List<ÅrMåne
             emptyList()
         } else {
             beløpshistorikk.periodeListe
-                .filter { it.periode.fom >= virkningstidspunkt }
+                .filter { it.periode.fom >= virkningstidspunkt || it.periode.til == null || it.periode.til!! > virkningstidspunkt }
                 .map { it.periode }
         }
     } else if (søknadsbarnRolle.erRevurderingsbarn) {
@@ -112,7 +112,7 @@ fun Behandling.finnSkalInnkrevesPeriode(søknadsbarnRolle: Rolle): List<ÅrMåne
             emptyList()
         } else {
             beløpshistorikk.periodeListe
-                .filter { it.periode.fom >= virkningstidspunkt }
+                .filter { it.periode.fom >= virkningstidspunkt || it.periode.til == null || it.periode.til!! > virkningstidspunkt }
                 .map {
                     ÅrMånedsperiode(
                         it.periode.fom,

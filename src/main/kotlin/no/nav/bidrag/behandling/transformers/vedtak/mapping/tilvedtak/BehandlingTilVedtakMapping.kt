@@ -402,8 +402,7 @@ class BehandlingTilVedtakMapping(
                                                 )
                                             }
                                         }
-                                }
-                                .fyllMellomromMedOpphørsperioder()
+                                }.fyllMellomromMedOpphørsperioder()
                         val opphørPeriode =
                             if (periodeliste.isNotEmpty() && søknadsbarn.opphørsdato != null &&
                                 søknadsbarn.opphørsdato!!.toYearMonth() != periodeliste.last().periode.fom
