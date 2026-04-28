@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.scheduling
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import jakarta.transaction.Transactional
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.service.NotatOpplysningerService
@@ -18,7 +17,6 @@ class NotatFeilhåndteringScheduler(
 ) {
     @Scheduled(cron = "0 */5 * * * *")
     @SchedulerLock(name = "opprettNotatHvisFeilet", lockAtLeastFor = "10m")
-    @Transactional
     fun oppdaterStatusPaFerdigstilteDokumenterSkeduler() {
         val behandlingerSomManglerNotater = behandlingRepository.hentBehandlingerSomManglerNotater(LocalDateTime.now().minusMonths(6))
         log.info { "Fant ${behandlingerSomManglerNotater.size} behandlinger som mangler notat" }
