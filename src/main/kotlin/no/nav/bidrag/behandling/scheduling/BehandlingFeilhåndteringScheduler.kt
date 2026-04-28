@@ -1,7 +1,6 @@
 package no.nav.bidrag.behandling.scheduling
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import jakarta.transaction.Transactional
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.service.ForsendelseService
@@ -18,7 +17,6 @@ class BehandlingFeilhåndteringScheduler(
 ) {
     @Scheduled(cron = "0 */5 * * * *")
     @SchedulerLock(name = "opprettOgDistribuerForsendelserAldersjustering", lockAtLeastFor = "10m")
-    @Transactional
     fun opprettOgDistribuerForsendelserAldersjustering() {
         val behandlinger = behandlingRepository.hentBehandlingerHvorDistribusjonAvForsendelseFeilet()
         log.info { "Fant ${behandlinger.size} behandlinger hvor distribusjon av forsendelse feilet" }

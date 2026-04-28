@@ -22,6 +22,12 @@ springdoc:
 
 spring.main.banner-mode: off
 
+server:
+  jetty:
+    threads:
+      max: 64
+      min: 10
+
 egenskaper:
   grunnlag:
     min-antall-minutter-siden-forrige-innhenting: ${GRUNNLAG_MIN_ANT_MINUTTER_SIDEN_FORRIGE_INNHENTING}
