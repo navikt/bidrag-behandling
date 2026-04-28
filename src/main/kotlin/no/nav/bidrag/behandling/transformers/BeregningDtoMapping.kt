@@ -1555,7 +1555,7 @@ fun List<GrunnlagDto>.finnAlleDelberegningUnderholdskostnad(rolle: Rolle): List<
     this
         .filtrerOgKonverterBasertPåEgenReferanse<DelberegningUnderholdskostnad>(
             Grunnlagstype.DELBEREGNING_UNDERHOLDSKOSTNAD,
-        ).filter { hentPersonMedReferanse(it.gjelderBarnReferanse)?.personIdent == rolle.personident?.verdi }
+        ).filter { it.gjelderBarnReferanse == rolle.tilGrunnlagsreferanse() }
         .sortedBy {
             it.innhold.periode.fom
         }

@@ -8,28 +8,28 @@ import java.time.YearMonth
 
 class DateUtilsTest {
     @Test
-    fun `skal matche periode som overlapper selv om matchende periode starter før søkeperiode`() {
+    fun `skal matche periode som overlapper selv om matchende periode starter for sokeperiode`() {
         val perioder =
             listOf(
                 ÅrMånedsperiode(YearMonth.parse("2025-07"), YearMonth.parse("2025-10")),
                 ÅrMånedsperiode(YearMonth.parse("2026-02"), null),
             )
-        val søkeperiode = ÅrMånedsperiode(YearMonth.parse("2025-08"), YearMonth.parse("2026-01"))
+        val sokeperiode = ÅrMånedsperiode(YearMonth.parse("2025-08"), YearMonth.parse("2026-01"))
 
-        val resultat = perioder.filtrerMatchendePeriode(søkeperiode)
+        val resultat = perioder.filtrerMatchendePeriode(sokeperiode)
 
         resultat.shouldContainExactly(perioder.first())
     }
 
     @Test
-    fun `skal matche åpne perioder når søkeperiode overlapper`() {
+    fun `skal matche apne perioder nar sokeperiode overlapper`() {
         val perioder =
             listOf(
                 ÅrMånedsperiode(YearMonth.parse("2026-02"), null),
             )
-        val søkeperiode = ÅrMånedsperiode(YearMonth.parse("2026-03"), YearMonth.parse("2026-05"))
+        val sokeperiode = ÅrMånedsperiode(YearMonth.parse("2026-03"), YearMonth.parse("2026-05"))
 
-        val resultat = perioder.filtrerMatchendePeriode(søkeperiode)
+        val resultat = perioder.filtrerMatchendePeriode(sokeperiode)
 
         resultat.shouldContainExactly(perioder.first())
     }
@@ -41,9 +41,9 @@ class DateUtilsTest {
                 ÅrMånedsperiode(YearMonth.parse("2025-07"), YearMonth.parse("2025-10")),
                 ÅrMånedsperiode(YearMonth.parse("2026-02"), null),
             )
-        val søkeperiode = ÅrMånedsperiode(YearMonth.parse("2025-11"), YearMonth.parse("2026-01"))
+        val sokeperiode = ÅrMånedsperiode(YearMonth.parse("2025-11"), YearMonth.parse("2026-01"))
 
-        val resultat = perioder.filtrerMatchendePeriode(søkeperiode)
+        val resultat = perioder.filtrerMatchendePeriode(sokeperiode)
 
         resultat.shouldBeEmpty()
     }

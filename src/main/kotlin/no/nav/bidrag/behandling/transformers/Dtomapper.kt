@@ -297,7 +297,7 @@ class Dtomapper(
             } else {
                 this.behandling
                     .tilBeregnetUnderholdskostnad()
-                    .perioderForBarn(personIdent)
+                    .perioderForBarn(personIdent, rolleSøknadsbarn?.stønadstype)
             }
 
         return UnderholdDto(
@@ -329,10 +329,12 @@ class Dtomapper(
         )
     }
 
-    fun Set<BeregnetUnderholdskostnad>.perioderForBarn(personIdent: String?) =
-        find { bu ->
-            bu.gjelderBarn.ident?.verdi == personIdent
-        }?.perioder ?: emptySet()
+    fun Set<BeregnetUnderholdskostnad>.perioderForBarn(
+        personIdent: String?,
+        stønadstype: Stønadstype?,
+    ) = find { bu ->
+        bu.gjelderBarn.ident?.verdi == personIdent && (stønadstype == null || bu.gjelderBarn.stønadstype == stønadstype)
+    }?.perioder ?: emptySet()
 
     fun Behandling.tilBeregnetPrivatAvtale(
         gjelderBarn: Rolle,

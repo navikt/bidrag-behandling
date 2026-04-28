@@ -36,7 +36,7 @@ fun String?.toLocalDateTime(): LocalDateTime {
 fun List<ÅrMånedsperiode>.filtrerMatchendePeriode(periode: ÅrMånedsperiode) = filter { it.overlapperMed(periode) }
 
 private fun ÅrMånedsperiode.overlapperMed(annenPeriode: ÅrMånedsperiode): Boolean {
-    val starterFørEllerNårAndreSlutter = annenPeriode.til == null || fom < annenPeriode.til
-    val slutterEtterEllerNårAndreStarter = til == null || til!! > annenPeriode.fom
-    return starterFørEllerNårAndreSlutter && slutterEtterEllerNårAndreStarter
+    val starterForEllerNarAndreSlutter = annenPeriode.til?.let { fom < it } ?: true
+    val slutterEtterEllerNarAndreStarter = til?.let { it > annenPeriode.fom } ?: true
+    return starterForEllerNarAndreSlutter && slutterEtterEllerNarAndreStarter
 }
