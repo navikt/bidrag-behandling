@@ -1,10 +1,7 @@
 package no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import io.swagger.v3.oas.annotations.media.Schema
-import jakarta.persistence.Column
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
-import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.service.SimulertInntektGrunnlag
@@ -13,13 +10,16 @@ import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
-import org.hibernate.annotations.JdbcTypeCode
-import org.hibernate.type.SqlTypes
 import java.time.LocalDate
 import java.time.YearMonth
 
 data class ForholdmessigFordelingDetaljerDto(
     val barn: List<ForholdsmessigFordelingBarnDto>,
+)
+
+data class OpprettFFRequest(
+    @JsonFormat(pattern = "dd.MM.yyyy")
+    val revurderingFraDato: LocalDate? = null,
 )
 
 data class SjekkForholdmessigFordelingResponse(

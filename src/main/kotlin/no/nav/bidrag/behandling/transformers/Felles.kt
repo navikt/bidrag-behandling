@@ -224,7 +224,7 @@ fun Behandling.finnPeriodeLøperBidrag(rolle: Rolle): ÅrMånedsperiode? {
     val fraPeriodePrivatAvtale =
         privatAvtale
             .find {
-                it.rolle?.id == rolle.id
+                it.gjelderPerson(rolle.ident!!, rolle.stønadstype)
             }?.perioderInnkreving
             ?.minByOrNull { it.fom }
             ?.fom
@@ -232,7 +232,7 @@ fun Behandling.finnPeriodeLøperBidrag(rolle: Rolle): ÅrMånedsperiode? {
     val tilPeriodePrivatAvtale =
         privatAvtale
             .find {
-                it.rolle?.id == rolle.id
+                it.gjelderPerson(rolle.ident!!, rolle.stønadstype)
             }?.perioderInnkreving
             ?.maxByOrNull { it.fom }
             ?.tom

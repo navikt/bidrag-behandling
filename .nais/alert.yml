@@ -1,0 +1,50 @@
+apiVersion: nais.io/v1
+kind: Alert
+metadata:
+  name: bidrag-behandling-responstid
+  namespace: bidrag
+  labels:
+    team: bidrag
+spec:
+  receivers:
+    slack:
+      channel: "#bidrag-alerts"
+  alerts:
+    - alert: HighApiResponseTimeP95
+      expr: |
+        histogram_quantile(0.95,
+          sum by (le) (
+            rate(http_server_requests_seconds_bucket{
+              app=~"bidrag-behandling.*",
+              namespace="bidrag",
+              uri=~"^/api/.*",
+              uri!="UNKNOWN",
+              uri!~"^/(isalive|isready|metrics)$",
+              uri!~"^/actuator/.*"
+            }[5m])
+          )
+        ) > 1
+      for: 10m
+      description: "p95 responstid for /api/** er over 1 sekund"
+      action: "Sjekk Grafana-dashboardet for responstid og identifiser topp-endepunkter"
+      documentation: https://github.com/navikt/bidrag-behandling#observability
+      severity: warning
+    - alert: CriticalApiResponseTimeP95
+      expr: |
+        histogram_quantile(0.95,
+          sum by (le) (
+            rate(http_server_requests_seconds_bucket{
+              app=~"bidrag-behandling.*",
+              namespace="bidrag",
+              uri=~"^/api/.*",
+              uri!="UNKNOWN",
+              uri!~"^/(isalive|isready|metrics)$",
+              uri!~"^/actuator/.*"
+            }[5m])
+          )
+        ) > 2
+      for: 10m
+      description: "p95 responstid for /api/** er over 2 sekunder"
+      action: "Sjekk error-rate, avhengigheter og nylige deploys"
+      documentation: https://github.com/navikt/bidrag-behandling#observability
+      severity: critical

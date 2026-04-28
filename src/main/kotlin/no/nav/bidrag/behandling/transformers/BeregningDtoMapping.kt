@@ -49,6 +49,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.hentSøkna
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnInnkrevesFraDato
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnSkalInnkrevesPeriode
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
@@ -228,6 +229,7 @@ fun mapTilBeregningresultatBarn(
                 .finnBeregnTilDatoBehandling(`søknadsbarn`)
                 ?.toYearMonth(),
         innkrevesFraDato = behandling.finnInnkrevesFraDato(`søknadsbarn`),
+        innkrevesFraPerioder = behandling.finnSkalInnkrevesPeriode(søknadsbarn),
         opphørsdato = `søknadsbarn`.opphørsdato?.toYearMonth(),
         `løperBidrag` = behandling.løperBidragEtterEldsteVirkning(søknadsbarn),
         resultat =
@@ -427,6 +429,7 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                     ResultatBidragsberegningBarnDto(
                         barn = resultat.barn,
                         innkrevesFraDato = resultat.innkrevesFraDato,
+                        innkrevesFraPerioder = resultat.innkrevesFraPerioder,
                         ugyldigBeregning = resultat.ugyldigBeregning,
                         erAvvistRevurdering = resultat.erAvvistRevurdering,
                         medInnkreving = resultat.medInnkreving,
@@ -477,7 +480,11 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                                             avslagskode,
                                             it.grunnlagsreferanseListe,
                                             resultat.ugyldigBeregning,
-                                            grunnlagsListe.erResultatEndringUnderGrense(resultat.barn.referanse),
+                                            grunnlagsListe.erResultatEndringUnderGrenseForPeriode(
+                                                it.periode,
+                                                resultat.barn.referanse,
+                                                it.grunnlagsreferanseListe,
+                                            ),
                                             vedtakstype,
                                             resultat.barn.ident!!,
                                         )
@@ -1602,13 +1609,14 @@ fun List<GrunnlagDto>.finnBarnetillegg(
 
 fun List<GrunnlagDto>.periodeHarSlåttUtTilFF(periode: ÅrMånedsperiode) = perioderSlåttUtTilFF().map { it.periode }.contains(periode)
 
-fun List<GrunnlagDto>.perioderSlåttUtTilFF(): List<PeriodeSlåttUtTilFF> {
+fun List<GrunnlagDto>.perioderSlåttUtTilFF(søknadsbarnReferanse: String? = null): List<PeriodeSlåttUtTilFF> {
     val andelBidragsevne =
         filtrerOgKonverterBasertPåFremmedReferanse<DelberegningAndelAvBidragsevne>(
             Grunnlagstype.DELBEREGNING_ANDEL_AV_BIDRAGSEVNE,
-        )
+        ).filter { søknadsbarnReferanse == null || it.gjelderBarnReferanse == søknadsbarnReferanse }
 
-    val finnesFlereBarnIBeregning = andelBidragsevne.mapNotNull { it.gjelderBarnReferanse }.distinct().size > 1
+    val finnesFlereBarnIBeregning =
+        søknadsbarnReferanse != null || andelBidragsevne.mapNotNull { it.gjelderBarnReferanse }.distinct().size > 1
     return andelBidragsevne
         .filter {
             finnesFlereBarnIBeregning && !it.innhold.harBPFullEvne
@@ -1642,7 +1650,8 @@ fun List<GrunnlagDto>.harOpprettetForholdsmessigFordeling(): Boolean =
         // Flere søknader = Opprettet FF vanligvis
         hentSøknader().size > 1
 
-fun List<GrunnlagDto>.harSlåttUtTilForholdsmessigFordeling(): Boolean = perioderSlåttUtTilFF().isNotEmpty()
+fun List<GrunnlagDto>.harSlåttUtTilForholdsmessigFordeling(søknadsbarnReferanse: String? = null): Boolean =
+    perioderSlåttUtTilFF(søknadsbarnReferanse).isNotEmpty()
 
 fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
     grunnlagsreferanseListe: List<Grunnlagsreferanse>,

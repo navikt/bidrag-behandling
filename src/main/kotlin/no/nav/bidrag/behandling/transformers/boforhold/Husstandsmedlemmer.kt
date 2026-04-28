@@ -12,6 +12,8 @@ import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.boforhold.BostatusperiodeDto
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.service.BoforholdService.Companion.opprettDefaultPeriodeForAndreVoksneIHusstand
+import no.nav.bidrag.behandling.transformers.behandling.finnOpphørsdatoBoforhold
+import no.nav.bidrag.behandling.transformers.behandling.finnVirkningstidspunktBeregningBoforhold
 import no.nav.bidrag.behandling.transformers.erSærbidrag
 import no.nav.bidrag.behandling.transformers.grunnlag.finnFødselsdato
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
@@ -361,7 +363,7 @@ fun Husstandsmedlem.overskriveMedBearbeidaPerioder(nyePerioder: List<BoforholdRe
     perioder.addAll(
         nyePerioder
             .justerBoforholdPerioderForOpphørsdatoOgBeregnTilDato(
-                null, // rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                rolle?.finnOpphørsdatoBoforhold(),
                 behandling.finnBeregnTilDatoBehandling(rolle),
             ).tilPerioder(this),
     )
@@ -440,21 +442,19 @@ fun Husstandsmedlem.oppdaterePerioder(
     try {
         this.overskriveMedBearbeidaPerioder(
             BoforholdApi.beregnBoforholdBarnV3(
-                behandling.eldsteVirkningstidspunkt,
-                null,
-//            rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                rolle?.finnVirkningstidspunktBeregningBoforhold() ?: behandling.eldsteVirkningstidspunkt,
+                rolle?.finnOpphørsdatoBoforhold(),
                 behandling.finnBeregnTilDatoBehandling(rolle),
                 behandling.tilTypeBoforhold(),
                 listOf(periodiseringsrequest),
             ),
         )
-    } catch (_: NullPointerException) {
+    } catch (_: Exception) {
         // Noen caser hvor det er skjedd en feil i periodiseringen pga ugydlig data eller bug. Ruller tilbake til offentlige opplysninger
         this.overskriveMedBearbeidaPerioder(
             BoforholdApi.beregnBoforholdBarnV3(
-                behandling.eldsteVirkningstidspunkt,
-                null,
-//            rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                rolle?.finnVirkningstidspunktBeregningBoforhold() ?: behandling.eldsteVirkningstidspunkt,
+                rolle?.finnOpphørsdatoBoforhold(),
                 behandling.finnBeregnTilDatoBehandling(rolle),
                 behandling.tilTypeBoforhold(),
                 listOf(

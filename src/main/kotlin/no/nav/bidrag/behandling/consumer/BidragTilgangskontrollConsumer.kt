@@ -65,7 +65,6 @@ class BidragTilgangskontrollConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
-    @BrukerCacheable(PERSON_HAR_BESKYTTELSE)
     fun personHarBeskyttelse(personident: Personident): Boolean {
         return try {
             val headers = HttpHeaders()

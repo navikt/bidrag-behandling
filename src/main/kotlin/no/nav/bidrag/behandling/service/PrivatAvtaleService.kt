@@ -6,7 +6,6 @@ import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
-import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.PrivatavtaleRepository
 import no.nav.bidrag.behandling.database.repository.RolleRepository
@@ -14,9 +13,6 @@ import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleBegrunn
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtalePeriodeDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.OppdaterePrivatAvtaleRequest
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
-import no.nav.bidrag.behandling.transformers.erRevurderingsbarnUtenLøpendeBidrag
-import no.nav.bidrag.behandling.transformers.finnLøperBidragFra
-import no.nav.bidrag.behandling.transformers.finnLøperBidragTil
 import no.nav.bidrag.behandling.transformers.finnesLøpendeBidragForRolle
 import no.nav.bidrag.behandling.transformers.maxOfNullable
 import no.nav.bidrag.behandling.transformers.minOfNullable
@@ -27,7 +23,6 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
-import no.nav.bidrag.transport.felles.toYearMonth
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -162,7 +157,7 @@ class PrivatAvtaleService(
         nyBegrunnelse: String,
     ) {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
-        val rolle = behandling.roller.find { it.ident == barnIdent || it.id == barnId }
+        val rolle = behandling.roller.find { (barnId == null && it.ident == barnIdent) || it.id == barnId }
         val privatAvtale =
             if (privatavtaleId != null) {
                 behandling.privatAvtale.find { it.id == privatavtaleId }

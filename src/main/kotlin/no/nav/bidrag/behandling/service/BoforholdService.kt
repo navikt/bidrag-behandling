@@ -39,6 +39,8 @@ import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.behandling.finnOpphørsdatoBoforhold
+import no.nav.bidrag.behandling.transformers.behandling.finnVirkningstidspunktBeregningBoforhold
 import no.nav.bidrag.behandling.transformers.boforhold.filtrerUtUrelevantePerioder
 import no.nav.bidrag.behandling.transformers.boforhold.henteNyesteSivilstandGrunnlagsdata
 import no.nav.bidrag.behandling.transformers.boforhold.oppdaterePerioder
@@ -324,7 +326,6 @@ class BoforholdService(
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.eldsteVirkningstidspunkt,
                             null,
-//                            behandling.globalOpphørsdato,
                             behandling.finnBeregnTilDatoBehandling(),
                             behandling.tilTypeBoforhold(),
                             behandling
@@ -703,8 +704,9 @@ class BoforholdService(
                 } // Kjør ny periodisering for å oppdatere kilde på periodene basert på nye opplysninger
                     ?: BoforholdApi
                         .beregnBoforholdBarnV3(
-                            behandling.eldsteVirkningstidspunkt,
-                            null, // eksisterendeHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                            eksisterendeHusstandsmedlem.rolle?.finnVirkningstidspunktBeregningBoforhold()
+                                ?: behandling.eldsteVirkningstidspunkt,
+                            eksisterendeHusstandsmedlem.rolle?.finnOpphørsdatoBoforhold(),
                             behandling.finnBeregnTilDatoBehandling(eksisterendeHusstandsmedlem.rolle),
                             behandling.tilTypeBoforhold(),
                             listOf(
@@ -767,16 +769,18 @@ class BoforholdService(
                 val periodisertBoforhold =
                     if (overskriveManuelleOpplysninger) {
                         BoforholdApi.beregnBoforholdBarnV3(
-                            behandling.eldsteVirkningstidspunkt,
-                            null, // offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                            offisieltHusstandsmedlem.rolle?.finnVirkningstidspunktBeregningBoforhold()
+                                ?: behandling.eldsteVirkningstidspunkt,
+                            offisieltHusstandsmedlem.rolle?.finnOpphørsdatoBoforhold(),
                             behandling.finnBeregnTilDatoBehandling(offisieltHusstandsmedlem.rolle),
                             behandling.tilTypeBoforhold(),
                             listOf(request),
                         )
                     } else {
                         BoforholdApi.beregnBoforholdBarnV3(
-                            behandling.eldsteVirkningstidspunkt,
-                            null, // offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                            offisieltHusstandsmedlem.rolle?.finnVirkningstidspunktBeregningBoforhold()
+                                ?: behandling.eldsteVirkningstidspunkt,
+                            offisieltHusstandsmedlem.rolle?.finnOpphørsdatoBoforhold(),
                             behandling.finnBeregnTilDatoBehandling(offisieltHusstandsmedlem.rolle),
                             behandling.tilTypeBoforhold(),
                             listOf(

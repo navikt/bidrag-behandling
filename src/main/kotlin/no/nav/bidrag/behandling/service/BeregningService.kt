@@ -246,6 +246,7 @@ class BeregningService(
                     }
                     val perioderBarn = resultatBarn.resultatVedtakListe.flatMap { it.periodeListe }.map { it.periode }
                     val minstEnPeriodeSlåttUtTilFF = perioderBarn.any { pb -> perioderSlåttUtTilFF.any { it.overlapper(pb) } }
+                    // For omgjøring
                     val erOmgjøringMedPerioder = endeligBeregning && behandling.erKlageEllerOmgjøring && perioderBarn.isNotEmpty()
                     val erAvvistRevurdering =
                         forholdsmessigFordelingDetaljer != null && forholdsmessigFordelingDetaljer.erRevurdering &&
@@ -324,7 +325,7 @@ class BeregningService(
         val grunnlagslisteSøknadsbarn = grunnlagslisteBarn.flatMap { it.beregnGrunnlag.grunnlagListe }.toSet().toList()
         val grunnlagslisteSimulertPrivatAvtale =
             mapper.run {
-                byggGrunnlagForSimulering(behandling, grunnlagslisteSøknadsbarn.toSet())
+                byggGrunnlagForSimuleringPrivatAvtale(behandling, grunnlagslisteSøknadsbarn.toSet())
             }
         return BidragsberegningOrkestratorRequestV2(
             skalHensyntaLøpendeBidrag = UnleashFeatures.BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG.isEnabled,

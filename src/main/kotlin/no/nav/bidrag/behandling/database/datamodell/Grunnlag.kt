@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -12,10 +13,12 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
 import no.nav.bidrag.behandling.database.datamodell.model.BpsBarnUtenBidragsakEllerLøpendeBidrag
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
 import no.nav.bidrag.behandling.dto.v1.beregning.BeregnetBidragBarnDto
+import no.nav.bidrag.behandling.dto.v1.grunnlag.BpsBarnUtenLøpendeBidragDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
@@ -49,6 +52,9 @@ open class Grunnlag(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rolle_id", nullable = false)
     open var rolle: Rolle,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "gjelder_barn_rolle_id", nullable = true)
+    open var gjelderBarnRolle: Rolle? = null,
     open var gjelder: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -62,8 +68,10 @@ open class Grunnlag(
             "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet, gjelder=$gjelder)"
         }
 
-    val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder
-    val identifikatorAlle get() = type.name + rolle.ident + erBearbeidet + gjelder + grunnlagFraVedtakSomSkalOmgjøres
+    val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder + gjelderBarnRolle?.identifikator
+    val identifikatorAlle get() =
+        type.name + rolle.ident + erBearbeidet + gjelder + grunnlagFraVedtakSomSkalOmgjøres +
+            gjelderBarnRolle?.identifikator
 }
 
 fun Set<Grunnlag>.hentAlleIkkeAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
@@ -149,6 +157,21 @@ fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderRolleListe(
             }
     }
 
+fun Behandling.bpsBarnUtenLøpendeBidrag(): Set<BpsBarnUtenLøpendeBidragDto> =
+    grunnlag
+        .hentSisteGrunnlagBpsBarnUtenBidragsak()
+        ?.map {
+            BpsBarnUtenLøpendeBidragDto(
+                ident = it.ident.verdi,
+                fødselsdato = it.fødselsdato,
+                navn = it.navn,
+                saksnummer = it.saksnummer,
+                enhet = it.enhet,
+                beløpshistorikkBidrag = it.beløpshistorikkBidrag,
+                beløpshistorikkBidrag18År = it.beløpshistorikkBidrag18År,
+            )
+        }?.toSet() ?: emptySet()
+
 fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderRolle(
     rolle: Rolle,
     type: Grunnlagsdatatype,
@@ -181,8 +204,16 @@ fun Set<Grunnlag>.henteSisteSivilstand(erBearbeidet: Boolean) =
 fun Husstandsmedlem.hentSisteBearbeidetBoforhold() =
     behandling.grunnlag
         .hentSisteAktiv()
-        .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD && it.gjelder == this.ident }
-        .konvertereData<List<BoforholdResponseV2>>()
+        .find {
+            it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD &&
+                (
+                    (
+                        it.gjelderBarnRolle != null && this.rolle != null &&
+                            it.gjelderBarnRolle!!.erSammeRolle(this.rolle!!)
+                    ) ||
+                        (it.gjelderBarnRolle == null && it.gjelder == this.ident)
+                )
+        }.konvertereData<List<BoforholdResponseV2>>()
 
 fun Underholdskostnad.hentSisteBearbeidetBarnetilsyn() =
     behandling.grunnlag

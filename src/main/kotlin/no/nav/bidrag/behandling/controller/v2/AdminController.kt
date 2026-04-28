@@ -18,7 +18,6 @@ import no.nav.bidrag.behandling.service.BoforholdService.Companion.tilbakestille
 import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.InntektService
-import no.nav.bidrag.behandling.service.PrivatAvtaleService
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato

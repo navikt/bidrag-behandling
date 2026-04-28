@@ -1,12 +1,23 @@
 package no.nav.bidrag.behandling.consumer
 
+import jakarta.persistence.Cacheable
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.BBM_ALLE_BEREGNINGER_CACHE
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.BBM_BEREGNING_CACHE
+import no.nav.bidrag.behandling.config.CacheConfig.Companion.BBM_BP_AAPNE_SOKADER
+import no.nav.bidrag.behandling.consumer.dto.DeaktiverHovedsøknadRequest
+import no.nav.bidrag.behandling.consumer.dto.FinnSammenknytningerHovedsøknadRequest
+import no.nav.bidrag.behandling.consumer.dto.FinnSammenknytningerHovedsøknadResponse
+import no.nav.bidrag.behandling.consumer.dto.SammenknyttSøknaderRequest
+import no.nav.bidrag.behandling.consumer.dto.SlettHovedsøknadRequest
+import no.nav.bidrag.behandling.consumer.dto.SlettSammenknytningForSøknadRequest
+import no.nav.bidrag.behandling.consumer.dto.SøknadsknytningResponse
 import no.nav.bidrag.beregn.barnebidrag.service.external.BeregningBBMConsumer
 import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
+import no.nav.bidrag.domene.enums.behandling.SøknadsknytningStatus
+import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadRequest
@@ -19,14 +30,11 @@ import no.nav.bidrag.transport.behandling.beregning.felles.HentSøknadResponse
 import no.nav.bidrag.transport.behandling.beregning.felles.LeggTilBarnIFFSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlerenhetRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlingsidRequest
-import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterReferanseGebyrRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadResponse
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.http.HttpStatus
-import org.springframework.http.HttpStatusCode
 import org.springframework.retry.annotation.Backoff
 import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Component
@@ -146,6 +154,7 @@ class BidragBBMConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
+    @BrukerCacheable(BBM_BP_AAPNE_SOKADER)
     fun hentÅpneSøknaderForBp(bidragspliktig: String): HentBPsÅpneSøknaderResponse =
         postForNonNullEntity(
             bidragBBMUri.pathSegment("apnesoknader").build().toUri(),
@@ -175,6 +184,8 @@ class BidragBBMConsumer(
                             behandlingstema = Behandlingstema.BIDRAG,
                             behandlingStatusType = BehandlingStatusType.UNDER_BEHANDLING,
                             partISøknadListe = emptyList(),
+                            innkreving = true,
+                            søktAvType = SøktAvType.NAV_BIDRAG,
                         ),
                 )
             } else if (e is HttpClientErrorException && e.statusCode.is4xxClientError) {
@@ -183,4 +194,69 @@ class BidragBBMConsumer(
                 throw e
             }
         }
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun endreSammenknytningSøknad(
+        hovedsøknadsid: Long,
+        søknadsid: Long,
+    ): SøknadsknytningResponse? =
+        postForEntity<SøknadsknytningResponse>(
+            bidragBBMUri.pathSegment("endresammenknytningsoknad").build().toUri(),
+            SammenknyttSøknaderRequest(hovedsøknadsid, søknadsid),
+        )
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun sammeknyttSøknader(
+        hovedsøknadsid: Long,
+        søknadsid: Long,
+    ): SøknadsknytningResponse? =
+        postForEntity<SøknadsknytningResponse>(
+            bidragBBMUri.pathSegment("sammenknyttsoknader").build().toUri(),
+            SammenknyttSøknaderRequest(hovedsøknadsid, søknadsid),
+        )
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun fjernSammeknytning(søknadsid: Long) =
+        postForEntity<Unit>(
+            bidragBBMUri.pathSegment("slettsammenknytningsoknad").build().toUri(),
+            SlettSammenknytningForSøknadRequest(søknadsid),
+        )
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun fjernSammeknytningHovedsøknad(
+        søknadsid: Long,
+        nyHovedsøknadsid: Long? = null,
+    ) = postForEntity<Unit>(
+        bidragBBMUri.pathSegment("sletthovedsoknad").build().toUri(),
+        SlettHovedsøknadRequest(søknadsid, nyHovedsøknadsid),
+    )
+
+    @Retryable(
+        value = [Exception::class],
+        maxAttempts = 3,
+        backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
+    )
+    fun finnSammenknytningerHovedsøknad(
+        søknadsid: Long,
+        status: SøknadsknytningStatus = SøknadsknytningStatus.Aktiv,
+    ) = postForNonNullEntity<FinnSammenknytningerHovedsøknadResponse>(
+        bidragBBMUri.pathSegment("finnsammenknytningerhovedsoknad").build().toUri(),
+        FinnSammenknytningerHovedsøknadRequest(søknadsid, status),
+    )
 }

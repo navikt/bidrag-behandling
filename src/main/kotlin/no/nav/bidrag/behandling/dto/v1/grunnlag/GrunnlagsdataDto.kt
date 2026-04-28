@@ -3,7 +3,9 @@ package no.nav.bidrag.behandling.dto.v1.grunnlag
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -28,4 +30,13 @@ data class BpsBarnUtenLøpendeBidragDto(
     val fødselsdato: LocalDate? = null,
     val enhet: String? = null,
     val saksnummer: String? = null,
-)
+    val beløpshistorikkBidrag: StønadDto?,
+    val beløpshistorikkBidrag18År: StønadDto?,
+) {
+    fun finnBeløpshistorikk(stønadstype: Stønadstype?) =
+        when (stønadstype) {
+            Stønadstype.BIDRAG -> beløpshistorikkBidrag
+            Stønadstype.BIDRAG18AAR -> beløpshistorikkBidrag18År
+            else -> null
+        }
+}

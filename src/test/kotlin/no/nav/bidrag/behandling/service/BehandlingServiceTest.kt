@@ -2201,6 +2201,75 @@ class BehandlingServiceTest : TestContainerRunner() {
         antallNotatForSlettetRolle shouldBe 0L
     }
 
+    @Test
+    @Transactional
+    fun slettRolleFraBehandling_sletterAltGrunnlagSomReferererTilRolle() {
+        val behandling = prepareBehandling(søknadsid = 55667789)
+        behandling.roller.add(testdataBarn2.tilRolle(behandling))
+        val barnSomSkalSlettes = behandling.søknadsbarn.first()
+
+        behandling.grunnlag.add(
+            Grunnlag(
+                behandling = behandling,
+                type = Grunnlagsdatatype.BOFORHOLD,
+                data = "{}",
+                innhentet = LocalDateTime.now(),
+                rolle = barnSomSkalSlettes,
+            ),
+        )
+        behandling.grunnlag.add(
+            Grunnlag(
+                behandling = behandling,
+                type = Grunnlagsdatatype.BOFORHOLD,
+                data = "{}",
+                innhentet = LocalDateTime.now(),
+                rolle = behandling.bidragsmottaker!!,
+                gjelderBarnRolle = barnSomSkalSlettes,
+                gjelder = barnSomSkalSlettes.ident,
+            ),
+        )
+
+        val lagretBehandling = behandlingRepository.save(behandling)
+        entityManager.flush()
+        entityManager.clear()
+
+        behandlingService
+            .oppdaterRoller(
+                lagretBehandling.id!!,
+                OppdaterRollerRequest(
+                    roller =
+                        listOf(
+                            OpprettRolleDto(
+                                rolletype = Rolletype.BARN,
+                                ident = Personident(barnSomSkalSlettes.ident!!),
+                                fødselsdato = barnSomSkalSlettes.fødselsdato,
+                                erSlettet = true,
+                            ),
+                        ),
+                ),
+            ).status shouldBe OppdaterRollerStatus.ROLLER_OPPDATERT
+
+        entityManager.flush()
+
+        val antallGrunnlagSomReferererTilSlettetRolle =
+            (
+                entityManager
+                    .createNativeQuery(
+                        """
+                        select count(*)
+                        from grunnlag g
+                        where g.behandling_id = :behandlingId
+                          and (g.rolle_id = :rolleId or g.gjelder_barn_rolle_id = :rolleId or g.gjelder = :ident)
+                        """.trimIndent(),
+                    ).setParameter("behandlingId", lagretBehandling.id!!)
+                    .setParameter("rolleId", barnSomSkalSlettes.id!!)
+                    .setParameter("ident", barnSomSkalSlettes.ident!!)
+                    .singleResult as Number
+            ).toLong()
+
+        antallGrunnlagSomReferererTilSlettetRolle shouldBe 0L
+    }
+
     companion object {
         fun prepareBehandling(søknadsid: Long = 123123): Behandling {
             val behandling =
