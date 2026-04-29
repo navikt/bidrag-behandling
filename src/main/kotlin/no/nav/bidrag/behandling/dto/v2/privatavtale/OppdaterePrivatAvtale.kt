@@ -83,6 +83,7 @@ data class PrivatAvtaleAndreBarnDtoV2(
     val gjelderBarn: PersoninfoDto,
     val privatAvtale: PrivatAvtaleBarnDtoV2? = null,
     val enhet: String? = null,
+    val perioderLøperBidrag: List<ÅrMånedsperiode> = emptyList(),
     val saksnummer: String? = null,
 )
 

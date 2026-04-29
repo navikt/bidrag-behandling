@@ -109,6 +109,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
+import no.nav.bidrag.transport.felles.toYearMonth
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
@@ -1182,10 +1183,14 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             }
             val nestSistePeriode = stønadsendring.periodeListe[stønadsendring.periodeListe.size - 2]
             assertSoftly(nestSistePeriode) {
-                it.periode.fom shouldBe YearMonth.parse("2026-01")
+                it.periode.fom shouldBe
+                    behandling.søknadsbarn
+                        .first()
+                        .virkningstidspunkt!!
+                        .toYearMonth()
                 it.periode.til shouldBe YearMonth.from(opphørsdato)
                 it.resultatkode shouldBe Resultatkode.BEREGNET_BIDRAG.name
-                it.beløp shouldBe BigDecimal(6040)
+                it.beløp shouldBe BigDecimal(9900)
             }
         }
 

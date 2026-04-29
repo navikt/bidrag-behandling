@@ -7,6 +7,7 @@ import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
+import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadRequest
@@ -175,6 +176,8 @@ class BidragBBMConsumer(
                             behandlingstema = Behandlingstema.BIDRAG,
                             behandlingStatusType = BehandlingStatusType.UNDER_BEHANDLING,
                             partISøknadListe = emptyList(),
+                            innkreving = true,
+                            søktAvType = SøktAvType.NAV_BIDRAG,
                         ),
                 )
             } else if (e is HttpClientErrorException && e.statusCode.is4xxClientError) {

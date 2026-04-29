@@ -102,11 +102,11 @@ import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidra
 import no.nav.bidrag.transport.behandling.beregning.felles.Barn
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadsBarnRequest
+import no.nav.bidrag.transport.behandling.beregning.felles.HentSøknad
 import no.nav.bidrag.transport.behandling.beregning.felles.LeggTilBarnIFFSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlerenhetRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OppdaterBehandlingsidRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadRequest
-import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragTilFordelingLøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
@@ -133,15 +133,15 @@ import java.time.YearMonth
 import kotlin.collections.plus
 
 private val LOGGER = KotlinLogging.logger {}
-val ÅpenSøknadDto.bidragsmottaker get() = partISøknadListe.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
-val ÅpenSøknadDto.bidragspliktig get() = partISøknadListe.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
-val ÅpenSøknadDto.barn get() =
+val HentSøknad.bidragsmottaker get() = partISøknadListe.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
+val HentSøknad.bidragspliktig get() = partISøknadListe.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
+val HentSøknad.barn get() =
     partISøknadListe.filter {
         it.rolletype == Rolletype.BARN &&
             it.behandlingstatus == Behandlingstatus.UNDER_BEHANDLING
     }
 
-fun ÅpenSøknadDto.parterForRolle(rolletype: Rolletype) = partISøknadListe.filter { it.rolletype == rolletype }
+fun HentSøknad.parterForRolle(rolletype: Rolletype) = partISøknadListe.filter { it.rolletype == rolletype }
 
 val behandlingstyperSomIkkeSkalInkluderesIFF =
     listOf(
@@ -175,9 +175,10 @@ data class SakKravhaver(
     val løperBidragTil: YearMonth? = null,
     val stønadstype: Stønadstype? = null,
     val opphørsdato: YearMonth? = null,
-    val åpneSøknader: MutableSet<ÅpenSøknadDto> = mutableSetOf(),
+    val åpneSøknader: MutableSet<HentSøknad> = mutableSetOf(),
     val åpneBehandlinger: MutableSet<Behandling> = mutableSetOf(),
     val privatAvtale: PrivatAvtale? = null,
+    val perioderLøperBidrag: List<ÅrMånedsperiode> = emptyList(),
 ) {
     fun erSammePerson(
         ident: String,
@@ -929,7 +930,7 @@ class ForholdsmessigFordelingService(
 
     private fun leggTilRollerFraRelevanteSøknaderSomIkkeErIBehandling(
         behandling: Behandling,
-        alleSøknaderRelevantForBehandling: List<ÅpenSøknadDto>,
+        alleSøknaderRelevantForBehandling: List<HentSøknad>,
     ) {
         val alleIdenterIBehandling = behandling.roller.map { it.ident!! }
         val alleRollerRelevantSomIkkeErIBehandling =
@@ -967,7 +968,7 @@ class ForholdsmessigFordelingService(
     private fun håndterBarnSomSkalVæreSøknadsbarn(
         behandling: Behandling,
         rolle: Rolle,
-        førsteSøknad: ÅpenSøknadDto,
+        førsteSøknad: HentSøknad,
     ) {
         leggTilEllerSlettBarnFraBehandlingSomErIFF(
             OppdaterBarnFraFFRequest(
@@ -1080,7 +1081,7 @@ class ForholdsmessigFordelingService(
             .maxByOrNull { it.søknadsid ?: Long.MIN_VALUE }
 
     private fun finnApneSoknaderForBarn(
-        alleSøknaderRelevantForBehandling: List<ÅpenSøknadDto>,
+        alleSøknaderRelevantForBehandling: List<HentSøknad>,
         rolle: Rolle,
     ) = alleSøknaderRelevantForBehandling
         .filter { it.behandlingstema.tilStønadstype() == rolle.stønadstype }
@@ -1093,7 +1094,7 @@ class ForholdsmessigFordelingService(
 
     private fun oppdaterLagredeSoknadsstatuserFraBbm(
         lagretSøknader: MutableSet<ForholdsmessigFordelingSøknadBarn>,
-        alleSøknaderRelevantForBehandling: List<ÅpenSøknadDto>,
+        alleSøknaderRelevantForBehandling: List<HentSøknad>,
         rolle: Rolle,
     ): MutableSet<ForholdsmessigFordelingSøknadBarn> {
         val eksisterendeSøknaderOppdatert =
@@ -1802,7 +1803,7 @@ class ForholdsmessigFordelingService(
             ) ||
                 !erKlageEllerOmgjøring
         }.sortedWith(
-            compareByDescending<ÅpenSøknadDto> { it.behandlingstype == behandlingstypeForFF }
+            compareByDescending<HentSøknad> { it.behandlingstype == behandlingstypeForFF }
                 .thenBy { it.søknadFomDato },
         )
 

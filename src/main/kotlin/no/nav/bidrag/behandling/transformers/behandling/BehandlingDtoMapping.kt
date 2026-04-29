@@ -224,10 +224,17 @@ private fun slettGrunnlagSomTilhørerRolleSomSlettes(
     rollerSomSkalSlettes: List<OpprettRolleDto>,
 ) {
     rollerSomSkalSlettes.forEach { rolle ->
-        behandling.grunnlag.removeIf {
-            it.rolle.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype) ||
-                it.gjelder == rolle.ident.verdi
+        val grunnlagSomSkalSlettes =
+            behandling.grunnlag.filter {
+                it.rolle.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype) ||
+                    it.gjelder == rolle.ident.verdi
+            }
+
+        grunnlagSomSkalSlettes.forEach {
+            it.rolle.grunnlag.remove(it)
+            it.gjelderBarnRolle?.grunnlagGjelderBarn?.remove(it)
         }
+        behandling.grunnlag.removeAll(grunnlagSomSkalSlettes)
     }
 }
 
@@ -267,11 +274,11 @@ private fun oppdaterOpphørForRoller(
                 val opphørsdato = if (it.opphørsdato.isAfter(rolle.virkningstidspunktRolle)) it.opphørsdato else null
                 if (opphørsdato != null) {
                     virkningstidspunktService.oppdaterOpphørsdato(
-                        behandling.id!!,
                         OppdaterOpphørsdatoRequestDto(
                             rolle.id!!,
                             opphørsdato,
                         ),
+                        behandling,
                     )
                 }
             }
@@ -529,16 +536,19 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
             },
     )
 
-fun Person.tilRolle(behandling: Behandling) =
-    Rolle(
-        behandling,
-        Rolletype.BARN,
-        ident,
-        fødselsdato,
-        LocalDateTime.now(),
-        null,
-        navn ?: hentPersonVisningsnavn(ident),
-    )
+fun Person.tilRolle(
+    behandling: Behandling,
+    stønadstype: Stønadstype?,
+) = Rolle(
+    behandling,
+    Rolletype.BARN,
+    ident,
+    fødselsdato,
+    LocalDateTime.now(),
+    null,
+    navn ?: hentPersonVisningsnavn(ident),
+    stønadstype = stønadstype,
+)
 
 fun Person.tilDto(stønadstype: Stønadstype? = null) =
     RolleDto(

@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.transformers
 
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -30,4 +31,12 @@ fun String?.toLocalDateTime(): LocalDateTime {
     } catch (e: DateTimeParseException) {
         OffsetDateTime.parse(formatted).toLocalDateTime()
     }
+}
+
+fun List<ÅrMånedsperiode>.filtrerMatchendePeriode(periode: ÅrMånedsperiode) = filter { it.overlapperMed(periode) }
+
+private fun ÅrMånedsperiode.overlapperMed(annenPeriode: ÅrMånedsperiode): Boolean {
+    val starterForEllerNarAndreSlutter = annenPeriode.til?.let { fom < it } ?: true
+    val slutterEtterEllerNarAndreStarter = til?.let { it > annenPeriode.fom } ?: true
+    return starterForEllerNarAndreSlutter && slutterEtterEllerNarAndreStarter
 }

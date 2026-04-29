@@ -14,12 +14,14 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.felles.grunnlag.stønadstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettPeriodeRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
@@ -58,12 +60,22 @@ data class StønadsendringPeriode(
 
 fun Collection<BaseGrunnlag>.hentPersonMedIdent(ident: String?) = hentAllePersoner().find { it.personIdent == ident }
 
-fun Collection<GrunnlagDto>.hentPersonNyesteIdent(ident: String?) =
-    filter { it.erPerson() }
-        // Person barn BM havner nederst i listen. Det kan hende samme person er oppgitt som både husstandsmedlem og barn BM pga underholdskostnad
-        .sortedBy { listOf(Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER).indexOf(it.type) }
-        .toSet()
-        .find { it.personIdent == hentNyesteIdent(ident)?.verdi || it.personIdent == ident }
+fun Collection<GrunnlagDto>.hentPersonNyesteIdent(
+    ident: String?,
+    stønadstype: Stønadstype? = null,
+) = hentPersonerNyesteIdent(ident, stønadstype).firstOrNull()
+
+fun Collection<GrunnlagDto>.hentPersonerNyesteIdent(
+    ident: String?,
+    stønadstype: Stønadstype? = null,
+) = filter { it.erPerson() }
+    // Person barn BM havner nederst i listen. Det kan hende samme person er oppgitt som både husstandsmedlem og barn BM pga underholdskostnad
+    .sortedBy { listOf(Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER).indexOf(it.type) }
+    .toSet()
+    .filter {
+        (it.personIdent == hentNyesteIdent(ident)?.verdi || it.personIdent == ident) &&
+            (stønadstype == null || it.stønadstype == null || stønadstype == it.stønadstype)
+    }.distinctBy { it.referanse }
 
 // TODO: Reel mottaker fra bidrag-sak?
 fun Set<Rolle>.reelMottakerEllerBidragsmottaker(rolle: RolleDto): Personident {

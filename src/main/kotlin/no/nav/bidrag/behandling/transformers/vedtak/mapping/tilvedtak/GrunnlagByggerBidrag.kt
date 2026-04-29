@@ -255,7 +255,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
     resultatDelvedtak: List<ResultatDelvedtak>,
 ): StønadsendringPeriode {
     val søknadsbarnRolle =
-        behandling.søknadsbarn.find { it.ident == søknadsbarn.ident!!.verdi }
+        behandling.søknadsbarn.find { it.erSammeRolle(søknadsbarn.ident!!.verdi, søknadsbarn.stønadstype) }
             ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!)
 
     val grunnlagListe = mutableSetOf<GrunnlagDto>()
@@ -265,7 +265,11 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
             søknadsbarnRolle.opphørsdato != null && resultatPeriode.periode.fom == søknadsbarnRolle.opphørsdato?.toYearMonth()
         val vedtak =
             resultatDelvedtak.find { rv ->
-                rv.resultatBarn(søknadsbarn)?.beregnetBarnebidragPeriodeListe?.any { vp ->
+                (
+                    rv.request == null ||
+                        rv.request.stønadsendringListe
+                            .any { søknadsbarnRolle.erSammeRolle(it.kravhaver.verdi, it.type) }
+                ) && rv.resultatBarn(søknadsbarn)?.beregnetBarnebidragPeriodeListe?.any { vp ->
                     (resultatPeriode.periode.fom == vp.periode.fom) ||
                         (erOpphørsperiode && vp.periode.til == søknadsbarnRolle.opphørsdato?.toYearMonth())
                 } == true
@@ -275,10 +279,10 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
                 Resultatkode.OPPHØR.name
             } else if (vedtak.request != null) {
                 vedtak.request.stønadsendringListe
-                    .find { it.kravhaver.verdi == søknadsbarnRolle.ident!! }!!
-                    .periodeListe
-                    .find { vp -> resultatPeriode.periode.fom == vp.periode.fom }!!
-                    .resultatkode
+                    .find { søknadsbarnRolle.erSammeRolle(it.kravhaver.verdi, it.type) }
+                    ?.periodeListe
+                    ?.find { vp -> resultatPeriode.periode.fom == vp.periode.fom }
+                    ?.resultatkode!!
             } else {
                 val periode = vedtak.resultat.beregnetBarnebidragPeriodeListe.find { vp -> resultatPeriode.periode.fom == vp.periode.fom }!!
                 if (periode.resultat.beløp == null) Resultatkode.OPPHØR.name else Resultatkode.BEREGNET_BIDRAG.name
@@ -357,7 +361,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
     erEndeligVedtak: Boolean = true,
 ): StønadsendringPeriode {
     val søknadsbarn =
-        behandling.søknadsbarn.find { it.ident == søknadsbarn.ident!!.verdi }
+        behandling.søknadsbarn.find { it.erSammeRolle(søknadsbarn.ident!!.verdi, søknadsbarn.stønadstype) }
             ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!)
 
     val grunnlagListe = grunnlagListe.toSet()

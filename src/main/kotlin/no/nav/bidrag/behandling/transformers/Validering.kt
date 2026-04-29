@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.database.datamodell.PrivatAvtalePeriode
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
+import no.nav.bidrag.behandling.database.datamodell.bpsBarnUtenLøpendeBidrag
 import no.nav.bidrag.behandling.database.datamodell.finnBostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.henteAlleBostatusperioder
 import no.nav.bidrag.behandling.database.datamodell.særbidragKategori
@@ -43,6 +44,8 @@ import no.nav.bidrag.behandling.requestManglerDataException
 import no.nav.bidrag.behandling.ressursHarFeilKildeException
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
 import no.nav.bidrag.behandling.ressursIkkeTilknyttetBehandling
+import no.nav.bidrag.behandling.transformers.behandling.finnOpphørsdatoBoforhold
+import no.nav.bidrag.behandling.transformers.behandling.finnVirkningstidspunktBeregningBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.kategorierSomKreverType
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
@@ -404,7 +407,7 @@ fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
     val notatPrivatAvtale =
         behandling.notater.find {
             it.type == NotatGrunnlag.NotatType.PRIVAT_AVTALE &&
-                if (rolle == null) it.rolle.ident == behandling.bidragspliktig?.ident else rolle?.ident == it.rolle?.ident
+                if (rolle == null) it.rolle.ident == behandling.bidragspliktig?.ident else rolle?.erSammeRolle(it.rolle) == true
         }
     return PrivatAvtaleValideringsfeilDto(
         privatAvtaleId = id!!,
@@ -421,6 +424,15 @@ fun PrivatAvtale.validerePrivatAvtale(): PrivatAvtaleValideringsfeilDto {
                     },
                     rolle!!,
                 )
+            } else if (personIdent != null) {
+                behandling
+                    .finnPerioderSomOverlapperMedLøpendeBidragForAndreBarn(
+                        perioder.map {
+                            it.tilDatoperiode()
+                        },
+                        personIdent!!,
+                        stønadstype ?: Stønadstype.BIDRAG,
+                    )
             } else {
                 emptySet()
             },
@@ -488,13 +500,14 @@ fun Husstandsmedlem.validereBoforhold(
     valideringsfeil: MutableList<BoforholdPeriodeseringsfeil>,
     validerePerioder: Boolean = true,
 ): Set<BoforholdPeriodeseringsfeil> {
-    val opphørsdato = rolle?.opphørsdato ?: behandling.globalOpphørsdato
+    val beregnFraDato = rolle?.finnVirkningstidspunktBeregningBoforhold() ?: virkniningstidspunkt
+    val opphørsdato = rolle?.finnOpphørsdatoBoforhold()
 
     val hullIPerioder =
         this.perioder
             .map {
                 Datoperiode(it.datoFom!!, it.datoTom)
-            }.finnHullIPerioder(maxOf(virkniningstidspunkt, this.fødselsdato ?: this.rolle!!.fødselsdato), opphørsdato)
+            }.finnHullIPerioder(maxOf(beregnFraDato, this.fødselsdato ?: this.rolle!!.fødselsdato), opphørsdato)
     if (validerePerioder) {
         valideringsfeil.add(
             BoforholdPeriodeseringsfeil(
@@ -565,6 +578,23 @@ fun Behandling.manglerLøpendePeriode(
     val ikkeLøpendePeriode = perioder.maxByOrNull { it.fom }?.tom
     val sistePeriodeEr18Årsdag = ikkeLøpendePeriode != null && ikkeLøpendePeriode == fødselsdato18År
     return !løperBidrag && (!harLøpendePrivatAvtale && !sistePeriodeEr18Årsdag)
+}
+
+fun Behandling.finnPerioderSomOverlapperMedLøpendeBidragForAndreBarn(
+    perioder: List<Datoperiode>,
+    barnIdent: String,
+    stønadstype: Stønadstype,
+): Set<Datoperiode> {
+    val løpendeBidrag =
+        bpsBarnUtenLøpendeBidrag()
+            .find { it.ident == barnIdent }
+            ?.finnBeløpshistorikk(stønadstype)
+            ?.periodeListe ?: emptyList()
+    return perioder
+        .sortedBy { it.fom }
+        .filter {
+            løpendeBidrag.any { lb -> it.overlapper(Datoperiode(lb.periode.fom, lb.periode.til?.minusMonths(1))) }
+        }.toSet()
 }
 
 fun Behandling.finnPerioderSomOverlapperMedLøpendeBidrag(

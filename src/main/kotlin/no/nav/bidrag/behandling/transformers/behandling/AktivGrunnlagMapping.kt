@@ -480,19 +480,23 @@ fun Inntekt.erDetSammeSom(grunnlag: SummertÅrsinntekt): Boolean {
 fun Behandling.henteUaktiverteGrunnlag(
     grunnlagstype: Grunnlagstype,
     rolle: Rolle,
+    gjelderBarnRolle: Rolle? = null,
 ): Set<Grunnlag> =
     grunnlag
         .hentAlleIkkeAktiv()
         .filter {
-            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet
+            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet &&
+                (gjelderBarnRolle == null || gjelderBarnRolle.id == it.gjelderBarnRolle?.id)
         }.toSet()
 
 fun Behandling.henteAktiverteGrunnlag(
     grunnlagstype: Grunnlagstype,
     rolle: Rolle,
+    gjelderBarnRolle: Rolle? = null,
 ): Set<Grunnlag> =
     grunnlag
         .hentAlleAktiv()
         .filter {
-            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet
+            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet &&
+                (gjelderBarnRolle == null || gjelderBarnRolle.id == it.gjelderBarnRolle?.id)
         }.toSet()
