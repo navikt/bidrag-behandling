@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.transformers
 
-import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactly
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import org.junit.Test
 import java.time.YearMonth
@@ -48,4 +48,3 @@ class DateUtilsTest {
         resultat.shouldBeEmpty()
     }
 }
-

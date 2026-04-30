@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
+import no.nav.bidrag.behandling.transformers.filtrerOgJusterFraVirkningstidspunkt
 import no.nav.bidrag.behandling.utils.stubPersonConsumer
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.validerHarGrunnlag
@@ -273,5 +274,35 @@ class VedtakGrunnlagMapperTest {
         val sammenslåttePerioder = perioder.`slåSammenEtterfølgendePerioder`()
 
         sammenslåttePerioder shouldBe perioder
+    }
+
+    @Test
+    fun `skal filtrere bort perioder før virkningstidspunkt og justere fom ved overlapp`() {
+        val perioder =
+            listOf(
+                ÅrMånedsperiode(YearMonth.of(2025, 7), YearMonth.of(2025, 8)),
+                ÅrMånedsperiode(YearMonth.of(2025, 7), YearMonth.of(2025, 10)),
+                ÅrMånedsperiode(YearMonth.of(2026, 2), null),
+            )
+
+        val resultat = perioder.filtrerOgJusterFraVirkningstidspunkt(YearMonth.of(2025, 8))
+
+        resultat shouldBe
+            listOf(
+                ÅrMånedsperiode(YearMonth.of(2025, 8), YearMonth.of(2025, 10)),
+                ÅrMånedsperiode(YearMonth.of(2026, 2), null),
+            )
+    }
+
+    @Test
+    fun `skal beholde åpen periode men justere fom til virkningstidspunkt`() {
+        val perioder =
+            listOf(
+                ÅrMånedsperiode(YearMonth.of(2025, 1), null),
+            )
+
+        val resultat = perioder.filtrerOgJusterFraVirkningstidspunkt(YearMonth.of(2025, 8))
+
+        resultat shouldBe listOf(ÅrMånedsperiode(YearMonth.of(2025, 8), null))
     }
 }

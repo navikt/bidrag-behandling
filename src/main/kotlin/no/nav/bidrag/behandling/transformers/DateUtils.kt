@@ -5,6 +5,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.Period
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
@@ -40,3 +41,15 @@ private fun ÅrMånedsperiode.overlapperMed(annenPeriode: ÅrMånedsperiode): Bo
     val slutterEtterEllerNarAndreStarter = til?.let { it > annenPeriode.fom } ?: true
     return starterForEllerNarAndreSlutter && slutterEtterEllerNarAndreStarter
 }
+
+fun List<ÅrMånedsperiode>.filtrerOgJusterFraVirkningstidspunkt(virkningstidspunkt: YearMonth): List<ÅrMånedsperiode> =
+    mapNotNull { periode ->
+        if (periode.til != null && periode.til!! <= virkningstidspunkt) {
+            null
+        } else {
+            ÅrMånedsperiode(
+                maxOf(periode.fom, virkningstidspunkt),
+                periode.til,
+            )
+        }
+    }
