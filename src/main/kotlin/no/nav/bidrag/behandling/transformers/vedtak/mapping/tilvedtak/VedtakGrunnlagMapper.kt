@@ -297,7 +297,9 @@ fun Behandling.finnBeregnTilDatoBehandling(
                 else -> {
                     val virkningstidspunkt = søknadsbarnRolle?.virkningstidspunkt ?: this.virkningstidspunkt!!
                     if (virkningstidspunkt >= opprinneligVedtakstidspunktBeregnTil) {
-                        virkningstidspunkt.plusMonths(1).withDayOfMonth(1)
+                        // Revurderingsbarn så kan opphørsdato være før virkningstidspunkt. Feks hvis bidraget har opphørt før virkning men
+                        // har løpende bidrag fra eldste virkningstidspunkt
+                        minOfNullable(opphørsdato?.toLocalDate(), virkningstidspunkt.plusMonths(1).withDayOfMonth(1))!!
                     } else if (søknadsbarnRolle == null) {
                         finnBeregnTilDato()
                     } else {
