@@ -1640,29 +1640,6 @@ class BehandlingTilVedtakMapping(
         }
     }
 
-    private fun List<OpprettPeriodeRequestDto>.fyllMellomromMedOpphørsperioder(): List<OpprettPeriodeRequestDto> {
-        if (size <= 1) return this
-
-        val sortertPeriodeliste = sortedBy { it.periode.fom }
-        return buildList {
-            sortertPeriodeliste.forEachIndexed { index, periode ->
-                add(periode)
-                val nestePeriode = sortertPeriodeliste.getOrNull(index + 1) ?: return@forEachIndexed
-                val opphørFom = periode.periode.til
-                if (opphørFom != null && opphørFom < nestePeriode.periode.fom) {
-                    add(
-                        OpprettPeriodeRequestDto(
-                            periode = ÅrMånedsperiode(opphørFom, nestePeriode.periode.fom),
-                            resultatkode = Resultatkode.OPPHØR.name,
-                            beløp = null,
-                            grunnlagReferanseListe = periode.grunnlagReferanseListe,
-                        ),
-                    )
-                }
-            }
-        }
-    }
-
     private fun Behandling.byggOpprettVedtakRequestObjekt(
         enhet: String?,
         søknadsbarn: List<Rolle> = this.søknadsbarn,
@@ -1682,4 +1659,27 @@ class BehandlingTilVedtakMapping(
             // Settes automatisk av bidrag-vedtak basert på token
             opprettetAv = null,
         )
+}
+
+internal fun List<OpprettPeriodeRequestDto>.fyllMellomromMedOpphørsperioder(): List<OpprettPeriodeRequestDto> {
+    if (isEmpty()) return this
+
+    val sortertPeriodeliste = sortedBy { it.periode.fom }
+    return buildList {
+        sortertPeriodeliste.forEachIndexed { index, periode ->
+            add(periode)
+            val opphørFom = periode.periode.til ?: return@forEachIndexed
+            val nestePeriode = sortertPeriodeliste.getOrNull(index + 1)
+            if (nestePeriode == null || opphørFom < nestePeriode.periode.fom) {
+                add(
+                    OpprettPeriodeRequestDto(
+                        periode = ÅrMånedsperiode(opphørFom, nestePeriode?.periode?.fom),
+                        resultatkode = Resultatkode.OPPHØR.name,
+                        beløp = null,
+                        grunnlagReferanseListe = periode.grunnlagReferanseListe,
+                    ),
+                )
+            }
+        }
+    }
 }
