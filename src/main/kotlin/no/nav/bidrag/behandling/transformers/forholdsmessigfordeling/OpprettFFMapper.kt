@@ -45,6 +45,7 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.HentSøknad
+import no.nav.bidrag.transport.behandling.beregning.felles.PartISøknad
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.felles.toLocalDate
@@ -68,6 +69,14 @@ data class OppdaterBarnFraFFRequest(
     val gebyrGjelder18År: Boolean = false,
     val stønadstype: Stønadstype? = null,
 )
+
+fun List<PartISøknad>.filterBarnVedtakFattet() =
+    filter {
+        it.rolletype == Rolletype.BARN &&
+            it.behandlingstatus == Behandlingstatus.VEDTAK_FATTET
+    }
+
+fun List<PartISøknad>.finnBarn(ident: String) = find { it.personident == ident }
 
 fun HentSøknad.tilIdentStønadstypeNøkkel(ident: String) = "${ident}_${behandlingstema.tilStønadstype()}"
 

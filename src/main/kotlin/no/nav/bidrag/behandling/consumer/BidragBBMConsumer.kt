@@ -154,7 +154,6 @@ class BidragBBMConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
-    @BrukerCacheable(BBM_BP_AAPNE_SOKADER)
     fun hentÅpneSøknaderForBp(bidragspliktig: String): HentBPsÅpneSøknaderResponse =
         postForNonNullEntity(
             bidragBBMUri.pathSegment("apnesoknader").build().toUri(),
