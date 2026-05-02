@@ -70,6 +70,12 @@ data class OppdaterBarnFraFFRequest(
     val stønadstype: Stønadstype? = null,
 )
 
+fun List<PartISøknad>.filterBarnUnderBehandling() =
+    filter {
+        it.rolletype == Rolletype.BARN &&
+            it.behandlingstatus == Behandlingstatus.UNDER_BEHANDLING
+    }
+
 fun List<PartISøknad>.filterBarnVedtakFattet() =
     filter {
         it.rolletype == Rolletype.BARN &&
@@ -193,7 +199,7 @@ fun HentSøknad.tilForholdsmessigFordelingSøknad() =
         saksnummer = saksnummer,
     )
 
-fun opprettRolle(
+fun opprettEllerOppdaterRolle(
     behandling: Behandling,
     rolletype: Rolletype,
     fødselsnummer: String,
@@ -215,7 +221,11 @@ fun opprettRolle(
                     it
                 }
         }
-        it.forholdsmessigFordeling = ffDetaljer
+        if (it.forholdsmessigFordeling == null) {
+            it.forholdsmessigFordeling = ffDetaljer
+        } else {
+            it.forholdsmessigFordeling!!.søknader.addAll(ffDetaljer.søknader)
+        }
 
         return it
     }

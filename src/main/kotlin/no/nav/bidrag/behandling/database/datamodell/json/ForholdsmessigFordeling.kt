@@ -60,8 +60,8 @@ data class ForholdsmessigFordelingSøknadBarn(
     var erFraPåklagetVedtak: Boolean = false,
     var behandlingstype: Behandlingstype?,
     var behandlingstema: Behandlingstema?,
-    val omgjørSøknadsid: Long? = null,
-    val omgjørVedtaksid: Int? = null,
+    var omgjørSøknadsid: Long? = null,
+    var omgjørVedtaksid: Int? = null,
     var innkreving: Boolean = true,
     val enhet: String = "9999",
     // TODO: Er dette nødvendig? Kan BM/Barn være i flere saker?
