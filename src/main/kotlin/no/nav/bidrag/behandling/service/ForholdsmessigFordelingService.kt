@@ -2558,33 +2558,35 @@ class ForholdsmessigFordelingService(
         if (barn.isEmpty()) {
             return null
         }
-        if (!erOppdateringAvBehandlingSomErIFF) {
-            return opprettSøknad(
-                behandling.bidragspliktig!!.ident!!,
-                barn,
-                saksnummer,
-                behandling,
-                behandlerEnhet,
-                stønadstype,
-                søktFomDato,
-                medInnkreving,
-                bmFødselsnummer!!,
-            )
-        }
-
-        val søknader =
-            barn.map {
-                leggTilEllerOpprettSøknadForRevurderingsbarn(
-                    barnIdent = it.kravhaver,
-                    saksnummer = saksnummer,
-                    behandling = behandling,
-                    stønadstype = stønadstype,
-                    søktFomDato = søktFomDato,
-                    medInnkreving = medInnkreving,
+        val søknadsid =
+            if (!erOppdateringAvBehandlingSomErIFF) {
+                opprettSøknad(
+                    behandling.bidragspliktig!!.ident!!,
+                    barn,
+                    saksnummer,
+                    behandling,
+                    behandlerEnhet,
+                    stønadstype,
+                    søktFomDato,
+                    medInnkreving,
+                    bmFødselsnummer!!,
                 )
+            } else {
+                val søknader =
+                    barn.map {
+                        leggTilEllerOpprettSøknadForRevurderingsbarn(
+                            barnIdent = it.kravhaver,
+                            saksnummer = saksnummer,
+                            behandling = behandling,
+                            stønadstype = stønadstype,
+                            søktFomDato = søktFomDato,
+                            medInnkreving = medInnkreving,
+                        )
+                    }
+                // Antar at alle barn havner i samme søknad
+                søknader.first().søknadsid
             }
-        // Antar at alle barn havner i samme søknad
-        val søknadsid = søknader.first().søknadsid
+
         val ffDetaljer =
             ForholdsmessigFordelingRolle(
                 delAvOpprinneligBehandling = false,
