@@ -142,7 +142,7 @@ val HentSøknad.bidragspliktig get() = partISøknadListe.find { it.rolletype == 
 val HentSøknad.barn get() =
     partISøknadListe.filter {
         it.rolletype == Rolletype.BARN &&
-            it.behandlingstatus == Behandlingstatus.UNDER_BEHANDLING
+            it.behandlingstatus != Behandlingstatus.FEILREGISTRERT
     }
 
 fun HentSøknad.parterForRolle(rolletype: Rolletype) = partISøknadListe.filter { it.rolletype == rolletype }
@@ -496,13 +496,14 @@ class ForholdsmessigFordelingService(
                         innkreving = originalSøknad.innkreving,
                         barnListe =
                             barnISøknad
-                                .filter {
-                                    val parterISøknad = originalSøknad.partISøknadListe.filterBarnVedtakFattet().map { it.personident!! }
-                                    relevanteKravhavere.none {
-                                        parterISøknad.contains(it.kravhaver) &&
-                                            it.stønadstype == originalSøknad.behandlingstema.tilStønadstype()
-                                    }
-                                }.map { Barn(it.personident!!, it.innbetaltBeløp) },
+//                                .filter {
+//                                    val parterISøknad = originalSøknad.partISøknadListe.filterBarnVedtakFattet().map { it.personident!! }
+//                                    relevanteKravhavere.none {
+//                                        parterISøknad.contains(it.kravhaver) &&
+//                                            it.stønadstype == originalSøknad.behandlingstema.tilStønadstype()
+//                                    }
+//                                }
+                                .map { Barn(it.personident!!, it.innbetaltBeløp) },
                     ),
                 ).søknadsid
         val forholdsmessigFordelingSøknad =
@@ -2890,6 +2891,7 @@ class ForholdsmessigFordelingService(
                             stønadstype = stønadstype,
                             åpneBehandlinger = mutableSetOf(behandling),
                             eierfogd = behandling.behandlerEnhet,
+                            bidragsmottaker = behandling.bidragsmottaker?.ident,
                             løperBidragFra = løpendeBidrag?.periodeFra,
                             løperBidragTil = løpendeBidrag?.periodeTil,
                             opphørsdato = barn.opphørsdato?.toYearMonth(),
@@ -2934,6 +2936,7 @@ class ForholdsmessigFordelingService(
                                     løperBidragFra = løpendeBidrag?.periodeFra,
                                     løperBidragTil = løpendeBidrag?.periodeTil,
                                     stønadstype = stønadstype,
+                                    bidragsmottaker = åpenSøknad?.bidragsmottaker?.personident,
                                     opphørsdato = behandling.finnOpphørsdato(stønadstype!!, barnFnr.personident!!),
                                     åpneSøknader = mutableSetOf(åpenSøknad),
                                     privatAvtale = behandling.privatAvtale.find { it.gjelderPerson(barnFnr.personident!!, stønadstype) },
@@ -2949,10 +2952,12 @@ class ForholdsmessigFordelingService(
             løpendeBidraggsakerBP
                 .filter { lb -> !krahaverFraÅpneSaker.finnes(lb.kravhaver.verdi, lb.type) }
                 .map {
+                    val sak = sakConsumer.hentSak(it.sak.verdi)
                     SakKravhaver(
                         saksnummer = it.sak.verdi,
                         kravhaver = it.kravhaver.verdi,
                         stønadstype = it.type,
+                        bidragsmottaker = sak.bidragsmottaker?.fødselsnummer?.verdi,
                         løperBidragFra = it.periodeFra,
                         løperBidragTil = it.periodeTil,
                         opphørsdato = behandling.finnOpphørsdato(it.type, it.kravhaver.verdi),

@@ -1254,8 +1254,20 @@ class GrunnlagService(
                 behandling.tilTypeBoforhold(),
                 boforhold.tilBoforholdBarnRequest(behandling, true),
             )
-        val boforholdPeriodisertBarn = boforholdPeriodisert.filter { it.gjelderPersonId == gjelderRolle?.ident }.distinct()
-        overskrivBearbeidetBoforholdGrunnlag(behandling, boforholdPeriodisertBarn, rekalkulerOgOverskriveAktiverte, gjelderRolle)
+        if (gjelderRolle == null) {
+            // Hvis gjelderRolle er null så kan det hende det har skjedd feil ved lagring eller at det mangler grunnlag for barnet
+            // Dette er fallback løsning
+            boforholdPeriodisert
+                .filter { it.gjelderPersonId != null }
+                .groupBy { it.gjelderPersonId }
+                .forEach { (gjelder, perioder) ->
+                    val gjelderRolle = behandling.roller.find { it.ident == gjelder } ?: return@forEach
+                    overskrivBearbeidetBoforholdGrunnlag(behandling, perioder, rekalkulerOgOverskriveAktiverte, gjelderRolle)
+                }
+        } else {
+            val boforholdPeriodisertBarn = boforholdPeriodisert.filter { it.gjelderPersonId == gjelderRolle.ident }.distinct()
+            overskrivBearbeidetBoforholdGrunnlag(behandling, boforholdPeriodisertBarn, rekalkulerOgOverskriveAktiverte, gjelderRolle)
+        }
     }
 
     private fun overskrivBearbeidetAndreVoksneIHusstandenGrunnlag(
