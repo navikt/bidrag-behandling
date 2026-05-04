@@ -60,7 +60,7 @@ azure_access_inbound:
 database:
   dbname: bidrag-behandling
   autoResize: true
-  tier: db-custom-8-7680
+  tier: db-custom-10-7680
   auditlog: "on"
 outbound-access-apps:
   - bidrag-grunnlag

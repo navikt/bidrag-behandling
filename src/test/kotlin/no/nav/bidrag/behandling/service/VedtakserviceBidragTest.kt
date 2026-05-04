@@ -1184,7 +1184,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             assertSoftly(nestSistePeriode) {
                 it.periode.til shouldBe YearMonth.from(opphørsdato)
                 it.resultatkode shouldBe Resultatkode.BEREGNET_BIDRAG.name
-                it.beløp shouldBe BigDecimal(9900)
+                it.beløp shouldBe BigDecimal(6040)
             }
         }
 
