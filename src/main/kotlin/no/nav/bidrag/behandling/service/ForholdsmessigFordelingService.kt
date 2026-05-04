@@ -465,7 +465,7 @@ class ForholdsmessigFordelingService(
                 behandling.søknadstype!!
             }
         val barnISøknad =
-            originalSøknad.partISøknadListe
+            originalSøknad.barn
                 .filter { !it.behandlingstatus!!.erFeilregistrert }
 
         val barnISøknadIdenter = barnISøknad.map { it.personident }.toSet()
@@ -1956,17 +1956,10 @@ class ForholdsmessigFordelingService(
         val sakerUtenLøpendeBidrag =
             hentBarnUtenLøpendeBidrag(behandling, åpneEllerLøpendeSakerBp)
 
-        // TODO: Hent også kravhavere som har fremtidig løpende bidrag som overlapper med løpende bidrag til revurderingsbarn
+        // Hent også kravhavere som har fremtidig løpende bidrag som overlapper med løpende bidrag til revurderingsbarn
         // Feks når bidraget til søknadsbarn opphører men beregningsperioden utvides pga revurideringsbarn
         val relevanteKravhavere = åpneEllerLøpendeSakerBp + sakerUtenLøpendeBidrag
         return relevanteKravhavere + hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling, relevanteKravhavere)
-    }
-
-    /*
-     Hent også kravhavere som har fremtidig løpende bidrag som overlapper med løpende bidrag til revurderingsbarn
-     Feks når bidraget til søknadsbarn opphører men beregningsperioden utvides pga revurideringsbarn
-     */
-    fun hentAlleRelevanteKravhavereBasertPåRevurderingsbarn(relevanteKravhavere: Set<SakKravhaver>) {
     }
 
     private fun hentBarnUtenLøpendeBidrag(
