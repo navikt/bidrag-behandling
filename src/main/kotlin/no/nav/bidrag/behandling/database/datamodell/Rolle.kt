@@ -274,17 +274,26 @@ open class Rolle(
     fun hentEllerOpprettGebyr() = opppdaterGebyrTilNyVersjon()
 
     val bidragsmottaker get() =
-        behandling.alleBidragsmottakere.find { it.matcherBidragsmottaker(this) }
+        behandling.alleBidragsmottakere.find { matcherBidragsmottaker(it) }
 
-    private fun Rolle.matcherBidragsmottaker(rolle: Rolle): Boolean {
-        val rolleFF = rolle.forholdsmessigFordeling
-        val thisFF = this.forholdsmessigFordeling
+    private fun matcherBidragsmottaker(bidragsmottaker: Rolle): Boolean {
+        val bidragsmottakerFF = bidragsmottaker.forholdsmessigFordeling
+        val thisRolleFF = this.forholdsmessigFordeling
 
+        val saksnummerBehandling = behandling.saksnummer
         return when {
-            rolleFF == null || thisFF == null -> true
-            rolleFF.bidragsmottaker != null -> this.ident == rolleFF.bidragsmottaker
-            thisFF.tilhørerSak == rolleFF.tilhørerSak -> true
-            rolleFF.tilhørerSak == rolle.behandling.saksnummer -> true
+            // Hvis ikke i FF så er det bare en BM i behandlingen
+            !behandling.erIForholdsmessigFordeling -> true
+
+            thisRolleFF?.bidragsmottaker != null -> thisRolleFF.bidragsmottaker == bidragsmottaker.ident
+
+            thisRolleFF != null && bidragsmottakerFF != null &&
+                thisRolleFF.tilhørerSak == bidragsmottakerFF.tilhørerSak -> true
+
+            // Tilfelle hvor rolle mangler FF (bør aldri skje) så finner den BM til originale behandling
+            thisRolleFF == null && bidragsmottakerFF != null &&
+                bidragsmottakerFF.tilhørerSak == saksnummerBehandling -> true
+
             else -> false
         }
     }

@@ -715,15 +715,9 @@ class VedtakService(
         val vedtakRequest = opprettFatteVedtakRequestForBidrag(behandling, request)
         val vedtakRequestDtos: MutableList<Pair<Int, OpprettVedtakRequestDto>> = mutableListOf()
 
-//        val vedtakResponser =
-//            vedtakRequester.associate { vedtakRequest ->
         vedtakRequest.validerGrunnlagsreferanser()
         secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $vedtakRequest" }
-//        val søknadsider =
-//            vedtakRequest.behandlingsreferanseListe
-//                .filter {
-//                    it.kilde == BehandlingsrefKilde.BISYS_SØKNAD
-//                }.map { it.referanse.toLong() }
+
         val response = fatteVedtak(vedtakRequest, simuler)
         vedtakRequestDtos.add(response.vedtaksid to vedtakRequest)
         if (!simuler) {
@@ -763,11 +757,7 @@ class VedtakService(
             } med vedtaksid ${response.vedtaksid}"
         }
 
-//                søknadsider to response.vedtaksid
-//            }
-        // Hent hoved vedtaksiden, dette skal fjernes etterhvert når det migreres over til ny struktur
         val vedtaksid = response.vedtaksid
-//            vedtakResponser.filterKeys { it.contains(behandling.soknadsid!!) }.values.firstOrNull() ?: vedtakResponser.values.first()
 
         fatteInnkrevingsvedtak(
             behandling,
