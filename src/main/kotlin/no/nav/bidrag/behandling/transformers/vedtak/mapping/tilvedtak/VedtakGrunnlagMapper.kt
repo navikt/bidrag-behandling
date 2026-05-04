@@ -251,9 +251,8 @@ fun Rolle.finnBeregnFra(): YearMonth =
 fun Behandling.finnBeregnTilDatoBehandling(
     søknadsbarnRolle: Rolle? = null,
     senesteBeregnTil: LocalDate? = null,
+    opphørsdato: YearMonth? = søknadsbarnRolle?.opphørsdato?.toYearMonth() ?: globalOpphørsdatoYearMonth,
 ): LocalDate {
-    val opphørsdato =
-        søknadsbarnRolle?.opphørsdato?.toYearMonth() ?: globalOpphørsdatoYearMonth
     val beregnTil =
         if (tilType() == TypeBehandling.SÆRBIDRAG) {
             virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
@@ -269,7 +268,7 @@ fun Behandling.finnBeregnTilDatoBehandling(
                 BeregnTil.INNEVÆRENDE_MÅNED -> {
                     utledBeregnTilDato(
                         søknadsbarnRolle.virkningstidspunkt ?: virkningstidspunkt!!,
-                        opphørsdato ?: globalOpphørsdatoYearMonth,
+                        opphørsdato,
                         senesteBeregnTil = senesteBeregnTil,
                         søknadsbarnRolle = søknadsbarnRolle,
                     )
@@ -305,7 +304,7 @@ fun Behandling.finnBeregnTilDatoBehandling(
                     } else {
                         utledBeregnTilDato(
                             virkningstidspunkt,
-                            opphørsdato ?: globalOpphørsdatoYearMonth,
+                            opphørsdato,
                             opprinneligVedtakstidspunktBeregnTil,
                             senesteBeregnTil = senesteBeregnTil,
                             søknadsbarnRolle = søknadsbarnRolle,
@@ -318,7 +317,7 @@ fun Behandling.finnBeregnTilDatoBehandling(
         } else {
             utledBeregnTilDato(
                 søknadsbarnRolle?.virkningstidspunkt ?: virkningstidspunkt!!,
-                opphørsdato ?: globalOpphørsdatoYearMonth,
+                opphørsdato,
                 senesteBeregnTil = senesteBeregnTil,
                 søknadsbarnRolle = søknadsbarnRolle,
             )

@@ -76,6 +76,7 @@ import no.nav.bidrag.behandling.transformers.mapTilBeregnetBidragDto
 import no.nav.bidrag.behandling.transformers.tilDato18årsBidrag
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
@@ -1957,7 +1958,15 @@ class ForholdsmessigFordelingService(
 
         // TODO: Hent også kravhavere som har fremtidig løpende bidrag som overlapper med løpende bidrag til revurderingsbarn
         // Feks når bidraget til søknadsbarn opphører men beregningsperioden utvides pga revurideringsbarn
-        return åpneEllerLøpendeSakerBp + sakerUtenLøpendeBidrag
+        val relevanteKravhavere = åpneEllerLøpendeSakerBp + sakerUtenLøpendeBidrag
+        return relevanteKravhavere + hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling, relevanteKravhavere)
+    }
+
+    /*
+     Hent også kravhavere som har fremtidig løpende bidrag som overlapper med løpende bidrag til revurderingsbarn
+     Feks når bidraget til søknadsbarn opphører men beregningsperioden utvides pga revurideringsbarn
+     */
+    fun hentAlleRelevanteKravhavereBasertPåRevurderingsbarn(relevanteKravhavere: Set<SakKravhaver>) {
     }
 
     private fun hentBarnUtenLøpendeBidrag(
@@ -1965,7 +1974,7 @@ class ForholdsmessigFordelingService(
         sakerMedLøpendeBidrag: Set<SakKravhaver>? = null,
     ): List<SakKravhaver> {
         val kravhavereSomHarÅpenBehandling = sakerMedLøpendeBidrag ?: hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling)
-        val søktFomDatoRevurdering = `kravhavereSomHarÅpenBehandling`.finnSøktFomRevurderingSøknad(behandling)
+        val søktFomDatoRevurdering = kravhavereSomHarÅpenBehandling.finnSøktFomRevurderingSøknad(behandling)
 
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
         val søknadsbarnIdentStønadstypeMap =
@@ -2775,9 +2784,37 @@ class ForholdsmessigFordelingService(
                 )
             }
 
-    fun hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling: Behandling): Set<SakKravhaver> {
+    fun hentAlleÅpneEllerLøpendeBidraggsakerForBP(
+        behandling: Behandling,
+        eksisterendeRelevanteKravhavere: Set<SakKravhaver>? = null,
+    ): Set<SakKravhaver> {
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
-        val løpendeBidraggsakerBP = hentSisteLøpendeStønader(Personident(bidragspliktigFnr), behandling.finnBeregningsperiode())
+        val beregningsperiode =
+            if (eksisterendeRelevanteKravhavere.isNullOrEmpty()) {
+                behandling.finnBeregningsperiode()
+            } else {
+                val senestBeregnTil =
+                    if (eksisterendeRelevanteKravhavere.any { it.løperBidragTil == null && it.løperBidragFra != null }) {
+                        null
+                    } else {
+                        eksisterendeRelevanteKravhavere
+                            .filter {
+                                it.løperBidragTil != null
+                            }.maxOfOrNull { it.løperBidragTil!! }
+                    }
+                val nyBeregnTil =
+                    behandling.søknadsbarn.maxOf {
+                        behandling.finnBeregnTilDatoBehandling(
+                            it,
+                            opphørsdato = senestBeregnTil,
+                        )
+                    }
+                ÅrMånedsperiode(
+                    fom = behandling.eldsteVirkningstidspunkt,
+                    til = nyBeregnTil,
+                )
+            }
+        val løpendeBidraggsakerBP = hentSisteLøpendeStønader(Personident(bidragspliktigFnr), beregningsperiode)
         val åpneBehandlinger =
             behandlingRepository
                 .finnÅpneBidragsbehandlingerForBp(bidragspliktigFnr, behandling.id!!)
