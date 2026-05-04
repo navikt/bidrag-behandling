@@ -214,6 +214,12 @@ open class Behandling(
     @Transient
     var historiskeStønader: MutableSet<StønadDto> = mutableSetOf(),
 ) {
+    fun sammeBarnInkludertIBehandlingSom18ÅrOgOrdinærBidrag(ident: String): Boolean {
+        val bidrag = roller.any { it.ident == ident && it.stønadstype == Stønadstype.BIDRAG }
+        val bidrag18År = roller.any { it.ident == ident && it.stønadstype == Stønadstype.BIDRAG18AAR }
+        return bidrag && bidrag18År
+    }
+
     fun oppdaterVirkningstidspunktForAlle(nyVirkningstidspunkt: LocalDate) {
         virkningstidspunkt = nyVirkningstidspunkt
         søknadsbarn.forEach {

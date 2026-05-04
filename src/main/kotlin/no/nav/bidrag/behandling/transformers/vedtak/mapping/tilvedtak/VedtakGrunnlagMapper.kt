@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.transformers.dato18ÅrsBidrag
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erDirekteAvslag
 import no.nav.bidrag.behandling.transformers.erForskudd
+import no.nav.bidrag.behandling.transformers.filtrerOgJusterFraVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphørForRolle
 import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
@@ -82,17 +83,17 @@ fun Behandling.finnSkalInnkrevesPeriode(søknadsbarnRolle: Rolle): List<ÅrMåne
         val sistePeriode = beløpshistorikk.periodeListe.maxByOrNull { it.periode.fom }
         val virkningstidspunkt = søknadsbarnRolle.virkningstidspunktRolle.toYearMonth()
         val beregnTil = søknadsbarnRolle.finnBeregnTil()
-        val harPerioderUtenInnkreving =
+        val perioderFraVirkningstidspunkt =
             beløpshistorikk.periodeListe
-                .map {
-                    it.periode
-                }.inneholderPerioderUtenInnkreving(virkningstidspunkt, beregnTil)
+                .map { it.periode }
+                .filtrerOgJusterFraVirkningstidspunkt(virkningstidspunkt)
+        val harPerioderUtenInnkreving =
+            perioderFraVirkningstidspunkt
+                .inneholderPerioderUtenInnkreving(virkningstidspunkt, beregnTil)
         if (sistePeriode?.periode?.til != null && sistePeriode.periode.til!! <= beregnTil && !harPerioderUtenInnkreving) {
             emptyList()
         } else {
-            beløpshistorikk.periodeListe
-                .filter { it.periode.fom >= virkningstidspunkt || it.periode.til == null || it.periode.til!! > virkningstidspunkt }
-                .map { it.periode }
+            perioderFraVirkningstidspunkt
         }
     } else if (søknadsbarnRolle.erRevurderingsbarn) {
         val beløpshistorikk = hentGrunnlagBeløpshistorikkForRolle(søknadsbarnRolle, false).konverterTilStønadDto() ?: return emptyList()
@@ -102,21 +103,23 @@ fun Behandling.finnSkalInnkrevesPeriode(søknadsbarnRolle: Rolle): List<ÅrMåne
                 ?.periode
                 ?.fom
         val virkningstidspunkt = maxOf(søknadsbarnRolle.virkningstidspunktRolle.toYearMonth(), søknadsbarnRolle.finnBeregnFra())
-        val harPerioderUtenInnkreving =
+        val perioderFraVirkningstidspunkt =
             beløpshistorikk.periodeListe
                 .map { it.periode }
+                .filtrerOgJusterFraVirkningstidspunkt(virkningstidspunkt)
+        val harPerioderUtenInnkreving =
+            perioderFraVirkningstidspunkt
                 .inneholderPerioderUtenInnkreving(virkningstidspunkt, søknadsbarnRolle.finnBeregnTil())
         // Hvis det skal innkreves fra virkningtidspunkt så returnerer metoden null mtp at det er med innkreving
         // Dette brukes for å innkreve deler av periodene
         if (førstePeriodeFom == null || !harPerioderUtenInnkreving) {
             emptyList()
         } else {
-            beløpshistorikk.periodeListe
-                .filter { it.periode.fom >= virkningstidspunkt || it.periode.til == null || it.periode.til!! > virkningstidspunkt }
+            perioderFraVirkningstidspunkt
                 .map {
                     ÅrMånedsperiode(
-                        it.periode.fom,
-                        minOfNullable(it.periode.til, søknadsbarnRolle.opphørsdato?.toYearMonth()) ?: it.periode.til,
+                        it.fom,
+                        minOfNullable(it.til, søknadsbarnRolle.opphørsdato?.toYearMonth()) ?: it.til,
                     )
                 }.slåSammenEtterfølgendePerioder()
         }
@@ -248,9 +251,8 @@ fun Rolle.finnBeregnFra(): YearMonth =
 fun Behandling.finnBeregnTilDatoBehandling(
     søknadsbarnRolle: Rolle? = null,
     senesteBeregnTil: LocalDate? = null,
+    opphørsdato: YearMonth? = søknadsbarnRolle?.opphørsdato?.toYearMonth() ?: globalOpphørsdatoYearMonth,
 ): LocalDate {
-    val opphørsdato =
-        søknadsbarnRolle?.opphørsdato?.toYearMonth() ?: globalOpphørsdatoYearMonth
     val beregnTil =
         if (tilType() == TypeBehandling.SÆRBIDRAG) {
             virkningstidspunkt!!.plusMonths(1).withDayOfMonth(1)
@@ -266,7 +268,7 @@ fun Behandling.finnBeregnTilDatoBehandling(
                 BeregnTil.INNEVÆRENDE_MÅNED -> {
                     utledBeregnTilDato(
                         søknadsbarnRolle.virkningstidspunkt ?: virkningstidspunkt!!,
-                        opphørsdato ?: globalOpphørsdatoYearMonth,
+                        opphørsdato,
                         senesteBeregnTil = senesteBeregnTil,
                         søknadsbarnRolle = søknadsbarnRolle,
                     )
@@ -294,13 +296,15 @@ fun Behandling.finnBeregnTilDatoBehandling(
                 else -> {
                     val virkningstidspunkt = søknadsbarnRolle?.virkningstidspunkt ?: this.virkningstidspunkt!!
                     if (virkningstidspunkt >= opprinneligVedtakstidspunktBeregnTil) {
-                        virkningstidspunkt.plusMonths(1).withDayOfMonth(1)
+                        // Revurderingsbarn så kan opphørsdato være før virkningstidspunkt. Feks hvis bidraget har opphørt før virkning men
+                        // har løpende bidrag fra eldste virkningstidspunkt
+                        minOfNullable(opphørsdato?.toLocalDate(), virkningstidspunkt.plusMonths(1).withDayOfMonth(1))!!
                     } else if (søknadsbarnRolle == null) {
                         finnBeregnTilDato()
                     } else {
                         utledBeregnTilDato(
                             virkningstidspunkt,
-                            opphørsdato ?: globalOpphørsdatoYearMonth,
+                            opphørsdato,
                             opprinneligVedtakstidspunktBeregnTil,
                             senesteBeregnTil = senesteBeregnTil,
                             søknadsbarnRolle = søknadsbarnRolle,
@@ -313,7 +317,7 @@ fun Behandling.finnBeregnTilDatoBehandling(
         } else {
             utledBeregnTilDato(
                 søknadsbarnRolle?.virkningstidspunkt ?: virkningstidspunkt!!,
-                opphørsdato ?: globalOpphørsdatoYearMonth,
+                opphørsdato,
                 senesteBeregnTil = senesteBeregnTil,
                 søknadsbarnRolle = søknadsbarnRolle,
             )
