@@ -384,7 +384,7 @@ class ForholdsmessigFordelingService(
                 it.personident to
                     opprettetSøknad.behandlingstema.tilStønadstype()
             }
-        val søknadsbarnOrdinæreSøknader =
+        val søknadsbarnAndreSøknader =
             tilknyttetSøknaderIkkeHovedsøknad.flatMap { tilknyttetSøknad ->
                 opprettKlageSøknad(
                     tilknyttetSøknad,
@@ -399,7 +399,8 @@ class ForholdsmessigFordelingService(
                         it.personident to
                             tilknyttetSøknad.behandlingstema.tilStønadstype()
                     }
-            } + søknadsbarnOpprettetSøknad
+            }
+        val søknadsbarnOrdinæreSøknader = søknadsbarnAndreSøknader + søknadsbarnOpprettetSøknad
 
         behandling.roller
             .forEach {
@@ -439,6 +440,7 @@ class ForholdsmessigFordelingService(
             )
 
         giSakTilgangTilEnhet(behandling, behandlerEnhet)
+        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         oppdaterBehandlingEtterOppdatertRoller(
             behandling,
             underholdService,
@@ -1099,6 +1101,34 @@ class ForholdsmessigFordelingService(
             }
     }
 
+    @Transactional
+    fun slettDuplikatForholdsmessigFordelingSøknader(behandling: Behandling) {
+        behandling.søknadsbarn
+            .forEach { rolle ->
+                val ffDetaljer = rolle.forholdsmessigFordeling ?: return@forEach
+                val åpneFFSøknader =
+                    ffDetaljer.søknaderUnderBehandling
+                        .filter { it.behandlingstype?.erForholdsmessigFordeling == true }
+                        .filter { it.søknadsid != null }
+
+                if (åpneFFSøknader.size <= 1) return@forEach
+
+                val søknadSomSkalBeholdes =
+                    åpneFFSøknader.minWithOrNull(
+                        compareBy(
+                            { it.søknadFomDato ?: LocalDate.MAX },
+                            { it.mottattDato },
+                        ),
+                    ) ?: return@forEach
+
+                åpneFFSøknader
+                    .filter { it.søknadsid != søknadSomSkalBeholdes.søknadsid }
+                    .forEach { duplikatSøknad ->
+                        feilregistrerSøknadTrygt(duplikatSøknad, behandling)
+                    }
+            }
+    }
+
     // Feilhåndtering hvis FF søknad blir slettet manuelt eller ved feil
     @Transactional
     fun synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling: Behandling) {
@@ -1112,7 +1142,7 @@ class ForholdsmessigFordelingService(
             hentÅpneSøknader(behandling.bidragspliktig!!.ident!!, behandling.behandlingstypeForFF, behandling.omgjøringsdetaljer)
 
         oppdaterSøknadStatuserForAlleRoller(behandling)
-
+        slettDuplikatForholdsmessigFordelingSøknader(behandling)
         if (behandling.erKlageEllerOmgjøring) {
             opprettSøknaderForKlageEllerOmgjøring(behandling, behandling.soknadsid!!)
             knyttSammenManglendeSøknadsknytningerIBehandling(behandling)
@@ -1334,7 +1364,7 @@ class ForholdsmessigFordelingService(
                 }
             }
 
-        feilregistrerAndreSøknaderTrygt(lagretSøknader, søknadSomSkalBeholdes)
+        feilregistrerAndreSøknaderTrygt(lagretSøknader, søknadSomSkalBeholdes, behandling)
     }
 
     private fun opprettEllerGjenopprettFfSøknadForRevurderingsbarn(
@@ -1369,26 +1399,35 @@ class ForholdsmessigFordelingService(
     private fun feilregistrerAndreSøknaderTrygt(
         lagretSøknader: MutableSet<ForholdsmessigFordelingSøknadBarn>,
         søknadSomSkalBeholdes: ForholdsmessigFordelingSøknadBarn,
+        behandling: Behandling,
     ) {
         lagretSøknader
             .filter { it.søknadsid != søknadSomSkalBeholdes.søknadsid }
             // Bare feilregistrer de som har samme innkrevingstype men ikke er samme søknadsid
             .filter { it.innkreving == søknadSomSkalBeholdes.innkreving }
             .forEach { søknad ->
-                val søknadsid = søknad.søknadsid ?: return@forEach
-                if (feilregistrerSøknadTrygt(søknadsid)) {
-                    søknad.status = Behandlingstatus.FEILREGISTRERT
-                }
+                feilregistrerSøknadTrygt(søknad, behandling)
             }
     }
 
-    private fun feilregistrerSøknadTrygt(søknadsid: Long): Boolean =
+    private fun feilregistrerSøknadTrygt(
+        søknad: ForholdsmessigFordelingSøknadBarn,
+        behandling: Behandling,
+    ): Boolean =
         try {
+            val søknadsid = søknad.søknadsid ?: return false
             bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(søknadsid))
             bbmConsumer.fjernSammeknytning(søknadsid)
+            søknad.status = Behandlingstatus.FEILREGISTRERT
+            behandling.roller.forEach {
+                val søknader = it.forholdsmessigFordeling?.søknaderUnderBehandling?.filter { it.søknadsid == søknadsid } ?: emptyList()
+                søknader.forEach {
+                    it.status = Behandlingstatus.FEILREGISTRERT
+                }
+            }
             true
         } catch (e: Exception) {
-            LOGGER.warn(e) { "Kunne ikke feilregistrere søknad $søknadsid i BBM" }
+            LOGGER.warn(e) { "Kunne ikke feilregistrere søknad ${søknad.søknadsid} i BBM" }
             false
         }
 
@@ -1483,7 +1522,12 @@ class ForholdsmessigFordelingService(
                     val partBarn = it.parterForRolle(rolle.rolletype).find { it.personident == rolle.ident }
                     val status =
                         if (rolle.rolletype != Rolletype.BARN) {
-                            null
+                            val statuser = it.barn.map { it.behandlingstatus }.distinct()
+                            when {
+                                statuser.size == 1 -> statuser.first()
+                                it.barn.any { it.behandlingstatus == Behandlingstatus.VEDTAK_FATTET } -> Behandlingstatus.VEDTAK_FATTET
+                                else -> Behandlingstatus.UNDER_BEHANDLING
+                            }
                         } else {
                             partBarn?.behandlingstatus ?: Behandlingstatus.UNDER_BEHANDLING
                         }
@@ -2465,7 +2509,7 @@ class ForholdsmessigFordelingService(
         val barnMedInnkreving = løpendeBidragssak.filter { it.løperBidragEtterDato(søktFomDato.toYearMonth()) }
         val ffDetaljerBarn =
             ForholdsmessigFordelingSøknadBarn(
-                søknadsid = 0,
+                søknadsid = 0, // Settes senere når søknad opprettes
                 mottattDato = LocalDate.now(),
                 søknadFomDato = søktFomDato,
                 søktAvType = SøktAvType.NAV_BIDRAG,
