@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import io.getunleash.FakeUnleash
+import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockkClass
@@ -148,6 +149,7 @@ abstract class CommonMockServiceTest {
         val unleash = FakeUnleash()
         unleash.enableAll()
 
+        every { inntektService.justerInntektOffentligePerioderEtterSisteGrunnlag(any()) } returns Unit
         grunnlagService =
             GrunnlagService(grunnlagConsumer, boforholdService, grunnlagRepository, InntektApi(""), inntektService, dtomapper, underholdService, barnebidragGrunnlagInnhenting, vedtakConsumer)
         inntektService = InntektService(behandlingRepository, inntektRepository, notatService)
