@@ -17,6 +17,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import no.nav.bidrag.behandling.database.datamodell.extensions.ÅrsakConverter
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
+import no.nav.bidrag.behandling.dto.grunnlag.PersonStønad
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
@@ -125,6 +126,10 @@ open class Rolle(
     @Column(columnDefinition = "jsonb", name = "forholdsmessig_fordeling")
     open var forholdsmessigFordeling: ForholdsmessigFordelingRolle? = null,
 ) {
+    fun erSammeRolle(gjelder: PersonStønad) =
+        (gjelder.rolleId != null && this.id == gjelder.rolleId) ||
+            (gjelder.rolleId == null && erSammeRolle(gjelder.personident!!.verdi, gjelder.stønadstype))
+
     fun erSammeRolle(annenRolle: Rolle) =
         if (rolletype == Rolletype.BARN) {
             erSammeRolle(annenRolle.ident!!, annenRolle.stønadstype)

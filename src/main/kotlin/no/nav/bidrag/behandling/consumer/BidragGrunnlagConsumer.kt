@@ -63,7 +63,7 @@ class BidragGrunnlagConsumer(
                 .forEach {
                     requestobjekterGrunnlag[it] =
                         oppretteGrunnlagsobjekter(
-                            Personident(it.personident.verdi),
+                            Personident(it.personident!!.verdi),
                             Rolletype.BARN,
                             behandling,
                         )

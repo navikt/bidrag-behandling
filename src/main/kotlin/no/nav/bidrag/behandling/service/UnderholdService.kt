@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentSisteBearbeidetBarnetils
 import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
 import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
+import no.nav.bidrag.behandling.dto.grunnlag.PersonStønad
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
@@ -252,7 +253,7 @@ class UnderholdService(
 
     fun oppdatereAutomatiskInnhentaStønadTilBarnetilsyn(
         behandling: Behandling,
-        gjelderSøknadsbarn: Personident,
+        gjelderSøknadsbarn: PersonStønad,
     ) {
         val ikkeAktiverteGrunnlag =
             behandling.grunnlag.hentAlleIkkeAktiv().filter { Grunnlagsdatatype.BARNETILSYN == it.type }
@@ -265,7 +266,7 @@ class UnderholdService(
         val ikkeaktivertBearbeidaGrunnlagForSøknadsbarn =
             ikkeAktiverteGrunnlag
                 .filter { it.erBearbeidet }
-                .find { it.gjelder == gjelderSøknadsbarn.verdi }
+                .find { it.gjelderBarn(gjelderSøknadsbarn) }
 
         if (ikkeaktivertBearbeidaGrunnlagForSøknadsbarn == null) {
             throw HttpClientErrorException(
@@ -274,19 +275,19 @@ class UnderholdService(
             )
         }
 
-        val søknadsbarn = behandling.søknadsbarn.find { it.ident == gjelderSøknadsbarn.verdi }
+        val søknadsbarn = behandling.søknadsbarn.find { it.erSammeRolle(gjelderSøknadsbarn) }
 
         val data =
             behandling.grunnlag
                 .hentAlleIkkeAktiv()
-                .filter { it.gjelder == gjelderSøknadsbarn.verdi }
+                .filter { it.gjelderBarn(gjelderSøknadsbarn) }
                 .toSet()
                 .hentAlleBearbeidaBarnetilsyn(
                     søknadsbarn!!.virkningstidspunktRolle,
                     søknadsbarn!!.bidragsmottaker!!,
                 )
 
-        val u = behandling.underholdskostnader.find { it.personIdent == gjelderSøknadsbarn.verdi }
+        val u = behandling.underholdskostnader.find { it.tilhørerPerson(søknadsbarn.ident!!, søknadsbarn.stønadstype) }
         if (u == null) {
             throw HttpClientErrorException(
                 HttpStatus.NOT_FOUND,
@@ -300,7 +301,7 @@ class UnderholdService(
 
         ikkeaktivertBearbeidaGrunnlagForSøknadsbarn.aktiv = LocalDateTime.now()
         if (nyesteIkkeaktiverteGrunnlag != null &&
-            ikkeAktiverteGrunnlag.filter { it.erBearbeidet }.find { it.gjelder != gjelderSøknadsbarn.verdi } == null
+            ikkeAktiverteGrunnlag.filter { it.erBearbeidet }.none { !it.gjelderBarn(gjelderSøknadsbarn) }
         ) {
             nyesteIkkeaktiverteGrunnlag.aktiv = LocalDateTime.now()
         }

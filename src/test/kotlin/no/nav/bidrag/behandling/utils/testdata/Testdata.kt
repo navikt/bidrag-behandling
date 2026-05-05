@@ -30,6 +30,7 @@ import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.grunnlag.SkattepliktigeInntekter
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
+import no.nav.bidrag.behandling.dto.grunnlag.PersonStønad
 import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
@@ -230,6 +231,11 @@ data class TestDataPerson(
         fødselsdato = fødselsdato,
         rolle = mutableSetOf(behandling.roller.find { it.ident == ident } ?: tilRolle(behandling, id)),
     )
+
+    fun tilPersonStønad() =
+        PersonStønad(
+            personident = Personident(ident),
+        )
 
     fun tilPersonDto() =
         PersonDto(

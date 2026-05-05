@@ -206,7 +206,7 @@ class GrunnlagService(
                 TypeBehandling.FORSKUDD -> Formål.FORSKUDD
                 TypeBehandling.SÆRBIDRAG -> Formål.SÆRBIDRAG
             }
-        secureLogger.debug { "Henter grunnlag for ${gjelder.personident.verdi}: $request" }
+        secureLogger.debug { "Henter grunnlag for ${gjelder.personident?.verdi}: $request" }
         val hentetGrunnlag = bidragGrunnlagConsumer.henteGrunnlag(request, formål)
         return gjelder to hentetGrunnlag
     }
@@ -919,7 +919,9 @@ class GrunnlagService(
                 }
 
                 else -> {
-                    behandling.roller.find { request.personident == it.personident }
+                    behandling.roller.find {
+                        it.erSammeRolle(PersonStønad(request.personident, rolleId = request.gjelderRolleId))
+                    }
                         ?: request.grunnlagstype.innhentesForRolle(behandling)
                 }
             }
@@ -934,7 +936,7 @@ class GrunnlagService(
         val harIkkeaktivertGrunnlag =
             behandling.grunnlag
                 .hentSisteIkkeAktiv()
-                .filter { rolleGrunnlagErInnhentetFor!!.ident == it.rolle.ident }
+                .filter { rolleGrunnlagErInnhentetFor!!.erSammeRolle(it.rolle) }
                 .any { request.grunnlagstype == it.type }
 
         if (!harIkkeaktivertGrunnlag) {
@@ -953,14 +955,14 @@ class GrunnlagService(
         } else if (Grunnlagsdatatype.BARNETILSYN == request.grunnlagstype) {
             underholdService.oppdatereAutomatiskInnhentaStønadTilBarnetilsyn(
                 behandling,
-                request.gjelderIdent!!,
+                PersonStønad(request.personident, rolleId = request.gjelderRolleId),
             )
         } else if (Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN == request.grunnlagstype) {
             aktivereBoforholdBMsSøknadsbarn(behandling)
         } else if (Grunnlagsdatatype.BOFORHOLD == request.grunnlagstype) {
             aktivereBoforhold(
                 behandling,
-                request.gjelderIdent!!,
+                PersonStønad(request.personident, rolleId = request.gjelderRolleId),
                 request.overskriveManuelleOpplysninger,
             )
         } else if (Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == request.grunnlagstype) {
@@ -1474,14 +1476,14 @@ class GrunnlagService(
 
     private fun aktivereBoforhold(
         behandling: Behandling,
-        gjelderHusstandsmedlem: Personident,
+        gjelderHusstandsmedlem: PersonStønad,
         overskriveManuelleOpplysninger: Boolean,
     ) {
         val grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD
         val nyesteIkkeAktiverteBoforholdForHusstandsmedlem =
             behandling.grunnlag
                 .hentSisteIkkeAktiv()
-                .filter { gjelderHusstandsmedlem.verdi == it.gjelder && grunnlagsdatatype == it.type }
+                .filter { it.gjelderBarn(gjelderHusstandsmedlem) && grunnlagsdatatype == it.type }
                 .firstOrNull { it.erBearbeidet }
 
         if (nyesteIkkeAktiverteBoforholdForHusstandsmedlem == null) {
@@ -1499,19 +1501,6 @@ class GrunnlagService(
                     "Det oppstod en feil ved aktivering av boforhold i behandling ${behandling.id}",
                 ),
             )
-
-        // TOOD: Vurdere å trigge ny grunnlagsinnhenting
-//        if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.isNullOrEmpty()) {
-//            log.error {
-//                "Fant ingen husstandsmedlemmer som er barn av ${grunnlagsdatatype.innhentesForRolle(behandling)!!.rolletype} i " +
-//                    "nyeste boforholdsgrunnlag i behandling ${behandling.id}"
-//            }
-//            throw HttpClientErrorException(
-//                HttpStatus.INTERNAL_SERVER_ERROR,
-//                "Fant ingen husstandsmedlemmer som er barn av ${grunnlagsdatatype.innhentesForRolle(behandling)!!.rolletype} " +
-//                    "i nyeste boforholdsgrunnlag i behandling ${behandling.id}",
-//            )
-//        }
 
         boforholdService.oppdatereAutomatiskInnhentetBoforhold(
             behandling,
@@ -1558,15 +1547,18 @@ class GrunnlagService(
                 it.gjelderPersonId != null && it.erBarn
             }.groupBy {
                 it.gjelderPersonId
-            }.forEach {
+            }.forEach { gjelderPerson ->
+                val roller = behandling.roller.filter { it.ident == gjelderPerson.key }
                 val nyesteGrunnlagForHusstandsmedlem =
-                    behandling.henteNyesteGrunnlag(
-                        Grunnlagstype(grunnlagsdatatype, true),
-                        grunnlagsdatatype.innhentesForRolle(behandling)!!,
-                        Personident(it.key!!),
-                        null, // TODO: Fix meg
-                    )
-                if (nyesteGrunnlagForHusstandsmedlem != null && nyesteGrunnlagForHusstandsmedlem.aktiv == null) {
+                    roller.mapNotNull {
+                        behandling.henteNyesteGrunnlag(
+                            Grunnlagstype(grunnlagsdatatype, true),
+                            grunnlagsdatatype.innhentesForRolle(behandling)!!,
+                            it.personident,
+                            it,
+                        )
+                    }
+                if (nyesteGrunnlagForHusstandsmedlem.isNotEmpty() && nyesteGrunnlagForHusstandsmedlem.any { it.aktiv == null }) {
                     return false
                 }
             }
@@ -1586,7 +1578,7 @@ class GrunnlagService(
                 Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
                 rolle,
                 null,
-                null, // TODO: Fix meg
+                null,
             )
         val husstandsmedlemmer = nyesteGrunnlag.konvertereData<List<RelatertPersonGrunnlagDto>>()
         periodisereOgLagreBoforhold(
@@ -1634,7 +1626,7 @@ class GrunnlagService(
                     .filterNot { it.value == null }
             } ?: Grunnlagsdatatype.gjeldende().associateWith { null }
 
-        val rolleInnhentetFor = behandling.roller.find { it.erSammeRolle(gjelder.personident.verdi, gjelder.stønadstype) }!!
+        val rolleInnhentetFor = behandling.roller.find { it.erSammeRolle(gjelder.personident!!.verdi, gjelder.stønadstype) }!!
         innhentetGrunnlag.hentGrunnlagDto?.let {
             lagreGrunnlagHvisEndret(behandling, rolleInnhentetFor, it, feilrapporteringer)
         }
@@ -1689,7 +1681,7 @@ class GrunnlagService(
                         Grunnlagstype(grunnlagstypeBoforhold, false),
                         it,
                         null,
-                        null, // TODO: Fix meg
+                        null,
                     )
                 }
             val innhentingBoforholdUtenFeil =
@@ -1698,7 +1690,7 @@ class GrunnlagService(
                         !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
                 )
             if (behandling.søknadsbarn.isNotEmpty() && innhentingBoforholdUtenFeil &&
-                boforholdInnhentesForRolle?.ident == gjelder.personident.verdi
+                boforholdInnhentesForRolle?.ident == gjelder.personident?.verdi
             ) {
                 periodisereOgLagreBoforhold(
                     behandling,
@@ -1725,7 +1717,7 @@ class GrunnlagService(
                         Grunnlagstype(grunnlagstypeBoforholdBM, false),
                         it,
                         null,
-                        null, // TODO: Fix meg
+                        null,
                     )
                 }
             val innhentingBmBoforholdUtenFeil =
@@ -1735,7 +1727,7 @@ class GrunnlagService(
                             !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
                     )
             if (behandling.søknadsbarn.isNotEmpty() && innhentingBmBoforholdUtenFeil &&
-                grunnlagBoforholdTilBMInnhentesForRolle?.ident == gjelder.personident.verdi
+                grunnlagBoforholdTilBMInnhentesForRolle?.ident == gjelder.personident?.verdi
             ) {
                 periodisereOgLagreBoforhold(
                     behandling,
@@ -1743,7 +1735,7 @@ class GrunnlagService(
                     Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN,
                 )
             }
-            if (Grunnlagsdatatype.ANDRE_BARN.innhentesForRolle(behandling)?.ident == gjelder.personident.verdi) {
+            if (Grunnlagsdatatype.ANDRE_BARN.innhentesForRolle(behandling)?.ident == gjelder.personident?.verdi) {
                 lagreAndreBarnTilBMGrunnlag(
                     behandling,
                     it.husstandsmedlemmerOgEgneBarnListe.toSet(),
@@ -2609,19 +2601,21 @@ class GrunnlagService(
         innhentetForRolle: Rolle,
     ): Boolean {
         val nyesteRådata = jsonTilObjekt<List<RelatertPersonGrunnlagDto>>(sisteInnhentedeIkkeBearbeidaGrunnlag!!.data)
-        nyesteRådata.mapNotNull { it.gjelderPersonId }.forEach {
+        nyesteRådata.mapNotNull { it.gjelderPersonId }.forEach { gjelderPerson ->
             val nyesteBearbeidaDataForHusstandsmedlem =
-                behandling.henteNyesteGrunnlag(
-                    Grunnlagstype(
-                        Grunnlagsdatatype.BOFORHOLD,
-                        true,
-                    ),
-                    innhentetForRolle,
-                    Personident(it),
-                    null, // TODO: Fix meg
-                )
+                behandling.roller.filter { it.ident == gjelderPerson }.mapNotNull {
+                    behandling.henteNyesteGrunnlag(
+                        Grunnlagstype(
+                            Grunnlagsdatatype.BOFORHOLD,
+                            true,
+                        ),
+                        innhentetForRolle,
+                        it.personident,
+                        it,
+                    )
+                }
 
-            if (nyesteBearbeidaDataForHusstandsmedlem?.aktiv == null) {
+            if (nyesteBearbeidaDataForHusstandsmedlem.isNotEmpty() && nyesteBearbeidaDataForHusstandsmedlem.any { it.aktiv == null }) {
                 return false
             }
         }
@@ -2873,7 +2867,7 @@ class GrunnlagService(
         type: GrunnlagRequestType,
         personident: PersonStønad,
     ) = feilrapporteringListe.find {
-        it.grunnlagstype == type && it.personId == personident.personident.verdi
+        it.grunnlagstype == type && it.personId == personident.personident?.verdi
     }
 
     private fun lagreGrunnlagHvisEndret(

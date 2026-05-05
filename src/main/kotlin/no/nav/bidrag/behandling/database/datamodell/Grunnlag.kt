@@ -2,7 +2,6 @@ package no.nav.bidrag.behandling.database.datamodell
 
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.swagger.v3.oas.annotations.media.Schema
-import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -13,10 +12,10 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToOne
 import no.nav.bidrag.behandling.database.datamodell.model.BpsBarnUtenBidragsakEllerLøpendeBidrag
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
+import no.nav.bidrag.behandling.dto.grunnlag.PersonStønad
 import no.nav.bidrag.behandling.dto.v1.beregning.BeregnetBidragBarnDto
 import no.nav.bidrag.behandling.dto.v1.grunnlag.BpsBarnUtenLøpendeBidragDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -54,12 +53,23 @@ open class Grunnlag(
     open var rolle: Rolle,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gjelder_barn_rolle_id", nullable = true)
+    // Gjelder barn rolle hvis grunnlag gjelder en rolle i behandlingen
     open var gjelderBarnRolle: Rolle? = null,
+    // Gjelder ident hvis grunnlaget gjelder en person som ikke er del av behandlingen. Feks i boforhold
     open var gjelder: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
 ) {
+    fun gjelderBarn(person: PersonStønad) =
+        (person.rolleId != null && gjelderBarnRolle != null && gjelderBarnRolle!!.id == person.rolleId) ||
+            (
+                person.rolleId == null && gjelderBarnRolle != null &&
+                    gjelderBarnRolle!!
+                        .erSammeRolle(person.personident!!.verdi, person.stønadstype)
+            ) ||
+            (person.rolleId == null && person.personident?.verdi == gjelder)
+
     override fun toString(): String =
         try {
             "Grunnlag($type, erBearbeidet=$erBearbeidet, rolle=${rolle.rolletype}, ident=${rolle.ident}, aktiv=$aktiv, " +
