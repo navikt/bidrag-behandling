@@ -955,14 +955,14 @@ class GrunnlagService(
         } else if (Grunnlagsdatatype.BARNETILSYN == request.grunnlagstype) {
             underholdService.oppdatereAutomatiskInnhentaStønadTilBarnetilsyn(
                 behandling,
-                PersonStønad(request.personident, rolleId = request.gjelderRolleId),
+                PersonStønad(request.gjelderIdent, rolleId = request.gjelderRolleId),
             )
         } else if (Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN == request.grunnlagstype) {
             aktivereBoforholdBMsSøknadsbarn(behandling)
         } else if (Grunnlagsdatatype.BOFORHOLD == request.grunnlagstype) {
             aktivereBoforhold(
                 behandling,
-                PersonStønad(request.personident, rolleId = request.gjelderRolleId),
+                PersonStønad(request.gjelderIdent, rolleId = request.gjelderRolleId),
                 request.overskriveManuelleOpplysninger,
             )
         } else if (Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN == request.grunnlagstype) {
