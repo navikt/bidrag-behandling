@@ -461,6 +461,7 @@ data class ForholdsmessigFordelingBidragTilFordelingBarn(
     val oppfostringsbidrag: Boolean = false,
     val privatAvtale: Boolean,
     val erSøknadsbarn: Boolean,
+    val stønadstype: Stønadstype? = null,
     val beregnetBidrag: BeregnetBidragBarnDto? = null,
     val bidragTilFordeling: BigDecimal,
     val barn: PersoninfoDto,

@@ -561,7 +561,8 @@ class ForholdsmessigFordelingService(
             }
             val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
             val erOppdateringAvBehandlingSomErIFF = behandling.erIForholdsmessigFordeling
-            opprettGrunnlagLøpendeBidrag(behandling)
+            // Må hente løpende bidrag før mtp at vi ønsker å vite løpende bidrag før FF opprettes og lagre det helt til slutt
+            val nyesteLøpendeBidragGrunnlag = sjekkBeregningKreverForholdsmessigFordeling(behandling).løpendeBidragBarn
 
             val originalBM = behandling.bidragsmottaker!!.ident
 
@@ -680,15 +681,20 @@ class ForholdsmessigFordelingService(
                 },
                 emptyList(),
             )
+            // Opprett helt til slutt mtp at den krever rolle som opprettes
+            opprettGrunnlagLøpendeBidrag(behandling, nyesteLøpendeBidragGrunnlag)
         } catch (e: Exception) {
             secureLogger.error(e) { "Det skjedde en feil ved opprettelse eller oppdatering av FF for behandling $behandlingId" }
             behandlingRepository.markerOpprettelseAvFFFeilet(behandlingId)
         }
     }
 
-    private fun opprettGrunnlagLøpendeBidrag(behandling: Behandling) {
+    private fun opprettGrunnlagLøpendeBidrag(
+        behandling: Behandling,
+        nyesteLøpendeBidragGrunnlag: List<LøpendeBidragGrunnlagForholdsmessigFordeling>,
+    ) {
         val type = Grunnlagsdatatype.LØPENDE_BIDRAG_OPPRETT_FORHOLDSMESSIG_FORDELING
-        val nyesteLøpendeBidragGrunnlag = sjekkBeregningKreverForholdsmessigFordeling(behandling).løpendeBidragBarn
+
         val eksisterendeGrunnlag =
             behandling.grunnlag.hentSisteGrunnlagLøpendeBidragFF(behandling) ?: emptyList()
         if (eksisterendeGrunnlag != nyesteLøpendeBidragGrunnlag) {
@@ -698,17 +704,19 @@ class ForholdsmessigFordelingService(
             // Hver gang det lagres så legges det til ny barn. Dette er grunnlag når FF opprettes.
             // Det betyr det saksbehandler baserte valget på for når FF skulle opprettes. Derfor bør ikke eksisterende data endres
             // Når nye grunnlag lagres
-            val eksisterendeGrunnlagIdenter = eksisterendeGrunnlag.map { it.gjelderBarnIdent }
+            val eksisterendeGrunnlagIdenter = eksisterendeGrunnlag.map { it.gjelderBarnIdent to it.gjelderStønadstype }
             val nyeGrunnlag =
                 nyesteLøpendeBidragGrunnlag
-                    .filter { !eksisterendeGrunnlagIdenter.contains(it.gjelderBarnIdent) }
+                    .filter { !eksisterendeGrunnlagIdenter.contains(it.gjelderBarnIdent to it.gjelderStønadstype) }
 
             behandling.grunnlag.addAll(
                 nyeGrunnlag.map {
+                    val rolle = behandling.roller.find { r -> r.erSammeRolle(it.gjelderBarnIdent, it.gjelderStønadstype) }
                     Grunnlag(
                         behandling = behandling,
                         type = type,
                         gjelder = it.gjelderBarnIdent,
+                        gjelderBarnRolle = rolle,
                         data = commonObjectmapper.writeValueAsString(it.løpendeBidragPerioder),
                         innhentet = LocalDateTime.now(),
                         aktiv = LocalDateTime.now(),
@@ -1916,17 +1924,18 @@ class ForholdsmessigFordelingService(
                 grunnlagsliste.filtrerOgKonverterBasertPåEgenReferanse<DelberegningBidragTilFordelingLøpendeBidrag>(
                     Grunnlagstype.DELBEREGNING_BIDRAG_TIL_FORDELING_LØPENDE_BIDRAG,
                 )
-            val lagretLøpendeBidragBarnIdenter = lagretLøpendeBidrag.map { it.gjelderBarnIdent }
+            val lagretLøpendeBidragBarnIdenter = lagretLøpendeBidrag.map { it.gjelderBarnIdent to it.gjelderStønadstype }
             val løpendeBidragBarn =
                 grunnlagsliste
                     .mapTilBeregnetBidragDto(løpendeBidrag)
                     // Lagret løpende bidrag så betyr det at det er opprettet FF på grunnlaget av løpende bidraget som ble lagret
                     // Da skal de brukes istedenfor det som kommer fra beregningen.
-                    .filter { !lagretLøpendeBidragBarnIdenter.contains(it.barn.ident!!.verdi) }
-                    .groupBy { it.barn.ident!!.verdi }
-                    .map { (ident, løpendeBidrag) ->
+                    .filter { !lagretLøpendeBidragBarnIdenter.contains(it.barn.ident!!.verdi to it.stønadstype) }
+                    .groupBy { it.barn.ident!!.verdi to it.stønadstype }
+                    .map { (identStønad, løpendeBidrag) ->
                         LøpendeBidragGrunnlagForholdsmessigFordeling(
-                            ident,
+                            identStønad.first,
+                            identStønad.second,
                             løpendeBidrag.mapNotNull { it.beregnetBidrag },
                         )
                     }

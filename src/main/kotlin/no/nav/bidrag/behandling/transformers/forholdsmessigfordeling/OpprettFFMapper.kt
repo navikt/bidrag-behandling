@@ -268,7 +268,7 @@ fun opprettEllerOppdaterRolle(
                 } else {
                     null
                 },
-            opphørsdato = if (erBarn) opphørsdato?.toLocalDate() ?: behandling.globalOpphørsdato else null,
+            opphørsdato = if (erBarn) opphørsdato?.toLocalDate() else null,
             årsak =
                 if (erBarn && ffDetaljer.erRevurdering) {
                     VirkningstidspunktÅrsakstype.REVURDERING_MÅNEDEN_ETTER

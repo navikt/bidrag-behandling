@@ -19,7 +19,7 @@ class ForholdsmessigFordelingController(
     @PostMapping("/{behandlingsid}")
     fun opprettForholdsmessigFordeling(
         @PathVariable behandlingsid: Long,
-        @RequestBody request: OpprettFFRequest,
+        @RequestBody(required = false) request: OpprettFFRequest?,
     ) {
         forholdsmessigFordelingService.opprettEllerOppdaterForholdsmessigFordeling(behandlingsid, request = request)
     }
