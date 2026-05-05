@@ -445,7 +445,7 @@ fun Husstandsmedlem.oppdaterePerioder(
                 rolle?.finnVirkningstidspunktBeregningBoforhold() ?: behandling.eldsteVirkningstidspunkt,
                 rolle?.finnOpphørsdatoBoforhold(),
                 behandling.finnBeregnTilDatoBehandling(rolle),
-                behandling.tilTypeBoforhold(),
+                behandling.tilTypeBoforhold(rolle?.stønadstype),
                 listOf(periodiseringsrequest),
             ),
         )

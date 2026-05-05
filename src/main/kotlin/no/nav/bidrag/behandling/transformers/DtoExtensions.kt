@@ -118,16 +118,7 @@ fun OpprettRolleDto.toHusstandsmedlem(behandling: Behandling): Husstandsmedlem {
                     ?: rolleManglerFødselsdato(rolletype),
         )
 
-    husstandsmedlem.oppdaterePerioder(
-        nyEllerOppdatertBostatusperiode =
-            Bostatusperiode(
-                husstandsmedlem = husstandsmedlem,
-                bostatus = Bostatuskode.IKKE_MED_FORELDER,
-                datoFom = behandling.eldsteVirkningstidspunkt,
-                datoTom = null,
-                kilde = Kilde.MANUELL,
-            ),
-    )
+    husstandsmedlem.oppdaterePerioder()
 
     return husstandsmedlem
 }

@@ -191,6 +191,7 @@ fun oppdaterBehandlingEtterOppdatertRoller(
     oppdaterUnderholdskostnadForRoller(behandling, underholdService, rollerSomLeggesTilJustert, rollerSomSkalSlettesJustert)
     oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTilJustert)
     oppdaterOpphørForRoller(behandling, virkningstidspunktService, rollerSomLeggesTilJustert)
+    virkningstidspunktService.oppdaterVirkningstidspunkt(null, null, behandling, true)
 }
 
 private fun slettInntekterSomTilhørerRolleSomSlettes(
