@@ -133,7 +133,7 @@ fun List<Grunnlag>.henteEndringerIBarnetilsyn(
     fun Personident.erSøknadsbarn() = behandling.søknadsbarn.find { it.personident == this } != null
 
     fun Behandling.henteUnderholdskostnadPersonident(personident: Personident) =
-        this.underholdskostnader.find {
+        this.underholdskostnader.filter {
             it.personIdent == personident.verdi
         }
 
@@ -175,12 +175,14 @@ fun List<Grunnlag>.henteEndringerIBarnetilsyn(
         return StønadTilBarnetilsynIkkeAktiveGrunnlagDto(
             stønadTilBarnetilsyn =
                 nyeBarnetilsynsdataTilknyttetSøknadsbarn
-                    .map {
-                        it.key to
-                            it.value
-                                .tilBarnetilsyn(behandling.henteUnderholdskostnadPersonident(it.key)!!)
-                                .toSet()
-                                .tilStønadTilBarnetilsynDtos()
+                    .flatMap {
+                        behandling.henteUnderholdskostnadPersonident(it.key).map { u ->
+                            it.key to
+                                it.value
+                                    .tilBarnetilsyn(u)
+                                    .toSet()
+                                    .tilStønadTilBarnetilsynDtos()
+                        }
                     }.toMap(),
             grunnlag =
                 nyeBarnetilsyn

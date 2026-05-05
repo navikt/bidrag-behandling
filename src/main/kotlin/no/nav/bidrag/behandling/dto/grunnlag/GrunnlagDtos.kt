@@ -14,6 +14,7 @@ data class LøpendeBidragGrunnlagForholdsmessigFordeling(
 )
 
 data class PersonStønad(
-    val personident: Personident,
-    val stønadstype: Stønadstype?,
+    val personident: Personident? = null,
+    val stønadstype: Stønadstype? = null,
+    val rolleId: Long? = null,
 )
