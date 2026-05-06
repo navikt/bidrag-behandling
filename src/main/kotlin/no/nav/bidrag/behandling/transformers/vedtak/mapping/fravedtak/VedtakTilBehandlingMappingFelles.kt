@@ -90,10 +90,12 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
+import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrenseForPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
@@ -402,6 +404,7 @@ internal fun VedtakDto.hentBeregningsperioder(stønadsendring: StønadsendringDt
         }
     } else {
         stønadsendring.periodeListe.filter { Resultatkode.fraKode(it.resultatkode) != Resultatkode.OPPHØR }.map {
+            val søknadsbarn = grunnlagsliste.hentPersonMedIdent(stønadsendring.kravhaver.verdi, stønadsendring.type)
             grunnlagsliste.byggResultatBidragsberegning(
                 it.periode,
                 it.beløp,
@@ -412,7 +415,7 @@ internal fun VedtakDto.hentBeregningsperioder(stønadsendring: StønadsendringDt
                 },
                 it.grunnlagReferanseListe,
                 null,
-                Resultatkode.fraKode(it.resultatkode) == Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
+                grunnlagListe.erResultatEndringUnderGrenseForPeriode(it.periode, søknadsbarn!!.referanse),
                 type,
                 barnIdent = stønadsendring.kravhaver,
                 `løperBidrag` = løpteBidragEllerForskuddFraVirkningstidspunkt(stønadsendring.tilStønadsid()),
