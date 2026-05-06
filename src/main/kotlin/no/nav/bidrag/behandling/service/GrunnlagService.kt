@@ -1361,9 +1361,7 @@ class GrunnlagService(
             }
         val grunnlagSomSkalOverskrivesGjelder =
             grunnlagSomSkalOverskrives.find {
-                if (gjelderBarn == null) {
-                    it.gjelderBarnRolle == null && it.gjelder == null
-                } else if (it.gjelderBarnRolle != null && gjelderBarn != null) {
+                if (it.gjelderBarnRolle != null && gjelderBarn != null) {
                     it.gjelderBarnRolle!!.erSammeRolle(gjelderBarn)
                 } else {
                     it.gjelder == gjelderBarn?.ident

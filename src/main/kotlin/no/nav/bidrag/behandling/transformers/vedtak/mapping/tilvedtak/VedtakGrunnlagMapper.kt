@@ -86,7 +86,7 @@ fun Behandling.finnSkalInnkrevesPeriode(søknadsbarnRolle: Rolle): List<ÅrMåne
         val perioderFraVirkningstidspunkt =
             beløpshistorikk.periodeListe
                 .map { it.periode }
-                .filtrerOgJusterFraVirkningstidspunkt(virkningstidspunkt)
+                .filtrerOgJusterFraVirkningstidspunkt(ÅrMånedsperiode(virkningstidspunkt.toLocalDate(), søknadsbarnRolle.opphørsdato))
         val harPerioderUtenInnkreving =
             perioderFraVirkningstidspunkt
                 .inneholderPerioderUtenInnkreving(virkningstidspunkt, beregnTil)
@@ -106,7 +106,17 @@ fun Behandling.finnSkalInnkrevesPeriode(søknadsbarnRolle: Rolle): List<ÅrMåne
         val perioderFraVirkningstidspunkt =
             beløpshistorikk.periodeListe
                 .map { it.periode }
-                .filtrerOgJusterFraVirkningstidspunkt(virkningstidspunkt)
+                .filtrerOgJusterFraVirkningstidspunkt(
+                    ÅrMånedsperiode(
+                        virkningstidspunkt.toLocalDate(),
+                        if (søknadsbarnRolle.opphørsdato != null) {
+                            maxOfNullable(søknadsbarnRolle.opphørsdato, virkningstidspunkt.toLocalDate())
+                        } else {
+                            null
+                        },
+                    ),
+                )
+
         val harPerioderUtenInnkreving =
             perioderFraVirkningstidspunkt
                 .inneholderPerioderUtenInnkreving(virkningstidspunkt, søknadsbarnRolle.finnBeregnTil())

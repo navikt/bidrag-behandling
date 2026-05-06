@@ -22,6 +22,7 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonMedIdent
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.fyllMellomromMedOpphørsperioder
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilVedtakDto
@@ -387,7 +388,7 @@ class BehandlingTilVedtakMapping(
                                     innkrevingsperioder
                                         .filtrerMatchendePeriode(periode.periode)
                                         .mapNotNull { innkrevingsperiode ->
-                                            periode.periode.klippTilPeriode(innkrevingsperiode)?.let { klippetPeriode ->
+                                            periode.periode.snitt(innkrevingsperiode)?.let { klippetPeriode ->
                                                 periode.copy(
                                                     periode = klippetPeriode,
                                                     grunnlagReferanseListe =
@@ -1457,22 +1458,6 @@ class BehandlingTilVedtakMapping(
         periodeListe = emptyList(),
         førsteIndeksreguleringsår = null,
     )
-
-    private fun ÅrMånedsperiode.klippTilPeriode(annenPeriode: ÅrMånedsperiode): ÅrMånedsperiode? {
-        val klippetFom = maxOf(fom, annenPeriode.fom)
-        val klippetTom =
-            when {
-                til == null -> annenPeriode.til
-                annenPeriode.til == null -> til
-                else -> minOf(til!!, annenPeriode.til!!)
-            }
-
-        return if (klippetTom != null && klippetTom <= klippetFom) {
-            null
-        } else {
-            ÅrMånedsperiode(klippetFom, klippetTom)
-        }
-    }
 
     private fun Behandling.byggOpprettVedtakRequestObjekt(
         enhet: String?,
