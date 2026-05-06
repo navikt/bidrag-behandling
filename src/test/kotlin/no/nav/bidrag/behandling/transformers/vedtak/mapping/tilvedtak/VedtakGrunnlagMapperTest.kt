@@ -285,12 +285,29 @@ class VedtakGrunnlagMapperTest {
                 ÅrMånedsperiode(YearMonth.of(2026, 2), null),
             )
 
-        val resultat = perioder.filtrerOgJusterFraVirkningstidspunkt(YearMonth.of(2025, 8))
+        val resultat = perioder.filtrerOgJusterFraVirkningstidspunkt(ÅrMånedsperiode(YearMonth.of(2025, 8), null))
 
         resultat shouldBe
             listOf(
                 ÅrMånedsperiode(YearMonth.of(2025, 8), YearMonth.of(2025, 10)),
                 ÅrMånedsperiode(YearMonth.of(2026, 2), null),
+            )
+    }
+
+    @Test
+    fun `skal filtrere bort perioder før oppøhr og justere fom ved overlapp`() {
+        val perioder =
+            listOf(
+                ÅrMånedsperiode(YearMonth.of(2025, 7), YearMonth.of(2025, 8)),
+                ÅrMånedsperiode(YearMonth.of(2025, 7), YearMonth.of(2025, 10)),
+                ÅrMånedsperiode(YearMonth.of(2026, 2), null),
+            )
+
+        val resultat = perioder.filtrerOgJusterFraVirkningstidspunkt(ÅrMånedsperiode(YearMonth.of(2025, 8), YearMonth.of(2025, 10)))
+
+        resultat shouldBe
+            listOf(
+                ÅrMånedsperiode(YearMonth.of(2025, 8), YearMonth.of(2025, 10)),
             )
     }
 
@@ -301,7 +318,7 @@ class VedtakGrunnlagMapperTest {
                 ÅrMånedsperiode(YearMonth.of(2025, 1), null),
             )
 
-        val resultat = perioder.filtrerOgJusterFraVirkningstidspunkt(YearMonth.of(2025, 8))
+        val resultat = perioder.filtrerOgJusterFraVirkningstidspunkt(ÅrMånedsperiode(YearMonth.of(2025, 8), null))
 
         resultat shouldBe listOf(ÅrMånedsperiode(YearMonth.of(2025, 8), null))
     }
