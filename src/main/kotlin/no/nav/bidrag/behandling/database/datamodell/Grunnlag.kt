@@ -146,7 +146,8 @@ fun Set<Grunnlag>.hentSisteGrunnlagLøpendeBidragFF(behandling: Behandling): Lis
         )
     return løpendeBidragListe.sortedBy { it.gjelder }.map {
         LøpendeBidragGrunnlagForholdsmessigFordeling(
-            gjelderBarnIdent = it.gjelder!!,
+            gjelderBarnIdent = it.gjelderBarnRolle?.ident ?: it.gjelder!!,
+            gjelderStønadstype = it.gjelderBarnRolle?.stønadstype,
             løpendeBidragPerioder = it.konvertereData<List<BeregnetBidragBarnDto>>()!!,
         )
     }

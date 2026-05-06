@@ -1913,6 +1913,7 @@ fun List<GrunnlagDto>.mapTilBeregnetBidragDto(
             oppfostringsbidrag = it.innhold.erOppfostringsbidrag,
             privatAvtale = false,
             erSøknadsbarn = false,
+            stønadstype = løpendeBidrag.stønadstype,
             bidragTilFordeling = it.innhold.bidragTilFordelingNOK,
             barn =
                 PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),

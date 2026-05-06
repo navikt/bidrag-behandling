@@ -409,7 +409,11 @@ fun Grunnlag?.konverterTilStønadDto() =
 fun Rolle.harLøpendeBidragFørOpphørEllerLøpende() =
     (
         opphørsdato == null && (
-            behandling.finnesLøpendeBidragForRolle(this) || behandling.privatAvtale.any { it.personIdent == this.ident }
+            behandling.finnesLøpendeBidragForRolle(this) ||
+                behandling.privatAvtale.any {
+                    (it.rolle != null && it.rolle!!.erSammeRolle(this)) ||
+                        (it.personIdent == ident && it.stønadstype == stønadstype)
+                }
         )
     ) ||
         (opphørsdato != null && løperBidragFørOpphør())
