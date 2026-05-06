@@ -36,6 +36,7 @@ import no.nav.bidrag.behandling.transformers.behandling.finnRolle
 import no.nav.bidrag.behandling.transformers.behandling.finnes
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.filtrerSakerHvorPersonErBP
+import no.nav.bidrag.behandling.transformers.filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode
 import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.OppdaterBarnFraFFRequest
 import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.erFeilregistrert
@@ -2032,31 +2033,9 @@ class ForholdsmessigFordelingService(
         val sakerBp = hentSakerBp(bidragspliktigFnr)
         val barneSomHarBidragssak = sakerBp.flatMap { it.barn.map { it.fødselsnummer!!.verdi } }
 
-        fun Set<PrivatAvtale>.filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode() =
-            filter {
-                val førstePeriode = it.perioder.firstOrNull() ?: return@filter true
-                val sistePeriodeTom =
-                    it.perioder
-                        .maxByOrNull { it.fom }
-                        ?.tom
-                        ?.plusMonths(1)
-                        ?.toYearMonth()
-                val starterFørBeregningsperiodeSlutt =
-                    beregningsperiode.til == null ||
-                        førstePeriode.fom.toYearMonth().isBefore(beregningsperiode.til!!)
-
-                val slutterIkkeFørBeregningsperiode =
-                    sistePeriodeTom == null ||
-                        (
-                            sistePeriodeTom > beregningsperiode.fom &&
-                                (beregningsperiode.til == null || sistePeriodeTom >= beregningsperiode.til)
-                        )
-
-                starterFørBeregningsperiodeSlutt && slutterIkkeFørBeregningsperiode
-            }
         val privatAvtalerUtenBidragssak =
             behandling.privatAvtale
-                .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode()
+                .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode(beregningsperiode)
                 .filter {
                     it.rolle == null && !barneSomHarBidragssak.contains(it.personIdent!!) && (
                         it.rolle?.forholdsmessigFordeling == null ||
@@ -2083,7 +2062,7 @@ class ForholdsmessigFordelingService(
                 }
         val privatAvtalerBarnIBehandling =
             behandling.privatAvtale
-                .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode()
+                .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode(beregningsperiode)
                 .filter {
                     it.rolle != null && !kravhavereSomHarÅpenBehandling.map { it.kravhaver }.contains(it.personIdent!!)
                 }.mapNotNull { privatAvtale ->
@@ -2148,7 +2127,7 @@ class ForholdsmessigFordelingService(
                     barn
                         .flatMap { b ->
                             behandling.privatAvtale
-                                .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode()
+                                .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode(beregningsperiode)
                                 .filter { pa ->
                                     pa.rolle == null &&
                                         pa.personIdent == b.fødselsnummer?.verdi

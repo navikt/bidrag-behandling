@@ -10,6 +10,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.PersonService
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode
 import no.nav.bidrag.behandling.transformers.grunnlag.tilBeregnetInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetAndreBarnTilBidragsmottaker
@@ -214,6 +215,7 @@ class BehandlingTilGrunnlagMappingV2(
 
         return if (gjelderRolle == null || gjelderRolle.id == null) {
             privatAvtale
+                .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode()
                 .filter {
                     it.rolle == null && it.perioderInnkreving.isNotEmpty() &&
                         (gjelderRolle == null || it.gjelderPerson(gjelderRolle.ident ?: "", gjelderRolle.stønadstype))
@@ -225,6 +227,7 @@ class BehandlingTilGrunnlagMappingV2(
                 }.toSet()
         } else {
             privatAvtale
+                .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode()
                 .find { it.perioderInnkreving.isNotEmpty() && it.rolle != null && it.rolle!!.erSammeRolle(gjelderRolle) }
                 ?.let { pa ->
                     val privatAvtaleRolle = pa.rolle
