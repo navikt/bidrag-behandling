@@ -2022,7 +2022,8 @@ class ForholdsmessigFordelingService(
     ): List<SakKravhaver> {
         val kravhavereSomHarÅpenBehandling = sakerMedLøpendeBidrag ?: hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling)
         val søktFomDatoRevurdering = kravhavereSomHarÅpenBehandling.finnSøktFomRevurderingSøknad(behandling)
-
+        val beregningsperiode =
+            finnBeregningsperiodeForKravhavere(sakerMedLøpendeBidrag, behandling)
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
         val søknadsbarnIdentStønadstypeMap =
             kravhavereSomHarÅpenBehandling.map { it.kravhaver to it.stønadstype } +
@@ -2030,8 +2031,32 @@ class ForholdsmessigFordelingService(
 
         val sakerBp = hentSakerBp(bidragspliktigFnr)
         val barneSomHarBidragssak = sakerBp.flatMap { it.barn.map { it.fødselsnummer!!.verdi } }
+
+        fun Set<PrivatAvtale>.filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode() =
+            filter {
+                val førstePeriode = it.perioder.firstOrNull() ?: return@filter true
+                val sistePeriodeTom =
+                    it.perioder
+                        .maxByOrNull { it.fom }
+                        ?.tom
+                        ?.plusMonths(1)
+                        ?.toYearMonth()
+                val starterFørBeregningsperiodeSlutt =
+                    beregningsperiode.til == null ||
+                        førstePeriode.fom.toYearMonth().isBefore(beregningsperiode.til!!)
+
+                val slutterIkkeFørBeregningsperiode =
+                    sistePeriodeTom == null ||
+                        (
+                            sistePeriodeTom > beregningsperiode.fom &&
+                                (beregningsperiode.til == null || sistePeriodeTom >= beregningsperiode.til)
+                        )
+
+                starterFørBeregningsperiodeSlutt && slutterIkkeFørBeregningsperiode
+            }
         val privatAvtalerUtenBidragssak =
             behandling.privatAvtale
+                .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode()
                 .filter {
                     it.rolle == null && !barneSomHarBidragssak.contains(it.personIdent!!) && (
                         it.rolle?.forholdsmessigFordeling == null ||
@@ -2058,6 +2083,7 @@ class ForholdsmessigFordelingService(
                 }
         val privatAvtalerBarnIBehandling =
             behandling.privatAvtale
+                .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode()
                 .filter {
                     it.rolle != null && !kravhavereSomHarÅpenBehandling.map { it.kravhaver }.contains(it.personIdent!!)
                 }.mapNotNull { privatAvtale ->
@@ -2122,6 +2148,7 @@ class ForholdsmessigFordelingService(
                     barn
                         .flatMap { b ->
                             behandling.privatAvtale
+                                .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode()
                                 .filter { pa ->
                                     pa.rolle == null &&
                                         pa.personIdent == b.fødselsnummer?.verdi
@@ -2837,30 +2864,7 @@ class ForholdsmessigFordelingService(
     ): Set<SakKravhaver> {
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
         val beregningsperiode =
-            if (eksisterendeRelevanteKravhavere.isNullOrEmpty()) {
-                behandling.finnBeregningsperiode()
-            } else {
-                val senestBeregnTil =
-                    if (eksisterendeRelevanteKravhavere.any { it.løperBidragTil == null && it.løperBidragFra != null }) {
-                        null
-                    } else {
-                        eksisterendeRelevanteKravhavere
-                            .filter {
-                                it.løperBidragTil != null
-                            }.maxOfOrNull { it.løperBidragTil!! }
-                    }
-                val nyBeregnTil =
-                    behandling.søknadsbarn.maxOf {
-                        behandling.finnBeregnTilDatoBehandling(
-                            it,
-                            opphørsdato = senestBeregnTil,
-                        )
-                    }
-                ÅrMånedsperiode(
-                    fom = behandling.eldsteVirkningstidspunkt,
-                    til = nyBeregnTil,
-                )
-            }
+            finnBeregningsperiodeForKravhavere(eksisterendeRelevanteKravhavere, behandling)
         val løpendeBidraggsakerBP = hentSisteLøpendeStønader(Personident(bidragspliktigFnr), beregningsperiode)
         val åpneBehandlinger =
             behandlingRepository
@@ -2985,6 +2989,38 @@ class ForholdsmessigFordelingService(
                 }
             }.distinctBy { it.saksnummer to it.distinctKey }
             .toSet()
+    }
+
+    private fun finnBeregningsperiodeForKravhavere(
+        eksisterendeRelevanteKravhavere: Set<SakKravhaver>?,
+        behandling: Behandling,
+    ): ÅrMånedsperiode {
+        val beregningsperiode =
+            if (eksisterendeRelevanteKravhavere.isNullOrEmpty()) {
+                behandling.finnBeregningsperiode()
+            } else {
+                val senestBeregnTil =
+                    if (eksisterendeRelevanteKravhavere.any { it.løperBidragTil == null && it.løperBidragFra != null }) {
+                        null
+                    } else {
+                        eksisterendeRelevanteKravhavere
+                            .filter {
+                                it.løperBidragTil != null
+                            }.maxOfOrNull { it.løperBidragTil!! }
+                    }
+                val nyBeregnTil =
+                    behandling.søknadsbarn.maxOf {
+                        behandling.finnBeregnTilDatoBehandling(
+                            it,
+                            opphørsdato = senestBeregnTil,
+                        )
+                    }
+                ÅrMånedsperiode(
+                    fom = behandling.eldsteVirkningstidspunkt,
+                    til = nyBeregnTil,
+                )
+            }
+        return beregningsperiode
     }
 
     private fun Behandling.finnOpphørsdato(
