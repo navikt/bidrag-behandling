@@ -1470,17 +1470,18 @@ class ForholdsmessigFordelingService(
                 grunnlagsliste.filtrerOgKonverterBasertPåEgenReferanse<DelberegningBidragTilFordelingLøpendeBidrag>(
                     Grunnlagstype.DELBEREGNING_BIDRAG_TIL_FORDELING_LØPENDE_BIDRAG,
                 )
-            val lagretLøpendeBidragBarnIdenter = lagretLøpendeBidrag.map { it.gjelderBarnIdent }
+            val lagretLøpendeBidragBarnIdenter = lagretLøpendeBidrag.map { it.gjelderBarnIdent to it.gjelderStønadstype }
             val løpendeBidragBarn =
                 grunnlagsliste
                     .mapTilBeregnetBidragDto(løpendeBidrag)
                     // Lagret løpende bidrag så betyr det at det er opprettet FF på grunnlaget av løpende bidraget som ble lagret
                     // Da skal de brukes istedenfor det som kommer fra beregningen.
-                    .filter { !lagretLøpendeBidragBarnIdenter.contains(it.barn.ident!!.verdi) }
-                    .groupBy { it.barn.ident!!.verdi }
-                    .map { (ident, løpendeBidrag) ->
+                    .filter { !lagretLøpendeBidragBarnIdenter.contains(it.barn.ident!!.verdi to it.stønadstype) }
+                    .groupBy { it.barn.ident!!.verdi to it.stønadstype }
+                    .map { (identStønad, løpendeBidrag) ->
                         LøpendeBidragGrunnlagForholdsmessigFordeling(
-                            ident,
+                            identStønad.first,
+                            identStønad.second,
                             løpendeBidrag.mapNotNull { it.beregnetBidrag },
                         )
                     }
