@@ -487,17 +487,5 @@ ALTER TABLE ONLY public.inntektspost
 
 
 --
--- Performance Indexes for inntekt and inntektspost
---
-
-CREATE INDEX idx_inntekt_behandling_id ON inntekt(behandling_id);
-CREATE INDEX idx_inntektspost_inntekt_id ON inntektspost(inntekt_id);
-CREATE INDEX idx_inntekt_behandling_covering ON inntekt(behandling_id) INCLUDE (id, ta_med, inntektsrapportering, dato_fom, dato_tom, ident, belop, kilde, gjelder_barn, opprinnelig_fom, opprinnelig_tom);
-CREATE INDEX idx_rolle_behandling_id_deleted ON rolle(behandling_id, deleted);
-CREATE INDEX idx_grunnlag_rolle_id ON grunnlag(rolle_id);
-CREATE INDEX idx_grunnlag_behandling_id ON grunnlag(behandling_id);
-
-
---
 -- PostgreSQL database dump complete
 --
