@@ -464,8 +464,10 @@ class VedtakGrunnlagMapper(
         gjelderBarn: Rolle,
     ): List<GrunnlagDto> {
         return if (behandling.grunnlagslisteFraVedtak.isNullOrEmpty()) {
-            if (behandling.privatAvtale
+            val privatAvtaler =
+                behandling.privatAvtale
                     .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode()
+            if (privatAvtaler.isEmpty() || privatAvtaler
                     .find { it.gjelderPerson(gjelderBarn.ident ?: "", gjelderBarn.stønadstype) }
                     ?.perioderInnkreving
                     ?.isEmpty() == true
