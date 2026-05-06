@@ -2958,7 +2958,10 @@ class ForholdsmessigFordelingService(
                 }.distinctBy { it.distinctKey }
         val bidragsaker = løpendeBidragsaker + sakKravhaverListe
         return bidragsaker
-            .sortedWith { a, b ->
+            .filter {
+                eksisterendeRelevanteKravhavere == null ||
+                    eksisterendeRelevanteKravhavere.hentForKravhaver(it.kravhaver, it.stønadstype) == null
+            }.sortedWith { a, b ->
                 val aHasOpen = a.åpneSøknader.isNotEmpty() || a.åpneBehandlinger.isNotEmpty()
                 val bHasOpen = b.åpneSøknader.isNotEmpty() || b.åpneBehandlinger.isNotEmpty()
                 when {
