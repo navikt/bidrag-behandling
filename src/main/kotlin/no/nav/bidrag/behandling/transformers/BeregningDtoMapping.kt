@@ -1007,6 +1007,8 @@ private fun List<GrunnlagDto>.byggPeriodeBeregningDto(
         resultatKode =
             if (erResultatEndringUnderGrense) {
                 Resultatkode.INGEN_ENDRING_UNDER_GRENSE
+            } else if (resultatkode == Resultatkode.INGEN_ENDRING_UNDER_GRENSE) {
+                Resultatkode.BEREGNET_BIDRAG
             } else {
                 resultatkode
             },

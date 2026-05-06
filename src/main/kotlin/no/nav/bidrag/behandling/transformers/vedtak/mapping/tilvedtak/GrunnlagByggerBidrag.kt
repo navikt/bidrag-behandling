@@ -49,6 +49,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VedtakOrkestreringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
+import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrenseForPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanser
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAldersjusteringDetaljerGrunnlag
@@ -366,7 +367,11 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
             val resultatSluttberegning = grunnlagListe.toList().resultatSluttberegning(it.grunnlagsreferanseListe)
             val ikkeOmsorgForBarnet = resultatSluttberegning == Resultatkode.IKKE_OMSORG
             val barnetErSelvforsørget = resultatSluttberegning == Resultatkode.BARNET_ER_SELVFORSØRGET
-            val erResultatIngenEndringUnderGrense = grunnlagListe.toList().erResultatEndringUnderGrense(søknadsbarn.tilGrunnlagsreferanse())
+            val erResultatIngenEndringUnderGrense =
+                grunnlagListe.toList().erResultatEndringUnderGrenseForPeriode(
+                    it.periode,
+                    søknadsbarn.tilGrunnlagsreferanse(),
+                )
             val erIndeksregulering =
                 grunnlagListe
                     .toList()
