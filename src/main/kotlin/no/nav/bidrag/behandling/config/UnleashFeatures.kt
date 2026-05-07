@@ -28,6 +28,7 @@ enum class UnleashFeatures(
     TILGANG_OPPRETTE_FF("behandling.opprette_ff", true),
     SEND_BEHANDLING_HENDELSE("bisys.send_behandling_hendelse", false),
     HENT_GRUNNLAG_ASYNC("behandling.hent_grunnlag_async", false),
+    FEILHÅNDTERING_INNTEKT_SOM_MANGLER("behandling.opprett_inntekt_som_mangler", false),
     ;
 
     private var defaultValue = false

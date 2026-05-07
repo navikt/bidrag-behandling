@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.aktiveringAvGrunnlagFeiletException
 import no.nav.bidrag.behandling.behandlingNotFoundException
+import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
@@ -108,6 +109,12 @@ class InntektService(
                         }
                     if (finnesMinstEnPeriodeMedAvvik || finnesMinstEnPeriodeSomManglerBasertPåInnhentet) {
                         oppdatereAutomatiskInnhentaOffentligeInntekter(
+                            behandling,
+                            rolle,
+                            summerteInntekter.inntekter,
+                            type.tilGrunnlagsdataType(),
+                        )
+                        feilfiksOpprettOffentligeInntekterSomMangler(
                             behandling,
                             rolle,
                             summerteInntekter.inntekter,
@@ -272,6 +279,56 @@ class InntektService(
                 it
             },
         )
+    }
+
+    @Transactional
+    fun feilfiksOpprettOffentligeInntekterSomMangler(
+        behandling: Behandling,
+        rolle: Rolle,
+        summerteÅrsinntekter: List<SummertÅrsinntekt>,
+        grunnlagstype: Grunnlagsdatatype? = null,
+    ) {
+        if (!UnleashFeatures.FEILHÅNDTERING_INNTEKT_SOM_MANGLER.isEnabled) return
+        val idTilInntekterSomBleOppdatert: MutableSet<Long> = mutableSetOf()
+
+        summerteÅrsinntekter.forEach { nyInntekt ->
+            behandleInntektsoppdatering(behandling, nyInntekt, rolle, idTilInntekterSomBleOppdatert)
+        }
+
+        val inntektsrapporteringerForYtelser =
+            setOf(
+                Inntektsrapportering.BARNETILSYN,
+                Inntektsrapportering.BARNETILLEGG,
+                Inntektsrapportering.KONTANTSTØTTE,
+                Inntektsrapportering.UTVIDET_BARNETRYGD,
+            )
+
+        val ytelsetypeSomOppdateres = grunnlagstype?.tilInntektrapporteringYtelse()
+        val inntekt = summerteÅrsinntekter.tilInntekt(behandling, rolle)
+        val offentligeInntekterSomMangler =
+            inntekt
+                .filter {
+                    (
+                        ytelsetypeSomOppdateres != null &&
+                            it.type == ytelsetypeSomOppdateres
+                    ) ||
+                        (
+                            ytelsetypeSomOppdateres == null &&
+                                !inntektsrapporteringerForYtelser.contains(it.type)
+                        )
+                }.filter { i ->
+                    behandling.inntekter
+                        .filter { it.kilde == Kilde.OFFENTLIG }
+                        .none { it.type == i.type && it.opprinneligFom == i.opprinneligFom && it.opprinneligTom == i.opprinneligTom }
+                }
+
+        offentligeInntekterSomMangler.forEach {
+            secureLogger.debug {
+                "Legger til offentlig inntekt med type ${it.type} " +
+                    "og periode ${it.opprinneligFom.toCompactString()} - ${it.opprinneligTom.toCompactString()} fra behandling ${behandling.id} som manglet"
+            }
+            behandling.inntekter.add(it)
+        }
     }
 
     @Transactional
