@@ -304,7 +304,6 @@ class InntektService(
             )
 
         val ytelsetypeSomOppdateres = grunnlagstype?.tilInntektrapporteringYtelse()
-        // Sletter tidligere innhentede inntekter knyttet til ainntekt og skattegrunnlag som ikke finnes i nyeste uttrekk
         val inntekt = summerteÅrsinntekter.tilInntekt(behandling, rolle)
         val offentligeInntekterSomMangler =
             inntekt
