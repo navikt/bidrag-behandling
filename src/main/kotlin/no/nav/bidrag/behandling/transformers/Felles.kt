@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers
 import com.fasterxml.jackson.module.kotlin.KotlinInvalidNullException
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderRolle
@@ -13,6 +14,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.Eksis
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentVedtak
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
@@ -491,3 +493,31 @@ fun opprettHentGrunnlagDto() =
         hentetTidspunkt = LocalDateTime.now(),
         tilleggsstønadBarnetilsynListe = emptyList(),
     )
+
+fun Set<PrivatAvtale>.filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode(
+    beregningsperiode: ÅrMånedsperiode? = null,
+): List<PrivatAvtale> {
+    if (this.isEmpty()) return this.toList()
+    val beregningsperiode = beregningsperiode ?: this.first().behandling.finnBeregningsperiode()
+    return filter {
+        val førstePeriode = it.perioder.firstOrNull() ?: return@filter true
+        val sistePeriodeTom =
+            it.perioder
+                .maxByOrNull { it.fom }
+                ?.tom
+                ?.plusMonths(1)
+                ?.toYearMonth()
+        val starterFørBeregningsperiodeSlutt =
+            beregningsperiode.til == null ||
+                førstePeriode.fom.toYearMonth().isBefore(beregningsperiode.til!!)
+
+        val slutterIkkeFørBeregningsperiode =
+            sistePeriodeTom == null ||
+                (
+                    sistePeriodeTom > beregningsperiode.fom &&
+                        (beregningsperiode.til == null || sistePeriodeTom >= beregningsperiode.til)
+                )
+
+        starterFørBeregningsperiodeSlutt && slutterIkkeFørBeregningsperiode
+    }
+}

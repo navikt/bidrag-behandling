@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.erDirekteAvslag
 import no.nav.bidrag.behandling.transformers.erForskudd
 import no.nav.bidrag.behandling.transformers.filtrerOgJusterFraVirkningstidspunkt
+import no.nav.bidrag.behandling.transformers.filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphørForRolle
 import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
@@ -473,7 +474,10 @@ class VedtakGrunnlagMapper(
         gjelderBarn: Rolle,
     ): List<GrunnlagDto> {
         return if (behandling.grunnlagslisteFraVedtak.isNullOrEmpty()) {
-            if (behandling.privatAvtale
+            val privatAvtaler =
+                behandling.privatAvtale
+                    .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode()
+            if (privatAvtaler.isEmpty() || privatAvtaler
                     .find { it.gjelderPerson(gjelderBarn.ident ?: "", gjelderBarn.stønadstype) }
                     ?.perioderInnkreving
                     ?.isEmpty() == true

@@ -10,8 +10,6 @@ import no.nav.bidrag.behandling.database.datamodell.Notat
 import no.nav.bidrag.behandling.database.datamodell.Person
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Samvær
-import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
-import no.nav.bidrag.behandling.database.datamodell.henteNyesteAktiveGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple
 import no.nav.bidrag.behandling.database.datamodell.minified.RolleSimple
@@ -25,7 +23,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
-import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.SivilstandAktivGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.SjekkRolleDto
@@ -52,7 +49,6 @@ import no.nav.bidrag.behandling.service.hentAlleStønaderForBidragspliktig
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentSak
 import no.nav.bidrag.behandling.service.hentStønad
-import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.bestemRollerSomKanHaInntekter
 import no.nav.bidrag.behandling.transformers.bestemRollerSomMåHaMinstEnInntekt
@@ -80,12 +76,10 @@ import no.nav.bidrag.behandling.transformers.sorterEtterDatoOgBarn
 import no.nav.bidrag.behandling.transformers.sorterPersonEtterEldsteFødselsdato
 import no.nav.bidrag.behandling.transformers.tilInntektberegningDto
 import no.nav.bidrag.behandling.transformers.tilType
-import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.toHusstandsmedlem
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTil
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
 import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
@@ -94,14 +88,12 @@ import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
 import no.nav.bidrag.boforhold.BoforholdApi
 import no.nav.bidrag.boforhold.dto.BoforholdBarnRequestV3
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
-import no.nav.bidrag.boforhold.dto.Bostatus
 import no.nav.bidrag.commons.service.forsendelse.bidragspliktig
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
-import no.nav.bidrag.domene.enums.person.Bostatuskode
 import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -119,12 +111,10 @@ import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.HentStønadHistoriskRequest
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
-import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.TilleggsstønadGrunnlagDto
 import no.nav.bidrag.transport.behandling.inntekt.response.SummertMånedsinntekt
 import no.nav.bidrag.transport.felles.ifTrue
-import no.nav.bidrag.transport.felles.toLocalDate
 import no.nav.bidrag.transport.felles.toYearMonth
 import java.time.LocalDate
 import java.time.LocalDateTime
