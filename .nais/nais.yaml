@@ -47,26 +47,26 @@ spec:
   image: {{ image }}
   replicas:
       min: {{min_replicas}}
-      max: 4
+      max: 6
   liveness:
     path: /actuator/health
     initialDelay: 60
-    timeout: 1
+    timeout: 5
     periodSeconds: 5
     failureThreshold: 10
   readiness:
     path: /actuator/health
     initialDelay: 60
-    timeout: 1
+    timeout: 5
   prometheus:
     enabled: true
     path: /actuator/prometheus
   resources:
     limits:
-      memory: 2500Mi
+      memory: 3500Mi
     requests:
-      memory: 1500Mi
-      cpu: 800m
+      memory: 2500Mi
+      cpu: 1000m
   ingresses:
   {{#each ingresses as |url|}}
     - {{url}}
