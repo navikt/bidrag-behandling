@@ -138,6 +138,11 @@ class ForholdsmessigFordelingService(
             kravhaverService = kravhaverService,
         )
 
+    private val barnStatusService =
+        ForholdsmessigFordelingBarnStatusService(
+            søknadSyncService = søknadSyncService,
+        )
+
     private val klageService =
         ForholdsmessigFordelingKlageService(
             bbmConsumer = bbmConsumer,
@@ -179,21 +184,6 @@ class ForholdsmessigFordelingService(
         ::opprettRollerOgRevurderingssøknadForSak,
         ::giSakTilgangTilEnhet,
     )
-
-    private fun opprettKlageSøknad(
-        originalSøknad: HentSøknad,
-        relevanteKravhavere: Set<SakKravhaver>,
-        behandling: Behandling,
-        åpneSøknaderForVedtaksid: List<HentSøknad>,
-        hovedsøknadsid: Long?,
-    ): Long =
-        klageService.opprettKlageSøknad(
-            originalSøknad = originalSøknad,
-            relevanteKravhavere = relevanteKravhavere,
-            behandling = behandling,
-            åpneSøknaderForVedtaksid = åpneSøknaderForVedtaksid,
-            hovedsøknadsid = hovedsøknadsid,
-        )
 
     @Transactional
     fun opprettEllerOppdaterForholdsmessigFordeling(
@@ -810,53 +800,33 @@ class ForholdsmessigFordelingService(
         behandling: Behandling,
         åpneSøknaderFF: List<HentSøknad>,
         lagretSøknader: MutableSet<ForholdsmessigFordelingSøknadBarn>,
-    ) {
-        if (behandling.erKlageEllerOmgjøring) {
-            // For klage så skal ikke barne endres fra revurderingsbarn -> søknadsbarn eller at revurderingsbarn skal slettes
-            // Derfor er eneste feilhåndtering å opprette FF søknad
-            if (rolle.erRevurderingsbarn && åpneSøknaderFF.isEmpty()) {
-                LOGGER.info {
-                    "Barn ${rolle.ident} i ${behandling.id} er markert som revurderingsbarn men har ingen åpne FF søknader." +
-                        "Oppretter eller legger til i eksisterende FF søknad"
-                }
-                // Er markert som revurderingsbarn og har ingen åpne FF søknadaer. Opprett FF søknad
-                håndterBarnSomSkalVæreRevurderingsbarn(behandling, rolle, lagretSøknader)
-            }
-            return
-        }
-
-        if (åpneSøknaderIkkeFF.isNotEmpty() && rolle.erRevurderingsbarn) {
-            // Revurderingsbarn har åpne søknader som ikke er FF. Da skal barnet være en søknadsbarn og ikke revurderingsbarn
-            håndterBarnSomSkalVæreSøknadsbarn(behandling, rolle, åpneSøknaderIkkeFF.first())
-        } else if (åpneSøknaderFF.isNotEmpty() && !rolle.erRevurderingsbarn) {
-            // Barn som er søknadsbarn har ingen åpne søknader. Da må barnet endres til en revurderingsbarn
-            feilregistrerBarnFraFFSøknad(rolle)
-        } else if (!rolle.erRevurderingsbarn && åpneSøknaderIkkeFF.isEmpty()) {
-            LOGGER.info {
-                "Barn ${rolle.ident} i ${behandling.id} er ikke markert som revurderingsbarn men har ingen åpne søknader." +
-                    "Oppretter eller legger til i eksisterende FF søknad og endrer barnet til revurderingsbarn"
-            }
-            // Er markert som søknadsbarn men har ingen åpne søknader. Endre til revurderingsbarn
-            håndterBarnSomSkalVæreRevurderingsbarn(behandling, rolle, lagretSøknader)
-        } else if (rolle.erRevurderingsbarn && åpneSøknaderFF.isEmpty() &&
-            åpneSøknaderIkkeFF.isEmpty() &&
-            rolle.harLøpendeBidragFørOpphørEllerLøpende()
-        ) {
-            LOGGER.info {
-                "Barn ${rolle.ident} i ${behandling.id} er markert som revurderingsbarn men har ingen åpne FF søknader." +
-                    "Oppretter eller legger til i eksisterende FF søknad"
-            }
-            // Er markert som revurderingsbarn og har ingen åpne FF søknadaer. Opprett FF søknad
-            håndterBarnSomSkalVæreRevurderingsbarn(behandling, rolle, lagretSøknader)
-        } else if (rolle.erRevurderingsbarn && !rolle.harLøpendeBidragFørOpphørEllerLøpende()) {
-            secureLogger.info {
-                "Sletter revurderingsbarn ${rolle.personident?.verdi} " +
-                    "fra behandling ${behandling.id} etter da det ikke løper bidrag etter søkt fom dato. " +
-                    "Barnet har ingen løpende bidrag lenger og trenger derfor ikke å være revurderingsbarn"
-            }
-            slettRevurderingsbarn(behandling, rolle)
-        }
-    }
+    ) = barnStatusService.sjekkOgOppdaterStatusPåRevurderingOgSøknadsbarn(
+        åpneSøknaderIkkeFF = åpneSøknaderIkkeFF,
+        rolle = rolle,
+        behandling = behandling,
+        åpneSøknaderFF = åpneSøknaderFF,
+        lagretSøknader = lagretSøknader,
+        leggTilEllerSlettBarnFraBehandlingSomErIFF = ::leggTilEllerSlettBarnFraBehandlingSomErIFF,
+        feilregistrerBarnFraFFSøknad = ::feilregistrerBarnFraFFSøknad,
+        slettRevurderingsbarn = ::slettRevurderingsbarn,
+        opprettEllerOppdaterForholdsmessigFordeling = { behandlingId, reevaluerSøknadsbarn ->
+            opprettEllerOppdaterForholdsmessigFordeling(
+                behandlingId = behandlingId,
+                reevaluerSøkndasbarn = reevaluerSøknadsbarn,
+            )
+        },
+        leggTilEllerOpprettSøknadForRevurderingsbarn =
+            { behandlingArg, barnIdent, stønadstypeArg, saksnummerArg, søktFomDatoArg, medInnkrevingArg ->
+                leggTilEllerOpprettSøknadForRevurderingsbarn(
+                    behandling = behandlingArg,
+                    barnIdent = barnIdent,
+                    stønadstype = stønadstypeArg,
+                    saksnummer = saksnummerArg,
+                    søktFomDato = søktFomDatoArg,
+                    medInnkreving = medInnkrevingArg,
+                )
+            },
+    )
 
     private fun knyttSammenManglendeSøknadsknytningerIBehandling(behandling: Behandling) {
         søknadSyncService.knyttSammenManglendeSøknadsknytningerIBehandling(behandling)
@@ -899,118 +869,10 @@ class ForholdsmessigFordelingService(
         }
     }
 
-    private fun håndterBarnSomSkalVæreSøknadsbarn(
-        behandling: Behandling,
-        rolle: Rolle,
-        førsteSøknad: HentSøknad,
-    ) {
-        leggTilEllerSlettBarnFraBehandlingSomErIFF(
-            OppdaterBarnFraFFRequest(
-                rollerSomSkalLeggesTilDto = listOf(rolle.tilOpprettRolleDto()),
-                behandling = behandling,
-                medInnkreving = førsteSøknad.innkreving,
-                søktFraDato = førsteSøknad.søknadFomDato,
-                stønadstype = førsteSøknad.behandlingstema.tilStønadstype(),
-                behandlerenhet = førsteSøknad.behandlerenhet!!,
-                søknadsid = førsteSøknad.søknadsid,
-                saksnummer = førsteSøknad.saksnummer,
-            ),
-        )
-    }
-
-    private fun håndterBarnSomSkalVæreRevurderingsbarn(
-        behandling: Behandling,
-        rolle: Rolle,
-        lagretSøknader: MutableSet<ForholdsmessigFordelingSøknadBarn>,
-    ) {
-        val sisteFfSøknad = finnSisteFFSøknad(lagretSøknader)
-        val aktivFfSøknad = finnAktivFFSøknad(lagretSøknader)
-
-        val søknadSomSkalBeholdes =
-            when {
-                aktivFfSøknad != null -> {
-                    rolle.forholdsmessigFordeling?.erRevurdering = true
-                    aktivFfSøknad
-                }
-
-                sisteFfSøknad == null -> {
-                    opprettEllerOppdaterForholdsmessigFordeling(
-                        behandling.id!!,
-                        reevaluerSøkndasbarn = Pair(rolle.ident!!, rolle.stønadstype),
-                    )
-                    return
-                }
-
-                else -> {
-                    opprettEllerGjenopprettFfSøknadForRevurderingsbarn(behandling, rolle, lagretSøknader, sisteFfSøknad)
-                }
-            }
-
-        feilregistrerAndreSøknaderTrygt(lagretSøknader, søknadSomSkalBeholdes, behandling)
-    }
-
-    private fun opprettEllerGjenopprettFfSøknadForRevurderingsbarn(
-        behandling: Behandling,
-        rolle: Rolle,
-        lagretSøknader: MutableSet<ForholdsmessigFordelingSøknadBarn>,
-        referanseSøknad: ForholdsmessigFordelingSøknadBarn,
-    ): ForholdsmessigFordelingSøknadBarn {
-        val nyEllerEksisterendeSøknad =
-            leggTilEllerOpprettSøknadForRevurderingsbarn(
-                barnIdent = rolle.ident!!,
-                saksnummer = referanseSøknad.saksnummer ?: rolle.forholdsmessigFordeling!!.tilhørerSak,
-                behandling = behandling,
-                stønadstype = rolle.stønadstype,
-                søktFomDato = referanseSøknad.søknadFomDato ?: LocalDate.now().plusMonths(1).withDayOfMonth(1),
-                medInnkreving = rolle.innkrevingstype == Innkrevingstype.MED_INNKREVING,
-            )
-
-        val eksisterendeSøknad = lagretSøknader.find { it.søknadsid == nyEllerEksisterendeSøknad.søknadsid }
-        val søknadSomSkalBeholdes =
-            if (eksisterendeSøknad != null) {
-                eksisterendeSøknad.status = Behandlingstatus.UNDER_BEHANDLING
-                eksisterendeSøknad
-            } else {
-                lagretSøknader.add(nyEllerEksisterendeSøknad)
-                nyEllerEksisterendeSøknad
-            }
-        rolle.forholdsmessigFordeling?.erRevurdering = true
-        return søknadSomSkalBeholdes
-    }
-
-    private fun feilregistrerAndreSøknaderTrygt(
-        lagretSøknader: MutableSet<ForholdsmessigFordelingSøknadBarn>,
-        søknadSomSkalBeholdes: ForholdsmessigFordelingSøknadBarn,
-        behandling: Behandling,
-    ) = søknadSyncService.feilregistrerAndreSøknaderTrygt(lagretSøknader, søknadSomSkalBeholdes, behandling)
-
-    private fun feilregistrerSøknadTrygt(
-        søknad: ForholdsmessigFordelingSøknadBarn,
-        behandling: Behandling,
-    ): Boolean = søknadSyncService.feilregistrerSøknadTrygt(søknad, behandling)
-
-    private fun finnAktivFFSøknad(lagretSøknader: MutableSet<ForholdsmessigFordelingSøknadBarn>) =
-        lagretSøknader
-            .filter { it.behandlingstype?.erForholdsmessigFordeling == true }
-            .filter { it.status == Behandlingstatus.UNDER_BEHANDLING || it.status == null }
-            .maxByOrNull { it.søknadsid ?: Long.MIN_VALUE }
-
-    private fun finnSisteFFSøknad(lagretSøknader: MutableSet<ForholdsmessigFordelingSøknadBarn>) =
-        lagretSøknader
-            .filter { it.behandlingstype?.erForholdsmessigFordeling == true }
-            .maxByOrNull { it.søknadsid ?: Long.MIN_VALUE }
-
     private fun finnApneSoknaderForBarn(
         alleSøknaderRelevantForBehandling: List<HentSøknad>,
         rolle: Rolle,
     ) = søknadSyncService.finnApneSoknaderForBarn(alleSøknaderRelevantForBehandling, rolle)
-
-    private fun oppdaterLagredeSoknadsstatuserFraBbm(
-        lagretSøknader: MutableSet<ForholdsmessigFordelingSøknadBarn>,
-        alleSøknaderRelevantForBehandling: List<HentSøknad>,
-        rolle: Rolle,
-    ): MutableSet<ForholdsmessigFordelingSøknadBarn> =
-        søknadSyncService.oppdaterLagredeSoknadsstatuserFraBbm(lagretSøknader, alleSøknaderRelevantForBehandling, rolle)
 
     @Transactional
     fun leggTilEllerSlettBarnFraBehandlingSomErIFF(request: OppdaterBarnFraFFRequest) {
@@ -1310,8 +1172,6 @@ class ForholdsmessigFordelingService(
     }
 
     fun finnEnhetForBarnIBehandling(behandling: Behandling): String = kravhaverService.finnEnhetForBarnIBehandling(behandling)
-
-    private fun hentSakerBp(bpIdent: String) = kravhaverService.hentSakerBp(bpIdent)
 
     @Transactional
     fun skalLeggeTilBarnFraAndreSøknaderEllerBehandlinger(behandlingId: Long): Boolean {

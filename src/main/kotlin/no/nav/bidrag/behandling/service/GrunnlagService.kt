@@ -1953,6 +1953,26 @@ class GrunnlagService(
         husstandsmedlemmerOgEgneBarn: Set<RelatertPersonGrunnlagDto>,
         grunnlagsdatatype: Grunnlagsdatatype = Grunnlagsdatatype.BOFORHOLD,
     ) {
+        fun periodiserOgLagGrunnlagForRolle(gjelderBarnIdent: String): List<BoforholdResponseV2> {
+            val boforholdPeriodisert =
+                BoforholdApi.beregnBoforholdBarnV3(
+                    behandling.eldsteVirkningstidspunkt,
+                    null,
+                    behandling.finnBeregnTilDatoBehandling(),
+                    behandling.tilTypeBoforhold(),
+                    husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),
+                )
+            val resultatPerson = boforholdPeriodisert.filter { it.gjelderPersonId == gjelderBarnIdent }.distinct()
+            lagreGrunnlagHvisEndret<BoforholdResponseV2>(
+                behandling = behandling,
+                innhentetForRolle = grunnlagsdatatype.innhentesForRolle(behandling)!!,
+                grunnlagstype = Grunnlagstype(grunnlagsdatatype, true),
+                innhentetGrunnlag = resultatPerson.toSet(),
+                gjelderPerson = Personident(gjelderBarnIdent),
+            )
+            return resultatPerson
+        }
+
         val boforholdPeriodisert =
             husstandsmedlemmerOgEgneBarn
                 .flatMap { hm ->
@@ -1980,30 +2000,24 @@ class GrunnlagService(
                             resultatPerson
                         }
                     } else {
-                        val boforholdPeriodisert =
-                            BoforholdApi.beregnBoforholdBarnV3(
-                                behandling.eldsteVirkningstidspunkt,
-                                null,
-                                behandling.finnBeregnTilDatoBehandling(),
-                                behandling.tilTypeBoforhold(),
-                                husstandsmedlemmerOgEgneBarn.tilBoforholdBarnRequest(behandling, true),
-                            )
-                        val resultatPerson = boforholdPeriodisert.filter { it.gjelderPersonId == hm.gjelderPersonId }.distinct()
-                        lagreGrunnlagHvisEndret<BoforholdResponseV2>(
-                            behandling = behandling,
-                            innhentetForRolle = grunnlagsdatatype.innhentesForRolle(behandling)!!,
-                            grunnlagstype = Grunnlagstype(grunnlagsdatatype, true),
-                            innhentetGrunnlag = resultatPerson.toSet(),
-                            gjelderPerson = Personident(hm.gjelderPersonId!!),
-                        )
-                        listOf(resultatPerson)
+                        listOf(periodiserOgLagGrunnlagForRolle(hm.gjelderPersonId!!))
                     }
                 }.flatten()
 
+        val boforholdPeriodisertBarnIBehandlingSomIKkeFinnesIGrunnlag =
+            behandling.roller
+                .filter { rolle ->
+                    boforholdPeriodisert.none { rolle.ident == it.gjelderPersonId }
+                }.flatMap { rolle ->
+                    periodiserOgLagGrunnlagForRolle(rolle.ident!!)
+                }
         if (grunnlagsdatatype == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN) {
             aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling)
         } else {
-            boforholdService.lagreNyePeriodisertBoforhold(behandling, boforholdPeriodisert)
+            boforholdService.lagreNyePeriodisertBoforhold(
+                behandling,
+                boforholdPeriodisert + boforholdPeriodisertBarnIBehandlingSomIKkeFinnesIGrunnlag,
+            )
             aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
         }
     }
