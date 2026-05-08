@@ -315,7 +315,15 @@ private fun oppdatereHusstandsmedlemmerForRoller(
     val nyeRollerSomIkkeHarHusstandsmedlemmer =
         rollerSomLeggesTil
             .filter { it.rolletype == Rolletype.BARN }
-            .filter { nyRolle -> behandling.husstandsmedlem.none { it.erSammePerson(nyRolle.ident!!.verdi, nyRolle.stønadstype) } }
+            .filter { nyRolle ->
+                behandling.husstandsmedlem.none {
+                    if (it.rolle != null) {
+                        it.erSammePerson(nyRolle.ident!!.verdi, nyRolle.stønadstype)
+                    } else {
+                        it.ident == nyRolle.ident!!.verdi
+                    }
+                }
+            }
 
     behandling.husstandsmedlem.addAll(
         nyeRollerSomIkkeHarHusstandsmedlemmer.map { nyRolle ->
