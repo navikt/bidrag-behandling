@@ -72,6 +72,9 @@ interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandl
 
     fun findBehandlingById(id: Long): Optional<Behandling>
 
+    @Query("select b.saksnummer from behandling b where b.id = :behandlingId")
+    fun hentSaksnummer(@Param("behandlingId") behandlingId: Long): String?
+
     fun findFirstBySoknadsid(soknadsId: Long): Behandling?
 
     // Ikke erstatt meg med "delete(behandling)"
