@@ -515,7 +515,7 @@ fun Set<PrivatAvtale>.filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode(
             sistePeriodeTom == null ||
                 (
                     sistePeriodeTom > beregningsperiode.fom &&
-                        (beregningsperiode.til == null || sistePeriodeTom >= beregningsperiode.til)
+                        (beregningsperiode.til == null || sistePeriodeTom <= beregningsperiode.til)
                 )
 
         starterFørBeregningsperiodeSlutt && slutterIkkeFørBeregningsperiode
