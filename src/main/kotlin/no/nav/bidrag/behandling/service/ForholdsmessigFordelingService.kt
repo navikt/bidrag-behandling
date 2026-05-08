@@ -2376,8 +2376,9 @@ class ForholdsmessigFordelingService(
                     behandlesAvBehandling = behandling.id,
                 )
             behandlingOverført.bidragsmottaker?.let { rolle ->
-                val eksisterendeRolle = behandling.roller.find { barn -> barn.erSammeRolle(rolle) }
+                val eksisterendeRolle = behandling.roller.find { rolleBehandling -> rolleBehandling.erSammeRolle(rolle) }
                 if (eksisterendeRolle == null) {
+                    // I tilfelle BA er BM i en annen sak
                     val behandlingerRolle = åpneBehandlinger.filter { it.søknadsbarn.any { it.erSammeRolle(rolle) } }
                     behandling.roller.add(
                         rolle.kopierRolle(behandling, null, åpneBehandlinger = behandlingerRolle),

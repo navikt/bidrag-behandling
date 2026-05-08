@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.transformers.forholdsmessigfordeling
 
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
@@ -30,6 +31,7 @@ import no.nav.bidrag.behandling.service.SakKravhaver
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.behandling.finnRolle
+import no.nav.bidrag.behandling.transformers.boforhold.oppdaterePerioder
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
@@ -533,7 +535,10 @@ fun kopierHusstandsmedlem(
     husstandsmedlemOverført: Husstandsmedlem,
 ) {
     if (hovedbehandling.husstandsmedlem
-            .any { it.rolle != null && husstandsmedlemOverført.rolle != null && it.rolle!!.erSammeRolle(husstandsmedlemOverført.rolle!!) }
+            .any {
+                (it.rolle != null && husstandsmedlemOverført.rolle != null && it.rolle!!.erSammeRolle(husstandsmedlemOverført.rolle!!)) ||
+                    it.ident == husstandsmedlemOverført.ident
+            }
     ) {
         // Ikke overfør hvis barnet er allerede lagt inn som husstandsmedlem
         return
@@ -553,6 +558,9 @@ fun kopierHusstandsmedlem(
                 val nyHM =
                     Husstandsmedlem(
                         rolle = rolleBarn,
+                        ident = rolleBarn.ident,
+                        navn = rolleBarn.navn,
+                        fødselsdato = rolleBarn.fødselsdato,
                         behandling = hovedbehandling,
                         kilde = Kilde.OFFENTLIG,
                     )
@@ -563,19 +571,20 @@ fun kopierHusstandsmedlem(
     husstandsmedlemNy.kilde = Kilde.OFFENTLIG
 
     // TODO: Skal perioder overføres?
-//    husstandsmedlemNy.perioder.clear()
-//    husstandsmedlemNy.perioder.addAll(
-//        husstandsmedlemOverført.perioder
-//            .map { p ->
-//                Bostatusperiode(
-//                    kilde = p.kilde,
-//                    datoFom = p.datoFom,
-//                    datoTom = p.datoTom,
-//                    bostatus = p.bostatus,
-//                    husstandsmedlem = husstandsmedlemNy,
-//                )
-//            }.toMutableSet(),
-//    )
+    husstandsmedlemNy.perioder.clear()
+    husstandsmedlemNy.perioder.addAll(
+        husstandsmedlemOverført.perioder
+            .map { p ->
+                Bostatusperiode(
+                    kilde = p.kilde,
+                    datoFom = p.datoFom,
+                    datoTom = p.datoTom,
+                    bostatus = p.bostatus,
+                    husstandsmedlem = husstandsmedlemNy,
+                )
+            }.toMutableSet(),
+    )
+    husstandsmedlemNy.oppdaterePerioder()
 }
 
 fun kopierSamvær(

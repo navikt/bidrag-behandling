@@ -328,54 +328,6 @@ private fun oppdatereHusstandsmedlemmerForRoller(
     behandling.husstandsmedlem.addAll(
         nyeRollerSomIkkeHarHusstandsmedlemmer.map { nyRolle ->
             secureLogger.debug { "Legger til husstandsmedlem med ident ${nyRolle.ident?.verdi} i behandling ${behandling.id}" }
-
-//            val rolle = behandling.finnRolle(nyRolle.ident!!.verdi, nyRolle.stønadstype ?: behandling.stonadstype)!!
-//            val grunnlag =
-//                behandling
-//                    .henteNyesteAktiveGrunnlag(
-//                        Grunnlagstype(Grunnlagsdatatype.BOFORHOLD, false),
-//                        Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(behandling)!!,
-//                    )?.data
-//                    ?.let { jsonListeTilObjekt<RelatertPersonGrunnlagDto>(it) }
-//                    ?.find { it.gjelderPersonId == rolle.ident }
-//            val request =
-//                BoforholdBarnRequestV3(
-//                    gjelderPersonId = rolle.ident,
-//                    fødselsdato = rolle.fødselsdato,
-//                    relasjon = Familierelasjon.BARN,
-//                    innhentedeOffentligeOpplysninger =
-//                        when (grunnlag != null && grunnlag.borISammeHusstandDtoListe.isNotEmpty()) {
-//                            true -> {
-//                                grunnlag.borISammeHusstandDtoListe.tilBostatus(
-//                                    Bostatuskode.MED_FORELDER,
-//                                    Kilde.OFFENTLIG,
-//                                )
-//                            }
-//
-//                            false -> {
-//                                listOf(
-//                                    Bostatus(
-//                                        bostatus = Bostatuskode.IKKE_MED_FORELDER,
-//                                        kilde = Kilde.OFFENTLIG,
-//                                        periodeFom = behandling.eldsteVirkningstidspunkt,
-//                                        periodeTom = null,
-//                                    ),
-//                                )
-//                            }
-//                        },
-//                    behandledeBostatusopplysninger = emptyList(),
-//                    erSøknadsbarn = true,
-//                    endreBostatus = null,
-//                )
-//            val perioder =
-//                BoforholdApi.beregnBoforholdBarnV3(
-//                    rolle?.finnVirkningstidspunktBeregningBoforhold()
-//                        ?: behandling.eldsteVirkningstidspunkt,
-//                    rolle?.finnOpphørsdatoBoforhold(),
-//                    behandling.finnBeregnTilDatoBehandling(rolle),
-//                    behandling.tilTypeBoforhold(rolle?.stønadstype),
-//                    listOf(request),
-//                )
             nyRolle.toHusstandsmedlem(behandling)
         },
     )
