@@ -5,6 +5,7 @@ import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
@@ -240,6 +241,7 @@ class StønadsendringBidragsmottakerTest {
             )
         val roller = setOf(bidragsmottaker, bidragspliktig, barn, bidragsmottaker2, barn2)
         behandling.roller = roller.toMutableSet()
+        behandling.forholdsmessigFordeling = ForholdsmessigFordeling(null, true)
         every { hentNyesteIdent(bidragsmottakerIdent) } returns Personident(bidragsmottakerIdent)
         every { hentNyesteIdent(bidragsmottakerIdent2) } returns Personident(bidragsmottakerIdent2)
         val rolleDto =

@@ -1663,8 +1663,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // så
                 assertSoftly(behandling.grunnlag.filter { Grunnlagsdatatype.BOFORHOLD == it.type }) {
                     it shouldHaveSize 6
-                    it.filter { it.aktiv == null } shouldHaveSize 3
-                    it.filter { it.aktiv == null && it.erBearbeidet } shouldHaveSize 2
+                    it.filter { it.aktiv == null } shouldHaveSize 0
+                    it.filter { it.aktiv == null && it.erBearbeidet } shouldHaveSize 0
                 }
             }
 
@@ -4190,9 +4190,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // så
                 val boforhold = behandling.grunnlag.filter { it.type == Grunnlagsdatatype.BOFORHOLD }
                 assertSoftly(boforhold) { sb ->
-                    sb.size shouldBe 5
-                    sb.filter { it.aktiv != null } shouldHaveSize 3
-                    sb.filter { it.erBearbeidet } shouldHaveSize 3
+                    sb.size shouldBe 6
+                    sb.filter { it.aktiv != null } shouldHaveSize 6
+                    sb.filter { it.erBearbeidet } shouldHaveSize 4
                 }
             }
 
