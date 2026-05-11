@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service.forholdsmessigfordeling
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
+import no.nav.bidrag.behandling.consumer.dto.FinnSammenknytningerHovedsøknadResponse
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
@@ -14,21 +15,18 @@ import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterO
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
-import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.SøknadsknytningStatus
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.felles.Barn
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.HentSøknad
 import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadRequest
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.felles.toYearMonth
-import java.time.LocalDate
 
 private val KLAGE_LOGGER = KotlinLogging.logger {}
 
@@ -39,7 +37,12 @@ class ForholdsmessigFordelingKlageService(
     private val underholdService: UnderholdService,
     private val virkningstidspunktService: VirkningstidspunktService,
     private val kravhaverService: ForholdsmessigFordelingKravhaverService,
+    private val søknadOpprettService: ForholdsmessigFordelingSøknadOpprettService,
+    private val overføringService: ForholdsmessigFordelingOverføringService,
 ) {
+    // Feilhåndtering - slett eller gjenopprett klagesøknader basert på påklaget søknad
+    // Hvis hovedsøknad slettes så slettes alle relaterte søknader
+    // Hvis en annen søknad slettes så gjenopprettes klagesøknaden
     fun slettEllerGjennopprettKlageSøknader(
         behandling: Behandling,
         søknadsidSomSlettes: Long,
@@ -77,7 +80,7 @@ class ForholdsmessigFordelingKlageService(
         } else {
             val søknadSomSlettes = bbmConsumer.hentSøknad(søknadsidSomSlettes)!!.søknad
             if (søknadSomSlettes.refSøknadsid != behandling.soknadsid) {
-                opprettKlageSøknad(søknadSomSlettes, emptySet(), behandling, emptyList(), behandling.soknadsid)
+                opprettKlageSøknad(søknadSomSlettes, behandling, emptyList(), behandling.soknadsid)
                 bbmConsumer.fjernSammeknytning(søknadsidSomSlettes)
             }
         }
@@ -86,61 +89,123 @@ class ForholdsmessigFordelingKlageService(
     fun opprettSøknaderForKlageEllerOmgjøring(
         behandling: Behandling,
         opprettetEllerOppdaterSøknadsid: Long,
-        opprettRollerOgRevurderingssøknadForSak: (
-            behandling: Behandling,
-            saksnummer: String,
-            løpendeBidragssak: List<SakKravhaver>,
-            behandlerEnhet: String,
-            stønadstype: Stønadstype?,
-            søktFomDato: LocalDate,
-            erOppdateringAvBehandlingSomErIFF: Boolean,
-        ) -> Unit,
-        giSakTilgangTilEnhet: (Behandling, String) -> Unit,
     ) {
         if (!UnleashFeatures.TILGANG_OPPRETTE_FF.isEnabled) {
             KLAGE_LOGGER.info { "Opprettelse av forholdsmessig fordeling er deaktivert" }
             ugyldigForespørsel("Opprettelse av forholdsmessig fordeling er deaktivert")
         }
-        val relevanteKravhavere = kravhaverService.hentAlleRelevanteKravhavere(behandling).toMutableSet()
 
+        val relevanteKravhavere = kravhaverService.hentAlleRelevanteKravhavere(behandling).toMutableSet()
         val bmOgBidragspliktiIdenter = listOfNotNull(behandling.bidragspliktig?.ident, behandling.bidragsmottaker?.ident)
         var hovedsøknadsid = behandling.soknadsid!!
-
         val behandlerEnhet = kravhaverService.finnEnhetForBarnIBehandling(behandling)
-        val åpneSøknaderForVedtaksid =
-            bbmConsumer
-                .hentÅpneSøknaderForBp(behandling.bidragspliktig!!.ident!!)
-                .åpneSøknader
-                .filter { it.refVedtaksid == behandling.omgjøringsdetaljer?.omgjørVedtakId }
+        val åpneSøknaderForVedtaksid = hentÅpneSøknaderForVedtak(behandling)
 
+        sammeknyttSøknadHvisNødvendig(hovedsøknadsid, opprettetEllerOppdaterSøknadsid)
+
+        val opprettetSøknad = bbmConsumer.hentSøknad(opprettetEllerOppdaterSøknadsid)!!.søknad
+        hovedsøknadsid =
+            håndterSlettetHovedsøknad(
+                opprettetSøknad,
+                behandling,
+                åpneSøknaderForVedtaksid,
+                hovedsøknadsid,
+                opprettetEllerOppdaterSøknadsid,
+            )
+
+        oppdaterRollerMedSøknadDetaljer(behandling, opprettetSøknad, bmOgBidragspliktiIdenter, opprettetEllerOppdaterSøknadsid)
+
+        val søknadsbarnOrdinæreSøknader =
+            opprettKlagesøknaderForTilknyttedeSøknader(
+                behandling,
+                opprettetSøknad,
+                relevanteKravhavere,
+                åpneSøknaderForVedtaksid,
+                hovedsøknadsid,
+            )
+
+        fjernSøknaderSomIkkeErDelAvKlagebehandlingen(behandling)
+
+        opprettRevurderingssøknaderForGjenværendeKravhavere(
+            behandling,
+            relevanteKravhavere,
+            søknadsbarnOrdinæreSøknader,
+            behandlerEnhet,
+        )
+
+        behandling.forholdsmessigFordeling =
+            ForholdsmessigFordeling(
+                erHovedbehandling = true,
+            )
+
+        overføringService.giSakTilgangTilEnhet(behandling, behandlerEnhet)
+        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+        oppdaterBehandlingEtterOppdatertRoller(
+            behandling,
+            underholdService,
+            virkningstidspunktService,
+            behandling.søknadsbarn.map { it.tilOpprettRolleDto() },
+            emptyList(),
+        )
+    }
+
+    private fun hentÅpneSøknaderForVedtak(behandling: Behandling): List<HentSøknad> =
+        bbmConsumer
+            .hentÅpneSøknaderForBp(behandling.bidragspliktig!!.ident!!)
+            .åpneSøknader
+            .filter { it.refVedtaksid == behandling.omgjøringsdetaljer?.omgjørVedtakId }
+
+    private fun sammeknyttSøknadHvisNødvendig(
+        hovedsøknadsid: Long,
+        opprettetEllerOppdaterSøknadsid: Long,
+    ) {
         val tilknyttedeSøknaderBehandling =
             bbmConsumer.finnSammenknytningerHovedsøknad(
                 hovedsøknadsid,
                 SøknadsknytningStatus.Aktiv,
             )
-
         if (tilknyttedeSøknaderBehandling.søknader.none { it.søknadsid == opprettetEllerOppdaterSøknadsid }) {
             bbmConsumer.sammeknyttSøknader(hovedsøknadsid, opprettetEllerOppdaterSøknadsid)
         }
+    }
 
-        val opprettetSøknad = bbmConsumer.hentSøknad(opprettetEllerOppdaterSøknadsid)!!.søknad
-        if (opprettetSøknad.behandlingStatusType == BehandlingStatusType.AVBRUTT) {
-            val originalSøknad = bbmConsumer.hentSøknad(behandling.omgjøringsdetaljer!!.soknadRefId!!)!!.søknad
-            val varHovedsøknad = opprettetEllerOppdaterSøknadsid == hovedsøknadsid
-            val nySøknadsid =
-                opprettKlageSøknad(
-                    originalSøknad,
-                    relevanteKravhavere,
-                    behandling,
-                    åpneSøknaderForVedtaksid,
-                    if (varHovedsøknad) null else hovedsøknadsid,
-                )
-            if (varHovedsøknad) {
-                bbmConsumer.fjernSammeknytningHovedsøknad(hovedsøknadsid, nySøknadsid)
-                hovedsøknadsid = nySøknadsid
-                behandling.soknadsid = nySøknadsid
-            }
+    /**
+     * Hvis den opprettede søknaden er avbrutt, opprett en ny klagesøknad.
+     * Returnerer oppdatert hovedsøknadsid.
+     */
+    private fun håndterSlettetHovedsøknad(
+        opprettetSøknad: HentSøknad,
+        behandling: Behandling,
+        åpneSøknaderForVedtaksid: List<HentSøknad>,
+        gjeldeneHovedsøknadsid: Long,
+        opprettetEllerOppdaterSøknadsid: Long,
+    ): Long {
+        if (opprettetSøknad.behandlingStatusType != BehandlingStatusType.AVBRUTT) return gjeldeneHovedsøknadsid
+
+        val originalSøknad = bbmConsumer.hentSøknad(behandling.omgjøringsdetaljer!!.soknadRefId!!)!!.søknad
+        val varHovedsøknad = opprettetEllerOppdaterSøknadsid == gjeldeneHovedsøknadsid
+        val nySøknadsid =
+            opprettKlageSøknad(
+                originalSøknad,
+                behandling,
+                åpneSøknaderForVedtaksid,
+                if (varHovedsøknad) null else gjeldeneHovedsøknadsid,
+            )
+        if (varHovedsøknad) {
+            bbmConsumer.fjernSammeknytningHovedsøknad(gjeldeneHovedsøknadsid, nySøknadsid)
+            behandling.soknadsid = nySøknadsid
+            return nySøknadsid
         }
+        return gjeldeneHovedsøknadsid
+    }
+
+    /** Legger til søknadsinfo på roller som tilhører den opprettede søknaden */
+    private fun oppdaterRollerMedSøknadDetaljer(
+        behandling: Behandling,
+        opprettetSøknad: HentSøknad,
+        bmOgBidragspliktiIdenter: List<String>,
+        opprettetEllerOppdaterSøknadsid: Long,
+    ) {
         val opprettetSøknadRoller = opprettetSøknad.partISøknadListe.map { it.personident!! } + bmOgBidragspliktiIdenter
         behandling.roller
             .filter {
@@ -162,27 +227,27 @@ class ForholdsmessigFordelingKlageService(
                     ),
                 )
             }
+    }
 
+    /**
+     * Finner tilknyttede søknader fra påklaget vedtak og oppretter klagesøknader for dem.
+     * Returnerer liste over søknadsbarn (ident + stønadstype) som ble håndtert.
+     */
+    private fun opprettKlagesøknaderForTilknyttedeSøknader(
+        behandling: Behandling,
+        opprettetSøknad: HentSøknad,
+        relevanteKravhavere: Set<SakKravhaver>,
+        åpneSøknaderForVedtaksid: List<HentSøknad>,
+        hovedsøknadsid: Long,
+    ): List<Pair<String?, Stønadstype?>> {
         val tilknyttedeSøknaderOmgjortSøknad =
             bbmConsumer.finnSammenknytningerHovedsøknad(
                 behandling.omgjøringsdetaljer!!.soknadRefId!!,
                 SøknadsknytningStatus.Deaktiv,
             )
 
-        val hovedsøknadPåklagetVedtak = tilknyttedeSøknaderOmgjortSøknad.hovedsøknadsid
         val tilknyttetSøknaderIkkeHovedsøknad =
-            tilknyttedeSøknaderOmgjortSøknad.søknader
-                .filter { !it.behandlingstype.erForholdsmessigFordeling }
-                .filter {
-                    it.behandlingStatusType == BehandlingStatusType.VEDTAK_FATTET
-                }.filter { søknad ->
-                    val parterISøknad = søknad.partISøknadListe.filterBarnVedtakFattet().map { it.personident!! }
-                    søknad.søknadsid != hovedsøknadPåklagetVedtak ||
-                        relevanteKravhavere.none {
-                            parterISøknad.contains(it.kravhaver) &&
-                                it.stønadstype == søknad.behandlingstema.tilStønadstype()
-                        }
-                }
+            filtrerTilknyttedeSøknaderForKlage(tilknyttedeSøknaderOmgjortSøknad, relevanteKravhavere)
 
         val søknadsbarnOpprettetSøknad =
             opprettetSøknad.partISøknadListe.filterBarnUnderBehandling().map {
@@ -192,7 +257,6 @@ class ForholdsmessigFordelingKlageService(
             tilknyttetSøknaderIkkeHovedsøknad.flatMap { tilknyttetSøknad ->
                 opprettKlageSøknad(
                     tilknyttetSøknad,
-                    relevanteKravhavere,
                     behandling,
                     åpneSøknaderForVedtaksid,
                     hovedsøknadsid,
@@ -203,11 +267,48 @@ class ForholdsmessigFordelingKlageService(
                         it.personident to tilknyttetSøknad.behandlingstema.tilStønadstype()
                     }
             }
-        val søknadsbarnOrdinæreSøknader = søknadsbarnAndreSøknader + søknadsbarnOpprettetSøknad
 
+        return søknadsbarnAndreSøknader + søknadsbarnOpprettetSøknad
+    }
+
+    /** Filtrerer tilknyttede søknader til kun de som er relevante for klagebehandling */
+    private fun filtrerTilknyttedeSøknaderForKlage(
+        tilknyttedeSøknaderOmgjortSøknad: FinnSammenknytningerHovedsøknadResponse,
+        relevanteKravhavere: Set<SakKravhaver>,
+    ): List<HentSøknad> {
+        val hovedsøknadPåklagetVedtak = tilknyttedeSøknaderOmgjortSøknad.hovedsøknadsid
+        return tilknyttedeSøknaderOmgjortSøknad.søknader
+            .filter { !it.behandlingstype.erForholdsmessigFordeling }
+            .filter { it.behandlingStatusType == BehandlingStatusType.VEDTAK_FATTET }
+            .filter { søknad ->
+                val parterISøknad = søknad.partISøknadListe.filterBarnVedtakFattet().map { it.personident!! }
+                søknad.søknadsid != hovedsøknadPåklagetVedtak ||
+                    relevanteKravhavere.none {
+                        parterISøknad.contains(it.kravhaver) &&
+                            it.stønadstype == søknad.behandlingstema.tilStønadstype()
+                    }
+            }
+    }
+
+    /** Fjerner søknader uten omgjøringsreferanse fra alle roller */
+    private fun fjernSøknaderSomIkkeErDelAvKlagebehandlingen(behandling: Behandling) {
         behandling.roller.forEach {
             it.forholdsmessigFordeling!!.søknader.removeIf { søknad -> søknad.omgjørSøknadsid == null }
         }
+    }
+
+    /** Oppretter revurderingssøknader for kravhavere som ikke allerede er håndtert via ordinære søknader */
+    private fun opprettRevurderingssøknaderForGjenværendeKravhavere(
+        behandling: Behandling,
+        relevanteKravhavere: Set<SakKravhaver>,
+        søknadsbarnOrdinæreSøknader: List<Pair<String?, Stønadstype?>>,
+        behandlerEnhet: String,
+    ) {
+        val tilknyttedeSøknaderOmgjortSøknad =
+            bbmConsumer.finnSammenknytningerHovedsøknad(
+                behandling.omgjøringsdetaljer!!.soknadRefId!!,
+                SøknadsknytningStatus.Deaktiv,
+            )
 
         relevanteKravhavere
             .filter { !søknadsbarnOrdinæreSøknader.contains(it.kravhaver to it.stønadstype) }
@@ -225,7 +326,7 @@ class ForholdsmessigFordelingKlageService(
             }.forEach { (saksnummerLøpendeBidrag, løpendebidragssaker) ->
                 val saksnummer = saksnummerLøpendeBidrag.first
                 val søktFomDato = saksnummerLøpendeBidrag.third
-                opprettRollerOgRevurderingssøknadForSak(
+                søknadOpprettService.opprettRollerOgRevurderingssøknadForSak(
                     behandling,
                     saksnummer,
                     løpendebidragssaker,
@@ -235,25 +336,10 @@ class ForholdsmessigFordelingKlageService(
                     true,
                 )
             }
-        behandling.forholdsmessigFordeling =
-            ForholdsmessigFordeling(
-                erHovedbehandling = true,
-            )
-
-        giSakTilgangTilEnhet(behandling, behandlerEnhet)
-        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
-        oppdaterBehandlingEtterOppdatertRoller(
-            behandling,
-            underholdService,
-            virkningstidspunktService,
-            behandling.søknadsbarn.map { it.tilOpprettRolleDto() },
-            emptyList(),
-        )
     }
 
     fun opprettKlageSøknad(
         originalSøknad: HentSøknad,
-        relevanteKravhavere: Set<SakKravhaver>,
         behandling: Behandling,
         åpneSøknaderForVedtaksid: List<HentSøknad>,
         hovedsøknadsid: Long?,
