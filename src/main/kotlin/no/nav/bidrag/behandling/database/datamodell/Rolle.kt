@@ -313,7 +313,9 @@ open class Rolle(
     val opphørSistePeriode get() = opphørTilDato != null
 
     override fun toString(): String =
-        "Rolle(id=$id, behandling=${behandling.id}, stønadstype=$stønadstype, behandlingstema=$behandlingstema, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
+        "Rolle(id=$id, behandling=${behandling.id}, stønadstype=$stønadstype, behandlingstema=$behandlingstema, " +
+            "rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, " +
+            "deleted=$deleted, innbetaltBeløp=$innbetaltBeløp, virkningstidspunkt=$virkningstidspunkt, opphørsdato=$opphørsdato, årsak=$årsak, avslag=$avslag)"
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

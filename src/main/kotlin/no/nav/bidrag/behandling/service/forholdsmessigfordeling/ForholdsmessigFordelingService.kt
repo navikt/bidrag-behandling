@@ -275,7 +275,7 @@ class ForholdsmessigFordelingService(
         alleSøknaderRelevantForBehandling: List<HentSøknad>,
     ) {
         val ffDetaljer = rolle.forholdsmessigFordeling ?: return
-        val beløpshistorikk = løpendeBidraggsakerBP.find { it.kravhaver.verdi == rolle.ident }
+        val beløpshistorikk = løpendeBidraggsakerBP.find { rolle.erSammeRolle(it.kravhaver.verdi, it.type) }
         val løperBidrag =
             if (beløpshistorikk != null) {
                 rolle.løperPeriodeEtterBeregnTil(
