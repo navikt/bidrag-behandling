@@ -61,6 +61,10 @@ open class Husstandsmedlem(
         rolle!!.erSammeRolle(ident, stønadstype)
     }
 
+    val identBarn get() = this.ident ?: this.rolle?.ident
+
+    val stønadstypeBarn get() = rolle?.stønadstype
+
     val erSøknadsbarn get() = behandling.søknadsbarn.any { it.ident == ident }
 
     override fun toString(): String =
