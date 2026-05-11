@@ -41,6 +41,7 @@ fun Rolle.tilGrunnlagPerson(): GrunnlagDto {
                 Person(
                     ident = ident.takeIf { !it.isNullOrEmpty() }?.let { hentNyesteIdent(it) },
                     navn = if (ident.isNullOrEmpty()) navn ?: hentPersonVisningsnavn(ident) else null,
+                    stønadstype = if (rolletype == Rolletype.BARN) stønadstype else null,
                     bidragsmottaker =
                         if (grunnlagstype == Grunnlagstype.PERSON_SØKNADSBARN) {
                             bidragsmottaker?.tilGrunnlagsreferanse()

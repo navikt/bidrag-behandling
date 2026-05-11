@@ -400,6 +400,7 @@ class BehandlingTilGrunnlagMappingV2(
                     Person(
                         ident = if (!ident.isNullOrEmpty()) Personident(ident!!) else null,
                         navn = if (ident.isNullOrEmpty()) navn ?: personService.hentPersonVisningsnavn(ident) else null,
+                        stønadstype = if (rolle != null && rolle.rolletype == Rolletype.BARN) rolle.stønadstype else null,
                         bidragsmottaker =
                             if (grunnlagstype == Grunnlagstype.PERSON_SØKNADSBARN) {
                                 rolle?.bidragsmottaker?.tilGrunnlagsreferanse()
