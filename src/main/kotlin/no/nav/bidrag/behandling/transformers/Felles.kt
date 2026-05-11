@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.Eksis
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentVedtak
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTil
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.commons.util.secureLogger
@@ -380,6 +381,10 @@ fun Behandling.finnPeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): År
             ?.til,
     )
 }
+
+fun Rolle.løperPeriodeEtterBeregnTil(periode: ÅrMånedsperiode) =
+    periode.til == null ||
+        periode.til!! > finnBeregnTil()
 
 fun Rolle.løperPeriodeEtterSøktFomDato(periode: ÅrMånedsperiode) =
     periode.til == null ||

@@ -830,7 +830,7 @@ class GrunnlagService(
                     // Beløpshistorikk ble lagret på BP/BM men burde bli lagret på barnet da det gjelder barnet. Dette er en passiv migrering til ny oppsett
                     eksisterendeGrunnlag.rolle = sb
                 }
-            } catch (e: HttpClientErrorException) {
+            } catch (e: Exception) {
                 feilrapporteringer.put(
                     type,
                     GrunnlagFeilDto(

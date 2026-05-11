@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
+import no.nav.bidrag.behandling.dto.grunnlag.PersonStønad
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
@@ -190,12 +191,18 @@ class ForholdsmessigFordelingBarnService(
      */
     fun oppdaterBarnEtterInnkrevingsvedtak(
         behandling: Behandling,
-        barnIdent: Personident,
+        barn: PersonStønad,
     ) {
-        val rolle = behandling.søknadsbarn.find { it.ident == barnIdent.verdi } ?: return
+        val rolle = behandling.søknadsbarn.find { it.erSammeRolle(barn.personident!!.verdi, barn.stønadstype) } ?: return
         val relevanteKravhavere = kravhaverService.hentAlleRelevanteKravhavere(behandling)
 
-        val rollerRevurderingsbarn = behandling.søknadsbarn.filter { it.erRevurderingsbarn }.map { it.ident!! }
+        val rollerRevurderingsbarn =
+            behandling.søknadsbarn.filter { it.erRevurderingsbarn }.map {
+                PersonStønad(
+                    it.personident,
+                    it.stønadstype,
+                )
+            }
         if (rolle.erRevurderingsbarn) {
             val søknad = rolle.forholdsmessigFordeling!!.eldsteSøknad
             if (søknad == null || !søknad.innkreving) {
@@ -209,7 +216,7 @@ class ForholdsmessigFordelingBarnService(
                     søknad?.søknadFomDato ?: rolle.forholdsmessigFordeling?.sisteOpprettetSøknad?.søknadFomDato
                         ?: relevanteKravhavere
                             .filter {
-                                rollerRevurderingsbarn.contains(it.kravhaver)
+                                rollerRevurderingsbarn.contains(PersonStønad(Personident(it.kravhaver), it.stønadstype))
                             }.finnSøktFomRevurderingSøknad(behandling),
                     true,
                 )
@@ -374,8 +381,12 @@ class ForholdsmessigFordelingBarnService(
                     }
                 if (eksisterendeRolle == null) {
                     opprettNyRolleForBarn(
-                        nyRolle, request, stønadstypeBeregnet,
-                        ffRolleDetaljer, løpendeBidragRolle, rollerSomSkalLeggesTil,
+                        nyRolle,
+                        request,
+                        stønadstypeBeregnet,
+                        ffRolleDetaljer,
+                        løpendeBidragRolle,
+                        rollerSomSkalLeggesTil,
                     )
                 } else {
                     oppdaterEksisterendeRolleForBarn(
@@ -571,5 +582,3 @@ class ForholdsmessigFordelingBarnService(
         )
     }
 }
-
-

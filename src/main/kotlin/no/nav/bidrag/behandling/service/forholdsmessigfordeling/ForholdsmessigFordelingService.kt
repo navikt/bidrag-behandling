@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.leggTilGebyr
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
+import no.nav.bidrag.behandling.dto.grunnlag.PersonStønad
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegning
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -32,6 +33,7 @@ import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterO
 import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
 import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
+import no.nav.bidrag.behandling.transformers.løperPeriodeEtterBeregnTil
 import no.nav.bidrag.behandling.transformers.løperPeriodeEtterSøktFomDato
 import no.nav.bidrag.behandling.transformers.mapTilBeregnetBidragDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
@@ -170,8 +172,8 @@ class ForholdsmessigFordelingService(
     @Transactional
     fun oppdaterBarnEtterInnkrevingsvedtak(
         behandling: Behandling,
-        barnIdent: Personident,
-    ) = barnService.oppdaterBarnEtterInnkrevingsvedtak(behandling, barnIdent)
+        barn: PersonStønad,
+    ) = barnService.oppdaterBarnEtterInnkrevingsvedtak(behandling, barn)
 
     @Transactional
     fun slettRevurderingsbarn(
@@ -203,12 +205,6 @@ class ForholdsmessigFordelingService(
             søknadSyncService.endreHovedsøknadIFFEtterHovedsøknadBleSlettet(behandling, søknadsid)
         }
     }
-
-    fun slettBarnFraBehandlingFF(
-        barn: Rolle,
-        behandling: Behandling,
-        søknadsid: Long,
-    ) = barnService.slettBarnFraBehandlingFF(barn, behandling, søknadsid)
 
     fun finnEnhetForBarnIBehandling(behandling: Behandling): String = kravhaverService.finnEnhetForBarnIBehandling(behandling)
 
@@ -282,7 +278,7 @@ class ForholdsmessigFordelingService(
         val beløpshistorikk = løpendeBidraggsakerBP.find { it.kravhaver.verdi == rolle.ident }
         val løperBidrag =
             if (beløpshistorikk != null) {
-                rolle.løperPeriodeEtterSøktFomDato(
+                rolle.løperPeriodeEtterBeregnTil(
                     ÅrMånedsperiode(beløpshistorikk.periodeFra, beløpshistorikk.periodeTil),
                 )
             } else {
@@ -293,7 +289,7 @@ class ForholdsmessigFordelingService(
         val erMedInnkreving =
             (eldsteSøknad != null && eldsteSøknad.innkreving) || rolle.innkrevingstype == Innkrevingstype.MED_INNKREVING
         if (!erMedInnkreving && løperBidrag) {
-            barnService.oppdaterBarnEtterInnkrevingsvedtak(behandling, Personident(rolle.ident!!))
+            barnService.oppdaterBarnEtterInnkrevingsvedtak(behandling, PersonStønad(rolle.personident, rolle.stønadstype))
         }
         if (erMedInnkreving && !løperBidrag && rolle.erRevurderingsbarn) {
             barnService.oppdaterRevurderingsbarnFraInnkrevingTilUtenInnkreving(behandling, rolle)
@@ -641,14 +637,17 @@ class ForholdsmessigFordelingService(
                         sakKravhaver.flatMap {
                             it.åpneBehandlinger
                                 .filter { it.id != behandling.id && it.soknadsid != behandling.soknadsid }
-                                .flatMap { it.roller.find { it.ident == rolle.ident }?.gebyrSøknader ?: emptySet() }
+                                .flatMap { it.roller.find { it.erSammeRolle(rolle) }?.gebyrSøknader ?: emptySet() }
                         }
                     val gebyrFraSøknader =
                         sakKravhaver.flatMap {
                             it.åpneSøknader
                                 .filter { it.søknadsid != behandling.soknadsid }
                                 .mapNotNull {
-                                    val rolleISøknad = it.partISøknadListe.find { it.personident == rolle.ident }
+                                    val rolleISøknad =
+                                        it.partISøknadListe.find { ps ->
+                                            rolle.erSammeRolle(ps.personident!!, it.behandlingstema.tilStønadstype())
+                                        }
                                     if (rolleISøknad != null && rolleISøknad.gebyr) {
                                         GebyrRolleSøknad(
                                             søknadsid = it.søknadsid,
@@ -691,7 +690,7 @@ class ForholdsmessigFordelingService(
                         søknad
                             ?.søknad
                             ?.partISøknadListe
-                            ?.find { rolle.ident == it.personident }
+                            ?.find { rolle.erSammeRolle(it.personident!!, søknad.søknad.behandlingstema.tilStønadstype()) }
                             ?.referanseGebyr
                 }
             }
@@ -702,18 +701,24 @@ class ForholdsmessigFordelingService(
         behandling: Behandling,
         alleSøknaderRelevantForBehandling: List<HentSøknad>,
     ) {
-        val alleIdenterIBehandling = behandling.roller.map { it.ident!! }
+        val alleIdenterIBehandling = behandling.roller.map { PersonStønad(it.personident, it.stønadstype) }
         val alleRollerRelevantSomIkkeErIBehandling =
             alleSøknaderRelevantForBehandling
-                .flatMap {
-                    it.partISøknadListe
+                .flatMap { søknad ->
+                    søknad.partISøknadListe
                         .filter { it.rolletype != Rolletype.BIDRAGSPLIKTIG }
-                        .map { it.personident!! }
+                        .map { ps -> PersonStønad(Personident(ps.personident!!), søknad.behandlingstema.tilStønadstype()) }
                 }.distinct()
                 .filter { !alleIdenterIBehandling.contains(it) }
 
         alleRollerRelevantSomIkkeErIBehandling.forEach { rolle ->
-            val søknad = alleSøknaderRelevantForBehandling.find { it.partISøknadListe.any { it.personident == rolle } }!!
+            val søknad =
+                alleSøknaderRelevantForBehandling.find { søknad ->
+                    søknad.partISøknadListe.any { ps ->
+                        rolle.personident!!.verdi == ps.personident &&
+                            (rolle.stønadstype == null || rolle.stønadstype == søknad.behandlingstema.tilStønadstype())
+                    }
+                }!!
             barnService.leggTilEllerSlettBarnFraBehandlingSomErIFF(
                 OppdaterBarnFraFFRequest(
                     behandling = behandling,

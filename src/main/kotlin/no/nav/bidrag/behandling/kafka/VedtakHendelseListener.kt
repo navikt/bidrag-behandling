@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.KunneIkkeLeseMeldingFraHendelse
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.grunnlag.PersonStønad
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.ForsendelseService
@@ -151,7 +152,7 @@ class VedtakHendelseListener(
             } else {
                 forholdsmessigFordelingService.oppdaterBarnEtterInnkrevingsvedtak(
                     behandling,
-                    stønadsendring.kravhaver,
+                    PersonStønad(stønadsendring.kravhaver, stønadsendring.type),
                 )
             }
         }
