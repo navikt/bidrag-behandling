@@ -164,7 +164,7 @@ class BehandlingTilVedtakMapping(
                 grunnlagListe = grunnlagsliste.toHashSet().toList(),
                 stønadsendringListe =
                     resultatBarn.map {
-                        val søknadsbarnRolle = søknadsbarn.find { sb -> sb.ident == it.barn.ident!!.verdi }!!
+                        val søknadsbarnRolle = søknadsbarn.find { sb -> sb.erSammeRolle(it.barn.ident!!.verdi, it.barn.stønadstype) }!!
                         val søknadsbarnGrunnlag =
                             grunnlagsliste.toSet().hentPersonMedIdent(søknadsbarnRolle.ident) ?: søknadsbarnRolle.tilGrunnlagPerson()
                         val stønad = tilStønadsid(søknadsbarnRolle)
@@ -286,7 +286,13 @@ class BehandlingTilVedtakMapping(
                                     )
                                 }
 
-                        val søknadsbarn = behandling.søknadsbarn.find { sb -> sb.ident == it.barn.ident!!.verdi }!!
+                        val søknadsbarn =
+                            behandling.søknadsbarn.find { sb ->
+                                sb.erSammeRolle(
+                                    it.barn.ident!!.verdi,
+                                    it.barn.stønadstype,
+                                )
+                            }!!
                         val resultatFraAnnenVedtakGrunnlag =
                             resultatBarn.find { it.barn.ident!!.verdi == søknadsbarn.ident }!!.resultat.grunnlagListe.filter {
                                 it.type == Grunnlagstype.RESULTAT_FRA_VEDTAK
@@ -370,7 +376,7 @@ class BehandlingTilVedtakMapping(
                 behandlingsreferanseListe = behandling.tilBehandlingreferanseListeUtenSøknad(),
                 stønadsendringListe =
                     vedtak.stønadsendringListe.mapNotNull {
-                        val søknadsbarn = behandling.søknadsbarn.find { sb -> sb.ident == it.kravhaver.verdi }!!
+                        val søknadsbarn = behandling.søknadsbarn.find { sb -> sb.erSammeRolle(it.kravhaver.verdi, it.type) }!!
                         val innkrevingsperioder = behandling.finnSkalInnkrevesPeriode(søknadsbarn)
                         if (innkrevingsperioder.isEmpty()) {
                             secureLogger.info {
@@ -388,9 +394,9 @@ class BehandlingTilVedtakMapping(
                                     innkrevingsperioder
                                         .filtrerMatchendePeriode(periode.periode)
                                         .mapNotNull { innkrevingsperiode ->
-                                            periode.periode.snitt(innkrevingsperiode)?.let { klippetPeriode ->
+                                            periode.periode.snitt(innkrevingsperiode)?.let { snittPeriode ->
                                                 periode.copy(
-                                                    periode = klippetPeriode,
+                                                    periode = snittPeriode,
                                                     grunnlagReferanseListe =
                                                         listOfNotNull(
                                                             resultatFraGrunnlag.referanse,
@@ -426,7 +432,7 @@ class BehandlingTilVedtakMapping(
         val beregninger =
             resultat.beregning.map { beregningBarn ->
                 val søknadsbarnRolle =
-                    behandling.søknadsbarn.find { it.ident == beregningBarn.barn.ident!!.verdi }
+                    behandling.søknadsbarn.find { sb -> sb.erSammeRolle(beregningBarn.barn.ident!!.verdi, beregningBarn.barn.stønadstype) }
                         ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!)
                 val endeligVedtak =
                     beregningBarn
@@ -1316,7 +1322,7 @@ class BehandlingTilVedtakMapping(
                 stønadsendringListe =
                     stønadsendringPerioder.map {
                         val søknadsbarn =
-                            behandling.søknadsbarn.find { sb -> sb.ident == it.barn.ident }
+                            behandling.søknadsbarn.find { sb -> sb.erSammeRolle(it.barn.ident!!, it.barn.stønadstype) }
                                 ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!)
                         val opphørPeriode =
                             listOfNotNull(opprettPeriodeOpphør(søknadsbarn, it.perioder, TypeBehandling.FORSKUDD))

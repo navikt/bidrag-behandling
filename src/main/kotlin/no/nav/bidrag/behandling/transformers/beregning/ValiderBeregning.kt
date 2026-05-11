@@ -69,7 +69,13 @@ class ValiderBeregning(
                                 rolle = grunnlagSomMåBekreftes.rolle.tilDto(),
                                 husstandsmedlem =
                                     (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
-                                        husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
+                                        husstandsmedlem.find {
+                                            it.ident != null &&
+                                                it.erSammePerson(
+                                                    grunnlagSomMåBekreftes.gjelderBarnRolle?.ident ?: grunnlagSomMåBekreftes.gjelder!!,
+                                                    grunnlagSomMåBekreftes.gjelderBarnRolle?.stønadstype,
+                                                )
+                                        }
                                     },
                             )
                         }.toSet()
@@ -217,7 +223,7 @@ class ValiderBeregning(
                 ).filter { it.harFeil }
                 .toMutableList()
 
-        if (søknadsbarn.none { sb -> husstandsmedlem.any { it.ident == sb.ident } }) {
+        if (søknadsbarn.none { sb -> husstandsmedlem.any { it.erSammePerson(sb.ident!!, sb.stønadstype) } }) {
             husstandsmedlemsfeil.add(
                 BoforholdPeriodeseringsfeil(
                     manglerPerioder = true,
@@ -245,7 +251,13 @@ class ValiderBeregning(
                             },
                         husstandsmedlem =
                             (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
-                                husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
+                                husstandsmedlem.find {
+                                    it.ident != null &&
+                                        it.erSammePerson(
+                                            grunnlagSomMåBekreftes.gjelderBarnRolle?.ident ?: grunnlagSomMåBekreftes.gjelder!!,
+                                            grunnlagSomMåBekreftes.gjelderBarnRolle?.stønadstype,
+                                        )
+                                }
                             },
                     )
                 }.toSet()
@@ -321,7 +333,7 @@ class ValiderBeregning(
                         ).filter { it.harFeil }
                         .toMutableList()
 
-                if (husstandsmedlem.none { it.ident == søknadsbarn.first().ident }) {
+                if (husstandsmedlem.none { it.erSammePerson(søknadsbarn.first().ident!!, søknadsbarn.first().stønadstype) }) {
                     husstandsmedlemsfeil.add(
                         BoforholdPeriodeseringsfeil(
                             manglerPerioder = true,
@@ -345,7 +357,13 @@ class ValiderBeregning(
                                 rolle = grunnlagSomMåBekreftes.rolle.tilDto(),
                                 husstandsmedlem =
                                     (grunnlagSomMåBekreftes.type == Grunnlagsdatatype.BOFORHOLD).ifTrue {
-                                        husstandsmedlem.find { it.ident != null && it.ident == grunnlagSomMåBekreftes.gjelder }
+                                        husstandsmedlem.find {
+                                            it.ident != null &&
+                                                it.erSammePerson(
+                                                    grunnlagSomMåBekreftes.gjelderBarnRolle?.ident ?: grunnlagSomMåBekreftes.gjelder!!,
+                                                    grunnlagSomMåBekreftes.gjelderBarnRolle?.stønadstype,
+                                                )
+                                        }
                                     },
                             )
                         }.toSet()

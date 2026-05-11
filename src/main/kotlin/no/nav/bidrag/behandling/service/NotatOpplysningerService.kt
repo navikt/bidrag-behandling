@@ -704,7 +704,15 @@ class NotatOpplysningerService(
                         beregningService.beregneBidrag(this).tilDto(this.kanFatteVedtakBegrunnelse()).let {
                             it.resultatBarn.sortedBy { it.barn.fødselsdato }.map { beregning ->
                                 DokumentmalResultatBidragsberegningBarnDto(
-                                    barn = roller.find { it.ident == beregning.barn.ident!!.verdi }!!.tilNotatRolle(),
+                                    barn =
+                                        roller
+                                            .find {
+                                                it.erSammeRolle(
+                                                    beregning.barn.ident!!.verdi,
+                                                    beregning.barn.stønadstype,
+                                                )
+                                            }!!
+                                            .tilNotatRolle(),
                                     indeksår = beregning.indeksår ?: Year.now().value,
                                     innkrevesFraDato = beregning.innkrevesFraDato,
                                     minstEnPeriodeHarSlåttUtTilFF = it.minstEnPeriodeHarSlåttUtTilFF,
@@ -1153,7 +1161,7 @@ private fun RolleDto.tilNotatRolle() =
     )
 
 private fun PersoninfoDto.tilNotatRolle(behandling: Behandling): DokumentmalPersonDto {
-    val rolle = behandling.roller.find { it.ident == ident?.verdi }
+    val rolle = behandling.roller.find { it.erSammeRolle(it.ident!!, it.stønadstype) }
     return DokumentmalPersonDto(
         rolle = if (medIBehandlingen == true) rolle?.rolletype else null,
         navn = ident?.let { hentPersonVisningsnavn(it.verdi) } ?: navn,
@@ -1204,7 +1212,7 @@ private fun Inntekt.tilNotatInntektDto() =
         gjelderBarn =
             gjelderBarn
                 ?.let { gjelderBarn ->
-                    behandling?.roller?.find { it.ident == gjelderBarn }
+                    behandling?.roller?.find { it.erSammeRolle(gjelderBarn, gjelderBarnRolle?.stønadstype) }
                 }?.tilNotatRolle(),
         historisk = erHistorisk(behandling!!.inntekter),
         inntektsposter =
@@ -1228,7 +1236,7 @@ private fun List<Inntekt>.filtrerKilde(filtrerBareOffentlige: Boolean = false) =
 
 private fun List<SamværBarnDto>.tilNotatSamværDto(behandling: Behandling) =
     map { samvær ->
-        val gjelderBarn = behandling.søknadsbarn.find { it.ident == samvær.gjelderBarn }!!
+        val gjelderBarn = behandling.søknadsbarn.find { it.erSammeRolle(samvær.barn.ident!!, samvær.barn.stønadstype) }!!
         NotatSamværBarnDto(
             gjelderBarn = gjelderBarn.tilNotatRolle(),
             perioder =
