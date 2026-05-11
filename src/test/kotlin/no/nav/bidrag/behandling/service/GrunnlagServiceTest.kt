@@ -1052,7 +1052,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 assertSoftly {
                     oppdatertBehandling.isPresent shouldBe true
-                    oppdatertBehandling.get().grunnlag.size shouldBe 9
+                    oppdatertBehandling.get().grunnlag.size shouldBe 11
                 }
 
                 val grunnlag =
@@ -1177,8 +1177,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 assertSoftly {
                     oppdatertBehandling.isPresent shouldBe true
                     val grunnlagListe = oppdatertBehandling.get().grunnlag
-                    grunnlagListe.size shouldBe 10
-                    grunnlagListe.filter { it.aktiv == null } shouldHaveSize 1
+                    grunnlagListe.size shouldBe 12
+                    grunnlagListe.filter { it.aktiv == null } shouldHaveSize 3
                     grunnlagListe
                         .filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet } shouldHaveSize 2
                 }
@@ -1282,9 +1282,9 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 // så
                 assertSoftly(behandling.grunnlag) { g ->
-                    g.size shouldBe 10
+                    g.size shouldBe 12
                     g.filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER } shouldHaveSize 3
-                    g.filter { it.aktiv == null && it.erBearbeidet } shouldHaveSize 1
+                    g.filter { it.aktiv == null && it.erBearbeidet } shouldHaveSize 3
                     g.filter { !it.erBearbeidet } shouldHaveSize 5
                 }
             }
@@ -1351,7 +1351,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 assertSoftly {
                     oppdatertBehandling.isPresent shouldBe true
-                    oppdatertBehandling.get().grunnlag.size shouldBe 9
+                    oppdatertBehandling.get().grunnlag.size shouldBe 11
                     oppdatertBehandling
                         .get()
                         .grunnlag
@@ -1427,10 +1427,10 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
                 // så
-                behandling.grunnlag.size shouldBe 2
+                behandling.grunnlag.size shouldBe 4
 
                 val alleAktiveGrunnlag = behandling.grunnlag.filter { it.aktiv != null }
-                alleAktiveGrunnlag.size shouldBe 2
+                alleAktiveGrunnlag.size shouldBe 4
                 val sistInnhentaSmåbarnstillegg =
                     behandling.grunnlag
                         .filter { Grunnlagsdatatype.SMÅBARNSTILLEGG == it.type }
@@ -1572,7 +1572,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 assertSoftly {
                     oppdatertBehandling.isPresent shouldBe true
-                    oppdatertBehandling.get().grunnlag.size shouldBe 0
+                    oppdatertBehandling.get().grunnlag.size shouldBe 2
                 }
 
                 val grunnlag =
@@ -1744,15 +1744,15 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 // så
                 assertSoftly(behandling) {
-                    grunnlag.size shouldBe 21
+                    grunnlag.size shouldBe 22
                     grunnlag
                         .filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }
-                        .size shouldBe 3
+                        .size shouldBe 4
                     grunnlag
                         .filter { g -> Grunnlagsdatatype.BOFORHOLD == g.type }
                         .filter { g -> g.erBearbeidet }
-                        .size shouldBe 2
-                    husstandsmedlem.size shouldBe 2
+                        .size shouldBe 3
+                    husstandsmedlem.size shouldBe 3
                 }
             }
 
@@ -1936,7 +1936,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 grunnlagService.oppdatereGrunnlagForBehandling(behandling)
 
                 // så
-                behandling.grunnlag.size shouldBe totaltAntallGrunnlag + 1
+                behandling.grunnlag.size shouldBe totaltAntallGrunnlag + 2
 
                 val grunnlagBarnetillegg =
                     behandling.grunnlag
@@ -4457,7 +4457,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
             // så
             assertSoftly(behandling) { b ->
-                b.grunnlag shouldHaveSize 0
+                b.grunnlag shouldHaveSize 2
                 b.grunnlagsinnhentingFeilet shouldNotBe null
             }
         }
