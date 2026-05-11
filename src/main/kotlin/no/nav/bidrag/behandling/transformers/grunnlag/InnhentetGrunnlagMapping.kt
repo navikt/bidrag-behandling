@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
+import no.nav.bidrag.behandling.transformers.vedtak.hentPersonerNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilGrunnlagsobjekt
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilGrunnlagsobjektInnhold
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.tilPersonGrunnlag
@@ -45,6 +46,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSkattegrunnlagG
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettSmåbarnstilleggGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettUtvidetbarnetrygGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.felles.grunnlag.stønadstype
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilleggGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
@@ -63,9 +65,10 @@ fun List<Grunnlag>.tilInnhentetArbeidsforhold(personobjekter: Set<GrunnlagDto>):
         .groupBy { it.rolle.ident }
         .map { (personId, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
+            val rolle = grunnlagListe.firstOrNull()?.rolle
             val arbeidsforholdListe =
                 grunnlag.konvertereData<List<ArbeidsforholdGrunnlagDto>>() ?: emptyList()
-            val gjelder = personobjekter.hentPersonNyesteIdent(personId)!!
+            val gjelder = personobjekter.hentPersonNyesteIdent(personId, rolle?.stønadstype)!!
             arbeidsforholdListe.tilGrunnlagsobjekt(grunnlag.innhentet, gjelder.referanse)
         }.toSet()
 
@@ -74,6 +77,7 @@ fun List<Grunnlag>.tilInnhentetSivilstand(personobjekter: Set<GrunnlagDto>): Set
         .groupBy { it.rolle.ident }
         .map { (personId, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
+
             val sivilstandListe =
                 grunnlag.konvertereData<List<SivilstandGrunnlagDto>>() ?: emptyList()
             val gjelder = personobjekter.hentPersonNyesteIdent(personId)!!
@@ -154,19 +158,23 @@ fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(
         val gjelder = personobjekter.hentPersonNyesteIdent(partPersonId)!!
         return husstandsmedlemList
             .groupBy { it.gjelderPersonId }
-            .map { (relatertPersonPersonId, relatertPersonListe) ->
-                val relatertPersonObjekt =
-                    (personobjekter + personobjekterInnhentetHusstandsmedlem).hentPersonNyesteIdent(
-                        relatertPersonPersonId,
-                    )
-                        ?: relatertPersonListe[0].opprettPersonGrunnlag()
-                if (relatertPersonListe.size > 1) innhentetGrunnlagHarFlereRelatertePersonMedSammeId()
-
-                relatertPersonListe.first().tilGrunnlagsobjekt(
-                    grunnlag.innhentet,
-                    gjelder.referanse,
-                    relatertPersonObjekt.referanse,
-                )
+            .flatMap { (relatertPersonPersonId, relatertPersonListe) ->
+                val relatertPersonObjekter =
+                    (personobjekter + personobjekterInnhentetHusstandsmedlem)
+                        .hentPersonerNyesteIdent(
+                            relatertPersonPersonId,
+                        ).ifEmpty {
+                            listOf(relatertPersonListe[0].opprettPersonGrunnlag())
+                        }
+                relatertPersonObjekter.flatMap { relatertPersonObjekt ->
+                    relatertPersonListe.map {
+                        it.tilGrunnlagsobjekt(
+                            grunnlag.innhentet,
+                            gjelder.referanse,
+                            relatertPersonObjekt.referanse,
+                        )
+                    }
+                }
             }
     }
     val innhentetHusstandsmedlemGrunnlagListe =
@@ -235,7 +243,9 @@ fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
             .filter { sb ->
                 innhentetHusstandsmedlemGrunnlagsliste.filter { it.type == Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM }.none {
                     val barnReferanse = it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.gjelderPerson
-                    personobjekter.hentPersonMedReferanse(barnReferanse)?.personIdent == sb.ident
+                    val person = personobjekter.hentPersonMedReferanse(barnReferanse)
+                    person?.personIdent == sb.ident &&
+                        (person?.stønadstype == null || sb.stønadstype == null || person?.stønadstype == sb.stønadstype)
                 }
             }.map {
                 RelatertPersonGrunnlagDto(
@@ -248,7 +258,7 @@ fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
                 ).tilGrunnlagsobjekt(
                     LocalDateTime.now().withSecond(0).withNano(0),
                     personobjektInnhentesForRolle.referanse,
-                    personobjekter.hentPersonNyesteIdent(it.ident)!!.referanse,
+                    personobjekter.hentPersonNyesteIdent(it.ident, it.stønadstype)!!.referanse,
                 )
             }
     val husstandsmedlemSomManglerInnhentetGrunnlag =
@@ -641,10 +651,11 @@ fun List<Grunnlag>.mapAinntekt(personobjekter: Set<GrunnlagDto>) =
         .groupBy { it.rolle.ident }
         .map { (ident, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
+            val rolle = grunnlagListe.firstOrNull()?.rolle
             val ainntektListe =
                 grunnlag.konvertereData<SkattepliktigeInntekter>()?.ainntekter
                     ?: emptyList()
-            val gjelder = personobjekter.hentPersonNyesteIdent(ident)!!
+            val gjelder = personobjekter.hentPersonNyesteIdent(ident, rolle?.stønadstype)!!
             ainntektListe.tilGrunnlagsobjekt(
                 grunnlag.innhentet,
                 gjelder.referanse,
@@ -698,11 +709,12 @@ fun List<Grunnlag>.mapSkattegrunnlag(personobjekter: Set<GrunnlagDto>) =
     filter { it.type == Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER && !it.erBearbeidet }
         .groupBy { it.rolle.ident }
         .flatMap { (ident, grunnlagListe) ->
+            val rolle = grunnlagListe.firstOrNull()?.rolle
             val grunnlag = grunnlagListe.first()
             val skattegrunnlag =
                 grunnlag.konvertereData<SkattepliktigeInntekter>()?.skattegrunnlag
                     ?: emptyList()
-            val gjelder = personobjekter.hentPersonNyesteIdent(ident)!!
+            val gjelder = personobjekter.hentPersonNyesteIdent(ident, rolle?.stønadstype)!!
             skattegrunnlag.map {
                 it.tilGrunnlagsobjekt(
                     grunnlag.innhentet,

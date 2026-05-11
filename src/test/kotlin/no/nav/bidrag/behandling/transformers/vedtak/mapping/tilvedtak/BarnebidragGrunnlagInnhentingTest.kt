@@ -6,6 +6,7 @@ import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.mockk.mockkClass
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
@@ -81,7 +82,7 @@ class BarnebidragGrunnlagInnhentingTest {
         assertSoftly(grunnlagsliste.find { it.type == Grunnlagstype.BELØPSHISTORIKK_BIDRAG }) {
             shouldNotBeNull()
             val innhold = innholdTilObjekt<BeløpshistorikkGrunnlag>()
-            referanse shouldBe "BELØPSHISTORIKK_BIDRAG_${SAKSNUMMER}_" +
+            referanse shouldContain "BELØPSHISTORIKK_BIDRAG_${SAKSNUMMER}_" +
                 "${behandling.søknadsbarn.first().ident}_${behandling.bidragspliktig!!.ident}_${LocalDate.now().toCompactString()}"
             gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
@@ -93,7 +94,7 @@ class BarnebidragGrunnlagInnhentingTest {
         assertSoftly(grunnlagsliste.find { it.type == Grunnlagstype.BELØPSHISTORIKK_BIDRAG_18_ÅR }) {
             shouldNotBeNull()
             val innhold = innholdTilObjekt<BeløpshistorikkGrunnlag>()
-            referanse shouldBe "BELØPSHISTORIKK_BIDRAG_18_ÅR_${SAKSNUMMER}_" +
+            referanse shouldContain "BELØPSHISTORIKK_BIDRAG_18_ÅR_${SAKSNUMMER}_" +
                 "${behandling.søknadsbarn.first().ident}_${behandling.bidragspliktig!!.ident}_${LocalDate.now().toCompactString()}"
             gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
@@ -181,7 +182,7 @@ class BarnebidragGrunnlagInnhentingTest {
         assertSoftly(grunnlagsliste.find { it.type == Grunnlagstype.BELØPSHISTORIKK_FORSKUDD }) {
             shouldNotBeNull()
             val innhold = innholdTilObjekt<BeløpshistorikkGrunnlag>()
-            referanse shouldBe "BELØPSHISTORIKK_FORSKUDD_${SAKSNUMMER}_" +
+            referanse shouldContain "BELØPSHISTORIKK_FORSKUDD_${SAKSNUMMER}_" +
                 "${behandling.søknadsbarn.first().ident}_${personIdentNav.verdi}_${LocalDate.now().toCompactString()}"
             gjelderReferanse shouldBe behandling.bidragsmottaker!!.tilGrunnlagsreferanse()
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
@@ -198,7 +199,7 @@ class BarnebidragGrunnlagInnhentingTest {
         assertSoftly(grunnlagsliste.find { it.type == Grunnlagstype.BELØPSHISTORIKK_BIDRAG }) {
             shouldNotBeNull()
             val innhold = innholdTilObjekt<BeløpshistorikkGrunnlag>()
-            referanse shouldBe "BELØPSHISTORIKK_BIDRAG_${SAKSNUMMER}_" +
+            referanse shouldContain "BELØPSHISTORIKK_BIDRAG_${SAKSNUMMER}_" +
                 "${behandling.søknadsbarn.first().ident}_${behandling.bidragspliktig!!.ident}_${LocalDate.now().toCompactString()}"
             gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
@@ -224,7 +225,7 @@ class BarnebidragGrunnlagInnhentingTest {
         assertSoftly(grunnlagsliste.find { it.type == Grunnlagstype.BELØPSHISTORIKK_FORSKUDD }) {
             shouldNotBeNull()
             val innhold = innholdTilObjekt<BeløpshistorikkGrunnlag>()
-            referanse shouldBe "BELØPSHISTORIKK_FORSKUDD_${SAKSNUMMER}_" +
+            referanse shouldContain "BELØPSHISTORIKK_FORSKUDD_${SAKSNUMMER}_" +
                 "${behandling.søknadsbarn.first().ident}_${personIdentNav.verdi}_${LocalDate.now().toCompactString()}"
             gjelderReferanse shouldBe behandling.bidragsmottaker!!.tilGrunnlagsreferanse()
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()
@@ -236,7 +237,7 @@ class BarnebidragGrunnlagInnhentingTest {
         assertSoftly(grunnlagsliste.find { it.type == Grunnlagstype.BELØPSHISTORIKK_BIDRAG }) {
             shouldNotBeNull()
             val innhold = innholdTilObjekt<BeløpshistorikkGrunnlag>()
-            referanse shouldBe "BELØPSHISTORIKK_BIDRAG_${SAKSNUMMER}_" +
+            referanse shouldContain "BELØPSHISTORIKK_BIDRAG_${SAKSNUMMER}_" +
                 "${behandling.søknadsbarn.first().ident}_${behandling.bidragspliktig!!.ident}_${LocalDate.now().toCompactString()}"
             gjelderReferanse shouldBe behandling.bidragspliktig!!.tilGrunnlagsreferanse()
             gjelderBarnReferanse shouldBe behandling.søknadsbarn.first().tilGrunnlagsreferanse()

@@ -191,6 +191,7 @@ fun oppdaterBehandlingEtterOppdatertRoller(
     oppdaterUnderholdskostnadForRoller(behandling, underholdService, rollerSomLeggesTilJustert, rollerSomSkalSlettesJustert)
     oppdatereHusstandsmedlemmerForRoller(behandling, rollerSomLeggesTilJustert)
     oppdaterOpphørForRoller(behandling, virkningstidspunktService, rollerSomLeggesTilJustert)
+    virkningstidspunktService.oppdaterVirkningstidspunkt(null, null, behandling, true)
 }
 
 private fun slettInntekterSomTilhørerRolleSomSlettes(
@@ -224,10 +225,17 @@ private fun slettGrunnlagSomTilhørerRolleSomSlettes(
     rollerSomSkalSlettes: List<OpprettRolleDto>,
 ) {
     rollerSomSkalSlettes.forEach { rolle ->
-        behandling.grunnlag.removeIf {
-            it.rolle.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype) ||
-                it.gjelder == rolle.ident.verdi
+        val grunnlagSomSkalSlettes =
+            behandling.grunnlag.filter {
+                it.rolle.erSammeRolle(rolle.ident!!.verdi, rolle.stønadstype) ||
+                    it.gjelder == rolle.ident.verdi
+            }
+
+        grunnlagSomSkalSlettes.forEach {
+            it.rolle.grunnlag.remove(it)
+            it.gjelderBarnRolle?.grunnlagGjelderBarn?.remove(it)
         }
+        behandling.grunnlag.removeAll(grunnlagSomSkalSlettes)
     }
 }
 
@@ -267,11 +275,11 @@ private fun oppdaterOpphørForRoller(
                 val opphørsdato = if (it.opphørsdato.isAfter(rolle.virkningstidspunktRolle)) it.opphørsdato else null
                 if (opphørsdato != null) {
                     virkningstidspunktService.oppdaterOpphørsdato(
-                        behandling.id!!,
                         OppdaterOpphørsdatoRequestDto(
                             rolle.id!!,
                             opphørsdato,
                         ),
+                        behandling,
                     )
                 }
             }
@@ -307,29 +315,20 @@ private fun oppdatereHusstandsmedlemmerForRoller(
     val nyeRollerSomIkkeHarHusstandsmedlemmer =
         rollerSomLeggesTil
             .filter { it.rolletype == Rolletype.BARN }
-            .filter { nyRolle -> behandling.husstandsmedlem.none { it.erSammePerson(nyRolle.ident!!.verdi, nyRolle.stønadstype) } }
+            .filter { nyRolle ->
+                behandling.husstandsmedlem.none {
+                    if (it.rolle != null) {
+                        it.erSammePerson(nyRolle.ident!!.verdi, nyRolle.stønadstype)
+                    } else {
+                        it.ident == nyRolle.ident!!.verdi
+                    }
+                }
+            }
 
     behandling.husstandsmedlem.addAll(
-        nyeRollerSomIkkeHarHusstandsmedlemmer.map {
-            secureLogger.debug { "Legger til husstandsmedlem med ident ${it.ident?.verdi} i behandling ${behandling.id}" }
-
-//            val request =
-//                BoforholdBarnRequestV3(
-//                    gjelderPersonId = it.ident,
-//                    fødselsdato = it.fødselsdato,
-//                    relasjon = Familierelasjon.BARN,
-//                    innhentedeOffentligeOpplysninger = emptyList(),
-//                    behandledeBostatusopplysninger = emptyList(),
-//                    erSøknadsbarn = true,
-//                    endreBostatus = null,
-//                )
-//            val perioder = BoforholdApi.beregnBoforholdBarnV3(
-//                virkningstidspunkt = behandling.eldsteVirkningstidspunkt,
-//                opphørsdato = it.opphørsdato,
-//                boforholdBarnRequestV3Liste = listOf(request),
-//                typeBehandling = behandling.tilType()
-//            )
-            it.toHusstandsmedlem(behandling)
+        nyeRollerSomIkkeHarHusstandsmedlemmer.map { nyRolle ->
+            secureLogger.debug { "Legger til husstandsmedlem med ident ${nyRolle.ident?.verdi} i behandling ${behandling.id}" }
+            nyRolle.toHusstandsmedlem(behandling)
         },
     )
 }
@@ -529,16 +528,19 @@ fun Behandling.tilBehandlingDetaljerDtoV2() =
             },
     )
 
-fun Person.tilRolle(behandling: Behandling) =
-    Rolle(
-        behandling,
-        Rolletype.BARN,
-        ident,
-        fødselsdato,
-        LocalDateTime.now(),
-        null,
-        navn ?: hentPersonVisningsnavn(ident),
-    )
+fun Person.tilRolle(
+    behandling: Behandling,
+    stønadstype: Stønadstype?,
+) = Rolle(
+    behandling,
+    Rolletype.BARN,
+    ident,
+    fødselsdato,
+    LocalDateTime.now(),
+    null,
+    navn ?: hentPersonVisningsnavn(ident),
+    stønadstype = stønadstype,
+)
 
 fun Person.tilDto(stønadstype: Stønadstype? = null) =
     RolleDto(

@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.repository.HusstandsmedlemRepository
 import no.nav.bidrag.behandling.database.repository.SivilstandRepository
+import no.nav.bidrag.behandling.dto.grunnlag.PersonStønad
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
@@ -39,6 +40,8 @@ import no.nav.bidrag.behandling.oppdateringAvBoforholdFeiletException
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.tilJson
+import no.nav.bidrag.behandling.transformers.behandling.finnOpphørsdatoBoforhold
+import no.nav.bidrag.behandling.transformers.behandling.finnVirkningstidspunktBeregningBoforhold
 import no.nav.bidrag.behandling.transformers.boforhold.filtrerUtUrelevantePerioder
 import no.nav.bidrag.behandling.transformers.boforhold.henteNyesteSivilstandGrunnlagsdata
 import no.nav.bidrag.behandling.transformers.boforhold.oppdaterePerioder
@@ -182,7 +185,7 @@ class BoforholdService(
         periodisertBoforhold: List<BoforholdResponseV2>,
         bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
         overskriveManuelleOpplysninger: Boolean,
-        gjelderHusstandsmedlem: Personident,
+        gjelderHusstandsmedlem: PersonStønad,
     ) {
         val nyeHusstandsmedlemMedPerioder = periodisertBoforhold.tilHusstandsmedlem(behandling).firstOrNull() ?: return
         // Ved overskriving bevares manuelle medlemmer, men dersom manuelt medlem med personident også finnes i grunnlag,
@@ -222,7 +225,7 @@ class BoforholdService(
                 "med overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
         }
         secureLogger.info {
-            "Husstandsmedlem ${gjelderHusstandsmedlem.verdi} ble oppdatert for behandling ${behandling.id} " +
+            "Husstandsmedlem ${gjelderHusstandsmedlem.personident?.verdi} ble oppdatert for behandling ${behandling.id} " +
                 "med overskriveManuelleOpplysninger=$overskriveManuelleOpplysninger"
         }
     }
@@ -324,7 +327,6 @@ class BoforholdService(
                         BoforholdApi.beregnBoforholdBarnV3(
                             behandling.eldsteVirkningstidspunkt,
                             null,
-//                            behandling.globalOpphørsdato,
                             behandling.finnBeregnTilDatoBehandling(),
                             behandling.tilTypeBoforhold(),
                             behandling
@@ -666,13 +668,19 @@ class BoforholdService(
     private fun sletteOffentligeHusstandsmedlemSomIkkeFinnesINyesteGrunnlag(
         behandling: Behandling,
         bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
-        gjelderHusstandsmedlem: Personident,
+        gjelderHusstandsmedlem: PersonStønad,
     ) {
-        if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.any { it.verdi == gjelderHusstandsmedlem.verdi }) return
+        if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.any { it.verdi == gjelderHusstandsmedlem.personident?.verdi }) return
 
         behandling.husstandsmedlem
-            .find { i -> Kilde.OFFENTLIG == i.kilde && i.ident == gjelderHusstandsmedlem.verdi }
-            ?.let { eksisterendeHusstandsmedlem ->
+            .find { i ->
+                Kilde.OFFENTLIG == i.kilde &&
+                    i.erSammePerson(
+                        gjelderHusstandsmedlem.personident!!.verdi,
+                        gjelderHusstandsmedlem.stønadstype,
+                        gjelderHusstandsmedlem.rolleId,
+                    )
+            }?.let { eksisterendeHusstandsmedlem ->
                 eksisterendeHusstandsmedlem.perioder.clear()
                 sletteHusstandsmedlem(behandling, eksisterendeHusstandsmedlem)
             }
@@ -703,10 +711,11 @@ class BoforholdService(
                 } // Kjør ny periodisering for å oppdatere kilde på periodene basert på nye opplysninger
                     ?: BoforholdApi
                         .beregnBoforholdBarnV3(
-                            behandling.eldsteVirkningstidspunkt,
-                            null, // eksisterendeHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                            eksisterendeHusstandsmedlem.rolle?.finnVirkningstidspunktBeregningBoforhold()
+                                ?: behandling.eldsteVirkningstidspunkt,
+                            eksisterendeHusstandsmedlem.rolle?.finnOpphørsdatoBoforhold(),
                             behandling.finnBeregnTilDatoBehandling(eksisterendeHusstandsmedlem.rolle),
-                            behandling.tilTypeBoforhold(),
+                            behandling.tilTypeBoforhold(eksisterendeHusstandsmedlem.rolle?.stønadstype),
                             listOf(
                                 eksisterendeHusstandsmedlem
                                     .tilBoforholdBarnRequest()
@@ -767,18 +776,20 @@ class BoforholdService(
                 val periodisertBoforhold =
                     if (overskriveManuelleOpplysninger) {
                         BoforholdApi.beregnBoforholdBarnV3(
-                            behandling.eldsteVirkningstidspunkt,
-                            null, // offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                            offisieltHusstandsmedlem.rolle?.finnVirkningstidspunktBeregningBoforhold()
+                                ?: behandling.eldsteVirkningstidspunkt,
+                            offisieltHusstandsmedlem.rolle?.finnOpphørsdatoBoforhold(),
                             behandling.finnBeregnTilDatoBehandling(offisieltHusstandsmedlem.rolle),
-                            behandling.tilTypeBoforhold(),
+                            behandling.tilTypeBoforhold(offisieltHusstandsmedlem.rolle?.stønadstype),
                             listOf(request),
                         )
                     } else {
                         BoforholdApi.beregnBoforholdBarnV3(
-                            behandling.eldsteVirkningstidspunkt,
-                            null, // offisieltHusstandsmedlem.rolle?.opphørsdato ?: behandling.globalOpphørsdato,
+                            offisieltHusstandsmedlem.rolle?.finnVirkningstidspunktBeregningBoforhold()
+                                ?: behandling.eldsteVirkningstidspunkt,
+                            offisieltHusstandsmedlem.rolle?.finnOpphørsdatoBoforhold(),
                             behandling.finnBeregnTilDatoBehandling(offisieltHusstandsmedlem.rolle),
-                            behandling.tilTypeBoforhold(),
+                            behandling.tilTypeBoforhold(offisieltHusstandsmedlem.rolle?.stønadstype),
                             listOf(
                                 request.copy(
                                     behandledeBostatusopplysninger = manueltMedlem.perioder.map { it.tilBostatus() },
@@ -798,13 +809,19 @@ class BoforholdService(
     private fun endreKildePåOffentligeHusstandsmedlemmerSomIkkeFinnesINyesteGrunnlag(
         behandling: Behandling,
         bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting: Set<Personident>,
-        gjelderHusstandsmedlem: Personident,
+        gjelderHusstandsmedlem: PersonStønad,
     ) {
-        if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.any { it.verdi == gjelderHusstandsmedlem.verdi }) return
+        if (bmsEgneBarnIHusstandenFraNyesteGrunnlagsinnhenting.any { it.verdi == gjelderHusstandsmedlem.personident!!.verdi }) return
 
         behandling.husstandsmedlem
-            .find { Kilde.OFFENTLIG == it.kilde && it.ident == gjelderHusstandsmedlem.verdi }
-            ?.let { eksisterendeHusstandsmedlem ->
+            .find {
+                Kilde.OFFENTLIG == it.kilde &&
+                    it.erSammePerson(
+                        gjelderHusstandsmedlem.personident!!.verdi,
+                        gjelderHusstandsmedlem.stønadstype,
+                        gjelderHusstandsmedlem.rolleId,
+                    )
+            }?.let { eksisterendeHusstandsmedlem ->
                 log.info { "Endret husstandsbmedlem ${eksisterendeHusstandsmedlem.id} til kilde MANUELL i behandling ${behandling.id}" }
                 secureLogger.info { "Endret husstandsmedlem $eksisterendeHusstandsmedlem til kilde MANUELL i behandling ${behandling.id}" }
                 eksisterendeHusstandsmedlem.kilde = Kilde.MANUELL

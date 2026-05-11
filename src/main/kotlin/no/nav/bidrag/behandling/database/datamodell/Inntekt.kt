@@ -139,12 +139,16 @@ open class Inntekt(
         this.gjelderIdent == ident
     }
 
-    fun inntektGjelderBarn(rolle: Rolle) =
-        if (gjelderBarnRolle != null) {
-            gjelderBarnRolle!!.erSammeRolle(rolle)
-        } else {
-            gjelderBarnIdent == rolle.ident
-        }
+    fun inntektGjelderBarn(rolle: Rolle) = inntektGjelderBarn(rolle.ident!!, rolle.stønadstype)
+
+    fun inntektGjelderBarn(
+        ident: String,
+        stønadstype: Stønadstype?,
+    ) = if (gjelderBarnRolle != null) {
+        gjelderBarnRolle!!.erSammeRolle(ident, stønadstype)
+    } else {
+        gjelderBarnIdent == ident
+    }
 
     val opphørsdato get() = if (gjelderSøknadsbarn != null) gjelderSøknadsbarn!!.opphørsdato else behandling?.globalOpphørsdato
     val beregnTilDato get() =

@@ -133,7 +133,7 @@ fun List<Grunnlag>.henteEndringerIBarnetilsyn(
     fun Personident.erSøknadsbarn() = behandling.søknadsbarn.find { it.personident == this } != null
 
     fun Behandling.henteUnderholdskostnadPersonident(personident: Personident) =
-        this.underholdskostnader.find {
+        this.underholdskostnader.filter {
             it.personIdent == personident.verdi
         }
 
@@ -175,12 +175,14 @@ fun List<Grunnlag>.henteEndringerIBarnetilsyn(
         return StønadTilBarnetilsynIkkeAktiveGrunnlagDto(
             stønadTilBarnetilsyn =
                 nyeBarnetilsynsdataTilknyttetSøknadsbarn
-                    .map {
-                        it.key to
-                            it.value
-                                .tilBarnetilsyn(behandling.henteUnderholdskostnadPersonident(it.key)!!)
-                                .toSet()
-                                .tilStønadTilBarnetilsynDtos()
+                    .flatMap {
+                        behandling.henteUnderholdskostnadPersonident(it.key).map { u ->
+                            it.key to
+                                it.value
+                                    .tilBarnetilsyn(u)
+                                    .toSet()
+                                    .tilStønadTilBarnetilsynDtos()
+                        }
                     }.toMap(),
             grunnlag =
                 nyeBarnetilsyn
@@ -480,19 +482,23 @@ fun Inntekt.erDetSammeSom(grunnlag: SummertÅrsinntekt): Boolean {
 fun Behandling.henteUaktiverteGrunnlag(
     grunnlagstype: Grunnlagstype,
     rolle: Rolle,
+    gjelderBarnRolle: Rolle? = null,
 ): Set<Grunnlag> =
     grunnlag
         .hentAlleIkkeAktiv()
         .filter {
-            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet
+            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet &&
+                (gjelderBarnRolle == null || gjelderBarnRolle.id == it.gjelderBarnRolle?.id)
         }.toSet()
 
 fun Behandling.henteAktiverteGrunnlag(
     grunnlagstype: Grunnlagstype,
     rolle: Rolle,
+    gjelderBarnRolle: Rolle? = null,
 ): Set<Grunnlag> =
     grunnlag
         .hentAlleAktiv()
         .filter {
-            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet
+            it.type == grunnlagstype.type && it.rolle.id == rolle.id && grunnlagstype.erBearbeidet == it.erBearbeidet &&
+                (gjelderBarnRolle == null || gjelderBarnRolle.id == it.gjelderBarnRolle?.id)
         }.toSet()

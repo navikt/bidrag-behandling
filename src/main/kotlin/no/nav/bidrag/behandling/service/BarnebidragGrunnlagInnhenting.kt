@@ -63,7 +63,8 @@ class BarnebidragGrunnlagInnhenting(
 
     fun hentBeløpshistorikk(
         behandling: Behandling,
-        søknadsbarn: Rolle,
+        gjelderBarnIdent: String,
+        saksnummer: String,
         stønadstype: Stønadstype,
         fraOpprinneligVedtakstidspunkt: Boolean = true,
     ): StønadDto? {
@@ -72,14 +73,14 @@ class BarnebidragGrunnlagInnhenting(
                 behandling.createStønadHistoriskRequest(
                     stønadstype = Stønadstype.FORSKUDD,
                     skyldner = personIdentNav,
-                    søknadsbarn = søknadsbarn,
+                    gjelderBarnIdent = gjelderBarnIdent,
                     fraOpprinneligVedtakstidspunkt = fraOpprinneligVedtakstidspunkt,
                 )
             } else {
                 behandling.createStønadHistoriskRequest(
                     stønadstype = stønadstype,
-                    søknadsbarn = søknadsbarn,
-                    saksnummer = Saksnummer(søknadsbarn.saksnummer),
+                    gjelderBarnIdent = gjelderBarnIdent,
+                    saksnummer = Saksnummer(saksnummer),
                     skyldner = Personident(behandling.bidragspliktig!!.ident!!),
                     fraOpprinneligVedtakstidspunkt = fraOpprinneligVedtakstidspunkt,
                 )
@@ -89,7 +90,7 @@ class BarnebidragGrunnlagInnhenting(
 
     private fun Behandling.createStønadHistoriskRequest(
         stønadstype: Stønadstype,
-        søknadsbarn: Rolle,
+        gjelderBarnIdent: String,
         skyldner: Personident?,
         saksnummer: Saksnummer? = null,
         fraOpprinneligVedtakstidspunkt: Boolean,
@@ -97,7 +98,7 @@ class BarnebidragGrunnlagInnhenting(
         type = stønadstype,
         sak = saksnummer ?: Saksnummer(this.saksnummer),
         skyldner = skyldner ?: Personident(bidragspliktig!!.ident!!),
-        kravhaver = Personident(søknadsbarn.ident!!),
+        kravhaver = Personident(gjelderBarnIdent),
         gyldigTidspunkt =
             if (erKlageEllerOmgjøring && fraOpprinneligVedtakstidspunkt) {
                 omgjøringsdetaljer!!.minsteVedtakstidspunkt!!.minusMinutes(1)

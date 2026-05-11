@@ -198,6 +198,7 @@ fun Set<Husstandsmedlem>.sortert() =
     sortedWith(
         compareByDescending<Husstandsmedlem> { it.erSøknadsbarn() }
             .thenByDescending { it.kilde == Kilde.OFFENTLIG }
+            .thenBy { it.rolle?.stønadstype }
             .thenBy { it.fødselsdato },
     )
 

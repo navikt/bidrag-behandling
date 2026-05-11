@@ -218,6 +218,7 @@ data class ResultatBidragsberegningBarn(
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val omgjøringsdetaljer: Omgjøringsdetaljer? = null,
     val innkrevesFraDato: YearMonth? = null,
+    val innkrevesFraPerioder: List<ÅrMånedsperiode> = emptyList(),
     val opphørsdato: YearMonth?,
     val beregnTilDato: YearMonth? = null,
     val `løperBidrag`: Boolean,
@@ -257,6 +258,7 @@ data class ResultatBidragberegningDto(
 data class ResultatBidragsberegningBarnDto(
     val barn: ResultatRolle,
     val innkrevesFraDato: YearMonth? = null,
+    val innkrevesFraPerioder: List<ÅrMånedsperiode> = emptyList(),
     val resultatUtenBeregning: Boolean = false,
     val indeksår: Int? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
@@ -459,6 +461,7 @@ data class ForholdsmessigFordelingBidragTilFordelingBarn(
     val oppfostringsbidrag: Boolean = false,
     val privatAvtale: Boolean,
     val erSøknadsbarn: Boolean,
+    val stønadstype: Stønadstype? = null,
     val beregnetBidrag: BeregnetBidragBarnDto? = null,
     val bidragTilFordeling: BigDecimal,
     val barn: PersoninfoDto,

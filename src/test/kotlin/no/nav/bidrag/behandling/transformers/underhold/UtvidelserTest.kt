@@ -29,6 +29,7 @@ class UtvidelserTest {
 
         val u = b.underholdskostnader.first()
 
+        u.rolle!!.fødselsdato = LocalDate.now().minusYears(5)
         u.personFødselsdato
             .plusYears(ALDER_VED_SKOLESTART)
             .year shouldBeGreaterThanOrEqual LocalDate.now().year

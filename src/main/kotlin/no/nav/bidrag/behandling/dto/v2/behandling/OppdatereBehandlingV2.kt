@@ -27,6 +27,7 @@ data class AktivereGrunnlagRequestV2(
                 " Er relevant for blant annet Barnetillegg, Kontantstøtte og Boforhold",
     )
     val gjelderIdent: Personident? = null,
+    val gjelderRolleId: Long? = null,
 )
 
 data class OppdatereBegrunnelse(

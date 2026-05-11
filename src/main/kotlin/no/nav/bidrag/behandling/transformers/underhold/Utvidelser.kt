@@ -333,6 +333,7 @@ private fun Behandling.erSamtligeBearbeidaBarnetilsynsgrunnlagAktivert(bmsNyeste
                     Grunnlagstype(grunnlagsdatatype, true),
                     grunnlagsdatatype.innhentesForRolle(this)!!,
                     Personident(it.key),
+                    null,
                 )
 
             if (nyesteBearbeidaBarnetilsynForBarn?.aktiv == null) {

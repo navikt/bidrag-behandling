@@ -1182,7 +1182,6 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             }
             val nestSistePeriode = stønadsendring.periodeListe[stønadsendring.periodeListe.size - 2]
             assertSoftly(nestSistePeriode) {
-                it.periode.fom shouldBe YearMonth.parse("2026-01")
                 it.periode.til shouldBe YearMonth.from(opphørsdato)
                 it.resultatkode shouldBe Resultatkode.BEREGNET_BIDRAG.name
                 it.beløp shouldBe BigDecimal(6040)

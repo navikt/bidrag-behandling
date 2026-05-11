@@ -15,15 +15,14 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
-import jakarta.persistence.OneToOne
 import no.nav.bidrag.behandling.database.datamodell.extensions.ÅrsakConverter
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
+import no.nav.bidrag.behandling.dto.grunnlag.PersonStønad
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.løperBidragEtterEldsteVirkning
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnFra
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
@@ -84,6 +83,12 @@ open class Rolle(
     open var grunnlag: MutableSet<Grunnlag> = mutableSetOf(),
     @OneToMany(
         fetch = FetchType.EAGER,
+        mappedBy = "gjelderBarnRolle",
+        cascade = [CascadeType.ALL],
+    )
+    open var grunnlagGjelderBarn: MutableSet<Grunnlag> = mutableSetOf(),
+    @OneToMany(
+        fetch = FetchType.EAGER,
         mappedBy = "rolle",
         cascade = [CascadeType.MERGE, CascadeType.PERSIST],
     )
@@ -121,6 +126,10 @@ open class Rolle(
     @Column(columnDefinition = "jsonb", name = "forholdsmessig_fordeling")
     open var forholdsmessigFordeling: ForholdsmessigFordelingRolle? = null,
 ) {
+    fun erSammeRolle(gjelder: PersonStønad) =
+        (gjelder.rolleId != null && this.id == gjelder.rolleId) ||
+            (gjelder.rolleId == null && erSammeRolle(gjelder.personident!!.verdi, gjelder.stønadstype))
+
     fun erSammeRolle(annenRolle: Rolle) =
         if (rolletype == Rolletype.BARN) {
             erSammeRolle(annenRolle.ident!!, annenRolle.stønadstype)
@@ -155,6 +164,13 @@ open class Rolle(
         }
     val stønadstypeBarnEllerBehandling get() = stønadstype ?: behandling.stonadstype
     val virkningstidspunktRolle get() = virkningstidspunkt ?: behandling.virkningstidspunktEllerSøktFomDato
+
+    fun finnSøknad(søknadsid: Long) =
+        forholdsmessigFordeling
+            ?.søknaderUnderBehandling
+            ?.find { it.søknadsid == søknadsid }
+
+    fun harSøknad(søknadsid: Long) = !behandling.erIForholdsmessigFordeling || finnSøknad(søknadsid) != null
 
     fun sakForSøknad(søknadsid: Long) =
         forholdsmessigFordeling
@@ -263,12 +279,30 @@ open class Rolle(
     fun hentEllerOpprettGebyr() = opppdaterGebyrTilNyVersjon()
 
     val bidragsmottaker get() =
-        behandling.alleBidragsmottakere.find {
-            (forholdsmessigFordeling?.bidragsmottaker != null && it.ident == forholdsmessigFordeling?.bidragsmottaker) ||
-                (it.forholdsmessigFordeling?.tilhørerSak == forholdsmessigFordeling?.tilhørerSak) ||
-                (forholdsmessigFordeling == null && it.forholdsmessigFordeling == null) ||
-                (forholdsmessigFordeling?.tilhørerSak == behandling.saksnummer && it.forholdsmessigFordeling == null)
+        behandling.alleBidragsmottakere.find { matcherBidragsmottaker(it) }
+
+    private fun matcherBidragsmottaker(bidragsmottaker: Rolle): Boolean {
+        val bidragsmottakerFF = bidragsmottaker.forholdsmessigFordeling
+        val thisRolleFF = this.forholdsmessigFordeling
+
+        val saksnummerBehandling = behandling.saksnummer
+        return when {
+            // Hvis ikke i FF så er det bare en BM i behandlingen
+            !behandling.erIForholdsmessigFordeling -> true
+
+            thisRolleFF?.bidragsmottaker != null -> thisRolleFF.bidragsmottaker == bidragsmottaker.ident
+
+            thisRolleFF != null && bidragsmottakerFF != null &&
+                thisRolleFF.tilhørerSak == bidragsmottakerFF.tilhørerSak -> true
+
+            // Tilfelle hvor rolle mangler FF (bør aldri skje) så finner den BM til originale behandling
+            thisRolleFF == null && bidragsmottakerFF != null &&
+                bidragsmottakerFF.tilhørerSak == saksnummerBehandling -> true
+
+            else -> false
         }
+    }
+
     val beregningGrunnlagFraVedtak get() = grunnlagFraVedtak ?: grunnlagFraVedtakForInnkreving?.vedtak
     val grunnlagFraVedtakForInnkreving get() = grunnlagFraVedtakListe.find { it.aldersjusteringForÅr == null }
     val personident get() = person?.ident?.let { Personident(it) } ?: this.ident?.let { Personident(it) }
@@ -455,7 +489,7 @@ fun Rolle.leggTilGebyr(fraRolle: Rolle) {
 }
 
 fun Rolle.leggTilGebyr(gebyrSøknader: List<GebyrRolleSøknad>) {
-    val gebyr = hentEllerOpprettGebyr()
+    val gebyr = this.gebyr ?: GebyrRolle()
     this@leggTilGebyr.gebyr =
         gebyr.let {
             it.gebyrSøknader.addAll(

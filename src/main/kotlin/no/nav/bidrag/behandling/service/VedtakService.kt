@@ -599,7 +599,7 @@ class VedtakService(
             }
 
         if (behandling.innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
-            fatteInnkrevingsgrunnlagOmgjøring(
+            fatteInnkrevingsvedtak(
                 behandling,
                 request?.enhet,
                 endeligVedtakOrkestrering.first.vedtaksid,
@@ -676,10 +676,10 @@ class VedtakService(
         )
     }
 
-    private fun fatteInnkrevingsgrunnlagOmgjøring(
+    private fun fatteInnkrevingsvedtak(
         behandling: Behandling,
         enhet: String?,
-        vedtaksidOrkestrering: Int,
+        vedtaksidHovedvedktak: Int,
         vedtak: OpprettVedtakRequestDto,
         vedtakRequestDtos: MutableList<Pair<Int, OpprettVedtakRequestDto>>,
         simuler: Boolean = false,
@@ -694,7 +694,7 @@ class VedtakService(
             behandlingTilVedtakMapping.byggOpprettVedtakRequestInnkrevingAvOmgjøring(
                 behandling,
                 enhet,
-                vedtaksidOrkestrering,
+                vedtaksidHovedvedktak,
                 vedtak,
             )
         innkrevingRequest.validerGrunnlagsreferanser()
@@ -759,67 +759,67 @@ class VedtakService(
         }
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
 
-        val vedtakRequester = opprettFatteVedtakRequestForBidrag(behandling, request)
+        val vedtakRequest = opprettFatteVedtakRequestForBidrag(behandling, request)
         val vedtakRequestDtos: MutableList<Pair<Int, OpprettVedtakRequestDto>> = mutableListOf()
 
-        val vedtakResponser =
-            vedtakRequester.associate { vedtakRequest ->
-                vedtakRequest.validerGrunnlagsreferanser()
-                secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $vedtakRequest" }
-                val søknadsider =
-                    vedtakRequest.behandlingsreferanseListe
-                        .filter {
-                            it.kilde == BehandlingsrefKilde.BISYS_SØKNAD
-                        }.map { it.referanse.toLong() }
-                val response = fatteVedtak(vedtakRequest, simuler)
-                vedtakRequestDtos.add(response.vedtaksid to vedtakRequest)
-                if (!simuler) {
-                    behandlingService.oppdaterDelvedtakFattetStatus(
-                        behandlingsid = behandling.id!!,
-                        fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
-                        resultat =
-                            FattetVedtak(
-                                vedtaksid = response.vedtaksid,
-                                vedtakstype = vedtakRequest.type,
-                                referanse = vedtakRequest.unikReferanse ?: "ukjent",
-                            ),
-                    )
-                    val aldersjusteringBeregnet =
-                        vedtakRequest.type == Vedtakstype.ALDERSJUSTERING &&
-                            vedtakRequest.stønadsendringListe.all { it.beslutning == Beslutningstype.ENDRING }
-                    if (aldersjusteringBeregnet) {
-                        forsendelseService.opprettForsendelseForAldersjustering(behandling)
-                    } else if (vedtakRequest.type != Vedtakstype.ALDERSJUSTERING) {
-                        opprettNotat(behandling)
-                    }
-                }
+        vedtakRequest.validerGrunnlagsreferanser()
+        secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $vedtakRequest" }
 
-                if (vedtakRequest.type == Vedtakstype.ALDERSJUSTERING && !simuler) {
-                    try {
-                        // Venter i 2 sekunder for å sikre at vedtaksbro har lest inn vedtaket og har oppdatert saksloggen
-                        Thread.sleep(2000)
-                    } catch (ie: InterruptedException) {
-                        Thread.currentThread().interrupt()
-                        LOGGER.warn(ie) { "Tråd avbrutt under venting" }
-                    }
-                }
-                LOGGER.info {
-                    "Fattet vedtak for behandling ${behandling.id} med ${
-                        behandling.årsak?.let { "årsakstype $it" }
-                            ?: "avslagstype ${behandling.avslag}"
-                    } med vedtaksid ${response.vedtaksid}"
-                }
-
-                søknadsider to response.vedtaksid
+        val response = fatteVedtak(vedtakRequest, simuler)
+        vedtakRequestDtos.add(response.vedtaksid to vedtakRequest)
+        if (!simuler) {
+            behandlingService.oppdaterDelvedtakFattetStatus(
+                behandlingsid = behandling.id!!,
+                fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
+                resultat =
+                    FattetVedtak(
+                        vedtaksid = response.vedtaksid,
+                        vedtakstype = vedtakRequest.type,
+                        referanse = vedtakRequest.unikReferanse ?: "ukjent",
+                    ),
+            )
+            val aldersjusteringBeregnet =
+                vedtakRequest.type == Vedtakstype.ALDERSJUSTERING &&
+                    vedtakRequest.stønadsendringListe.all { it.beslutning == Beslutningstype.ENDRING }
+            if (aldersjusteringBeregnet) {
+                forsendelseService.opprettForsendelseForAldersjustering(behandling)
+            } else if (vedtakRequest.type != Vedtakstype.ALDERSJUSTERING) {
+                opprettNotat(behandling)
             }
+        }
 
-        // Hent hoved vedtaksiden, dette skal fjernes etterhvert når det migreres over til ny struktur
-        val vedtaksid =
-            vedtakResponser.filterKeys { it.contains(behandling.soknadsid!!) }.values.firstOrNull() ?: vedtakResponser.values.first()
+        if (vedtakRequest.type == Vedtakstype.ALDERSJUSTERING && !simuler) {
+            try {
+                // Venter i 2 sekunder for å sikre at vedtaksbro har lest inn vedtaket og har oppdatert saksloggen
+                Thread.sleep(2000)
+            } catch (ie: InterruptedException) {
+                Thread.currentThread().interrupt()
+                LOGGER.warn(ie) { "Tråd avbrutt under venting" }
+            }
+        }
+        LOGGER.info {
+            "Fattet vedtak for behandling ${behandling.id} med ${
+                behandling.årsak?.let { "årsakstype $it" }
+                    ?: "avslagstype ${behandling.avslag}"
+            } med vedtaksid ${response.vedtaksid}"
+        }
+
+        val vedtaksid = response.vedtaksid
+
+        fatteInnkrevingsvedtak(
+            behandling,
+            request?.enhet,
+            vedtakRequestDtos.first().first,
+            vedtakRequestDtos.first().second,
+            vedtakRequestDtos,
+            simuler,
+        )
+
         if (!simuler) {
             behandlingService.oppdaterVedtakFattetStatus(
                 behandling.id!!,
-                vedtaksid = vedtakResponser.filterKeys { it.contains(behandling.soknadsid!!) }.values.first(),
+                vedtaksid = vedtaksid,
+//                vedtaksid = vedtakResponser.filterKeys { it.contains(behandling.soknadsid!!) }.values.first(),
                 request?.enhet ?: behandling.behandlerEnhet,
             )
         }
@@ -830,17 +830,17 @@ class VedtakService(
     fun opprettFatteVedtakRequestForBidrag(
         behandling: Behandling,
         request: FatteVedtakRequestDto?,
-    ): List<OpprettVedtakRequestDto> {
+    ): OpprettVedtakRequestDto {
         validering.run { behandling.validerForBeregningBidrag() }
 
         return behandlingTilVedtakMapping
             .run {
                 if (behandling.erAvslagForAlle) {
-                    listOf(behandling.byggOpprettVedtakRequestAvslagForBidrag(request?.enhet))
+                    behandling.byggOpprettVedtakRequestAvslagForBidrag(request?.enhet)
                 } else {
                     behandling.byggOpprettVedtakRequestBidragAlle(request?.enhet)
                 }
-            }.map {
+            }.let {
                 val erAvvisning = it.stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST }
                 it.copy(
                     innkrevingUtsattTilDato =

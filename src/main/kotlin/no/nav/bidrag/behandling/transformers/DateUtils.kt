@@ -1,9 +1,11 @@
 package no.nav.bidrag.behandling.transformers
 
+import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.Period
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
@@ -31,3 +33,23 @@ fun String?.toLocalDateTime(): LocalDateTime {
         OffsetDateTime.parse(formatted).toLocalDateTime()
     }
 }
+
+fun List<ÅrMånedsperiode>.filtrerMatchendePeriode(periode: ÅrMånedsperiode) = filter { it.overlapperMed(periode) }
+
+private fun ÅrMånedsperiode.overlapperMed(annenPeriode: ÅrMånedsperiode): Boolean {
+    val starterForEllerNarAndreSlutter = annenPeriode.til?.let { fom < it } ?: true
+    val slutterEtterEllerNarAndreStarter = til?.let { it > annenPeriode.fom } ?: true
+    return starterForEllerNarAndreSlutter && slutterEtterEllerNarAndreStarter
+}
+
+fun List<ÅrMånedsperiode>.filtrerOgJusterFraVirkningstidspunkt(beregningsperiode: ÅrMånedsperiode): List<ÅrMånedsperiode> =
+    mapNotNull { periode ->
+        if (!periode.overlapperMed(beregningsperiode)) {
+            null
+        } else {
+            ÅrMånedsperiode(
+                maxOf(periode.fom, beregningsperiode.fom),
+                minOfNullable(periode.til, beregningsperiode.til),
+            )
+        }
+    }

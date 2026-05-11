@@ -52,11 +52,18 @@ open class Husstandsmedlem(
     fun erSammePerson(
         ident: String,
         stønadstype: Stønadstype?,
+        rolleId: Long? = null,
     ) = if (rolle == null) {
         this.ident == ident
+    } else if (rolleId != null) {
+        rolle!!.id == rolleId
     } else {
         rolle!!.erSammeRolle(ident, stønadstype)
     }
+
+    val identBarn get() = this.ident ?: this.rolle?.ident
+
+    val stønadstypeBarn get() = rolle?.stønadstype
 
     val erSøknadsbarn get() = behandling.søknadsbarn.any { it.ident == ident }
 

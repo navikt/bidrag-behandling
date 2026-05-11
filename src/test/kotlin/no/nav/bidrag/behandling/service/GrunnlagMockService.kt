@@ -436,7 +436,7 @@ class GrunnlagMockService {
         )
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         val grunnlag = behandling.grunnlag
-        grunnlag shouldHaveSize 8
+        grunnlag shouldHaveSize 6
         assertSoftly(grunnlag.find { it.type == Grunnlagsdatatype.ANDRE_BARN }!!) {
             it.aktiv.shouldNotBeNull()
             it.rolle.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
@@ -522,7 +522,7 @@ class GrunnlagMockService {
         )
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         val grunnlag = behandling.grunnlag
-        grunnlag shouldHaveSize 8
+        grunnlag shouldHaveSize 6
         assertSoftly(grunnlag.find { it.type == Grunnlagsdatatype.ANDRE_BARN }!!) {
             it.aktiv.shouldNotBeNull()
             it.rolle.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER

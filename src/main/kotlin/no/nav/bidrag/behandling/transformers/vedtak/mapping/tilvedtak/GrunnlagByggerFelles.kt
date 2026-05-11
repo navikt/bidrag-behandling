@@ -836,12 +836,16 @@ fun opprettPeriodeOpphør(
     søknadsbarn: Rolle,
     periodeliste: List<OpprettPeriodeRequestDto>,
     type: TypeBehandling = TypeBehandling.BIDRAG,
-): OpprettPeriodeRequestDto? =
-    periodeliste.takeIfNotNullOrEmpty {
+): OpprettPeriodeRequestDto? {
+    val sistePeriode = periodeliste.maxByOrNull { it.periode.fom }
+    if (sistePeriode != null && sistePeriode.beløp == null && sistePeriode.periode.til == null) {
+        // Siste periode er allerede opphør. Trenger ikke å opprette på nytt
+        return null
+    }
+    return periodeliste.takeIfNotNullOrEmpty {
         søknadsbarn.opphørsdato?.let {
             val opphørsmåned = YearMonth.from(it)
-            val sistePeriode = periodeliste.maxBy { it.periode.fom }
-            if (sistePeriode.periode.til != opphørsmåned && sistePeriode.beløp != null) {
+            if (sistePeriode!!.periode.til != opphørsmåned && sistePeriode.beløp != null) {
                 ugyldigForespørsel("Siste periode i beregningen $sistePeriode er ikke lik opphørsdato $opphørsmåned")
             }
             OpprettPeriodeRequestDto(
@@ -873,6 +877,7 @@ fun opprettPeriodeOpphør(
             )
         }
     }
+}
 
 fun StønadDto?.tilGrunnlagBeløpshistorikk(
     kravhaver: String,

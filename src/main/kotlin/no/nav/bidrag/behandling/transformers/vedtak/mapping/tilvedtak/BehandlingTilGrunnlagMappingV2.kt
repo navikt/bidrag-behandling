@@ -9,8 +9,8 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.service.PersonService
-import no.nav.bidrag.behandling.transformers.behandling.tilRolle
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
+import no.nav.bidrag.behandling.transformers.filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode
 import no.nav.bidrag.behandling.transformers.grunnlag.tilBeregnetInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.grunnlag.tilInnhentetAndreBarnTilBidragsmottaker
@@ -54,6 +54,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetAnderB
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetSivilstandGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
+import no.nav.bidrag.transport.behandling.felles.grunnlag.stønadstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilGrunnlagstype
 import no.nav.bidrag.transport.behandling.felles.grunnlag.tilPersonreferanse
 import no.nav.bidrag.transport.felles.toCompactString
@@ -159,6 +160,7 @@ class BehandlingTilGrunnlagMappingV2(
                             } else {
                                 true
                             },
+                        stønadstype = if (rolletype == Rolletype.BARN) stønadstype else null,
                         fødselsdato =
                             finnFødselsdato(
                                 ident,
@@ -214,8 +216,11 @@ class BehandlingTilGrunnlagMappingV2(
 
         return if (gjelderRolle == null || gjelderRolle.id == null) {
             privatAvtale
-                .filter { it.rolle == null && it.perioderInnkreving.isNotEmpty() }
-                .flatMap { pa ->
+                .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode()
+                .filter {
+                    it.rolle == null && it.perioderInnkreving.isNotEmpty() &&
+                        (gjelderRolle == null || it.gjelderPerson(gjelderRolle.ident ?: "", gjelderRolle.stønadstype))
+                }.flatMap { pa ->
                     val gjelderBarn =
                         personobjekter.hentPerson(pa.personIdent) ?: pa.opprettPersonGrunnlag()
                     val gjelderBarnReferanse = gjelderBarn.referanse
@@ -223,6 +228,7 @@ class BehandlingTilGrunnlagMappingV2(
                 }.toSet()
         } else {
             privatAvtale
+                .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode()
                 .find { it.perioderInnkreving.isNotEmpty() && it.rolle != null && it.rolle!!.erSammeRolle(gjelderRolle) }
                 ?.let { pa ->
                     val privatAvtaleRolle = pa.rolle
@@ -266,7 +272,8 @@ class BehandlingTilGrunnlagMappingV2(
                 innhold =
                     POJONode(
                         InntektsrapporteringPeriode(
-                            beløp = BigDecimal.ZERO,
+                            // Simuler med 1 kr pga at hvis BP har 0kr inntekt så vil det ikke føre til FF
+                            beløp = BigDecimal.ONE,
                             versjon = null,
                             periode = ÅrMånedsperiode(eldsteVirkningstidspunkt, null),
                             opprinneligPeriode = null,
@@ -356,7 +363,11 @@ class BehandlingTilGrunnlagMappingV2(
                                 } else {
                                     true
                                 }
-                            inntektTilhørerBarn && (it.gjelderBarnIdent == søknadsbarn.personIdent || it.gjelderBarnIdent.isNullOrEmpty())
+                            inntektTilhørerBarn &&
+                                (
+                                    it.inntektGjelderBarn(søknadsbarn.personIdent!!, søknadsbarn.stønadstype) ||
+                                        it.gjelderBarnIdent.isNullOrEmpty()
+                                )
                         }
                     }.groupBy { it.gjelderBarnIdent }
                     .map { (gjelderBarn, innhold) ->
@@ -373,7 +384,7 @@ class BehandlingTilGrunnlagMappingV2(
     }
 
     fun Husstandsmedlem.tilGrunnlagPerson(): GrunnlagDto {
-        val rolle = behandling.roller.find { it.ident == ident }
+        val rolle = identBarn?.let { behandling.roller.find { it.erSammeRolle(identBarn!!, stønadstypeBarn) } }
         val grunnlagstype = rolle?.rolletype?.tilGrunnlagstype() ?: Grunnlagstype.PERSON_HUSSTANDSMEDLEM
         val referanse =
             grunnlagstype.tilPersonreferanse(
@@ -414,7 +425,7 @@ class BehandlingTilGrunnlagMappingV2(
 
     fun Behandling.tilGrunnlagSamværSimulering(): List<GrunnlagDto> =
         søknadsbarn.mapNotNull { barn ->
-            val samværBarn = samvær.find { it.rolle.ident == barn.ident }
+            val samværBarn = samvær.find { it.rolle.erSammeRolle(barn.ident!!, barn.stønadstype) }
             if (samværBarn == null || samværBarn.perioder.isEmpty()) {
                 GrunnlagDto(
                     referanse = "samvær_${Grunnlagstype.SAMVÆRSPERIODE}_${barn.tilGrunnlagsreferanse()}_$grunnlagsreferanseSimulert",
@@ -438,7 +449,7 @@ class BehandlingTilGrunnlagMappingV2(
     fun Behandling.tilGrunnlagSamvær(søknadsbarn: BaseGrunnlag? = null): List<GrunnlagDto> {
         val søknadsbarnIdent = søknadsbarn?.personIdent
         return samvær
-            .filter { søknadsbarn == null || it.rolle.ident == søknadsbarnIdent }
+            .filter { søknadsbarn == null || it.rolle.erSammeRolle(søknadsbarnIdent!!, søknadsbarn.stønadstype) }
             .flatMap { samvær ->
                 val bpGrunnlagsreferanse = samvær.behandling.bidragspliktig!!.tilGrunnlagsreferanse()
                 val barnGrunnlagsreferanse = samvær.rolle.tilGrunnlagPerson().referanse

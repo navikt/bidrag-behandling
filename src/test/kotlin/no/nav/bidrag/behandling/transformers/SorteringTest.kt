@@ -591,7 +591,7 @@ class SorteringTest {
             this[0].opprinneligFom shouldBe YearMonth.parse("2021-01").atDay(1)
         }
         assertSoftly(filtrertInntekter.filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }) {
-            shouldHaveSize(1)
+            shouldHaveSize(2)
             this[0].opprinneligFom shouldBe YearMonth.parse("2021-01").atDay(1)
         }
     }

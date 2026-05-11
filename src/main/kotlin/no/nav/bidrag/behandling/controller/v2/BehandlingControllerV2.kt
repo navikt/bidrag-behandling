@@ -478,7 +478,16 @@ class BehandlingControllerV2(
                 søktFomDato = LocalDate.now(),
                 mottattdato = LocalDate.now(),
                 behandlerenhet = "",
-                virkningstidspunktV3 = VirkningstidspunktDtoV3(false, false, false, BeregnTil.INNEVÆRENDE_MÅNED, null, YearMonth.now()),
+                virkningstidspunktV3 =
+                    VirkningstidspunktDtoV3(
+                        false,
+                        false,
+                        false,
+                        BeregnTil.INNEVÆRENDE_MÅNED,
+                        null,
+                        null,
+                        YearMonth.now(),
+                    ),
             )
         }
         val behandling = behandlingService.henteBehandling(behandlingsid, ikkeHentGrunnlag)

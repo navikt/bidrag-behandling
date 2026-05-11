@@ -32,7 +32,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.tilType
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
-import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
@@ -123,9 +122,12 @@ class BehandlingService(
                 val barnSomSkalSlettes =
                     behandling.søknadsbarn
                         .filter { it.forholdsmessigFordeling!!.søknaderUnderBehandling.any { it.søknadsid == søknadsid } }
-                forholdsmessigFordelingService!!.slettBarnEllerBehandling(barnSomSkalSlettes, behandling, søknadsid)
+                forholdsmessigFordelingService!!.slettBarnEllerBehandling(
+                    barnSomSkalSlettes,
+                    behandling,
+                    søknadsid,
+                )
                 behandling.bidragspliktig?.fjernGebyr(søknadsid)
-                forholdsmessigFordelingService!!.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
             }
         } else {
             logiskSlettBehandling(behandling)
@@ -246,7 +248,6 @@ class BehandlingService(
                             stønadstype = opprettBehandling.stønadstype!!,
                         ),
                     )
-                    forholdsmessigFordelingService!!.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
                 } catch (e: Exception) {
                     secureLogger.error(e) { "Feil ved opprettelse av behandling for $opprettBehandling for ff behandling ${behandling.id}" }
                     val metadata = behandling.metadata ?: BehandlingMetadataDo()
@@ -345,7 +346,7 @@ class BehandlingService(
         behandling.roller.addAll(
             HashSet(
                 opprettBehandling.roller.map {
-                    it.toRolle(behandling, stønadstype = opprettBehandling.stønadstype)
+                    it.toRolle(behandling, stønadstype = opprettBehandling.stønadstype, søktFraDato = opprettBehandling.søktFomDato)
                 },
             ),
         )
@@ -381,11 +382,11 @@ class BehandlingService(
                 val opphørsdato = if (it.opphørsdato.isAfter(behandling.virkningstidspunkt!!)) it.opphørsdato else null
                 if (opphørsdato != null) {
                     virkningstidspunktService.oppdaterOpphørsdato(
-                        behandling.id!!,
                         OppdaterOpphørsdatoRequestDto(
                             rolle.id!!,
                             opphørsdato,
                         ),
+                        behandling,
                     )
                 }
             }
@@ -533,6 +534,10 @@ class BehandlingService(
     ): Behandling {
         val behandling = hentBehandlingById(behandlingsid)
         if (!ikkeHentGrunnlag) {
+            if (behandling.erIForholdsmessigFordeling) {
+                forholdsmessigFordelingService?.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
+                behandlingRepository.save(behandling)
+            }
             grunnlagService.oppdaterGrunnlagForBehandlingAsync(behandling)
         }
         virkningstidspunktService.run {
@@ -655,7 +660,7 @@ class BehandlingService(
         val rollerSomLeggesTil =
             oppdaterRollerNyesteIdent
                 .filter { !it.erSlettet }
-                .filter { !eksisterendeRoller.any { br -> br.ident == it.ident?.verdi } }
+                .filter { !eksisterendeRoller.any { br -> br.erSammeRolle(it.ident!!.verdi, it.stønadstype) } }
                 .distinct()
 
         val identerSomSkalLeggesTil = rollerSomLeggesTil.mapNotNull { it.ident?.verdi }.distinct()
@@ -668,10 +673,6 @@ class BehandlingService(
         }
 
         val rollerSomSkalSlettes = oppdaterRollerListe.filter { r -> r.erSlettet }.distinct()
-        val identerSomSkalSlettes = rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }.distinct()
-        identerSomSkalSlettes.isNotEmpty().ifTrue {
-            secureLogger.debug { "Sletter søknadsbarn ${identerSomSkalSlettes.joinToString(",")} fra behandling $behandlingId" }
-        }
 
         // IMPORTANT: Do not remove roller here.
         // For FF-behandling, ForholdsmessigFordelingService must handle add/delete operations on a consistent graph.
@@ -680,7 +681,7 @@ class BehandlingService(
                 oppdaterRollerListe
                     .filter { r -> !r.erSlettet }
                     .filter { oppdatertRolle ->
-                        val rolle = behandling.roller.find { it.ident == oppdatertRolle.ident?.verdi }
+                        val rolle = behandling.roller.find { it.erSammeRolle(oppdatertRolle.ident!!.verdi, oppdatertRolle.stønadstype) }
                         rolle != null && rolle.erRevurderingsbarn
                     }
             try {
@@ -709,7 +710,7 @@ class BehandlingService(
                 rollerSomSkalSlettes,
             )
             behandling.roller.removeIf { r ->
-                if (identerSomSkalSlettes.contains(r.ident)) {
+                if (rollerSomSkalSlettes.any { r.erSammeRolle(it.ident!!.verdi, it.stønadstype) }) {
                     log.debug { "Sletter rolle ${r.id} fra behandling $behandlingId" }
                     slettRolleFraBehandling(behandling, r)
                     true
@@ -734,16 +735,27 @@ class BehandlingService(
         behandling: Behandling,
         rolle: Rolle,
     ) {
-        // Delete grunnlag directly without mutating the managed collection.
-        val grunnlagMedRolle = behandling.grunnlag.filter { it.rolle.id == rolle.id }.toSet()
+        val grunnlagSomSkalSlettes =
+            behandling.grunnlag
+                .filter {
+                    it.gjelderBarnRolle?.id == rolle.id || it.gjelder == rolle.ident ||
+                        it.rolle.id == rolle.id
+                }.toSet()
 
-        rolle.grunnlag.removeAll(grunnlagMedRolle) // only those actually owned by rolle
-        behandling.grunnlag.removeAll(grunnlagMedRolle)
+        // Hold both in-memory sides consistent before orphanRemoval on behandling.grunnlag.
+        grunnlagSomSkalSlettes.forEach {
+            it.rolle.grunnlag.remove(it)
+            it.gjelderBarnRolle?.grunnlagGjelderBarn?.remove(it)
+        }
+        behandling.grunnlag.removeAll(grunnlagSomSkalSlettes)
+        rolle.grunnlag.clear()
+        rolle.grunnlagGjelderBarn.clear()
 
         // Keep both sides in sync so JPA deletes notes instead of nulling rolle_id.
         val notaterForRolle = behandling.notater.filter { it.rolle.id == rolle.id }.toList()
         rolle.notat.removeAll(notaterForRolle)
         behandling.notater.removeAll(notaterForRolle)
+        rolle.notat.clear()
         behandling.inntekter.removeIf {
             it.rolle?.id == rolle.id || it.gjelderBarnRolle?.id == rolle.id
         }
@@ -758,12 +770,18 @@ class BehandlingService(
                 underholdService.fjernRolleFraUnderholdskostnad(it)
             }
         behandling.privatAvtale.removeIf { it.rolle?.id == rolle.id }
-        behandling.husstandsmedlem.find { it.rolle?.id == rolle.id }?.let {
-            it.rolle = null
-            it.ident = rolle.ident
-            it.navn = rolle.navn
-            it.fødselsdato = rolle.fødselsdato
+        val hustandsmedlemSlettetRolle = behandling.husstandsmedlem.find { it.rolle?.id == rolle.id }
+        if (behandling.husstandsmedlem.filter { it.ident == rolle.ident }.size > 1) {
+            behandling.husstandsmedlem.remove(hustandsmedlemSlettetRolle)
+        } else {
+            hustandsmedlemSlettetRolle?.let {
+                it.rolle = null
+                it.ident = rolle.ident
+                it.navn = rolle.navn
+                it.fødselsdato = rolle.fødselsdato
+            }
         }
+
         rolle.deleted = true
     }
 
@@ -786,9 +804,9 @@ class BehandlingService(
     ) {
         oppdaterRollerListe
             .filter { !it.erSlettet }
-            .filter { roller.any { br -> br.ident == it.ident?.verdi } }
+            .filter { roller.any { br -> br.erSammeRolle(it.ident!!.verdi, it.stønadstype) } }
             .forEach {
-                roller.find { br -> br.ident == it.ident?.verdi }?.let { eksisterendeRolle ->
+                roller.find { br -> br.erSammeRolle(it.ident!!.verdi, it.stønadstype) }?.let { eksisterendeRolle ->
                     eksisterendeRolle.innbetaltBeløp = it.innbetaltBeløp
                     // Skal ikke være mulig å fjerne gebyrsøknad fra rolle
                     eksisterendeRolle.harGebyrsøknad = if (eksisterendeRolle.harGebyrsøknad) true else it.harGebyrsøknad

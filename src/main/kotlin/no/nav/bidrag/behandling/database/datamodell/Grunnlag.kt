@@ -15,7 +15,9 @@ import jakarta.persistence.ManyToOne
 import no.nav.bidrag.behandling.database.datamodell.model.BpsBarnUtenBidragsakEllerLøpendeBidrag
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
+import no.nav.bidrag.behandling.dto.grunnlag.PersonStønad
 import no.nav.bidrag.behandling.dto.v1.beregning.BeregnetBidragBarnDto
+import no.nav.bidrag.behandling.dto.v1.grunnlag.BpsBarnUtenLøpendeBidragDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
@@ -49,11 +51,25 @@ open class Grunnlag(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rolle_id", nullable = false)
     open var rolle: Rolle,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "gjelder_barn_rolle_id", nullable = true)
+    // Gjelder barn rolle hvis grunnlag gjelder en rolle i behandlingen
+    open var gjelderBarnRolle: Rolle? = null,
+    // Gjelder ident hvis grunnlaget gjelder en person som ikke er del av behandlingen. Feks i boforhold
     open var gjelder: String? = null,
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     open val id: Long? = null,
 ) {
+    fun gjelderBarn(person: PersonStønad) =
+        (person.rolleId != null && gjelderBarnRolle != null && gjelderBarnRolle!!.id == person.rolleId) ||
+            (
+                person.rolleId == null && gjelderBarnRolle != null &&
+                    gjelderBarnRolle!!
+                        .erSammeRolle(person.personident!!.verdi, person.stønadstype)
+            ) ||
+            (person.rolleId == null && person.personident?.verdi == gjelder)
+
     override fun toString(): String =
         try {
             "Grunnlag($type, erBearbeidet=$erBearbeidet, rolle=${rolle.rolletype}, ident=${rolle.ident}, aktiv=$aktiv, " +
@@ -62,8 +78,10 @@ open class Grunnlag(
             "Grunnlag($type, erBearbeidet=$erBearbeidet, aktiv=$aktiv, id=$id, innhentet=$innhentet, gjelder=$gjelder)"
         }
 
-    val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder
-    val identifikatorAlle get() = type.name + rolle.ident + erBearbeidet + gjelder + grunnlagFraVedtakSomSkalOmgjøres
+    val identifikator get() = type.name + rolle.ident + erBearbeidet + gjelder + gjelderBarnRolle?.identifikator
+    val identifikatorAlle get() =
+        type.name + rolle.ident + erBearbeidet + gjelder + grunnlagFraVedtakSomSkalOmgjøres +
+            gjelderBarnRolle?.identifikator
 }
 
 fun Set<Grunnlag>.hentAlleIkkeAktiv() = sortedByDescending { it.innhentet }.filter { g -> g.aktiv == null }
@@ -128,7 +146,8 @@ fun Set<Grunnlag>.hentSisteGrunnlagLøpendeBidragFF(behandling: Behandling): Lis
         )
     return løpendeBidragListe.sortedBy { it.gjelder }.map {
         LøpendeBidragGrunnlagForholdsmessigFordeling(
-            gjelderBarnIdent = it.gjelder!!,
+            gjelderBarnIdent = it.gjelderBarnRolle?.ident ?: it.gjelder!!,
+            gjelderStønadstype = it.gjelderBarnRolle?.stønadstype,
             løpendeBidragPerioder = it.konvertereData<List<BeregnetBidragBarnDto>>()!!,
         )
     }
@@ -148,6 +167,21 @@ fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderRolleListe(
                 it.grunnlagFraVedtakSomSkalOmgjøres == grunnlagFraVedtakSomSkalOmgjøres
             }
     }
+
+fun Behandling.bpsBarnUtenLøpendeBidrag(): Set<BpsBarnUtenLøpendeBidragDto> =
+    grunnlag
+        .hentSisteGrunnlagBpsBarnUtenBidragsak()
+        ?.map {
+            BpsBarnUtenLøpendeBidragDto(
+                ident = it.ident.verdi,
+                fødselsdato = it.fødselsdato,
+                navn = it.navn,
+                saksnummer = it.saksnummer,
+                enhet = it.enhet,
+                beløpshistorikkBidrag = it.beløpshistorikkBidrag,
+                beløpshistorikkBidrag18År = it.beløpshistorikkBidrag18År,
+            )
+        }?.toSet() ?: emptySet()
 
 fun Set<Grunnlag>.hentSisteGrunnlagSomGjelderRolle(
     rolle: Rolle,
@@ -181,8 +215,16 @@ fun Set<Grunnlag>.henteSisteSivilstand(erBearbeidet: Boolean) =
 fun Husstandsmedlem.hentSisteBearbeidetBoforhold() =
     behandling.grunnlag
         .hentSisteAktiv()
-        .find { it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD && it.gjelder == this.ident }
-        .konvertereData<List<BoforholdResponseV2>>()
+        .find {
+            it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD &&
+                (
+                    (
+                        it.gjelderBarnRolle != null && this.rolle != null &&
+                            it.gjelderBarnRolle!!.erSammeRolle(this.rolle!!)
+                    ) ||
+                        (it.gjelderBarnRolle == null && it.gjelder == this.ident)
+                )
+        }.konvertereData<List<BoforholdResponseV2>>()
 
 fun Underholdskostnad.hentSisteBearbeidetBarnetilsyn() =
     behandling.grunnlag

@@ -5,8 +5,9 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.transformers.dato18ÅrsBidrag
 import no.nav.bidrag.behandling.transformers.erBidrag
+import no.nav.bidrag.behandling.transformers.minOfNullable
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
-import no.nav.bidrag.transport.behandling.beregning.felles.ÅpenSøknadDto
 import java.time.LocalDate
 
 fun Behandling.finnRolleForPeriode(
@@ -31,6 +32,31 @@ fun Behandling.finnRolleForPeriode(
         it.erSammeRolle(ident, stønadstypeBeregnet)
     }
 }
+
+fun Rolle.finnVirkningstidspunktBeregningBoforhold(): LocalDate? =
+    if (rolletype != Rolletype.BARN) {
+        behandling.eldsteVirkningstidspunkt
+    } else if (behandling.sammeBarnInkludertIBehandlingSom18ÅrOgOrdinærBidrag(ident!!)) {
+        if (stønadstype == Stønadstype.BIDRAG) {
+            behandling.eldsteVirkningstidspunkt
+        } else {
+            fødselsdato.dato18ÅrsBidrag
+        }
+    } else {
+        null
+    }
+
+fun Rolle.finnOpphørsdatoBoforhold(): LocalDate? =
+    // Betyr at barnet er inkludert to ganger (18 år og ordinær bidrag)
+    if (behandling.sammeBarnInkludertIBehandlingSom18ÅrOgOrdinærBidrag(ident!!)) {
+        if (stønadstype == Stønadstype.BIDRAG) {
+            fødselsdato.dato18ÅrsBidrag
+        } else {
+            null
+        }
+    } else {
+        null
+    }
 
 fun Behandling.finnRolle(
     ident: String,
