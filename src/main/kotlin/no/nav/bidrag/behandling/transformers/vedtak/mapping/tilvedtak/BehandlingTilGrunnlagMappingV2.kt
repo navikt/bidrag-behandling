@@ -384,7 +384,7 @@ class BehandlingTilGrunnlagMappingV2(
     }
 
     fun Husstandsmedlem.tilGrunnlagPerson(): GrunnlagDto {
-        val rolle = behandling.roller.find { it.erSammeRolle(identBarn!!, stønadstypeBarn) }
+        val rolle = identBarn?.let { behandling.roller.find { it.erSammeRolle(identBarn!!, stønadstypeBarn) } }
         val grunnlagstype = rolle?.rolletype?.tilGrunnlagstype() ?: Grunnlagstype.PERSON_HUSSTANDSMEDLEM
         val referanse =
             grunnlagstype.tilPersonreferanse(
