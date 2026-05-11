@@ -364,7 +364,10 @@ class BehandlingTilGrunnlagMappingV2(
                                     true
                                 }
                             inntektTilhørerBarn &&
-                                (it.erSammeRolle(søknadsbarn.personIdent!!, søknadsbarn.stønadstype) || it.gjelderBarnIdent.isNullOrEmpty())
+                                (
+                                    it.inntektGjelderBarn(søknadsbarn.personIdent!!, søknadsbarn.stønadstype) ||
+                                        it.gjelderBarnIdent.isNullOrEmpty()
+                                )
                         }
                     }.groupBy { it.gjelderBarnIdent }
                     .map { (gjelderBarn, innhold) ->
