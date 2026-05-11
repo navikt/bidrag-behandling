@@ -36,14 +36,10 @@ import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
-import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.behandling.erSamme
 import no.nav.bidrag.behandling.transformers.behandling.erSammePerson
 import no.nav.bidrag.behandling.transformers.behandling.finnRolle
-import no.nav.bidrag.behandling.transformers.behandling.finnes
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
-import no.nav.bidrag.behandling.transformers.filtrerSakerHvorPersonErBP
-import no.nav.bidrag.behandling.transformers.filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode
 import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
 import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
 import no.nav.bidrag.behandling.transformers.harLøpendeBidragFørOpphørEllerLøpende
@@ -51,10 +47,8 @@ import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeli
 import no.nav.bidrag.behandling.transformers.løperBidragFørOpphør
 import no.nav.bidrag.behandling.transformers.løperPeriodeEtterSøktFomDato
 import no.nav.bidrag.behandling.transformers.mapTilBeregnetBidragDto
-import no.nav.bidrag.behandling.transformers.tilDato18årsBidrag
 import no.nav.bidrag.behandling.transformers.toRolle
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
@@ -62,21 +56,18 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
-import no.nav.bidrag.domene.enums.behandling.SøknadsknytningStatus
 import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
-import no.nav.bidrag.domene.enums.samhandler.Valutakode
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragPeriodeRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.Barn
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadsBarnRequest
@@ -106,7 +97,6 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.YearMonth
 import kotlin.collections.plus
 
 private val LOGGER = KotlinLogging.logger {}
@@ -154,25 +144,71 @@ class ForholdsmessigFordelingService(
         )
 
     @Transactional
-    fun lukkAllFFSaker(behandlingsid: Long) {
-        val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
-        val åpneSaker =
-            hentÅpneSøknader(
-                behandling.bidragspliktig!!.ident!!,
-                behandling.behandlingstypeForFF,
-                omgjøringsdetaljer = behandling.omgjøringsdetaljer,
-            )
-        åpneSaker.filter { it.behandlingstype == behandling.behandlingstypeForFF }.forEach {
-            bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(it.søknadsid))
-            bbmConsumer.fjernSammeknytning(it.søknadsid)
-        }
-    }
-
-    @Transactional
     fun slettEllerGjennopprettKlageSøknader(
         behandling: Behandling,
         søknadsidSomSlettes: Long,
     ) = klageService.slettEllerGjennopprettKlageSøknader(behandling, søknadsidSomSlettes)
+
+    // Feilhåndtering hvis FF søknad blir slettet manuelt eller ved feil
+    @Transactional
+    fun synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling: Behandling) {
+        val løpendeBidraggsakerBP =
+            hentSisteLøpendeStønader(Personident(behandling.bidragspliktig!!.ident!!), behandling.finnBeregningsperiode())
+
+        grunnlagService.lagreBeløpshistorikkGrunnlag(behandling)
+        grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
+
+        val alleSøknaderRelevantForBehandling =
+            hentÅpneSøknader(behandling.bidragspliktig!!.ident!!, behandling.behandlingstypeForFF, behandling.omgjøringsdetaljer)
+
+        oppdaterSøknadStatuserForAlleRoller(behandling)
+        slettDuplikatForholdsmessigFordelingSøknader(behandling)
+        if (behandling.erKlageEllerOmgjøring) {
+            opprettSøknaderForKlageEllerOmgjøring(behandling, behandling.soknadsid!!)
+            knyttSammenManglendeSøknadsknytningerIBehandling(behandling)
+            return
+        }
+
+        leggTilRollerFraRelevanteSøknaderSomIkkeErIBehandling(behandling, alleSøknaderRelevantForBehandling)
+
+        behandling.søknadsbarn.forEach { rolle ->
+            val ffDetaljer = rolle.forholdsmessigFordeling ?: return@forEach
+            val beløpshistorikk = løpendeBidraggsakerBP.find { it.kravhaver.verdi == rolle.ident }
+            val løperBidrag =
+                if (beløpshistorikk != null) {
+                    rolle.løperPeriodeEtterSøktFomDato(
+                        ÅrMånedsperiode(beløpshistorikk.periodeFra, beløpshistorikk.periodeTil),
+                    )
+                } else {
+                    false
+                }
+
+            val eldsteSøknad = rolle.forholdsmessigFordeling!!.eldsteSøknad
+            val erMedInnkreving =
+                (eldsteSøknad != null && eldsteSøknad.innkreving) || rolle.innkrevingstype == Innkrevingstype.MED_INNKREVING
+            if (!erMedInnkreving && løperBidrag) {
+                oppdaterBarnEtterInnkrevingsvedtak(behandling, Personident(rolle.ident!!))
+            }
+            if (erMedInnkreving && !løperBidrag && rolle.erRevurderingsbarn) {
+                oppdaterRevurderingsbarnFraInnkrevingTilUtenInnkreving(behandling, rolle)
+                rolle.innkrevingstype = Innkrevingstype.UTEN_INNKREVING
+            }
+
+            val lagretSøknader = ffDetaljer.søknader
+            val søknaderForBarn = finnApneSoknaderForBarn(alleSøknaderRelevantForBehandling, rolle)
+            val åpneSøknaderIkkeFF = søknaderForBarn.filter { !it.behandlingstype.erForholdsmessigFordeling }
+            val åpneSøknaderFF = søknaderForBarn.filter { it.behandlingstype.erForholdsmessigFordeling }
+
+            sjekkOgOppdaterStatusPåRevurderingOgSøknadsbarn(åpneSøknaderIkkeFF, rolle, behandling, åpneSøknaderFF, lagretSøknader)
+        }
+
+        val hovedsøknad = bbmConsumer.hentSøknad(behandling.soknadsid!!)
+        if (hovedsøknad != null && hovedsøknad.søknad.behandlingStatusType == BehandlingStatusType.AVBRUTT) {
+            endreHovedsøknadIFFEtterHovedsøknadBleSlettet(behandling, hovedsøknad.søknad.søknadsid)
+        }
+
+        knyttSammenManglendeSøknadsknytningerIBehandling(behandling)
+    }
 
     @Transactional
     fun opprettSøknaderForKlageEllerOmgjøring(
@@ -486,7 +522,6 @@ class ForholdsmessigFordelingService(
     fun avsluttForholdsmessigFordeling(
         behandling: Behandling,
         slettBarn: List<Rolle>,
-        søknadsidSomSlettes: Long,
     ) {
         if (behandling.forholdsmessigFordeling == null) return
         if (!behandling.forholdsmessigFordeling!!.erHovedbehandling) return
@@ -504,7 +539,7 @@ class ForholdsmessigFordelingService(
             }
     }
 
-    fun feilregistrerBarnFraFFSøknad(rolle: Rolle) {
+    private fun feilregistrerBarnFraFFSøknad(rolle: Rolle) {
         val søknader =
             rolle.forholdsmessigFordeling!!.søknaderUnderBehandling.filter {
                 it.behandlingstype == rolle.behandling.behandlingstypeForFF
@@ -552,7 +587,7 @@ class ForholdsmessigFordelingService(
             }
     }
 
-    fun feilregistrerFFSøknad(rolle: Rolle) {
+    private fun feilregistrerFFSøknad(rolle: Rolle) {
         if (rolle.forholdsmessigFordeling == null || !rolle.forholdsmessigFordeling!!.erRevurdering) return
         rolle.forholdsmessigFordeling!!.søknaderUnderBehandling.forEach { søknad ->
             val søknadsid = søknad.søknadsid
@@ -576,7 +611,7 @@ class ForholdsmessigFordelingService(
         }
     }
 
-    fun kanBehandlingSlettes(
+    private fun kanBehandlingSlettes(
         behandling: Behandling,
         slettBarn: List<Rolle>,
     ): Boolean {
@@ -647,7 +682,7 @@ class ForholdsmessigFordelingService(
     }
 
     @Transactional
-    fun oppdaterRevurderingsbarnFraInnkrevingTilUtenInnkreving(
+    private fun oppdaterRevurderingsbarnFraInnkrevingTilUtenInnkreving(
         behandling: Behandling,
         rolle: Rolle,
     ) {
@@ -731,67 +766,6 @@ class ForholdsmessigFordelingService(
     @Transactional
     fun slettDuplikatForholdsmessigFordelingSøknader(behandling: Behandling) {
         søknadSyncService.slettDuplikatForholdsmessigFordelingSøknader(behandling)
-    }
-
-    // Feilhåndtering hvis FF søknad blir slettet manuelt eller ved feil
-    @Transactional
-    fun synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling: Behandling) {
-        val løpendeBidraggsakerBP =
-            hentSisteLøpendeStønader(Personident(behandling.bidragspliktig!!.ident!!), behandling.finnBeregningsperiode())
-
-        grunnlagService.lagreBeløpshistorikkGrunnlag(behandling)
-        grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
-
-        val alleSøknaderRelevantForBehandling =
-            hentÅpneSøknader(behandling.bidragspliktig!!.ident!!, behandling.behandlingstypeForFF, behandling.omgjøringsdetaljer)
-
-        oppdaterSøknadStatuserForAlleRoller(behandling)
-        slettDuplikatForholdsmessigFordelingSøknader(behandling)
-        if (behandling.erKlageEllerOmgjøring) {
-            opprettSøknaderForKlageEllerOmgjøring(behandling, behandling.soknadsid!!)
-            knyttSammenManglendeSøknadsknytningerIBehandling(behandling)
-            return
-        }
-
-        leggTilRollerFraRelevanteSøknaderSomIkkeErIBehandling(behandling, alleSøknaderRelevantForBehandling)
-
-        behandling.søknadsbarn.forEach { rolle ->
-            val ffDetaljer = rolle.forholdsmessigFordeling ?: return@forEach
-            val beløpshistorikk = løpendeBidraggsakerBP.find { it.kravhaver.verdi == rolle.ident }
-            val løperBidrag =
-                if (beløpshistorikk != null) {
-                    rolle.løperPeriodeEtterSøktFomDato(
-                        ÅrMånedsperiode(beløpshistorikk.periodeFra, beløpshistorikk.periodeTil),
-                    )
-                } else {
-                    false
-                }
-
-            val eldsteSøknad = rolle.forholdsmessigFordeling!!.eldsteSøknad
-            val erMedInnkreving =
-                (eldsteSøknad != null && eldsteSøknad.innkreving) || rolle.innkrevingstype == Innkrevingstype.MED_INNKREVING
-            if (!erMedInnkreving && løperBidrag) {
-                oppdaterBarnEtterInnkrevingsvedtak(behandling, Personident(rolle.ident!!))
-            }
-            if (erMedInnkreving && !løperBidrag && rolle.erRevurderingsbarn) {
-                oppdaterRevurderingsbarnFraInnkrevingTilUtenInnkreving(behandling, rolle)
-                rolle.innkrevingstype = Innkrevingstype.UTEN_INNKREVING
-            }
-
-            val lagretSøknader = ffDetaljer.søknader
-            val søknaderForBarn = finnApneSoknaderForBarn(alleSøknaderRelevantForBehandling, rolle)
-            val åpneSøknaderIkkeFF = søknaderForBarn.filter { !it.behandlingstype.erForholdsmessigFordeling }
-            val åpneSøknaderFF = søknaderForBarn.filter { it.behandlingstype.erForholdsmessigFordeling }
-
-            sjekkOgOppdaterStatusPåRevurderingOgSøknadsbarn(åpneSøknaderIkkeFF, rolle, behandling, åpneSøknaderFF, lagretSøknader)
-        }
-
-        val hovedsøknad = bbmConsumer.hentSøknad(behandling.soknadsid!!)
-        if (hovedsøknad != null && hovedsøknad.søknad.behandlingStatusType == BehandlingStatusType.AVBRUTT) {
-            endreHovedsøknadIFFEtterHovedsøknadBleSlettet(behandling, hovedsøknad.søknad.søknadsid)
-        }
-
-        knyttSammenManglendeSøknadsknytningerIBehandling(behandling)
     }
 
     private fun sjekkOgOppdaterStatusPåRevurderingOgSøknadsbarn(
@@ -1034,7 +1008,7 @@ class ForholdsmessigFordelingService(
         søknadBleSlettet: Boolean = false,
     ) {
         if (kanBehandlingSlettes(behandling, slettBarn)) {
-            avsluttForholdsmessigFordeling(behandling, slettBarn, søknadsid)
+            avsluttForholdsmessigFordeling(behandling, slettBarn)
             behandlingService.logiskSlettBehandling(behandling)
             bbmConsumer.fjernSammeknytningHovedsøknad(behandling.soknadsid!!)
         } else {
@@ -1108,7 +1082,7 @@ class ForholdsmessigFordelingService(
         val bidragspliktigFnr = behandling.bidragspliktig!!.ident!!
 
         val åpenFFSøknad =
-            hentÅpenSøknadFFFor(
+            hentÅpenSøknadFFForBP(
                 bidragspliktigFnr,
                 behandlingstype = behandling.behandlingstypeForFF,
                 medInnkreving = medInnkreving,
@@ -1272,7 +1246,7 @@ class ForholdsmessigFordelingService(
         val relevanteKravhavereIkkeSøknadsbarn = relevanteKravhavere.filter { !eksisterendeSøknadsbarn.contains(it.distinctKey) }
         val alleRelevanteKravhavere = relevanteKravhavereIkkeSøknadsbarn + relevanteKravhavere
         val bpsBarnMedLøpendeBidragEllerPrivatAvtale =
-            if (relevanteKravhavereIkkeSøknadsbarn.isEmpty() && `finnesLøpendeBidragSomOverlapperMedEldsteVirkning`) {
+            if (relevanteKravhavereIkkeSøknadsbarn.isEmpty() && finnesLøpendeBidragSomOverlapperMedEldsteVirkning) {
                 relevanteKravhavere
             } else {
                 relevanteKravhavereIkkeSøknadsbarn
@@ -1303,11 +1277,6 @@ class ForholdsmessigFordelingService(
     }
 
     fun hentAlleRelevanteKravhavere(behandling: Behandling): Set<SakKravhaver> = kravhaverService.hentAlleRelevanteKravhavere(behandling)
-
-    private fun hentBarnUtenLøpendeBidrag(
-        behandling: Behandling,
-        sakerMedLøpendeBidrag: Set<SakKravhaver>? = null,
-    ): List<SakKravhaver> = kravhaverService.hentBarnUtenLøpendeBidrag(behandling, sakerMedLøpendeBidrag)
 
     fun overførÅpneBisysSøknaderTilBehandling(
         behandling: Behandling,
@@ -1416,7 +1385,7 @@ class ForholdsmessigFordelingService(
             }
     }
 
-    private fun hentÅpenSøknadFFFor(
+    private fun hentÅpenSøknadFFForBP(
         bidragspliktigFnr: String,
         behandlingstype: Behandlingstype,
         medInnkreving: Boolean,
@@ -1425,7 +1394,7 @@ class ForholdsmessigFordelingService(
         stønadstype: Stønadstype?,
         omgjøringsdetaljer: Omgjøringsdetaljer?,
         erKlageEllerOmgjøring: Boolean = omgjøringsdetaljer != null,
-    ) = kravhaverService.hentÅpenSøknadFFFor(
+    ) = kravhaverService.hentÅpenSøknadFFForBP(
         bidragspliktigFnr,
         behandlingstype,
         medInnkreving,
@@ -1826,7 +1795,7 @@ class ForholdsmessigFordelingService(
                 )
             }
         val eksisterendeSøknad =
-            hentÅpenSøknadFFFor(
+            hentÅpenSøknadFFForBP(
                 bidragspliktigFnr = bidragspliktigFnr,
                 behandlingstype = behandling.behandlingstypeForFF,
                 medInnkreving = medInnkreving,
@@ -1926,4 +1895,20 @@ class ForholdsmessigFordelingService(
         behandling: Behandling,
         eksisterendeRelevanteKravhavere: Set<SakKravhaver>? = null,
     ): Set<SakKravhaver> = kravhaverService.hentAlleÅpneEllerLøpendeBidraggsakerForBP(behandling, eksisterendeRelevanteKravhavere)
+
+    // Brukes bare i dev
+    @Transactional
+    fun lukkAllFFSaker(behandlingsid: Long) {
+        val behandling = behandlingRepository.findBehandlingById(behandlingsid).get()
+        val åpneSaker =
+            hentÅpneSøknader(
+                behandling.bidragspliktig!!.ident!!,
+                behandling.behandlingstypeForFF,
+                omgjøringsdetaljer = behandling.omgjøringsdetaljer,
+            )
+        åpneSaker.filter { it.behandlingstype == behandling.behandlingstypeForFF }.forEach {
+            bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(it.søknadsid))
+            bbmConsumer.fjernSammeknytning(it.søknadsid)
+        }
+    }
 }

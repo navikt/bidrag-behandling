@@ -158,7 +158,7 @@ class ForholdsmessigFordelingBarnStatusService(
                 }
             }
 
-        søknadSyncService.feilregistrerAndreSøknaderTrygt(lagretSøknader, søknadSomSkalBeholdes, behandling)
+        søknadSyncService.feilregistrerAndreSøknader(lagretSøknader, søknadSomSkalBeholdes, behandling)
     }
 
     private fun opprettEllerGjenopprettFfSøknadForRevurderingsbarn(

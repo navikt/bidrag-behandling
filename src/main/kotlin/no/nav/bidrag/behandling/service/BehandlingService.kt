@@ -119,7 +119,6 @@ class BehandlingService(
                 forholdsmessigFordelingService!!.avsluttForholdsmessigFordeling(
                     behandling,
                     behandling.søknadsbarnForSøknad(behandling.soknadsid!!),
-                    behandling.soknadsid!!,
                 )
                 logiskSlettBehandling(behandling)
             } else {

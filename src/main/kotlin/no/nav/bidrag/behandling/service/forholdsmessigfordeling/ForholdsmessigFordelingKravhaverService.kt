@@ -23,7 +23,6 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragPeriodeRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.HentSøknad
 import no.nav.bidrag.transport.felles.toYearMonth
-import java.time.YearMonth
 
 private const val FORETRUKKET_BEHANDLERENHET = "2103"
 private val STØTTEDE_BEHANDLERENHETER_FOR_FF = setOf("4883", FORETRUKKET_BEHANDLERENHET)
@@ -211,7 +210,7 @@ class ForholdsmessigFordelingKravhaverService(
             .toSet()
     }
 
-    fun hentÅpenSøknadFFFor(
+    fun hentÅpenSøknadFFForBP(
         bidragspliktigFnr: String,
         behandlingstype: Behandlingstype,
         medInnkreving: Boolean,
@@ -334,18 +333,26 @@ class ForholdsmessigFordelingKravhaverService(
 
                     val stønadstypeBeregnet =
                         when {
-                            privatAvtale.stønadstype != null -> privatAvtale.stønadstype
+                            privatAvtale.stønadstype != null -> {
+                                privatAvtale.stønadstype
+                            }
 
-                            førstePeriodePrivatAvtale != null && førstePeriodePrivatAvtale.fom < dato18ÅrsBidrag ->
+                            førstePeriodePrivatAvtale != null && førstePeriodePrivatAvtale.fom < dato18ÅrsBidrag -> {
                                 no.nav.bidrag.domene.enums.vedtak.Stønadstype.BIDRAG
+                            }
 
                             førstePeriodePrivatAvtale != null &&
-                                førstePeriodePrivatAvtale.fom >= dato18ÅrsBidrag ->
+                                førstePeriodePrivatAvtale.fom >= dato18ÅrsBidrag -> {
                                 no.nav.bidrag.domene.enums.vedtak.Stønadstype.BIDRAG18AAR
+                            }
 
-                            er18EtterSøktFom -> no.nav.bidrag.domene.enums.vedtak.Stønadstype.BIDRAG18AAR
+                            er18EtterSøktFom -> {
+                                no.nav.bidrag.domene.enums.vedtak.Stønadstype.BIDRAG18AAR
+                            }
 
-                            else -> no.nav.bidrag.domene.enums.vedtak.Stønadstype.BIDRAG
+                            else -> {
+                                no.nav.bidrag.domene.enums.vedtak.Stønadstype.BIDRAG
+                            }
                         }
 
                     if (stønaderMedÅpenBehandling.contains(stønadstypeBeregnet)) return@mapNotNull null
@@ -396,18 +403,26 @@ class ForholdsmessigFordelingKravhaverService(
 
                                     val stønadstypeBeregnet =
                                         when {
-                                            privatAvtale.stønadstype != null -> privatAvtale.stønadstype
+                                            privatAvtale.stønadstype != null -> {
+                                                privatAvtale.stønadstype
+                                            }
 
-                                            førstePeriodePrivatAvtale != null && førstePeriodePrivatAvtale.fom < dato18ÅrsBidrag ->
+                                            førstePeriodePrivatAvtale != null && førstePeriodePrivatAvtale.fom < dato18ÅrsBidrag -> {
                                                 no.nav.bidrag.domene.enums.vedtak.Stønadstype.BIDRAG
+                                            }
 
                                             førstePeriodePrivatAvtale != null &&
-                                                førstePeriodePrivatAvtale.fom >= dato18ÅrsBidrag ->
+                                                førstePeriodePrivatAvtale.fom >= dato18ÅrsBidrag -> {
                                                 no.nav.bidrag.domene.enums.vedtak.Stønadstype.BIDRAG18AAR
+                                            }
 
-                                            er18EtterSøktFom -> no.nav.bidrag.domene.enums.vedtak.Stønadstype.BIDRAG18AAR
+                                            er18EtterSøktFom -> {
+                                                no.nav.bidrag.domene.enums.vedtak.Stønadstype.BIDRAG18AAR
+                                            }
 
-                                            else -> no.nav.bidrag.domene.enums.vedtak.Stønadstype.BIDRAG
+                                            else -> {
+                                                no.nav.bidrag.domene.enums.vedtak.Stønadstype.BIDRAG
+                                            }
                                         }
 
                                     if (stønaderMedÅpenBehandling.contains(stønadstypeBeregnet)) return@map null

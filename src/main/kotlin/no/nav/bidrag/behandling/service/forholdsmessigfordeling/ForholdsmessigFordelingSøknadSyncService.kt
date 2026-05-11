@@ -62,7 +62,7 @@ class ForholdsmessigFordelingSøknadSyncService(
             åpneFFSøknader
                 .filter { it.søknadsid != søknadSomSkalBeholdes.søknadsid }
                 .forEach { duplikatSøknad ->
-                    feilregistrerSøknadTrygt(duplikatSøknad, behandling)
+                    feilregistrerSøknad(duplikatSøknad, behandling)
                 }
         }
     }
@@ -103,7 +103,7 @@ class ForholdsmessigFordelingSøknadSyncService(
         }
     }
 
-    fun feilregistrerAndreSøknaderTrygt(
+    fun feilregistrerAndreSøknader(
         lagretSøknader: MutableSet<ForholdsmessigFordelingSøknadBarn>,
         søknadSomSkalBeholdes: ForholdsmessigFordelingSøknadBarn,
         behandling: Behandling,
@@ -112,11 +112,11 @@ class ForholdsmessigFordelingSøknadSyncService(
             .filter { it.søknadsid != søknadSomSkalBeholdes.søknadsid }
             .filter { it.innkreving == søknadSomSkalBeholdes.innkreving }
             .forEach { søknad ->
-                feilregistrerSøknadTrygt(søknad, behandling)
+                feilregistrerSøknad(søknad, behandling)
             }
     }
 
-    fun feilregistrerSøknadTrygt(
+    fun feilregistrerSøknad(
         søknad: ForholdsmessigFordelingSøknadBarn,
         behandling: Behandling,
     ): Boolean =
