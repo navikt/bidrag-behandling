@@ -533,7 +533,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
 
     private fun Behandling.validerGrunnlag() {
         assertSoftly(grunnlagListe) {
-            size shouldBe 19
+            size shouldBe 18
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.ANDRE_BARN,
                 testdataBM.ident,
@@ -565,7 +565,7 @@ class VedtakTilBehandlingBidragTest : CommonVedtakTilBehandlingTest() {
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.ARBEIDSFORHOLD,
                 testdataBM.ident,
-            ) shouldHaveSize 2
+            ) shouldHaveSize 1
             filtrerEtterTypeOgIdent(
                 Grunnlagsdatatype.BOFORHOLD,
                 testdataBP.ident,

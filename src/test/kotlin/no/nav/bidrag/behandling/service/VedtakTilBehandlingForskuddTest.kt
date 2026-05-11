@@ -371,13 +371,13 @@ class VedtakTilBehandlingForskuddTest : CommonVedtakTilBehandlingTest() {
         }
 
         assertSoftly(behandling.grunnlag) {
-            this shouldHaveSize 28
+            this shouldHaveSize 27
             filter { it.erBearbeidet && it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }.shouldHaveSize(
                 16,
             )
             filter { it.erBearbeidet && it.rolle.rolletype == Rolletype.BARN }.shouldHaveSize(1)
             filter { !it.erBearbeidet && it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }.shouldHaveSize(
-                10,
+                9,
             )
             filter { !it.erBearbeidet && it.rolle.rolletype == Rolletype.BARN }.shouldHaveSize(1)
         }
