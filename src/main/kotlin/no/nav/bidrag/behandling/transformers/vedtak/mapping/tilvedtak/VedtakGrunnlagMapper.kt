@@ -813,7 +813,7 @@ class VedtakGrunnlagMapper(
                                         valutakode = løpendeStønad.valutakode,
                                         erVedtakKildeBBM = beregning?.erVedtakKildeBBM ?: true,
                                         vedtaksid = beregning?.vedtaksid,
-                                        uMinusNettoBarnetilleggBM = beregning?.uMinusNettoBarnetilleggBM,
+                                        bruttoBidragEtterBarnetilleggBM = beregning?.bruttoBidragEtterBarnetilleggBM,
                                         bidragJustertForNettoBarnetilleggBP = beregning?.bidragJustertForNettoBarnetilleggBP,
                                     )
                                 },
