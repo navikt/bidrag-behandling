@@ -811,6 +811,10 @@ class VedtakGrunnlagMapper(
                                         gjelderBarn = personObjekt.referanse,
                                         saksnummer = Saksnummer(løpendeStønad.sak.verdi),
                                         valutakode = løpendeStønad.valutakode,
+                                        erVedtakKildeBBM = beregning?.erVedtakKildeBBM ?: true,
+                                        vedtaksid = beregning?.vedtaksid,
+                                        bruttoBidragEtterBarnetilleggBM = beregning?.bruttoBidragEtterBarnetilleggBM,
+                                        bidragJustertForNettoBarnetilleggBP = beregning?.bidragJustertForNettoBarnetilleggBP,
                                     )
                                 },
                         ),
