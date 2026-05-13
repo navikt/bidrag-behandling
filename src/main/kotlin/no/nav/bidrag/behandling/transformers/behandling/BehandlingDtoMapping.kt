@@ -873,7 +873,7 @@ fun Rolle.hentVirkningstidspunktValideringsfeilRolle(): VirkningstidspunktFeilV2
                 false
             },
         kanIkkeSetteOpphørsdatoEtterEtterfølgendeVedtak =
-            if (avslagRolle == null && behandling.erKlageEllerOmgjøring) {
+            if (avslagRolle == null && behandling.erKlageEllerOmgjøring && beregnTil != BeregnTil.INNEVÆRENDE_MÅNED) {
                 val etterfølgendeVedtak = behandling.hentNesteEtterfølgendeVedtak(this)
                 val virkningstidspunktEtterfølgendeVedtak = etterfølgendeVedtak?.virkningstidspunkt
                 virkningstidspunktEtterfølgendeVedtak != null && opphørsdato != null &&

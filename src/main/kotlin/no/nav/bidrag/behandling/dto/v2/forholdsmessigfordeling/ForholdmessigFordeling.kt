@@ -20,7 +20,13 @@ data class ForholdmessigFordelingDetaljerDto(
 data class OpprettFFRequest(
     @JsonFormat(pattern = "dd.MM.yyyy")
     val revurderingFraDato: LocalDate? = null,
-)
+    val detaljerBarn: List<OpprettFFRequestBarnDetaljer> = emptyList(),
+) {
+    data class OpprettFFRequestBarnDetaljer(
+        val manueltOverstyrtRevurderingFraDato: LocalDate? = null,
+        val ident: String,
+    )
+}
 
 data class SjekkForholdmessigFordelingResponse(
     val skalBehandlesAvEnhet: String,
