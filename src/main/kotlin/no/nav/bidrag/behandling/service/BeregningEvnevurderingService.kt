@@ -233,7 +233,8 @@ class BeregningEvnevurderingService(
             samværsklasse = samværsklasse,
             vedtaksid = vedtakDto.vedtaksid,
             bruttoBidragEtterBarnetilleggBM = beregningsetaljer?.bruttoBidragEtterBarnetilleggBM,
-            bidragJustertForNettoBarnetilleggBP = beregningsetaljer?.bruttoBidragEtterBarnetilleggBP,
+            bruttoBidragEtterBarnetilleggBP = beregningsetaljer?.bruttoBidragEtterBarnetilleggBP,
+            bidragJustertForNettoBarnetilleggBP = beregningsetaljer?.bidragJustertForNettoBarnetilleggBP,
             erVedtakKildeBBM = false,
         )
     }
