@@ -139,6 +139,7 @@ class ForholdsmessigFordelingKlageService(
             )
 
         overføringService.giSakTilgangTilEnhet(behandling, behandlerEnhet)
+        behandlingService.lagreBehandling(behandling)
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         oppdaterBehandlingEtterOppdatertRoller(
             behandling,
