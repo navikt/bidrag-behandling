@@ -21,4 +21,9 @@ data class RolleDto(
     val bidragsmottaker: String? = null,
     val harLøpendeForskudd: Boolean? = false,
     val harLøpendeBidrag: Boolean? = false,
+    val søknader: List<RolleSøknadDto> = emptyList(),
+)
+
+data class RolleSøknadDto(
+    val søknadsId: Long,
 )
