@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling
 
-import org.slf4j.LoggerFactory
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
@@ -14,8 +13,6 @@ import org.testcontainers.junit.jupiter.Testcontainers
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class TestContainerRunner : SpringTestRunner() {
     companion object {
-        private val LOGGER = LoggerFactory.getLogger(TestContainerRunner::class.java)
-
         @JvmStatic
         @Container
         protected val postgreSqlDb =
@@ -25,8 +22,6 @@ class TestContainerRunner : SpringTestRunner() {
                 withPassword("admin")
                 withInitScript("db/init.sql")
 //                withLogConsumer(Slf4jLogConsumer(LOGGER))
-                portBindings = listOf("7777:5432")
-                start()
             }
 
         @Suppress("unused")
