@@ -35,6 +35,7 @@ import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandRequest
 import no.nav.bidrag.behandling.transformers.boforhold.tilSivilstandskodePDL
 import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
+import no.nav.bidrag.behandling.utils.stubPersonConsumer
 import no.nav.bidrag.behandling.utils.testdata.TestdataManager
 import no.nav.bidrag.behandling.utils.testdata.oppretteBoforholdBearbeidetGrunnlagForhusstandsmedlem
 import no.nav.bidrag.behandling.utils.testdata.oppretteHusstandsmedlem
@@ -92,6 +93,7 @@ class BoforholdServiceTest : TestContainerRunner() {
     @BeforeEach
     fun initStubs() {
         stubUtils.stubTilgangskontrollPersonISak()
+        stubPersonConsumer(bidragPersonConsumer)
     }
 
     @Nested
