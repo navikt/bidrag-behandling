@@ -8,6 +8,7 @@ import no.nav.bidrag.commons.cache.BrukerCacheable
 import no.nav.bidrag.commons.web.client.AbstractRestClient
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
+import no.nav.bidrag.transport.tilgang.TilgangTilPersonRequest
 import no.nav.bidrag.transport.tilgang.TilgangTilTemaRequest
 import no.nav.bidrag.transport.tilgang.TilgangskontrollResponse
 import org.springframework.beans.factory.annotation.Qualifier
@@ -50,8 +51,8 @@ class BidragTilgangskontrollConsumer(
             headers.contentType = MediaType.APPLICATION_JSON
             val harTilgangTilPersonISak: Boolean? =
                 postForNonNullEntity<TilgangskontrollResponse>(
-                    createUri("/v2/api/tilgang/person/sak"),
-                    SjekkTilgangPersonISakRequest(personident, saksnummer),
+                    createUri("/v2/api/tilgang/person"),
+                    TilgangTilPersonRequest(personident),
                     headers,
                 ).harTilgang
             harTilgangTilPersonISak ?: false
@@ -77,8 +78,3 @@ class BidragTilgangskontrollConsumer(
         }
     }
 }
-
-data class SjekkTilgangPersonISakRequest(
-    val personident: Personident,
-    val saksnummer: Saksnummer,
-)
