@@ -1,10 +1,12 @@
 package no.nav.bidrag.behandling.service
 
+import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.BidragTilgangskontrollConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.ingenTilgang
 import no.nav.bidrag.commons.security.SikkerhetsKontekst
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.person.Diskresjonskode
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
@@ -17,6 +19,7 @@ import org.springframework.web.client.HttpClientErrorException
 @Service
 class TilgangskontrollService(
     private val tilgangskontrollConsumer: BidragTilgangskontrollConsumer,
+    private val personConsumer: BidragPersonConsumer,
 ) {
     fun sjekkTilgangPersonISak(
         personident: Personident,
@@ -65,5 +68,15 @@ class TilgangskontrollService(
             false
         }
 
-    fun harBeskyttelse(personident: Personident): Boolean = tilgangskontrollConsumer.personHarBeskyttelse(personident)
+    fun harBeskyttelse(personident: Personident): Boolean {
+        val diskresjonskode =
+            personConsumer
+                .hentPerson(personident)
+                .diskresjonskode
+        return if (diskresjonskode != null) {
+            listOf(Diskresjonskode.P19, Diskresjonskode.SPSF, Diskresjonskode.SPFO).contains(diskresjonskode)
+        } else {
+            false
+        }
+    }
 }
