@@ -33,11 +33,13 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.ForholdsmessigFordelingService
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.OppdaterBarnFraFFRequest
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.behandlingstyperSomIkkeSkalInkluderesIFF
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
-import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.OppdaterBarnFraFFRequest
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.opprettForsendelse
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
@@ -111,11 +113,12 @@ class BehandlingService(
         søknadsid: Long? = null,
     ) {
         if (behandling.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
-            if (søknadsid == null) {
+            if (behandling.erKlageEllerOmgjøring) {
+                forholdsmessigFordelingService!!.slettEllerGjennopprettKlageSøknader(behandling, søknadsid ?: behandling.soknadsid!!)
+            } else if (søknadsid == null) {
                 forholdsmessigFordelingService!!.avsluttForholdsmessigFordeling(
                     behandling,
                     behandling.søknadsbarnForSøknad(behandling.soknadsid!!),
-                    behandling.soknadsid!!,
                 )
                 logiskSlettBehandling(behandling)
             } else {
@@ -126,6 +129,7 @@ class BehandlingService(
                     barnSomSkalSlettes,
                     behandling,
                     søknadsid,
+                    søknadBleSlettet = true,
                 )
                 behandling.bidragspliktig?.fjernGebyr(søknadsid)
             }

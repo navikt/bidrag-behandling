@@ -17,8 +17,10 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import no.nav.bidrag.behandling.database.datamodell.extensions.ÅrsakConverter
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
 import no.nav.bidrag.behandling.dto.grunnlag.PersonStønad
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.tilFFBarnDetaljer
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
@@ -164,6 +166,8 @@ open class Rolle(
         }
     val stønadstypeBarnEllerBehandling get() = stønadstype ?: behandling.stonadstype
     val virkningstidspunktRolle get() = virkningstidspunkt ?: behandling.virkningstidspunktEllerSøktFomDato
+
+    val søknader get() = forholdsmessigFordeling?.søknaderUnderBehandling ?: listOf(behandling.tilFFBarnDetaljer())
 
     fun finnSøknad(søknadsid: Long) =
         forholdsmessigFordeling
@@ -313,7 +317,9 @@ open class Rolle(
     val opphørSistePeriode get() = opphørTilDato != null
 
     override fun toString(): String =
-        "Rolle(id=$id, behandling=${behandling.id}, stønadstype=$stønadstype, behandlingstema=$behandlingstema, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
+        "Rolle(id=$id, behandling=${behandling.id}, stønadstype=$stønadstype, behandlingstema=$behandlingstema, " +
+            "rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, " +
+            "deleted=$deleted, innbetaltBeløp=$innbetaltBeløp, virkningstidspunkt=$virkningstidspunkt, opphørsdato=$opphørsdato, årsak=$årsak, avslag=$avslag)"
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

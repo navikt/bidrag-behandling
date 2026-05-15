@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.database.repository.PersonRepository
 import no.nav.bidrag.behandling.database.repository.SamværRepository
 import no.nav.bidrag.behandling.database.repository.SivilstandRepository
 import no.nav.bidrag.behandling.database.repository.UnderholdskostnadRepository
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilGrunnlagMappingV2

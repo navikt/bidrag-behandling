@@ -13,7 +13,6 @@ import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
-import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
 import no.nav.bidrag.behandling.dto.v1.beregning.BeregnetBidragBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.DelvedtakDto
 import no.nav.bidrag.behandling.dto.v1.beregning.KlageOmgjøringDetaljer
@@ -23,7 +22,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.erForholdsmessigFordeling
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
@@ -43,7 +42,6 @@ import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
-import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.erForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.harOpprettetForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.kanOpprette35C
@@ -57,11 +55,9 @@ import no.nav.bidrag.behandling.transformers.tilTypeBoforhold
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
 import no.nav.bidrag.behandling.vedtakmappingFeilet
 import no.nav.bidrag.boforhold.BoforholdApi
-import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.boforhold.dto.BoforholdVoksneRequest
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
-import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
@@ -76,7 +72,6 @@ import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
-import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.sivilstand.SivilstandApi
 import no.nav.bidrag.transport.behandling.felles.grunnlag.AldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag

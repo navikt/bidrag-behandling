@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.RolleSøknadDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
@@ -572,6 +573,12 @@ fun Rolle.tilDto() =
         beregnTilDato = finnBeregnTil(),
         harLøpendeForskudd = behandling.finnesLøpendeForskuddForRolle(this),
         harLøpendeBidrag = behandling.finnesLøpendeBidragForRolle(this),
+        søknader =
+            søknader.filter { it.søknadsid != null }.map {
+                RolleSøknadDto(
+                    it.søknadsid!!,
+                )
+            },
         bidragsmottaker =
             if (rolletype == Rolletype.BARN) {
                 forholdsmessigFordeling?.bidragsmottaker ?: behandling.bidragsmottaker?.ident
@@ -873,7 +880,7 @@ fun Rolle.hentVirkningstidspunktValideringsfeilRolle(): VirkningstidspunktFeilV2
                 false
             },
         kanIkkeSetteOpphørsdatoEtterEtterfølgendeVedtak =
-            if (avslagRolle == null && behandling.erKlageEllerOmgjøring) {
+            if (avslagRolle == null && behandling.erKlageEllerOmgjøring && beregnTil != BeregnTil.INNEVÆRENDE_MÅNED) {
                 val etterfølgendeVedtak = behandling.hentNesteEtterfølgendeVedtak(this)
                 val virkningstidspunktEtterfølgendeVedtak = etterfølgendeVedtak?.virkningstidspunkt
                 virkningstidspunktEtterfølgendeVedtak != null && opphørsdato != null &&

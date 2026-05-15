@@ -34,11 +34,11 @@ import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftspostDto
 import no.nav.bidrag.behandling.dto.v2.underhold.DatoperiodeDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdskostnadDto.UnderholdskostnadPeriodeBeregningsdetaljer
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.erForholdsmessigFordeling
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilSøknadsdetaljerDto
-import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.erForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.inntekt.bestemDatoTomForOffentligInntekt
 import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
@@ -89,6 +89,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningAndelAvBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnetilleggSkattesats
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragJustertForBPBarnetillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragTilFordeling
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragTilFordelingLøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragTilFordelingPrivatAvtale
@@ -137,7 +138,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrun
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottakerReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.byggSluttberegningBarnebidragDetaljer
-import no.nav.bidrag.transport.behandling.felles.grunnlag.erIndeksEllerAldersjustering
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrenseForPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erSluttberegningGammelStruktur
@@ -145,7 +145,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenRe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanser
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
-import no.nav.bidrag.transport.behandling.felles.grunnlag.finnDelberegningSjekkGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnDelberegningSjekkGrensePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
@@ -1687,6 +1686,11 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
     val bidragTilFordelingSøknadsbarn =
         bidragTilFordelingSøknadsbarnGrunnlag.map {
             val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
+            val delberegningJustertForBpsBarnetillegg =
+                finnOgKonverterGrunnlagSomErReferertAv<DelberegningBidragJustertForBPBarnetillegg>(
+                    Grunnlagstype.DELBEREGNING_BIDRAG_JUSTERT_FOR_BP_BARNETILLEGG,
+                    sumBidragTilBeregning.grunnlag,
+                ).find { it.gjelderBarnReferanse == it.gjelderBarnReferanse }
             ForholdsmessigFordelingBidragTilFordelingBarn(
                 utenlandskbidrag = false,
                 privatAvtale = false,
@@ -1700,6 +1704,16 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
                         løpendeBeløp = BigDecimal.ZERO,
                         faktiskBeløp = BigDecimal.ZERO,
                         beregnetBidrag = it.innhold.bidragTilFordeling,
+                        bruttoBidragEtterBarnetilleggBM = it.innhold.bruttoBidragEtterBarnetilleggBM,
+                        bruttoBidragEtterBarnetilleggBP =
+                            delberegningJustertForBpsBarnetillegg
+                                ?.innhold
+                                ?.bidragJustertForNettoBarnetilleggBP,
+                        bidragJustertForNettoBarnetilleggBP =
+                            delberegningJustertForBpsBarnetillegg
+                                ?.innhold
+                                ?.erBidragJustertTilNettoBarnetilleggBP,
+                        erVedtakKildeBBM = false,
                         beregnetBeløp = BigDecimal.ZERO,
                         reduksjonUnderholdskostnad = BigDecimal.ZERO,
                         samværsfradrag = BigDecimal.ZERO,
@@ -1928,6 +1942,11 @@ fun List<GrunnlagDto>.mapTilBeregnetBidragDto(
                     faktiskBeløp = løpendeBidrag.faktiskBeløp,
                     stønadstype = løpendeBidrag.stønadstype,
                     beregnetBidrag = it.innhold.bidragTilFordelingNOK,
+                    vedtaksid = løpendeBidrag.vedtaksid,
+                    bidragJustertForNettoBarnetilleggBP = løpendeBidrag.bidragJustertForNettoBarnetilleggBP,
+                    bruttoBidragEtterBarnetilleggBM = løpendeBidrag.bruttoBidragEtterBarnetilleggBM,
+                    bruttoBidragEtterBarnetilleggBP = løpendeBidrag.bruttoBidragEtterBarnetilleggBP,
+                    erVedtakKildeBBM = løpendeBidrag.erVedtakKildeBBM,
                     beregnetBeløp = løpendeBidrag.beregnetBeløp,
                     valutakode = løpendeBidrag.valutakode,
                     valutakurs = valutakursNOKTilValuta ?: BigDecimal.ONE,
