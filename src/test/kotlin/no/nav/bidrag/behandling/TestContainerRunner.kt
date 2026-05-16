@@ -20,6 +20,7 @@ class TestContainerRunner : SpringTestRunner() {
                 withDatabaseName("bidrag-behandling")
                 withUsername("cloudsqliamuser")
                 withPassword("admin")
+                withInitScript("db/init.sql")
                 start()
             }
 

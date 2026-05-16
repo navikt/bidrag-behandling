@@ -9,7 +9,6 @@ import io.kotest.matchers.date.shouldHaveSameDayAs
 import io.kotest.matchers.shouldBe
 import io.mockk.clearAllMocks
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
 import io.mockk.slot
 import io.mockk.verify
 import jakarta.persistence.EntityManager
@@ -165,16 +164,16 @@ class VedtakserviceTest : TestContainerRunner() {
 
     lateinit var beregningService: BeregningService
 
-    @MockK
+    @MockkBean
     lateinit var underholdskostnadRepository: UnderholdskostnadRepository
 
-    @MockK
+    @MockkBean
     lateinit var personRepository: PersonRepository
 
-    @MockK
+    @MockkBean
     lateinit var forsendelseService: ForsendelseService
 
-    @MockK
+    @MockkBean
     lateinit var hentLøpendeBidragService: HentLøpendeBidragService
 
     @MockkBean
