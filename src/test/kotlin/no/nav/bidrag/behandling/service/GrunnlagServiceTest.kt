@@ -100,7 +100,6 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
@@ -2432,9 +2431,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 testdataManager.lagreBehandlingNewTransaction(behandling)
 
                 stubbeHentingAvPersoninfoForTestpersoner()
-                Mockito
-                    .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
-                    .thenReturn(testdataBarn1.tilPersonDto())
+                every { bidragPersonConsumer.hentPerson(testdataBarn1.ident) }
+                    .returns(testdataBarn1.tilPersonDto())
 
                 assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 0
@@ -2536,9 +2534,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 testdataManager.lagreBehandlingNewTransaction(behandling)
 
                 stubbeHentingAvPersoninfoForTestpersoner()
-                Mockito
-                    .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
-                    .thenReturn(testdataBarn1.tilPersonDto())
+                every { bidragPersonConsumer.hentPerson(testdataBarn1.ident) }
+                    .returns(testdataBarn1.tilPersonDto())
 
                 assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 0
@@ -2745,9 +2742,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandling.stonadstype = null
 
                 stubbeHentingAvPersoninfoForTestpersoner()
-                Mockito
-                    .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
-                    .thenReturn(testdataBarn1.tilPersonDto())
+                every { bidragPersonConsumer.hentPerson(testdataBarn1.ident) }
+                    .returns(testdataBarn1.tilPersonDto())
 
                 assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 0
@@ -3476,9 +3472,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         behandlingstype = TypeBehandling.SÆRBIDRAG,
                     )
                 stubbeHentingAvPersoninfoForTestpersoner()
-                Mockito
-                    .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
-                    .thenReturn(testdataBarn1.tilPersonDto())
+                every { bidragPersonConsumer.hentPerson(testdataBarn1.ident) }
+                    .returns(testdataBarn1.tilPersonDto())
 
                 testdataManager.oppretteOgLagreGrunnlag(
                     behandling = behandling,
@@ -3932,9 +3927,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false, false, false)
                 stubbeHentingAvPersoninfoForTestpersoner()
-                Mockito
-                    .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
-                    .thenReturn(testdataBarn1.tilPersonDto())
+                every { bidragPersonConsumer.hentPerson(testdataBarn1.ident) }
+                    .returns(testdataBarn1.tilPersonDto())
 
                 assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 0
@@ -4105,8 +4099,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 val grunnlag = opprettAlleAktiveGrunnlagFraFil(behandling, "hente-grunnlagrespons.json")
 
-                entityManager.refresh(behandling)
-
                 val rådataBoforhold = grunnlag.find { !it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD }
 
                 val nyeBorhosperioder =
@@ -4221,8 +4213,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 val grunnlag = opprettAlleAktiveGrunnlagFraFil(behandling, "hente-grunnlagrespons.json")
 
-                entityManager.refresh(behandling)
-
                 val rådataBoforhold = grunnlag.find { !it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD }
 
                 behandling.grunnlag.add(
@@ -4312,9 +4302,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false)
                 stubbeHentingAvPersoninfoForTestpersoner()
-                Mockito
-                    .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
-                    .thenReturn(testdataBarn1.tilPersonDto())
+                every { bidragPersonConsumer.hentPerson(testdataBarn1.ident) }
+                    .returns(testdataBarn1.tilPersonDto())
 
                 assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 2
