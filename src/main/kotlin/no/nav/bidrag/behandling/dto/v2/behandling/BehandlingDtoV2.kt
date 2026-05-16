@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v2.behandling
 import com.fasterxml.jackson.annotation.JsonEnumDefaultValue
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Behandling
@@ -90,7 +91,8 @@ data class BehandlingDetaljerDtoV2(
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val virkningstidspunkt: LocalDate? = null,
-    @Schema(name = "årsak", enumAsRef = true)
+    @get:JsonProperty("årsak")
+    @get:Schema(enumAsRef = true)
     val årsak: VirkningstidspunktÅrsakstype? = null,
     @Schema(enumAsRef = true)
     val avslag: Resultatkode? = null,
@@ -363,7 +365,7 @@ data class IkkeAktiveInntekter(
     val utvidetBarnetrygd: Set<IkkeAktivInntektDto> = emptySet(),
     val kontantstøtte: Set<IkkeAktivInntektDto> = emptySet(),
     val småbarnstillegg: Set<IkkeAktivInntektDto> = emptySet(),
-    @Schema(name = "årsinntekter")
+    @get:JsonProperty("årsinntekter")
     val årsinntekter: Set<IkkeAktivInntektDto> = emptySet(),
 ) {
     @get:JsonIgnore

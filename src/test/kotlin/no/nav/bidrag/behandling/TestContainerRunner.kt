@@ -4,9 +4,9 @@ import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.postgresql.PostgreSQLContainer
 
 @Testcontainers
 @ActiveProfiles(value = ["test", "testcontainer"])
@@ -16,12 +16,11 @@ class TestContainerRunner : SpringTestRunner() {
         @JvmStatic
         @Container
         protected val postgreSqlDb =
-            PostgreSQLContainer("postgres:15.4").apply {
+            PostgreSQLContainer("postgres:latest").apply {
                 withDatabaseName("bidrag-behandling")
                 withUsername("cloudsqliamuser")
                 withPassword("admin")
-                withInitScript("db/init.sql")
-//                withLogConsumer(Slf4jLogConsumer(LOGGER))
+                start()
             }
 
         @Suppress("unused")

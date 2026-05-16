@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.dto.v1.behandling
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.EksisterendeOpphørsvedtakDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDtoV3
@@ -98,7 +99,8 @@ data class VirkningstidspunktBarnDtoV2(
     val opprinneligVirkningstidspunkt: LocalDate? = null,
     val opprinneligVedtakstidspunkt: LocalDate? = null,
     val omgjortVedtakVedtakstidspunkt: LocalDate? = null,
-    @Schema(name = "årsak", enumAsRef = true)
+    @get:JsonProperty("årsak")
+    @get:Schema(enumAsRef = true)
     val årsak: VirkningstidspunktÅrsakstype? = null,
     @Schema(enumAsRef = true)
     val avslag: Resultatkode? = null,
@@ -151,7 +153,8 @@ data class VirkningstidspunktDto(
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val opprinneligVirkningstidspunkt: LocalDate? = null,
-    @Schema(name = "årsak", enumAsRef = true)
+    @get:JsonProperty("årsak")
+    @get:Schema(enumAsRef = true)
     val årsak: VirkningstidspunktÅrsakstype? = null,
     @Schema(enumAsRef = true)
     val avslag: Resultatkode? = null,

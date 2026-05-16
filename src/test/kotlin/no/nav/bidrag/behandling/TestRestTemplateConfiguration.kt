@@ -24,15 +24,14 @@ import no.nav.security.mock.oauth2.token.DefaultOAuth2TokenCallback
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.ConfigurableBeanFactory
-import org.springframework.boot.test.web.client.TestRestTemplate
-import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.boot.restclient.RestTemplateBuilder
+import org.springframework.boot.resttestclient.TestRestTemplate
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.context.annotation.Scope
 import org.springframework.http.HttpHeaders
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 
@@ -54,7 +53,6 @@ class TestRestTemplateConfiguration {
     fun httpHeaderTestRestTemplate(): TestRestTemplate =
         TestRestTemplate(
             RestTemplateBuilder()
-                .additionalMessageConverters(MappingJackson2HttpMessageConverter())
                 .additionalInterceptors({ request, body, execution ->
                     request.headers.add(HttpHeaders.AUTHORIZATION, generateBearerToken())
                     execution.execute(request, body)

@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v2.validering
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
@@ -94,7 +95,7 @@ data class InntektValideringsfeilV2Dto(
     val utvidetBarnetrygd: InntektValideringsfeil? = InntektValideringsfeil(),
     val kontantstøtte: Collection<InntektValideringsfeil>? = emptySet(),
     val småbarnstillegg: InntektValideringsfeil? = InntektValideringsfeil(),
-    @Schema(name = "årsinntekter")
+    @get:JsonProperty("årsinntekter")
     val årsinntekter: InntektValideringsfeil? = InntektValideringsfeil(),
 ) {
     @get:JsonIgnore
@@ -114,7 +115,7 @@ data class InntektValideringsfeilDto(
     val utvidetBarnetrygd: InntektValideringsfeil? = InntektValideringsfeil(),
     val kontantstøtte: Collection<InntektValideringsfeil>? = emptySet(),
     val småbarnstillegg: InntektValideringsfeil? = InntektValideringsfeil(),
-    @Schema(name = "årsinntekter")
+    @get:JsonProperty("årsinntekter")
     val årsinntekter: Set<InntektValideringsfeil>? = emptySet(),
 ) {
     @get:JsonIgnore

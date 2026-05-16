@@ -102,7 +102,6 @@ import org.junit.jupiter.api.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
@@ -132,7 +131,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var grunnlagService: GrunnlagService
 
-    @MockBean
+    @MockkBean
     lateinit var bidragPersonConsumer: BidragPersonConsumer
 
     @Autowired

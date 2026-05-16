@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v2.inntekt
 
 import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
@@ -143,7 +144,7 @@ data class InntekterDtoV3(
     val kontantstøtte: Collection<InntektBarn> = emptySet(),
     val månedsinntekter: Set<InntektDtoV2> = emptySet(),
     val småbarnstillegg: Set<InntektDtoV2> = emptySet(),
-    @Schema(name = "årsinntekter")
+    @get:JsonProperty("årsinntekter")
     val årsinntekter: Set<InntektDtoV2> = emptySet(),
     val beregnetInntekt: BeregnetInntekterDto,
     @Schema(description = "Saksbehandlers begrunnelser", deprecated = false)
@@ -158,7 +159,7 @@ data class InntekterDtoV2(
     val kontantstøtte: Set<InntektDtoV2> = emptySet(),
     val månedsinntekter: Set<InntektDtoV2> = emptySet(),
     val småbarnstillegg: Set<InntektDtoV2> = emptySet(),
-    @Schema(name = "årsinntekter")
+    @get:JsonProperty("årsinntekter")
     val årsinntekter: Set<InntektDtoV2> = emptySet(),
     val beregnetInntekter: List<BeregnetInntekterDto> = emptyList(),
     @Schema(description = "Saksbehandlers begrunnelser", deprecated = false)

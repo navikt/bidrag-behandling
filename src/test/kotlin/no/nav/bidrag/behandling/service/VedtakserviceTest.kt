@@ -1,7 +1,7 @@
 package no.nav.bidrag.behandling.service
 
 import com.ninjasquad.springmockk.MockkBean
-import com.ninjasquad.springmockk.SpykBean
+import com.ninjasquad.springmockk.MockkSpyBean
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
@@ -107,7 +107,7 @@ class VedtakserviceTest : TestContainerRunner() {
     @MockkBean
     lateinit var tilgangskontrollService: TilgangskontrollService
 
-    @SpykBean
+    @MockkSpyBean
     lateinit var vedtakConsumer: BidragVedtakConsumer
 
 //    @SpykBean
