@@ -32,6 +32,7 @@ import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.context.annotation.Scope
 import org.springframework.http.HttpHeaders
+import org.springframework.http.converter.StringHttpMessageConverter
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 
@@ -56,7 +57,9 @@ class TestRestTemplateConfiguration {
                 .additionalInterceptors({ request, body, execution ->
                     request.headers.add(HttpHeaders.AUTHORIZATION, generateBearerToken())
                     execution.execute(request, body)
-                }),
+                })
+                .defaultMessageConverters()
+                .additionalMessageConverters(StringHttpMessageConverter()),
         )
 
     @Bean
