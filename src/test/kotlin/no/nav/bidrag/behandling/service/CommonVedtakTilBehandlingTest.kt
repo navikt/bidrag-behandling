@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.service
 
-import com.ninjasquad.springmockk.MockkBean
 import io.getunleash.FakeUnleash
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -50,10 +49,10 @@ import org.junit.jupiter.api.extension.ExtendWith
 
 @ExtendWith(MockKExtension::class)
 abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
-    @MockkBean
+    @MockK
     lateinit var bidragStønadConsumer: BidragBeløpshistorikkConsumer
 
-    @MockkBean
+    @MockK
     lateinit var bbmConsumer: BidragBBMConsumer
 
     @MockK
@@ -62,10 +61,10 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
     @MockK
     lateinit var forsendelseService: ForsendelseService
 
-    @MockkBean
+    @MockK
     lateinit var sakConsumer: BidragSakConsumer
 
-    @MockkBean
+    @MockK
     lateinit var vedtakServiceBeregning: no.nav.bidrag.beregn.barnebidrag.service.external.VedtakService
 
     lateinit var beregningService: BeregningService

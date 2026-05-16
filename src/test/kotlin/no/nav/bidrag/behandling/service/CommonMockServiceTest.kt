@@ -1,6 +1,5 @@
 package no.nav.bidrag.behandling.service
 
-import com.ninjasquad.springmockk.MockkBean
 import io.getunleash.FakeUnleash
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -41,16 +40,16 @@ import org.junit.jupiter.api.extension.ExtendWith
 abstract class CommonMockServiceTest {
     lateinit var virkningstidspunktService: VirkningstidspunktService
 
-    @MockkBean
+    @MockK
     lateinit var underholdService: UnderholdService
     val notatService = NotatService()
 
     lateinit var behandlingControllerV2: BehandlingControllerV2
 
-    @MockkBean
+    @MockK
     lateinit var grunnlagConsumer: BidragGrunnlagConsumer
 
-    @MockkBean
+    @MockK
     lateinit var ffservice: ForholdsmessigFordelingService
 
     @MockK
