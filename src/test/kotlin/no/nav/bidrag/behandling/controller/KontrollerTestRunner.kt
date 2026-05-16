@@ -21,18 +21,19 @@ import org.springframework.boot.resttestclient.TestRestTemplate
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
+import org.testcontainers.postgresql.PostgreSQLContainer
 
 abstract class KontrollerTestRunner : CommonTestRunner() {
     companion object {
         @Container
         protected val postgreSqlDb =
-            PostgreSQLContainer("postgres:15.4").apply {
+            PostgreSQLContainer("postgres:latest").apply {
                 withDatabaseName("bidrag-behandling")
                 withUsername("cloudsqliamuser")
                 withPassword("admin")
                 withInitScript("db/init.sql")
+                start()
             }
 
         @Suppress("unused")
