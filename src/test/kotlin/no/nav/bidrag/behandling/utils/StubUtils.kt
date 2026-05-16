@@ -445,7 +445,7 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
         personIdent: String? = null,
     ) {
-        val stub = WireMock.post(urlMatching("/tilgangskontroll/v2/api/tilgang/person/sak"))
+        val stub = WireMock.post(urlMatching("/tilgangskontroll/v2/api/tilgang/person"))
         if (!personIdent.isNullOrEmpty()) {
             stub.withRequestBody(ContainsPattern(personIdent))
         }

@@ -5126,23 +5126,18 @@ class GrunnlagServiceTest : TestContainerRunner() {
     }
 
     private fun stubbeHentingAvPersoninfoForTestpersoner() {
-        Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBM.ident)).thenReturn(testdataBM.tilPersonDto())
-        Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBP.ident)).thenReturn(testdataBP.tilPersonDto())
-        Mockito
-            .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
-            .thenReturn(testdataBarn1.tilPersonDto())
-        Mockito
-            .`when`(bidragPersonConsumer.hentPerson(testdataBarn2.ident))
-            .thenReturn(testdataBarn2.tilPersonDto())
-        Mockito
-            .`when`(bidragPersonConsumer.hentPerson(testdataHusstandsmedlem1.ident))
-            .thenReturn(testdataHusstandsmedlem1.tilPersonDto())
-        Mockito
-            .`when`(bidragPersonConsumer.hentPerson(testdataBarnBm.ident))
-            .thenReturn(testdataBarnBm.tilPersonDto())
-        Mockito
-            .`when`(bidragPersonConsumer.hentPerson(testdataBarnBm2.ident))
-            .thenReturn(testdataBarnBm2.tilPersonDto())
+        every { bidragPersonConsumer.hentPerson(testdataBM.ident) }.returns(testdataBM.tilPersonDto())
+        every { bidragPersonConsumer.hentPerson(testdataBP.ident) }.returns(testdataBP.tilPersonDto())
+        every { bidragPersonConsumer.hentPerson(testdataBarn1.ident) }
+            .returns(testdataBarn1.tilPersonDto())
+        every { bidragPersonConsumer.hentPerson(testdataBarn2.ident) }
+            .returns(testdataBarn2.tilPersonDto())
+        every { bidragPersonConsumer.hentPerson(testdataHusstandsmedlem1.ident) }
+            .returns(testdataHusstandsmedlem1.tilPersonDto())
+        every { bidragPersonConsumer.hentPerson(testdataBarnBm.ident) }
+            .returns(testdataBarnBm.tilPersonDto())
+        every { bidragPersonConsumer.hentPerson(testdataBarnBm2.ident) }
+            .returns(testdataBarnBm2.tilPersonDto())
     }
 }
 
