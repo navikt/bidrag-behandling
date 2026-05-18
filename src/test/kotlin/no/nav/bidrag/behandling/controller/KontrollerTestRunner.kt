@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.resttestclient.TestRestTemplate
 import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
@@ -28,6 +29,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer
 
 @Testcontainers
 @ActiveProfiles(value = ["test", "testcontainer"])
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 abstract class KontrollerTestRunner : CommonTestRunner() {
     companion object {
         @Container
@@ -37,6 +39,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
                 withUsername("cloudsqliamuser")
                 withPassword("admin")
                 withInitScript("db/init.sql")
+                portBindings = listOf("7777:5432")
                 start()
             }
 
