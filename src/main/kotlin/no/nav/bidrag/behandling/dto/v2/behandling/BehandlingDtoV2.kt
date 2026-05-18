@@ -91,8 +91,7 @@ data class BehandlingDetaljerDtoV2(
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val virkningstidspunkt: LocalDate? = null,
-    @get:JsonProperty("årsak")
-    @get:Schema(enumAsRef = true)
+    @get:Schema(name = "årsak", enumAsRef = true)
     val årsak: VirkningstidspunktÅrsakstype? = null,
     @Schema(enumAsRef = true)
     val avslag: Resultatkode? = null,
@@ -365,7 +364,7 @@ data class IkkeAktiveInntekter(
     val utvidetBarnetrygd: Set<IkkeAktivInntektDto> = emptySet(),
     val kontantstøtte: Set<IkkeAktivInntektDto> = emptySet(),
     val småbarnstillegg: Set<IkkeAktivInntektDto> = emptySet(),
-    @get:JsonProperty("årsinntekter")
+    @get:Schema(name = "årsinntekter")
     val årsinntekter: Set<IkkeAktivInntektDto> = emptySet(),
 ) {
     @get:JsonIgnore

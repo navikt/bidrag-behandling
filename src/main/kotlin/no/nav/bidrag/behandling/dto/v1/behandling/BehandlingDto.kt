@@ -99,10 +99,9 @@ data class VirkningstidspunktBarnDtoV2(
     val opprinneligVirkningstidspunkt: LocalDate? = null,
     val opprinneligVedtakstidspunkt: LocalDate? = null,
     val omgjortVedtakVedtakstidspunkt: LocalDate? = null,
-    @get:JsonProperty("årsak")
-    @get:Schema(enumAsRef = true)
+    @get:Schema(name = "årsak", enumAsRef = true)
     val årsak: VirkningstidspunktÅrsakstype? = null,
-    @Schema(enumAsRef = true)
+    @get:Schema(enumAsRef = true)
     val avslag: Resultatkode? = null,
     @Schema(description = "Saksbehandlers begrunnelse")
     val begrunnelse: BegrunnelseDto,
@@ -150,11 +149,10 @@ data class VirkningstidspunktDto(
     @Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val virkningstidspunkt: LocalDate? = null,
-    @Schema(type = "string", format = "date", example = "01.12.2025")
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @get:Schema(type = "string", format = "date", example = "01.12.2025")
+    @get:JsonFormat(pattern = "yyyy-MM-dd")
     val opprinneligVirkningstidspunkt: LocalDate? = null,
-    @get:JsonProperty("årsak")
-    @get:Schema(enumAsRef = true)
+    @get:Schema(name = "årsak", enumAsRef = true)
     val årsak: VirkningstidspunktÅrsakstype? = null,
     @Schema(enumAsRef = true)
     val avslag: Resultatkode? = null,

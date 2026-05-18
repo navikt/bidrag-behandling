@@ -95,7 +95,7 @@ data class InntektValideringsfeilV2Dto(
     val utvidetBarnetrygd: InntektValideringsfeil? = InntektValideringsfeil(),
     val kontantstøtte: Collection<InntektValideringsfeil>? = emptySet(),
     val småbarnstillegg: InntektValideringsfeil? = InntektValideringsfeil(),
-    @get:JsonProperty("årsinntekter")
+    @get:Schema(name = "årsinntekter")
     val årsinntekter: InntektValideringsfeil? = InntektValideringsfeil(),
 ) {
     @get:JsonIgnore
@@ -115,7 +115,7 @@ data class InntektValideringsfeilDto(
     val utvidetBarnetrygd: InntektValideringsfeil? = InntektValideringsfeil(),
     val kontantstøtte: Collection<InntektValideringsfeil>? = emptySet(),
     val småbarnstillegg: InntektValideringsfeil? = InntektValideringsfeil(),
-    @get:JsonProperty("årsinntekter")
+    @get:Schema(name = "årsinntekter")
     val årsinntekter: Set<InntektValideringsfeil>? = emptySet(),
 ) {
     @get:JsonIgnore

@@ -49,7 +49,7 @@ data class ForholdsmessigFordelingBarnDto(
     val innkrevesFraDato: YearMonth?,
     val opphørsdato: YearMonth?,
     val sammeSakSomBehandling: Boolean,
-    @get:JsonProperty("åpneBehandlinger")
+    @get:Schema(name = "åpneBehandlinger")
     val åpneBehandlinger: List<ForholdsmessigFordelingÅpenBehandlingDto> = emptyList(),
     val privateAvtale: ForholdsmessigFordelingPrivateAvtaleDto? = null,
 )
