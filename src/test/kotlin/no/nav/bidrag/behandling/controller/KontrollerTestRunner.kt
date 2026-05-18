@@ -35,6 +35,7 @@ abstract class KontrollerTestRunner : CommonTestRunner() {
                 withUsername("cloudsqliamuser")
                 withPassword("admin")
                 withInitScript("db/init.sql")
+                portBindings = listOf("7777:5432")
                 start()
             }
 
