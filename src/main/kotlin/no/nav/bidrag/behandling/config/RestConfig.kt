@@ -1,5 +1,10 @@
 package no.nav.bidrag.behandling.config
 
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.datatype.jsr310.deser.YearMonthDeserializer
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
 import no.nav.bidrag.beregn.forskudd.BeregnForskuddApi
@@ -21,6 +26,9 @@ import org.springframework.retry.annotation.EnableRetry
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import java.time.Duration
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 @Configuration
@@ -38,7 +46,29 @@ class RestConfig(
     }
 
     override fun configureMessageConverters(converters: HttpMessageConverters.ServerBuilder) {
-        converters.addCustomConverter(CustomJacksonHttpMessageConverter(commonObjectmapper))
+        converters.addCustomConverter(
+            CustomJacksonHttpMessageConverter(
+                commonObjectmapper
+                    .setDefaultPropertyInclusion(
+                        JsonInclude.Value.construct(
+                            JsonInclude.Include.NON_NULL,
+                            JsonInclude.Include.NON_NULL,
+                        ),
+                    ).registerModules(
+                        KotlinModule.Builder().build(),
+                        JavaTimeModule()
+                            .addDeserializer(
+                                YearMonth::class.java,
+                                // Denne trengs for å parse år over 9999 riktig.
+                                YearMonthDeserializer(DateTimeFormatter.ofPattern("u-MM")),
+                            ).addSerializer(
+                                LocalDate::class.java,
+                                // Denne trengs for å skrive ut år over 9999 riktig.
+                                LocalDateSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                            ),
+                    ),
+            ),
+        )
     }
 
     companion object {
