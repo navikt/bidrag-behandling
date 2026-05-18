@@ -27,9 +27,9 @@ fun Behandling.validerGebyr() =
         }.filter { it.harFeil }
 
 data class GebyrValideringsfeilDto(
-    @Schema(deprecated = true, description = "Skal fjernes")
+    @get:Schema(deprecated = true, description = "Skal fjernes")
     val gjelder: RolleDto,
-    @Schema(deprecated = true, description = "Skal fjernes")
+    @get:Schema(deprecated = true, description = "Skal fjernes")
     val søknad: SøknadDetaljerDto,
     val manglerBegrunnelse: Boolean,
 ) {

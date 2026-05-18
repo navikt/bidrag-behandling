@@ -75,10 +75,10 @@ data class BehandlingDetaljerDtoV2(
     val erVedtakFattet: Boolean,
     val erKlageEllerOmgjøring: Boolean,
     val opprettetTidspunkt: LocalDateTime,
-    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @get:Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val søktFomDato: LocalDate,
-    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @get:Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val mottattdato: LocalDate,
     val søktAv: SøktAvType,
@@ -88,12 +88,13 @@ data class BehandlingDetaljerDtoV2(
     val vedtakRefId: Int? = null,
     val behandlerenhet: String,
     val roller: Set<RolleDto>,
-    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @get:Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val virkningstidspunkt: LocalDate? = null,
     @get:Schema(name = "årsak", enumAsRef = true)
+    @get:JsonProperty("årsak")
     val årsak: VirkningstidspunktÅrsakstype? = null,
-    @Schema(enumAsRef = true)
+    @get:Schema(enumAsRef = true)
     val avslag: Resultatkode? = null,
     val kategori: SærbidragKategoriDto? = null,
     val opprettetAv: SaksbehandlerDto,
@@ -131,13 +132,13 @@ data class BehandlingDtoV2(
     val erKlageEllerOmgjøring: Boolean = false,
     val skalInnkrevingKunneUtsettes: Boolean = false,
     val opprettetTidspunkt: LocalDateTime,
-    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @get:Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val søktFomDato: LocalDate,
-    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @get:Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val mottattdato: LocalDate,
-    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @get:Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val klageMottattdato: LocalDate? = null,
     val søktAv: SøktAvType,
@@ -161,9 +162,9 @@ data class BehandlingDtoV2(
     val aktiveGrunnlagsdata: AktiveGrunnlagsdata = AktiveGrunnlagsdata(),
     val ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata = IkkeAktiveGrunnlagsdata(),
     val feilOppståttVedSisteGrunnlagsinnhenting: Set<Grunnlagsinnhentingsfeil>? = null,
-    @Schema(description = "Utgiftsgrunnlag for særbidrag. Vil alltid være null for forskudd og bidrag")
+    @get:Schema(description = "Utgiftsgrunnlag for særbidrag. Vil alltid være null for forskudd og bidrag")
     val utgift: SærbidragUtgifterDto? = null,
-    @Schema(description = "Samværsperioder. Vil alltid være null for forskudd og særbidrag")
+    @get:Schema(description = "Samværsperioder. Vil alltid være null for forskudd og særbidrag")
     val samvær: List<SamværBarnDto>? = null,
     val samværV2: SamværDtoV2? = null,
     val privatAvtaleV3: PrivatAvtaleDtoV3? = null,
@@ -216,14 +217,14 @@ data class GebyrRolleDto(
 )
 
 data class GebyrDetaljerDto(
-    @Schema(deprecated = true, description = "Skal fjernes")
+    @get:Schema(deprecated = true, description = "Skal fjernes")
     val søknad: SøknadDetaljerDto? = null,
     val inntekt: GebyrInntektDto,
     val beløpGebyrsats: BigDecimal,
     val beregnetIlagtGebyr: Boolean,
     val endeligIlagtGebyr: Boolean,
     val begrunnelse: String? = null,
-    @Schema(deprecated = true)
+    @get:Schema(deprecated = true)
     val rolle: RolleDto,
 ) {
     val erManueltOverstyrt get() = beregnetIlagtGebyr != endeligIlagtGebyr
@@ -253,7 +254,7 @@ data class SærbidragUtgifterDto(
     val kategori: SærbidragKategoriDto,
     val beregning: UtgiftBeregningDto? = null,
     val maksGodkjentBeløp: MaksGodkjentBeløpDto? = null,
-    @Schema(description = "Saksbehandlers begrunnelse", deprecated = false)
+    @get:Schema(description = "Saksbehandlers begrunnelse", deprecated = false)
     val begrunnelse: BegrunnelseDto,
     val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
     val utgifter: List<UtgiftspostDto> = emptyList(),
@@ -261,7 +262,7 @@ data class SærbidragUtgifterDto(
     val totalBeregning: List<TotalBeregningUtgifterDto> = emptyList(),
 ) {
     @Deprecated("Erstattes av begrunnelse")
-    @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
+    @get:Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
     val notat: BegrunnelseDto = begrunnelse
 }
 
@@ -287,38 +288,40 @@ data class SærbidragKategoriDto(
 )
 
 data class UtgiftBeregningDto(
-    @Schema(description = "Beløp som er direkte betalt av BP")
+    @get:Schema(description = "Beløp som er direkte betalt av BP")
     val beløpDirekteBetaltAvBp: BigDecimal = BigDecimal.ZERO,
-    @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
+    @get:Schema(description = "Summen av godkjente beløp som brukes for beregningen")
     val totalGodkjentBeløp: BigDecimal = BigDecimal.ZERO,
-    @Schema(description = "Summen av kravbeløp")
+    @get:Schema(description = "Summen av kravbeløp")
     val totalKravbeløp: BigDecimal = BigDecimal.ZERO,
-    @Schema(description = "Summen av godkjente beløp som brukes for beregningen")
+    @get:Schema(description = "Summen av godkjente beløp som brukes for beregningen")
     val totalGodkjentBeløpBp: BigDecimal? = null,
-    @Schema(description = "Summen av godkjent beløp for utgifter BP har betalt plus beløp som er direkte betalt av BP")
+    @get:Schema(description = "Summen av godkjent beløp for utgifter BP har betalt plus beløp som er direkte betalt av BP")
     val totalBeløpBetaltAvBp: BigDecimal = (totalGodkjentBeløpBp ?: BigDecimal.ZERO) + beløpDirekteBetaltAvBp,
 )
 
 data class UtgiftspostDto(
-    @Schema(description = "Når utgifter gjelder. Kan være feks dato på kvittering")
+    @get:Schema(description = "Når utgifter gjelder. Kan være feks dato på kvittering")
     val dato: LocalDate,
-    @Schema(
+    @get:Schema(
         description = "Type utgift. Kan feks være hva som ble kjøpt for kravbeløp (bugnad, klær, sko, etc)",
         oneOf = [Utgiftstype::class, String::class],
     )
     val type: String,
-    @Schema(description = "Beløp som er betalt for utgiften det gjelder")
+    @get:Schema(description = "Beløp som er betalt for utgiften det gjelder")
     val kravbeløp: BigDecimal,
-    @Schema(description = "Beløp som er godkjent for beregningen")
+    @get:Schema(description = "Beløp som er godkjent for beregningen")
     val godkjentBeløp: BigDecimal = kravbeløp,
-    @Schema(description = "Begrunnelse for hvorfor godkjent beløp avviker fra kravbeløp. Må settes hvis godkjent beløp er ulik kravbeløp")
+    @get:Schema(
+        description = "Begrunnelse for hvorfor godkjent beløp avviker fra kravbeløp. Må settes hvis godkjent beløp er ulik kravbeløp",
+    )
     val kommentar: String,
-    @Schema(
+    @get:Schema(
         description = "Begrunnelse for hvorfor godkjent beløp avviker fra kravbeløp. Må settes hvis godkjent beløp er ulik kravbeløp",
         deprecated = true,
     )
     val begrunnelse: String = kommentar,
-    @Schema(description = "Om utgiften er betalt av BP")
+    @get:Schema(description = "Om utgiften er betalt av BP")
     val betaltAvBp: Boolean = false,
     val id: Long,
 ) {
@@ -341,7 +344,7 @@ data class AktiveGrunnlagsdata(
     val stønadTilBarnetilsyn: StønadTilBarnetilsynAktiveGrunnlagDto? = null,
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
-    @Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
+    @get:Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
     val husstandsbarn = husstandsmedlem
 }
 
@@ -355,7 +358,7 @@ data class IkkeAktiveGrunnlagsdata(
     val stønadTilBarnetilsyn: StønadTilBarnetilsynIkkeAktiveGrunnlagDto? = null,
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
-    @Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
+    @get:Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
     val husstandsbarn = husstandsmedlem
 }
 
@@ -365,6 +368,7 @@ data class IkkeAktiveInntekter(
     val kontantstøtte: Set<IkkeAktivInntektDto> = emptySet(),
     val småbarnstillegg: Set<IkkeAktivInntektDto> = emptySet(),
     @get:Schema(name = "årsinntekter")
+    @get:JsonProperty("årsinntekter")
     val årsinntekter: Set<IkkeAktivInntektDto> = emptySet(),
 ) {
     @get:JsonIgnore
@@ -397,16 +401,16 @@ data class IkkeAktivInntektDto(
     val originalId: Long?,
     val innhentetTidspunkt: LocalDateTime,
     val endringstype: GrunnlagInntektEndringstype,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val rapporteringstype: Inntektsrapportering,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val beløp: BigDecimal,
     val periode: ÅrMånedsperiode,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val ident: Personident,
-    @Schema(required = false)
+    @get:Schema(required = false)
     val gjelderBarn: Personident?,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val inntektsposter: Set<InntektspostDtoV2>,
     val inntektsposterSomErEndret: Set<InntektspostEndringDto> = emptySet(),
 )
@@ -447,13 +451,13 @@ data class HusstandsmedlemGrunnlagDto(
     val innhentetTidspunkt: LocalDateTime,
 ) {
     data class BostatusperiodeGrunnlagDto(
-        @Schema(type = "string", format = "date", example = "2025-01-25")
+        @get:Schema(type = "string", format = "date", example = "2025-01-25")
         @JsonFormat(pattern = "yyyy-MM-dd")
         val datoFom: LocalDate?,
-        @Schema(type = "string", format = "date", example = "2025-01-25")
+        @get:Schema(type = "string", format = "date", example = "2025-01-25")
         @JsonFormat(pattern = "yyyy-MM-dd")
         val datoTom: LocalDate?,
-        @Schema(required = true)
+        @get:Schema(required = true)
         val bostatus: Bostatuskode,
     )
 }
@@ -471,9 +475,9 @@ data class AndreVoksneIHusstandenGrunnlagDto(
 data class PeriodeAndreVoksneIHusstanden(
     val periode: Datoperiode,
     val status: Bostatuskode,
-    @Schema(description = "Total antall husstandsmedlemmer som bor hos BP for gjeldende periode")
+    @get:Schema(description = "Total antall husstandsmedlemmer som bor hos BP for gjeldende periode")
     val totalAntallHusstandsmedlemmer: Int,
-    @Schema(
+    @get:Schema(
         description =
             "Detaljer om husstandsmedlemmer som bor hos BP for gjeldende periode. " +
                 "Antall hustandsmedlemmer er begrenset til maks 10 personer",
@@ -485,7 +489,7 @@ data class AndreVoksneIHusstandenDetaljerDto(
     val navn: String,
     val fødselsdato: LocalDate?,
     val harRelasjonTilBp: Boolean,
-    @Schema(description = "Relasjon til BP. Brukes for debugging", deprecated = true)
+    @get:Schema(description = "Relasjon til BP. Brukes for debugging", deprecated = true)
     val relasjon: Familierelasjon,
     val erBeskyttet: Boolean = false,
 )

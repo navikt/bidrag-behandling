@@ -20,7 +20,6 @@ import org.springframework.http.converter.HttpMessageConverters
 import org.springframework.retry.annotation.EnableRetry
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
-import java.nio.charset.Charset
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 
@@ -44,7 +43,6 @@ class RestConfig(
 
     companion object {
         private const val API_PATH_PATTERN = "/api/**"
-        private const val POJO_NODE_MODULE_NAME = "pojoNodeCompatibilityModule"
     }
 
     @Bean
@@ -62,7 +60,6 @@ class RestConfig(
     @Bean
     fun openApiCustomizer(): OpenApiCustomizer =
         OpenApiCustomizer { openApi: OpenAPI ->
-            // Remove KotlinDeprecatedPropertyCustomizer if present
             openApi.components?.schemas?.values?.forEach { _ ->
                 // Additional schema adjustments if needed
             }

@@ -12,23 +12,23 @@ import java.time.LocalDate
 
 @Schema(description = "Rolle beskrivelse som er brukte til å opprette nye roller")
 data class OpprettRolleDto(
-    @Schema(required = true, enumAsRef = true)
+    @get:Schema(required = true, enumAsRef = true)
     val rolletype: Rolletype,
-    @Schema(
+    @get:Schema(
         type = "String",
         description = "F.eks fødselsnummer. Påkrevd for alle rolletyper utenom for barn som ikke inngår i beregning.",
         required = false,
         nullable = true,
     )
     val ident: Personident?,
-    @Schema(
+    @get:Schema(
         type = "String",
         description = "Navn på rolleinnehaver hvis ident er ukjent. Gjelder kun barn som ikke inngår i beregning",
         required = false,
         nullable = true,
     )
     val navn: String? = null,
-    @Schema(type = "String", format = "date", description = "F.eks fødselsdato")
+    @get:Schema(type = "String", format = "date", description = "F.eks fødselsdato")
     val fødselsdato: LocalDate?,
     val innbetaltBeløp: BigDecimal? = null,
     val erSlettet: Boolean = false,

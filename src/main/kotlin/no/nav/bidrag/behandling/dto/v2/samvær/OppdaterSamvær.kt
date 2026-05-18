@@ -16,12 +16,12 @@ data class OppdaterSamværDto(
     val barnId: Long? = null,
     @field:Valid
     val periode: OppdaterSamværsperiodeDto? = null,
-    @Schema(description = "Oppdatere saksbehandlers begrunnelse")
+    @get:Schema(description = "Oppdatere saksbehandlers begrunnelse")
     val oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
 )
 
 data class OppdaterSamværResponsDto(
-    @Schema(description = "Samvær som ble oppdatert", deprecated = true)
+    @get:Schema(description = "Samvær som ble oppdatert", deprecated = true)
     val oppdatertSamvær: SamværBarnDto? = null,
     val erSammeForAlle: Boolean = true,
     val samværBarn: List<SamværBarnDto> = emptyList(),

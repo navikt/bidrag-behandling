@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v1.behandling
 
 import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonSetter
 import com.fasterxml.jackson.annotation.Nulls
 import io.swagger.v3.oas.annotations.media.Schema
@@ -12,9 +13,9 @@ import java.time.LocalDate
 
 data class OppdatereVirkningstidspunktBegrunnelseResponseDto(
     val rolleId: Long? = null,
-    @Schema(description = "Oppdatere saksbehandlers begrunnelse", deprecated = true)
+    @get:Schema(description = "Oppdatere saksbehandlers begrunnelse", deprecated = true)
     var oppdatertBegrunnelse: String? = null,
-    @Schema(
+    @get:Schema(
         description =
             "Oppdatere saksbehandlers begrunnelse for vurdering av skolegang." +
                 " Dette kan bare settes hvis det er 18 års bidrag",
@@ -28,9 +29,9 @@ data class OppdatereVirkningstidspunktBegrunnelseResponseDto(
 
 data class OppdaterVirkningstidspunktBegrunnelseBarnResponse(
     val rolleId: Long? = null,
-    @Schema(description = "Oppdatere saksbehandlers begrunnelse")
+    @get:Schema(description = "Oppdatere saksbehandlers begrunnelse")
     var oppdatertBegrunnelse: String? = null,
-    @Schema(
+    @get:Schema(
         description =
             "Oppdatere saksbehandlers begrunnelse for vurdering av skolegang." +
                 " Dette kan bare settes hvis det er 18 års bidrag",
@@ -40,9 +41,9 @@ data class OppdaterVirkningstidspunktBegrunnelseBarnResponse(
 
 data class OppdatereVirkningstidspunktBegrunnelseDto(
     val rolleId: Long? = null,
-    @Schema(description = "Oppdatere saksbehandlers begrunnelse")
+    @get:Schema(description = "Oppdatere saksbehandlers begrunnelse")
     var oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
-    @Schema(
+    @get:Schema(
         description =
             "Oppdatere saksbehandlers begrunnelse for vurdering av skolegang." +
                 " Dette kan bare settes hvis det er 18 års bidrag",
@@ -52,7 +53,8 @@ data class OppdatereVirkningstidspunktBegrunnelseDto(
 
 data class OppdatereVirkningstidspunkt(
     val rolleId: Long? = null,
-    @Schema(
+    @get:JsonProperty("årsak")
+    @get:Schema(
         name = "årsak",
         description =
             "Oppdater årsak. Hvis verdien er satt til null så vil det ikke bli gjort noe endringer. " +
@@ -61,14 +63,14 @@ data class OppdatereVirkningstidspunkt(
     )
     @JsonSetter(nulls = Nulls.SKIP)
     val årsak: VirkningstidspunktÅrsakstype? = null,
-    @Schema(
+    @get:Schema(
         description =
             "Oppdater avslag. Hvis verdien er satt til null så vil det ikke bli gjort noe endringer. " +
                 "Hvis verdien er satt så vil avslag settes til samme verdi fra forespørsel og årsak settes til null",
         enumAsRef = true,
     )
     val avslag: Resultatkode? = null,
-    @Schema(
+    @get:Schema(
         type = "string",
         format = "date",
         example = "2025-01-25",
@@ -79,15 +81,15 @@ data class OppdatereVirkningstidspunkt(
     @JsonSetter(nulls = Nulls.SKIP)
     val virkningstidspunkt: LocalDate? = null,
     val beregnTilDato: LocalDate? = null,
-    @Schema(description = "Oppdatere saksbehandlers begrunnelse")
+    @get:Schema(description = "Oppdatere saksbehandlers begrunnelse")
     var oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
-    @Schema(
+    @get:Schema(
         description =
             "Oppdatere saksbehandlers begrunnelse for vurdering av skolegang." +
                 " Dette kan bare settes hvis det er 18 års bidrag",
     )
     var oppdaterBegrunnelseVurderingAvSkolegang: OppdatereBegrunnelse? = null,
-    @Schema(description = "Deprekert - Bruk oppdatereBegrunnelse i stedet")
+    @get:Schema(description = "Deprekert - Bruk oppdatereBegrunnelse i stedet")
     val notat: OppdatereBegrunnelse? = oppdatereBegrunnelse,
 ) {
     fun henteOppdatereNotat() = oppdatereBegrunnelse ?: notat
