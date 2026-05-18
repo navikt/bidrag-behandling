@@ -91,12 +91,12 @@ data class MaksGodkjentBeløpValideringsfeil(
 }
 
 data class InntektValideringsfeilV2Dto(
-    val barnetillegg: Collection<InntektValideringsfeil>? = emptySet(),
-    val utvidetBarnetrygd: InntektValideringsfeil? = InntektValideringsfeil(),
-    val kontantstøtte: Collection<InntektValideringsfeil>? = emptySet(),
-    val småbarnstillegg: InntektValideringsfeil? = InntektValideringsfeil(),
+    val barnetillegg: Collection<InntektValideringsfeil>? = null,
+    val utvidetBarnetrygd: InntektValideringsfeil? = null,
+    val kontantstøtte: Collection<InntektValideringsfeil>? = null,
+    val småbarnstillegg: InntektValideringsfeil? = null,
     @get:JsonProperty("årsinntekter")
-    val årsinntekter: InntektValideringsfeil? = InntektValideringsfeil(),
+    val årsinntekter: InntektValideringsfeil? = null,
 ) {
     @get:JsonIgnore
     val harFeil
@@ -111,12 +111,13 @@ data class InntektValideringsfeilV2Dto(
 }
 
 data class InntektValideringsfeilDto(
-    val barnetillegg: Collection<InntektValideringsfeil>? = emptySet(),
-    val utvidetBarnetrygd: InntektValideringsfeil? = InntektValideringsfeil(),
-    val kontantstøtte: Collection<InntektValideringsfeil>? = emptySet(),
-    val småbarnstillegg: InntektValideringsfeil? = InntektValideringsfeil(),
+    val barnetillegg: Collection<InntektValideringsfeil>? = null,
+    val utvidetBarnetrygd: InntektValideringsfeil? = null,
+    val kontantstøtte: Collection<InntektValideringsfeil>? = null,
+    val småbarnstillegg: InntektValideringsfeil? = null,
     @get:JsonProperty("årsinntekter")
-    val årsinntekter: Set<InntektValideringsfeil>? = emptySet(),
+    @get:Schema(name = "årsinntekter")
+    val årsinntekter: Set<InntektValideringsfeil>? = null,
 ) {
     @get:JsonIgnore
     val harFeil
