@@ -292,13 +292,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
 
                 behandling.underholdskostnader.shouldHaveSize(4)
-                val søknadsbarnUnderholdskostnader = behandling.underholdskostnader.filter { !it.gjelderAndreBarn }
-                val andreBarnUnderholdskostnader = behandling.underholdskostnader.filter { it.gjelderAndreBarn }
+                val søknadsbarnUnderholdskostnader = behandling.underholdskostnader.filter { !it.gjelderAndreBarn }.sortedBy { it.personIdent }
+                val andreBarnUnderholdskostnader = behandling.underholdskostnader.filter { it.gjelderAndreBarn }.sortedBy { it.personIdent }
                 andreBarnUnderholdskostnader.shouldHaveSize(2)
                 søknadsbarnUnderholdskostnader.shouldHaveSize(2)
                 søknadsbarnUnderholdskostnader.first().kilde shouldBe null
                 andreBarnUnderholdskostnader.first().kilde shouldBe Kilde.OFFENTLIG
-                andreBarnUnderholdskostnader.first().personIdent shouldBe testdataBarnBm.ident
+                andreBarnUnderholdskostnader.first().personIdent shouldBe testdataBarnBm2.ident
             }
 
             @Test

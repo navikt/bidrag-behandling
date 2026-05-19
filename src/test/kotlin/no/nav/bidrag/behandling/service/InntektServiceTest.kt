@@ -522,8 +522,6 @@ class InntektServiceTest : TestContainerRunner() {
                 inntektApi.transformerInntekter(transformereOriginalAinntekt).summertÅrsinntektListe,
             )
 
-            entityManager.refresh(behandling)
-
             behandling.inntekter.size shouldBe 3
             behandling.inntekter
                 .filter { Inntektsrapportering.AINNTEKT_BEREGNET_12MND == it.type }
@@ -561,9 +559,6 @@ class InntektServiceTest : TestContainerRunner() {
                 behandling.bidragsmottaker!!,
                 nyeManupilerteInntekter,
             )
-
-            // så
-            entityManager.refresh(behandling)
 
             assertSoftly {
                 behandling.inntekter.size shouldBe 3

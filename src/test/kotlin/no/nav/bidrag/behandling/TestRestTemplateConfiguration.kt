@@ -42,7 +42,6 @@ class TestRestTemplateConfiguration {
                     request.headers.add(HttpHeaders.AUTHORIZATION, generateBearerToken())
                     execution.execute(request, body)
                 })
-                .defaultMessageConverters()
                 .additionalMessageConverters(
                     CustomJacksonHttpMessageConverter(commonObjectmapper),
                 ),
