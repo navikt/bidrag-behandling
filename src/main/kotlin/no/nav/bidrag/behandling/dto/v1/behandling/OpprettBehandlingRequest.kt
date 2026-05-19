@@ -22,13 +22,13 @@ data class OpprettBehandlingRequest(
     val søknadstype: Behandlingstype? = null,
     val behandlingstype: Behandlingstype? = null,
     val behandlingstema: Behandlingstema? = null,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val vedtakstype: Vedtakstype,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val søktFomDato: LocalDate,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val mottattdato: LocalDate,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val søknadFra: SøktAvType,
     @field:NotBlank(message = "Saksnummer kan ikke være blank")
     @field:Size(max = 7, min = 7, message = "Saksnummer skal ha sju tegn")
@@ -37,9 +37,9 @@ data class OpprettBehandlingRequest(
     @field:Size(min = 4, max = 4, message = "Enhet må være 4 tegn")
     val behandlerenhet: String,
     val roller: Set<@Valid OpprettRolleDto>,
-    @Schema(required = true)
+    @get:Schema(required = true)
     var stønadstype: Stønadstype? = null,
-    @Schema(required = true)
+    @get:Schema(required = true)
     var engangsbeløpstype: Engangsbeløptype? = null,
     val søknadsid: Long,
     val vedtaksid: Int? = null,
@@ -71,9 +71,9 @@ fun OpprettBehandlingRequest.erBidrag() = tilType() == TypeBehandling.BIDRAG || 
 fun OpprettBehandlingRequest.erKlage() = vedtakstype == Vedtakstype.KLAGE
 
 data class OpprettKategoriRequestDto(
-    @Schema(required = true)
+    @get:Schema(required = true)
     val kategori: String,
-    @Schema(
+    @get:Schema(
         required = false,
         description = "Beskrivelse av kategorien som er valgt. Er påkrevd hvis kategori er ANNET ",
     )

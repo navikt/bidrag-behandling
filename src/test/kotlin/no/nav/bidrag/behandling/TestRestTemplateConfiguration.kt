@@ -1,40 +1,24 @@
 package no.nav.bidrag.behandling
 
-import com.fasterxml.jackson.module.kotlin.readValue
-import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
-import com.github.tomakehurst.wiremock.common.FileSource
-import com.github.tomakehurst.wiremock.extension.Parameters
-import com.github.tomakehurst.wiremock.extension.ResponseDefinitionTransformer
-import com.github.tomakehurst.wiremock.http.Request
-import com.github.tomakehurst.wiremock.http.ResponseDefinition
 import com.nimbusds.jose.JOSEObjectType
 import io.getunleash.FakeUnleash
 import io.getunleash.Unleash
 import no.nav.bidrag.behandling.utils.testdata.SAKSBEHANDLER_IDENT
-import no.nav.bidrag.behandling.utils.testdata.testdataBM
-import no.nav.bidrag.behandling.utils.testdata.testdataBP
-import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
-import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
-import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
-import no.nav.bidrag.domene.ident.Personident
+import no.nav.bidrag.commons.util.CustomJacksonHttpMessageConverter
 import no.nav.bidrag.transport.felles.commonObjectmapper
-import no.nav.bidrag.transport.person.PersonDto
 import no.nav.security.mock.oauth2.MockOAuth2Server
 import no.nav.security.mock.oauth2.token.DefaultOAuth2TokenCallback
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.beans.factory.config.ConfigurableBeanFactory
-import org.springframework.boot.test.web.client.TestRestTemplate
-import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.boot.restclient.RestTemplateBuilder
+import org.springframework.boot.resttestclient.TestRestTemplate
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.context.annotation.Scope
 import org.springframework.http.HttpHeaders
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
-import org.springframework.stereotype.Component
-import java.time.LocalDate
 
 @Configuration
 @Profile("test")
@@ -54,11 +38,13 @@ class TestRestTemplateConfiguration {
     fun httpHeaderTestRestTemplate(): TestRestTemplate =
         TestRestTemplate(
             RestTemplateBuilder()
-                .additionalMessageConverters(MappingJackson2HttpMessageConverter())
                 .additionalInterceptors({ request, body, execution ->
                     request.headers.add(HttpHeaders.AUTHORIZATION, generateBearerToken())
                     execution.execute(request, body)
-                }),
+                })
+                .additionalMessageConverters(
+                    CustomJacksonHttpMessageConverter(commonObjectmapper),
+                ),
         )
 
     @Bean
@@ -68,7 +54,10 @@ class TestRestTemplateConfiguration {
                 .additionalInterceptors({ request, body, execution ->
                     request.headers.add(HttpHeaders.AUTHORIZATION, generateBearerToken())
                     execution.execute(request, body)
-                }),
+                })
+                .additionalMessageConverters(
+                    CustomJacksonHttpMessageConverter(commonObjectmapper),
+                ),
         )
 
     protected fun generateBearerToken(): String {
@@ -88,35 +77,5 @@ class TestRestTemplateConfiguration {
                 ),
             )
         return "Bearer " + token.serialize()
-    }
-}
-
-@Component
-class ExampleTransformer : ResponseDefinitionTransformer() {
-    override fun getName() = "example"
-
-    override fun applyGlobally(): Boolean = false
-
-    override fun transform(
-        request: Request?,
-        responseDefinition: ResponseDefinition?,
-        files: FileSource?,
-        parameters: Parameters?,
-    ): ResponseDefinition {
-        val personDto = commonObjectmapper.readValue<PersonDto>(request!!.bodyAsString)
-        val personId = personDto.ident.verdi
-        val personer =
-            listOf(testdataBM, testdataBarn1, testdataBarn2, testdataBP, testdataHusstandsmedlem1)
-
-        return ResponseDefinitionBuilder()
-            .withStatus(200)
-            .withBody(
-                commonObjectmapper.writeValueAsString(
-                    personer.find { it.ident == personId }?.tilPersonDto() ?: PersonDto(
-                        Personident(personId),
-                        fødselsdato = LocalDate.parse("2015-05-01"),
-                    ),
-                ),
-            ).build()
     }
 }

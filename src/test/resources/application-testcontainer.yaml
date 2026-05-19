@@ -1,0 +1,18 @@
+# Test container profile configuration
+# This is used when running tests with @Testcontainers and the testcontainer profile active
+
+spring:
+  flyway:
+    enabled: true
+    locations: classpath:/db/migration
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      connection-timeout: 30000
+      idle-timeout: 600000
+      maximum-pool-size: 5
+      minimum-idle: 1
+      max-lifetime: 500000
+  jpa:
+    database: POSTGRESQL
+

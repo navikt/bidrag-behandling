@@ -98,7 +98,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
@@ -108,9 +107,6 @@ import java.time.YearMonth
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
 
 class BehandlingServiceTest : TestContainerRunner() {
-    @MockBean
-    lateinit var forsendelseService: ForsendelseService
-
     @Autowired
     lateinit var behandlingService: BehandlingService
 

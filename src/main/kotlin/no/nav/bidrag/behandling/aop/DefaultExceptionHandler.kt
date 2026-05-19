@@ -56,7 +56,7 @@ class DefaultExceptionHandler {
             .status(HttpStatus.BAD_REQUEST)
             .header(
                 HttpHeaders.WARNING,
-                feilmelding,
+                feilmelding!!,
             ).build<Any>()
     }
 
@@ -105,7 +105,7 @@ class DefaultExceptionHandler {
         LOGGER.error("Det skjedde en ukjent feil: ${exception.message}", exception)
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .header(HttpHeaders.WARNING, exception.message)
+            .header(HttpHeaders.WARNING, "Ukjent feil")
             .body(exception.message ?: "Ukjent feil")
     }
 

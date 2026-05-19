@@ -25,15 +25,15 @@ data class OppdaterePrivatAvtaleBegrunnelseRequest(
 )
 
 data class OppdaterePrivatAvtaleRequest(
-    @Schema(description = "Setter avtaledato på privat avtalen. Dersom avtaleDato er null, vil avtaledato fjernes.")
+    @get:Schema(description = "Setter avtaledato på privat avtalen. Dersom avtaleDato er null, vil avtaledato fjernes.")
     val avtaleDato: LocalDate? = null,
-    @Schema(
+    @get:Schema(
         description =
             "Setter om privat avtale periodene skal indeksreguleres eller ikke. " +
                 "Dersom skalIndeksreguleres er null, vil ikke indeksregulering endres.",
     )
     val skalIndeksreguleres: Boolean? = null,
-    @Schema(
+    @get:Schema(
         description = "Oppdater begrunnelse",
     )
     val begrunnelse: String? = null,
@@ -45,12 +45,12 @@ data class OppdaterePrivatAvtaleRequest(
 )
 
 data class OppdaterePrivatAvtaleResponsDto(
-    @Schema(description = "Privat avtale som ble oppdatert", deprecated = true)
+    @get:Schema(description = "Privat avtale som ble oppdatert", deprecated = true)
     val oppdatertPrivatAvtale: PrivatAvtaleBarnDto? = null,
     val privatAvtale: PrivatAvtaleDtoV3,
-    @Schema(deprecated = true)
+    @get:Schema(deprecated = true)
     val begrunnelseAndreBarn: String? = null,
-    @Schema(deprecated = true)
+    @get:Schema(deprecated = true)
     val mangleBegrunnelseAndreBarn: Boolean = false,
 )
 

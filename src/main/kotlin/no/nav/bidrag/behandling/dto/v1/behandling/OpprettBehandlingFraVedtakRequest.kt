@@ -10,13 +10,13 @@ import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import java.time.LocalDate
 
 data class OpprettBehandlingFraVedtakRequest(
-    @Schema(required = true)
+    @get:Schema(required = true)
     val vedtakstype: Vedtakstype,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val søktFomDato: LocalDate,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val mottattdato: LocalDate,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val søknadFra: SøktAvType,
     @field:NotBlank(message = "Saksnummer kan ikke være blank")
     @field:Size(max = 7, min = 7, message = "Saksnummer skal ha sju tegn")
@@ -24,7 +24,7 @@ data class OpprettBehandlingFraVedtakRequest(
     @field:NotBlank(message = "Enhet kan ikke være blank")
     @field:Size(min = 4, max = 4, message = "Enhet må være 4 tegn")
     val behandlerenhet: String,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val søknadsid: Long,
     val søknadsreferanseid: Long? = null,
     val søknadstype: Behandlingstype? = null,

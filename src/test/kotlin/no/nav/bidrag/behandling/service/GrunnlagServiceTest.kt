@@ -100,9 +100,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.client.HttpClientErrorException
@@ -132,7 +130,7 @@ class GrunnlagServiceTest : TestContainerRunner() {
     @Autowired
     lateinit var grunnlagService: GrunnlagService
 
-    @MockBean
+    @MockkBean
     lateinit var bidragPersonConsumer: BidragPersonConsumer
 
     @Autowired
@@ -294,13 +292,13 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandling.grunnlagSistInnhentet?.toLocalDate() shouldBe LocalDate.now()
 
                 behandling.underholdskostnader.shouldHaveSize(4)
-                val søknadsbarnUnderholdskostnader = behandling.underholdskostnader.filter { !it.gjelderAndreBarn }
-                val andreBarnUnderholdskostnader = behandling.underholdskostnader.filter { it.gjelderAndreBarn }
+                val søknadsbarnUnderholdskostnader = behandling.underholdskostnader.filter { !it.gjelderAndreBarn }.sortedBy { it.personIdent }
+                val andreBarnUnderholdskostnader = behandling.underholdskostnader.filter { it.gjelderAndreBarn }.sortedBy { it.personIdent }
                 andreBarnUnderholdskostnader.shouldHaveSize(2)
                 søknadsbarnUnderholdskostnader.shouldHaveSize(2)
                 søknadsbarnUnderholdskostnader.first().kilde shouldBe null
                 andreBarnUnderholdskostnader.first().kilde shouldBe Kilde.OFFENTLIG
-                andreBarnUnderholdskostnader.first().personIdent shouldBe testdataBarnBm.ident
+                andreBarnUnderholdskostnader.first().personIdent shouldBe testdataBarnBm2.ident
             }
 
             @Test
@@ -2433,9 +2431,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 testdataManager.lagreBehandlingNewTransaction(behandling)
 
                 stubbeHentingAvPersoninfoForTestpersoner()
-                Mockito
-                    .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
-                    .thenReturn(testdataBarn1.tilPersonDto())
+                every { bidragPersonConsumer.hentPerson(testdataBarn1.ident) }
+                    .returns(testdataBarn1.tilPersonDto())
 
                 assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 0
@@ -2537,9 +2534,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 testdataManager.lagreBehandlingNewTransaction(behandling)
 
                 stubbeHentingAvPersoninfoForTestpersoner()
-                Mockito
-                    .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
-                    .thenReturn(testdataBarn1.tilPersonDto())
+                every { bidragPersonConsumer.hentPerson(testdataBarn1.ident) }
+                    .returns(testdataBarn1.tilPersonDto())
 
                 assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 0
@@ -2746,9 +2742,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 behandling.stonadstype = null
 
                 stubbeHentingAvPersoninfoForTestpersoner()
-                Mockito
-                    .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
-                    .thenReturn(testdataBarn1.tilPersonDto())
+                every { bidragPersonConsumer.hentPerson(testdataBarn1.ident) }
+                    .returns(testdataBarn1.tilPersonDto())
 
                 assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 0
@@ -3477,9 +3472,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                         behandlingstype = TypeBehandling.SÆRBIDRAG,
                     )
                 stubbeHentingAvPersoninfoForTestpersoner()
-                Mockito
-                    .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
-                    .thenReturn(testdataBarn1.tilPersonDto())
+                every { bidragPersonConsumer.hentPerson(testdataBarn1.ident) }
+                    .returns(testdataBarn1.tilPersonDto())
 
                 testdataManager.oppretteOgLagreGrunnlag(
                     behandling = behandling,
@@ -3933,9 +3927,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false, false, false)
                 stubbeHentingAvPersoninfoForTestpersoner()
-                Mockito
-                    .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
-                    .thenReturn(testdataBarn1.tilPersonDto())
+                every { bidragPersonConsumer.hentPerson(testdataBarn1.ident) }
+                    .returns(testdataBarn1.tilPersonDto())
 
                 assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 0
@@ -4106,8 +4099,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 val grunnlag = opprettAlleAktiveGrunnlagFraFil(behandling, "hente-grunnlagrespons.json")
 
-                entityManager.refresh(behandling)
-
                 val rådataBoforhold = grunnlag.find { !it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD }
 
                 val nyeBorhosperioder =
@@ -4222,8 +4213,6 @@ class GrunnlagServiceTest : TestContainerRunner() {
 
                 val grunnlag = opprettAlleAktiveGrunnlagFraFil(behandling, "hente-grunnlagrespons.json")
 
-                entityManager.refresh(behandling)
-
                 val rådataBoforhold = grunnlag.find { !it.erBearbeidet && it.type == Grunnlagsdatatype.BOFORHOLD }
 
                 behandling.grunnlag.add(
@@ -4313,9 +4302,8 @@ class GrunnlagServiceTest : TestContainerRunner() {
                 // gitt
                 val behandling = testdataManager.oppretteBehandling(false)
                 stubbeHentingAvPersoninfoForTestpersoner()
-                Mockito
-                    .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
-                    .thenReturn(testdataBarn1.tilPersonDto())
+                every { bidragPersonConsumer.hentPerson(testdataBarn1.ident) }
+                    .returns(testdataBarn1.tilPersonDto())
 
                 assertSoftly(behandling.husstandsmedlem) {
                     it.size shouldBe 2
@@ -5127,23 +5115,18 @@ class GrunnlagServiceTest : TestContainerRunner() {
     }
 
     private fun stubbeHentingAvPersoninfoForTestpersoner() {
-        Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBM.ident)).thenReturn(testdataBM.tilPersonDto())
-        Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBP.ident)).thenReturn(testdataBP.tilPersonDto())
-        Mockito
-            .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
-            .thenReturn(testdataBarn1.tilPersonDto())
-        Mockito
-            .`when`(bidragPersonConsumer.hentPerson(testdataBarn2.ident))
-            .thenReturn(testdataBarn2.tilPersonDto())
-        Mockito
-            .`when`(bidragPersonConsumer.hentPerson(testdataHusstandsmedlem1.ident))
-            .thenReturn(testdataHusstandsmedlem1.tilPersonDto())
-        Mockito
-            .`when`(bidragPersonConsumer.hentPerson(testdataBarnBm.ident))
-            .thenReturn(testdataBarnBm.tilPersonDto())
-        Mockito
-            .`when`(bidragPersonConsumer.hentPerson(testdataBarnBm2.ident))
-            .thenReturn(testdataBarnBm2.tilPersonDto())
+        every { bidragPersonConsumer.hentPerson(testdataBM.ident) }.returns(testdataBM.tilPersonDto())
+        every { bidragPersonConsumer.hentPerson(testdataBP.ident) }.returns(testdataBP.tilPersonDto())
+        every { bidragPersonConsumer.hentPerson(testdataBarn1.ident) }
+            .returns(testdataBarn1.tilPersonDto())
+        every { bidragPersonConsumer.hentPerson(testdataBarn2.ident) }
+            .returns(testdataBarn2.tilPersonDto())
+        every { bidragPersonConsumer.hentPerson(testdataHusstandsmedlem1.ident) }
+            .returns(testdataHusstandsmedlem1.tilPersonDto())
+        every { bidragPersonConsumer.hentPerson(testdataBarnBm.ident) }
+            .returns(testdataBarnBm.tilPersonDto())
+        every { bidragPersonConsumer.hentPerson(testdataBarnBm2.ident) }
+            .returns(testdataBarnBm2.tilPersonDto())
     }
 }
 

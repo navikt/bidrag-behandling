@@ -8,7 +8,6 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
 import no.nav.bidrag.behandling.TestContainerRunner
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Notat
@@ -66,16 +65,16 @@ class DtoMapperTest : TestContainerRunner() {
 
     lateinit var personService: PersonService
 
-    @MockK
+    @MockkBean
     lateinit var tilgangskontrollService: TilgangskontrollService
 
-    @MockK
+    @MockkBean
     lateinit var validering: ValiderBeregning
 
-    @MockK
+    @MockkBean
     lateinit var behandlingService: BehandlingService
 
-    @MockK
+    @MockkBean
     lateinit var validerBehandlingService: ValiderBehandlingService
 
     @MockkBean

@@ -15,7 +15,7 @@ data class GrunnlagsdataDto(
     val gjelder: Personident,
     val grunnlagsdatatype: Grunnlagstype,
     val data: String,
-    @Schema(type = "string", format = "timestamp", example = "01.12.2025 12:00:00.000")
+    @get:Schema(type = "string", format = "timestamp", example = "01.12.2025 12:00:00.000")
     val innhentet: LocalDateTime,
 )
 

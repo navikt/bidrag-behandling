@@ -18,11 +18,11 @@ data class KanBehandlesINyLøsningRequest(
     val saksnummer: String,
 //    @field:Size(min = 2, message = "Sak må ha minst to roller involvert")
     val roller: List<SjekkRolleDto>,
-    @Schema(required = true)
+    @get:Schema(required = true)
     var stønadstype: Stønadstype? = null,
-    @Schema(required = true)
+    @get:Schema(required = true)
     var vedtakstype: Vedtakstype? = null,
-    @Schema(required = true)
+    @get:Schema(required = true)
     var engangsbeløpstype: Engangsbeløptype? = null,
     var søknadstype: Behandlingstype? = null,
     val harReferanseTilAnnenBehandling: Boolean = false,
@@ -37,9 +37,9 @@ data class KanBehandlesINyLøsningRequest(
 
 @Schema(description = "Rolle beskrivelse som er brukte til å opprette nye roller")
 data class SjekkRolleDto(
-    @Schema(required = true, enumAsRef = true)
+    @get:Schema(required = true, enumAsRef = true)
     val rolletype: Rolletype,
-    @Schema(
+    @get:Schema(
         type = "String",
         description = "F.eks fødselsnummer. Påkrevd for alle rolletyper utenom for barn som ikke inngår i beregning.",
         required = false,
