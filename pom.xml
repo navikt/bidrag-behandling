@@ -23,7 +23,7 @@
     <logback-encoder.version>9.0</logback-encoder.version>
     <token-support.version>6.0.6</token-support.version>
     <springdoc.version>3.0.3</springdoc.version>
-    <springframework-cloud.version>4.3.0</springframework-cloud.version>
+    <springframework-cloud.version>5.0.2</springframework-cloud.version>
     <kotest.version>5.9.1</kotest.version>
     <mockk.version>5.0.1</mockk.version>
     <kotlin-logging-jvm.version>8.0.02</kotlin-logging-jvm.version>
