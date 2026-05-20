@@ -44,7 +44,7 @@ class VedtakHendelseListener(
     val behandlingRepository: BehandlingRepository,
     val forholdsmessigFordelingService: ForholdsmessigFordelingService,
 ) {
-    @KafkaListener(groupId = "bidrag-behandling", topics = ["\${TOPIC_VEDTAK}"])
+    @KafkaListener(groupId = "bidrag-behandling", topics = [$$"${TOPIC_VEDTAK}"])
     @Transactional
     fun prossesserVedtakHendelse(melding: ConsumerRecord<String, String>) {
         val vedtak = parseVedtakHendelse(melding)

@@ -26,7 +26,7 @@ class TestRestTemplateConfiguration {
     @Autowired
     private lateinit var mockOAuth2Server: MockOAuth2Server
 
-    @Value("\${AZURE_APP_CLIENT_ID}")
+    @Value($$"${AZURE_APP_CLIENT_ID}")
     private lateinit var clientId: String
 
     @Bean

@@ -28,7 +28,7 @@ private val logger = KotlinLogging.logger {}
 
 @Component
 class BidragGrunnlagConsumer(
-    @Value("\${BIDRAG_GRUNNLAG_URL}") private val bidragGrunnlagUrl: URI,
+    @Value($$"${BIDRAG_GRUNNLAG_URL}") private val bidragGrunnlagUrl: URI,
     @Qualifier("azure") restTemplate: RestTemplate,
 ) : AbstractRestClient(restTemplate, "bidrag-grunnlag") {
     private val bidragGrunnlagUri get() = UriComponentsBuilder.fromUri(bidragGrunnlagUrl)

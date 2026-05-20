@@ -21,7 +21,7 @@ import java.net.URI
 
 @Service
 class BidragForsendelseConsumer(
-    @Value("\${BIDRAG_FORSENDELSE_URL}") private val bidragForsnendelseUrl: URI,
+    @Value($$"${BIDRAG_FORSENDELSE_URL}") private val bidragForsnendelseUrl: URI,
     @Qualifier("azure") restTemplate: RestTemplate,
 ) : AbstractRestClient(restTemplate, "bidrag-dokument-forsendelse") {
     private val bidragForsendelsedUri get() =

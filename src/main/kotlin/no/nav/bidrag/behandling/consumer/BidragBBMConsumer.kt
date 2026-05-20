@@ -40,9 +40,9 @@ import java.time.LocalDate
 
 @Component
 class BidragBBMConsumer(
-    @Value("\${BIDRAG_BBM_URL}") private val bidragBBMurl: URI,
+    @Value($$"${BIDRAG_BBM_URL}") private val bidragBBMurl: URI,
     @Qualifier("azure") restTemplate: RestTemplate,
-    @Value("\${DEBUG_MODE:false}") val debugMode: Boolean,
+    @Value($$"${DEBUG_MODE:false}") val debugMode: Boolean,
 ) : AbstractRestClient(restTemplate, "bidrag-bbm"),
     BeregningBBMConsumer {
     private val bidragBBMUri

@@ -28,7 +28,7 @@ import java.net.URI
 
 @Component
 class BidragBeløpshistorikkConsumer(
-    @Value("\${BIDRAG_BELOPSHISTORIKK_URL}") private val bidragBeløpshistorikkUrl: URI,
+    @Value($$"${BIDRAG_BELOPSHISTORIKK_URL}") private val bidragBeløpshistorikkUrl: URI,
     @Qualifier("azure") restTemplate: RestTemplate,
 ) : AbstractRestClient(restTemplate, "bidrag-beløpshistorikk"),
     BeregningBeløpshistorikkConsumer {
