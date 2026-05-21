@@ -235,7 +235,7 @@ class BeregningEvnevurderingService(
             bruttoBidragEtterBarnetilleggBM = beregningsetaljer?.bruttoBidragEtterBarnetilleggBM,
             bruttoBidragEtterBarnetilleggBP = beregningsetaljer?.bruttoBidragEtterBarnetilleggBP,
             bidragJustertForNettoBarnetilleggBP = beregningsetaljer?.bidragJustertForNettoBarnetilleggBP,
-            erVedtakKildeBBM = false,
+            erVedtakKildeBBM = true, // TODO: Endre dette til false når Christian og Tonje har testet ferdig,
         )
     }
 
