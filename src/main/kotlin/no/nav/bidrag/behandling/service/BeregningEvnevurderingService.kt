@@ -236,6 +236,7 @@ class BeregningEvnevurderingService(
             bruttoBidragEtterBarnetilleggBP = beregningsetaljer?.bruttoBidragEtterBarnetilleggBP,
             bidragJustertForNettoBarnetilleggBP = beregningsetaljer?.bidragJustertForNettoBarnetilleggBP,
             erVedtakKildeBBM = false,
+        )
     }
 
     private fun hentSisteLøpendeStønader(bpIdent: Personident): List<LøpendeBidragssak> =
