@@ -113,7 +113,7 @@ class OppretteBehandlingFraVedtakTest : BehandlingControllerTest() {
                         søknadsid = 12325553,
                     ),
                 ),
-                OpprettBehandlingResponse::class.java,
+                Void::class.java,
             )
 
         behandlingRes.statusCode shouldBe HttpStatus.NOT_FOUND

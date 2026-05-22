@@ -30,6 +30,7 @@ import no.nav.bidrag.transport.behandling.vedtak.erDelvedtak
 import no.nav.bidrag.transport.behandling.vedtak.erFattetGjennomBidragBehandling
 import no.nav.bidrag.transport.behandling.vedtak.saksnummer
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
@@ -38,7 +39,6 @@ private val log = KotlinLogging.logger {}
 
 @Component
 class VedtakHendelseListener(
-    val objectMapper: ObjectMapper,
     val forsendelseService: ForsendelseService,
     val behandlingService: BehandlingService,
     val notatOpplysningerService: NotatOpplysningerService,
@@ -46,7 +46,7 @@ class VedtakHendelseListener(
     val behandlingRepository: BehandlingRepository,
     val forholdsmessigFordelingService: ForholdsmessigFordelingService,
 ) {
-    @KafkaListener(groupId = "bidrag-behandling", topics = ["\${TOPIC_VEDTAK}"])
+    @KafkaListener(groupId = "bidrag-behandling", topics = [$$"${TOPIC_VEDTAK}"])
     @Transactional
     fun prossesserVedtakHendelse(melding: ConsumerRecord<String, String>) {
         val vedtak = parseVedtakHendelse(melding)
@@ -207,7 +207,7 @@ class VedtakHendelseListener(
 
     private fun parseVedtakHendelse(melding: ConsumerRecord<String, String>): VedtakHendelse {
         try {
-            return objectMapper.readValue(melding.value(), VedtakHendelse::class.java)
+            return commonObjectmapper.readValue(melding.value(), VedtakHendelse::class.java)
         } catch (e: Exception) {
             log.error(e) { "Det skjedde en feil ved konverting av melding fra hendelse" }
             throw KunneIkkeLeseMeldingFraHendelse(e.message, e)

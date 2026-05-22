@@ -365,7 +365,7 @@ open class Rolle(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class GrunnlagFraVedtak(
-    @Schema(
+    @get:Schema(
         description =
             "Årstall for aldersjustering av grunnlag. " +
                 "Brukes hvis det er et vedtak som skal brukes for aldersjustering av grunnlag. " +
@@ -375,7 +375,7 @@ data class GrunnlagFraVedtak(
     val vedtak: Int? = null,
     val grunnlagFraOmgjøringsvedtak: Boolean = false,
     val vedtakstidspunkt: LocalDateTime? = null,
-    @Schema(
+    @get:Schema(
         description =
             "Perioder i vedtaket som er valgt. " +
                 "Brukes når vedtakstype er innkreving og det er valgt å innkreve en vedtak fra NAV som opprinnelig var uten innkreving",

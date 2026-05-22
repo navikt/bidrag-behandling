@@ -5,6 +5,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.commons.CorrelationId
 import no.nav.bidrag.commons.CorrelationId.Companion.CORRELATION_ID_HEADER
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.aspectj.lang.JoinPoint
 import org.aspectj.lang.annotation.After
@@ -18,9 +19,7 @@ private val log = KotlinLogging.logger {}
 
 @Component
 @Aspect
-class HendelseCorrelationAspect(
-    private val objectMapper: ObjectMapper,
-) {
+class HendelseCorrelationAspect {
     @Before(value = "execution(* no.nav.bidrag.behandling.kafka.VedtakHendelseListener.prossesserVedtakHendelse(..)) && args(hendelse)")
     fun leggSporingFraVedtakHendelseTilMDC(
         joinPoint: JoinPoint,
@@ -38,7 +37,7 @@ class HendelseCorrelationAspect(
 
     private fun hentSporingFraHendelse(hendelse: ConsumerRecord<String, String>): String? =
         try {
-            val vedtakHendelse = objectMapper.readValue(hendelse.value(), VedtakHendelse::class.java)
+            val vedtakHendelse = commonObjectmapper.readValue(hendelse.value(), VedtakHendelse::class.java)
             vedtakHendelse.sporingsdata.correlationId
         } catch (e: Exception) {
             log.error(e) { "Det skjedde en feil ved konverting av melding fra hendelse" }

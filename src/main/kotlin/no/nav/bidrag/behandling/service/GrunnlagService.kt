@@ -190,10 +190,10 @@ class GrunnlagService(
     private val behandlingRepository: BehandlingRepository? = null,
     private val bestillAsyncJobService: BestillAsyncJobService? = null,
 ) {
-    @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting:60}")
+    @Value($$"${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting:60}")
     lateinit var grenseInnhenting: String
 
-    @Value("\${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting-belophistorikk:5}")
+    @Value($$"${egenskaper.grunnlag.min-antall-minutter-siden-forrige-innhenting-belophistorikk:5}")
     lateinit var grenseInnhentingBeløpshistorikk: String
 
     private suspend fun hentGrunnlag(

@@ -108,8 +108,8 @@ class VedtakControllerTest : KontrollerTestRunner() {
             httpHeaderTestRestTemplate.exchange(
                 "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
                 HttpMethod.POST,
-                HttpEntity(""),
-                Int::class.java,
+                HttpEntity(FatteVedtakRequestDto()),
+                Void::class.java,
             )
 
         response.statusCode shouldBe HttpStatus.PRECONDITION_FAILED
@@ -268,8 +268,8 @@ class VedtakControllerTest : KontrollerTestRunner() {
             httpHeaderTestRestTemplate.exchange(
                 "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
                 HttpMethod.POST,
-                HttpEntity(""),
-                Int::class.java,
+                HttpEntity(FatteVedtakRequestDto()),
+                Void::class.java,
             )
 
         response.statusCode shouldBe HttpStatus.BAD_REQUEST
@@ -286,8 +286,8 @@ class VedtakControllerTest : KontrollerTestRunner() {
             httpHeaderTestRestTemplate.exchange(
                 "${rootUriV2()}/behandling/fattevedtak/${behandling.id}",
                 HttpMethod.POST,
-                HttpEntity(""),
-                Int::class.java,
+                HttpEntity(FatteVedtakRequestDto()),
+                Void::class.java,
             )
 
         response.statusCode shouldBe HttpStatus.BAD_REQUEST

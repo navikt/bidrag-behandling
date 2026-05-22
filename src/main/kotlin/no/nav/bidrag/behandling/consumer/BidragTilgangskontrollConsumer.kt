@@ -26,7 +26,7 @@ import java.net.URI
 
 @Service
 class BidragTilgangskontrollConsumer(
-    @Value("\${BIDRAG_TILGANGSKONTROLL_URL}") val url: URI,
+    @Value($$"${BIDRAG_TILGANGSKONTROLL_URL}") val url: URI,
     @Qualifier("azure") private val restTemplate: RestOperations,
 ) : AbstractRestClient(restTemplate, "bidrag-tilgangskontroll") {
     private fun createUri(path: String?) =
@@ -78,8 +78,3 @@ class BidragTilgangskontrollConsumer(
         }
     }
 }
-
-data class SjekkTilgangPersonISakRequest(
-    val personident: Personident,
-    val saksnummer: Saksnummer,
-)

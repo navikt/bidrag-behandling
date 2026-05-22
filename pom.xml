@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.8</version>
+    <version>4.0.6</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
   <groupId>no.nav</groupId>
@@ -15,30 +15,28 @@
   <name>bidrag-behandling</name>
   <properties>
     <java.version>21</java.version>
-    <kotlin.version>2.2.10</kotlin.version>
-    <bidrag-felles.version>2026.05.13.083229</bidrag-felles.version>
+    <kotlin.version>2.2.21</kotlin.version>
+    <bidrag-felles.version>2026.05.20.125928-SB4</bidrag-felles.version>
     <bidrag-beregn-felles.version>2026.05.13.091343</bidrag-beregn-felles.version>
     <h2.version>2.3.232</h2.version>
-    <shedlock.version>6.6.1</shedlock.version>
+    <shedlock.version>7.7.0</shedlock.version>
     <logback-encoder.version>9.0</logback-encoder.version>
-    <token-support.version>5.0.25</token-support.version>
-    <springdoc.version>2.8.9</springdoc.version>
-    <springframework-cloud.version>4.3.0</springframework-cloud.version>
+    <token-support.version>6.0.6</token-support.version>
+    <springdoc.version>3.0.3</springdoc.version>
+    <springframework-cloud.version>5.0.2</springframework-cloud.version>
     <kotest.version>5.9.1</kotest.version>
-    <mockk.version>4.0.2</mockk.version>
-    <kotlin-logging-jvm.version>7.0.7</kotlin-logging-jvm.version>
-    <flyway.version>11.8.2</flyway.version>
-    <jackson.version>2.20.1</jackson.version>
-    <testcontainers.version>1.21.3</testcontainers.version>
+    <mockk.version>5.0.1</mockk.version>
+    <kotlin-logging-jvm.version>8.0.02</kotlin-logging-jvm.version>
+    <flyway.version>11.17.2</flyway.version>
+    <testcontainers.version>2.0.5</testcontainers.version>
     <spring-boot-testcontainers.version>3.5.6</spring-boot-testcontainers.version>
     <tomcat-embed-core.version>10.1.16</tomcat-embed-core.version>
     <snakeyaml.version>2.3</snakeyaml.version>
     <snappy-java.version>1.1.10.7</snappy-java.version>
-    <skipOwasp>false</skipOwasp>
-    <checker-qual.version>3.48.3</checker-qual.version>
-    <asm.version>9.7.1</asm.version>
+    <checker-qual.version>3.52.0</checker-qual.version>
+    <asm.version>9.9.1</asm.version>
     <jetbrains.annotations.version>26.0.2</jetbrains.annotations.version>
-    <nimbus-jose-jwt.version>10.5</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>10.9</nimbus-jose-jwt.version>
   </properties>
 
   <repositories>
@@ -61,13 +59,6 @@
         <version>${jetbrains.annotations.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.fasterxml.jackson</groupId>
-        <artifactId>jackson-bom</artifactId>
-        <version>${jackson.version}</version>
-        <scope>import</scope>
-        <type>pom</type>
-      </dependency>
-      <dependency>
         <groupId>org.yaml</groupId>
         <artifactId>snakeyaml</artifactId>
         <version>${snakeyaml.version}</version>
@@ -87,24 +78,71 @@
         <artifactId>asm</artifactId>
         <version>${asm.version}</version>
       </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.module</groupId>
-        <artifactId>jackson-module-kotlin</artifactId>
-        <version>${jackson.version}</version>
-      </dependency>
+
       <dependency>
         <groupId>net.logstash.logback</groupId>
         <artifactId>logstash-logback-encoder</artifactId>
         <version>${logback-encoder.version}</version>
+      </dependency>
+      <!-- Force consistent versions for transitive dependencies -->
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>33.5.0-jre</version>
+      </dependency>
+      <dependency>
+        <groupId>com.squareup.okio</groupId>
+        <artifactId>okio-jvm</artifactId>
+        <version>3.16.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty.ee10</groupId>
+        <artifactId>jetty-ee10-servlet</artifactId>
+        <version>12.1.6</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty.ee10</groupId>
+        <artifactId>jetty-ee10-servlets</artifactId>
+        <version>12.1.6</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty.ee10</groupId>
+        <artifactId>jetty-ee10-webapp</artifactId>
+        <version>12.1.6</version>
+      </dependency>
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>mockwebserver3</artifactId>
+        <version>5.2.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hibernate.orm</groupId>
+        <artifactId>hibernate-core</artifactId>
+        <version>7.2.14.Final</version>
+      </dependency>
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp-jvm</artifactId>
+        <version>5.2.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp</artifactId>
+        <version>5.2.1</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
 
   <dependencies>
     <dependency>
+      <groupId>io.swagger.core.v3</groupId>
+      <artifactId>swagger-annotations</artifactId>
+      <version>2.2.50</version>
+    </dependency>
+    <dependency>
       <groupId>io.hypersistence</groupId>
-      <artifactId>hypersistence-utils-hibernate-63</artifactId>
-      <version>3.10.1</version>
+      <artifactId>hypersistence-utils-hibernate-70</artifactId>
+      <version>3.15.2</version>
     </dependency>
     <!--Spring-->
     <dependency>
@@ -115,10 +153,7 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-data-rest</artifactId>
-    </dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
@@ -149,21 +184,20 @@
       <groupId>org.springframework.session</groupId>
       <artifactId>spring-session-core</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-aop</artifactId>
-    </dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-cache</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.springframework.kafka</groupId>
-      <artifactId>spring-kafka</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-kafka</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.retry</groupId>
       <artifactId>spring-retry</artifactId>
+      <version>2.0.5</version>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -188,31 +222,30 @@
     </dependency>
     <dependency>
       <groupId>org.flywaydb</groupId>
-      <artifactId>flyway-core</artifactId>
-      <version>${flyway.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.flywaydb</groupId>
       <artifactId>flyway-database-postgresql</artifactId>
       <version>${flyway.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-testcontainers</artifactId>
-      <version>${spring-boot-testcontainers.version}</version>
-      <scope>test</scope>
+      <artifactId>spring-boot-starter-flyway</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-resttestclient</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>postgresql</artifactId>
+      <artifactId>testcontainers-postgresql</artifactId>
       <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>${testcontainers.version}</version>
+      <version>1.21.4</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -226,15 +259,8 @@
       <version>${shedlock.version}</version>
     </dependency>
     <!--SpringDoc-->
-    <dependency>
-      <groupId>com.fasterxml.jackson.module</groupId>
-      <artifactId>jackson-module-kotlin</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-    </dependency>
+
+
     <!--SpringDoc-->
     <dependency>
       <groupId>org.springdoc</groupId>
@@ -247,31 +273,11 @@
       <groupId>no.nav.security</groupId>
       <artifactId>token-validation-spring</artifactId>
       <version>${token-support.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.tomcat.embed</groupId>
-          <artifactId>tomcat-embed-core</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>no.nav.security</groupId>
       <artifactId>token-client-spring</artifactId>
       <version>${token-support.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.tomcat.embed</groupId>
-          <artifactId>tomcat-embed-core</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
 
     <!--NAV-->
@@ -492,7 +498,13 @@
     <dependency>
       <groupId>io.getunleash</groupId>
       <artifactId>unleash-client-java</artifactId>
-      <version>11.0.2</version>
+      <version>12.2.1</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.squareup.okhttp3</groupId>
+          <artifactId>mockwebserver</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <!--Logging-->
     <dependency>
@@ -546,6 +558,18 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.wiremock</groupId>
+      <artifactId>wiremock-standalone</artifactId>
+      <version>3.13.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.wiremock.integrations</groupId>
+      <artifactId>wiremock-spring-boot</artifactId>
+      <version>4.2.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.ninja-squad</groupId>
       <artifactId>springmockk</artifactId>
       <version>${mockk.version}</version>
@@ -554,7 +578,7 @@
     <dependency>
       <groupId>io.mockk</groupId>
       <artifactId>mockk</artifactId>
-      <version>1.13.16</version>
+      <version>1.14.4</version>
       <scope>test</scope>
     </dependency>
 
@@ -572,20 +596,17 @@
           <groupId>commons-collections</groupId>
           <artifactId>commons-collections</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpcore</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>no.nav.security</groupId>
       <artifactId>token-validation-spring-test</artifactId>
       <version>${token-support.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-test</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -599,6 +620,14 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
         <version>${project.parent.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <environmentVariables>
+            <TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE>/var/run/docker.sock</TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE>
+          </environmentVariables>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-enforcer-plugin</artifactId>

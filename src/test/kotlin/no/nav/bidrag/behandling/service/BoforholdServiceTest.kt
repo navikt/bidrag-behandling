@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.service
 
+import com.ninjasquad.springmockk.MockkBean
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
@@ -9,6 +10,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotBeEmpty
+import io.mockk.every
 import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.TestContainerRunner
@@ -65,9 +67,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
-import org.mockito.Mockito
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
 import java.time.LocalDate
@@ -78,7 +78,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatTyp
 
 @RunWith(Enclosed::class)
 class BoforholdServiceTest : TestContainerRunner() {
-    @MockBean
+    @MockkBean(relaxed = true)
     lateinit var bidragPersonConsumer: BidragPersonConsumer
 
     @Autowired
@@ -1795,13 +1795,11 @@ class BoforholdServiceTest : TestContainerRunner() {
     }
 
     private fun stubbeHentingAvPersoninfoForTestpersoner() {
-        Mockito.`when`(bidragPersonConsumer.hentPerson(testdataBM.ident)).thenReturn(testdataBM.tilPersonDto())
-        Mockito
-            .`when`(bidragPersonConsumer.hentPerson(testdataBarn1.ident))
-            .thenReturn(testdataBarn1.tilPersonDto())
-        Mockito
-            .`when`(bidragPersonConsumer.hentPerson(testdataBarn2.ident))
-            .thenReturn(testdataBarn2.tilPersonDto())
+        every { bidragPersonConsumer.hentPerson(testdataBM.ident) } returns testdataBM.tilPersonDto()
+        every { bidragPersonConsumer.hentPerson(testdataBarn1.ident) }
+            .returns(testdataBarn1.tilPersonDto())
+        every { bidragPersonConsumer.hentPerson(testdataBarn2.ident) }
+            .returns(testdataBarn2.tilPersonDto())
     }
 }
 

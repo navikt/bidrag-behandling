@@ -8,14 +8,14 @@ import java.time.LocalDate
 
 data class BostatusperiodeDto(
     val id: Long?,
-    @Schema(type = "string", format = "date", example = "2025-01-25")
+    @get:Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoFom: LocalDate?,
-    @Schema(type = "string", format = "date", example = "2025-01-25")
+    @get:Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate?,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val bostatus: Bostatuskode,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val kilde: Kilde,
 )

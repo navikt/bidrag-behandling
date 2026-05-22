@@ -3,13 +3,12 @@ package no.nav.bidrag.behandling.controller
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
-import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.VedtakService
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.boot.restclient.RestTemplateBuilder
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.client.RestTemplate
@@ -25,7 +24,7 @@ data class ArbeidOgInntektLenkeRequest(
 
 @BehandlingRestControllerV1
 class ArbeidOgInntektController(
-    @Value("\${ARBEID_OG_INNTEKT_URL}") private val ainntektUrl: String,
+    @Value($$"${ARBEID_OG_INNTEKT_URL}") private val ainntektUrl: String,
     private val behandlingService: BehandlingService,
     private val vedtakService: VedtakService,
 ) {

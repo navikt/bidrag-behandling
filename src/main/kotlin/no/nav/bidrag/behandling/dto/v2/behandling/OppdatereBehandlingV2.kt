@@ -15,13 +15,13 @@ data class AktivereGrunnlagResponseV2(
 )
 
 data class AktivereGrunnlagRequestV2(
-    @Schema(description = "Personident tilhørende rolle i behandling grunnlag skal aktiveres for")
+    @get:Schema(description = "Personident tilhørende rolle i behandling grunnlag skal aktiveres for")
     val personident: Personident? = null,
-    @Schema(description = "Grunnlagstype som skal aktiveres")
+    @get:Schema(description = "Grunnlagstype som skal aktiveres")
     val grunnlagstype: Grunnlagsdatatype,
-    @Schema(description = "Angi om manuelle opplysninger skal overskrives")
+    @get:Schema(description = "Angi om manuelle opplysninger skal overskrives")
     val overskriveManuelleOpplysninger: Boolean = true,
-    @Schema(
+    @get:Schema(
         description =
             "Ident på person grunnlag gjelder." +
                 " Er relevant for blant annet Barnetillegg, Kontantstøtte og Boforhold",
@@ -31,8 +31,8 @@ data class AktivereGrunnlagRequestV2(
 )
 
 data class OppdatereBegrunnelse(
-    @Schema(description = "Saksbehandlers begrunnelse", defaultValue = "", type = "String")
+    @get:Schema(description = "Saksbehandlers begrunnelse", defaultValue = "", type = "String")
     var nyBegrunnelse: String = "",
-    @Schema(description = "Id til rollen begrunnelsen gjelder for")
+    @get:Schema(description = "Id til rollen begrunnelsen gjelder for")
     val rolleid: Long? = null,
 )

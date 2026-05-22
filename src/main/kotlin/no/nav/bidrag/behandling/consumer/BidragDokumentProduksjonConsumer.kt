@@ -11,7 +11,7 @@ import java.net.URI
 
 @Component
 class BidragDokumentProduksjonConsumer(
-    @Value("\${BIDRAG_DOKUMENT_PRODUKSJON_URL}") private val bidragDokumentProduksjonUrl: URI,
+    @Value($$"${BIDRAG_DOKUMENT_PRODUKSJON_URL}") private val bidragDokumentProduksjonUrl: URI,
     @Qualifier("azure") restTemplate: RestTemplate,
 ) : AbstractRestClient(restTemplate, "bidrag-dokument-produksjon") {
     private val bidragDokumentProduksjonUri

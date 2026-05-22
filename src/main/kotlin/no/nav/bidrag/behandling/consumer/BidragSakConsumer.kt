@@ -26,7 +26,7 @@ private val LOGGER = KotlinLogging.logger {}
 
 @Service
 class BidragSakConsumer(
-    @Value("\${BIDRAG_SAK_URL}") val url: URI,
+    @Value($$"${BIDRAG_SAK_URL}") val url: URI,
     @Qualifier("azure") private val restTemplate: RestOperations,
 ) : AbstractRestClient(restTemplate, "bidrag-sak"),
     BeregningSakConsumer,

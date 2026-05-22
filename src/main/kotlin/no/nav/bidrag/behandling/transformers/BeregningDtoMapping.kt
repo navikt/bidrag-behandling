@@ -731,9 +731,11 @@ fun List<GrunnlagDto>.finnNesteIndeksårFraPrivatAvtale(grunnlagsreferanseListe:
 fun List<GrunnlagDto>.finnIndeksår(
     søknadsbarnReferanse: String,
     sistePeriode: ÅrMånedsperiode,
-    periodereferanseListe: List<String>,
 ): Int {
-    if (!erResultatEndringUnderGrense(søknadsbarnReferanse)) return Year.of(sistePeriode.fom.year).plusYears(1).value
+    val erIngenEndringUnderGrenseForSistePeriode = erResultatEndringUnderGrenseForPeriode(sistePeriode, søknadsbarnReferanse)
+    if (!erIngenEndringUnderGrenseForSistePeriode) {
+        return Year.of(sistePeriode.fom.year).plusYears(1).value
+    }
     val nesteKalkulertIndeksår =
         if (YearMonth.now().isAfter(YearMonth.now().withMonth(7))) {
             Year.now().plusYears(1).value
@@ -741,25 +743,17 @@ fun List<GrunnlagDto>.finnIndeksår(
             Year.now().value
         }
 
-    return if (!erResultatEndringUnderGrenseForPeriode(sistePeriode, søknadsbarnReferanse, periodereferanseListe)) {
+    return finnDelberegningSjekkGrensePeriode(sistePeriode, søknadsbarnReferanse)?.let { endringUnderGrensePeriode ->
+        val grunnlagsreferanseListe = endringUnderGrensePeriode.grunnlag.grunnlagsreferanseListe
+        finnNesteIndeksårFraBeløpshistorikk(grunnlagsreferanseListe)
+            ?: finnNesteIndeksårFraPrivatAvtale(grunnlagsreferanseListe)
+    } ?: run {
         secureLogger.info {
             "Ingen resultat på finnDelberegningSjekkGrensePeriodeOgBarn for liste $this " +
                 "og periode $sistePeriode og søknadsbarnReferanse $søknadsbarnReferanse"
         }
-        nesteKalkulertIndeksår
-    } else {
-        finnDelberegningSjekkGrensePeriode(sistePeriode, søknadsbarnReferanse)?.let { endringUnderGrensePeriode ->
-            val grunnlagsreferanseListe = endringUnderGrensePeriode.grunnlag.grunnlagsreferanseListe
-            finnNesteIndeksårFraBeløpshistorikk(grunnlagsreferanseListe)
-                ?: finnNesteIndeksårFraPrivatAvtale(grunnlagsreferanseListe)
-        } ?: run {
-            secureLogger.info {
-                "Ingen resultat på finnDelberegningSjekkGrensePeriodeOgBarn for liste $this " +
-                    "og periode $sistePeriode og søknadsbarnReferanse $søknadsbarnReferanse"
-            }
-            null
-        } ?: nesteKalkulertIndeksår
-    }
+        null
+    } ?: nesteKalkulertIndeksår
 }
 
 fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =
