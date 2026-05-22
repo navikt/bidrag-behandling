@@ -577,6 +577,9 @@ fun Rolle.tilDto() =
             søknader.filter { it.søknadsid != null }.map {
                 RolleSøknadDto(
                     it.søknadsid!!,
+                    it.søktAvType,
+                    it.enhet,
+                    it.behandlingstype?.tilVedtakstype() ?: behandling.vedtakstype,
                 )
             },
         bidragsmottaker =

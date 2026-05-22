@@ -1,7 +1,9 @@
 package no.nav.bidrag.behandling.dto.v1.behandling
 
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -26,4 +28,7 @@ data class RolleDto(
 
 data class RolleSøknadDto(
     val søknadsId: Long,
+    val søknadFra: SøktAvType,
+    val enhet: String,
+    val vedtakstype: Vedtakstype,
 )
