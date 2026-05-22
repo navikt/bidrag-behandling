@@ -452,7 +452,6 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                                 grunnlagsListe.finnIndeksår(
                                     resultat.barn.referanse,
                                     sistePeriode?.periode ?: ÅrMånedsperiode(YearMonth.now(), null),
-                                    sistePeriode?.grunnlagsreferanseListe ?: emptyList(),
                                 )
                             } else {
                                 null
@@ -654,7 +653,6 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                 rv.resultat.grunnlagListe.finnIndeksår(
                     resultat.barn.referanse,
                     sistePeriode?.periode ?: ÅrMånedsperiode(YearMonth.now(), null),
-                    sistePeriode?.grunnlagsreferanseListe ?: emptyList(),
                 )
 
             val perioder =
