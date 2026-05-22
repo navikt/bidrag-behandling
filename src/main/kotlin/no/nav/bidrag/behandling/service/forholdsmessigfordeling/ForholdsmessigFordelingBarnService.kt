@@ -248,10 +248,8 @@ class ForholdsmessigFordelingBarnService(
             rolle.saksnummer,
             behandling,
             rolle.bidragsmottaker!!.ident!!,
-            eldsteSøknad!!
-                .søknadsid!!
-                .toString(),
-            listOf(SakKravhaver(kravhaver = rolle.ident!!, saksnummer = rolle.saksnummer)),
+            eldsteSøknad!!,
+            listOf(SakKravhaver(kravhaver = rolle.ident!!, saksnummer = rolle.saksnummer, stønadstype = rolle.stønadstype)),
         )
     }
 

@@ -442,11 +442,12 @@ class ForholdsmessigFordelingService(
                         val person = hentPerson(kravhaverSak.kravhaver)
                         person?.fødselsdato?.tilDato18årsBidrag()
                     } else {
-                        revurderingFraDatoDefault
+                        behandling.eldsteSøktFomDato
                     }
                 val manueltOverstyrtDato =
                     request?.revurderingFraDato
                         ?: request?.detaljerBarn?.find { it.ident == kravhaverSak.kravhaver }?.manueltOverstyrtRevurderingFraDato
+                        ?: revurderingFraDatoDefault
                 Triple(kravhaverSak.saksnummer!!, kravhaverSak.stønadstype, maxOfNullable(tidligstSøktFomDato, manueltOverstyrtDato))
             }.forEach { (saksnummerLøpendeBidrag, løpendebidragssaker) ->
                 søknadOpprettService.opprettRollerOgRevurderingssøknadForSak(

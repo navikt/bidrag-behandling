@@ -13,12 +13,15 @@ import no.nav.bidrag.behandling.service.ForsendelseService
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
+import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
+import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.beregning.felles.Barn
 import no.nav.bidrag.transport.behandling.beregning.felles.LeggTilBarnIFFSøknadRequest
@@ -160,7 +163,7 @@ class ForholdsmessigFordelingSøknadOpprettService(
         if (barn.isEmpty()) {
             return null
         }
-        val søknadsid =
+        val søknad =
             if (!erOppdateringAvBehandlingSomErIFF) {
                 opprettSøknad(
                     behandling.bidragspliktig!!.ident!!,
@@ -186,7 +189,7 @@ class ForholdsmessigFordelingSøknadOpprettService(
                         )
                     }
                 // Antar at alle barn havner i samme søknad
-                søknader.first().søknadsid
+                søknader.first()
             }
 
         val ffDetaljer =
@@ -202,13 +205,13 @@ class ForholdsmessigFordelingSøknadOpprettService(
             saksnummer = saksnummer,
             behandling = behandling,
             bmFødselsnummer = bmFødselsnummer!!,
-            søknadsid = søknadsid.toString(),
+            søknad = søknad,
             barn = barn,
         )
 
         barn.forEach { barnDetaljer ->
             val søknader =
-                setOfNotNull(ffDetaljerBarn.copy(søknadsid = søknadsid))
+                setOfNotNull(ffDetaljerBarn.copy(søknadsid = søknad.søknadsid))
             val rolle =
                 opprettEllerOppdaterRolle(
                     behandling,
@@ -242,7 +245,7 @@ class ForholdsmessigFordelingSøknadOpprettService(
             }
         }
 
-        return søknadsid
+        return søknad.søknadsid
     }
 
     /**
@@ -258,7 +261,7 @@ class ForholdsmessigFordelingSøknadOpprettService(
         søktFomDato: LocalDate,
         medInnkreving: Boolean,
         bmFødselsnummer: String,
-    ): Long {
+    ): ForholdsmessigFordelingSøknadBarn {
         val opprettSøknader =
             barnUtenSøknader.map {
                 Barn(
@@ -292,7 +295,7 @@ class ForholdsmessigFordelingSøknadOpprettService(
                     OppdaterBehandlingsidRequest(eksisterendeSøknad.søknadsid, eksisterendeSøknad.behandlingsid, behandling.id!!),
                 )
             }
-            return eksisterendeSøknad.søknadsid
+            return eksisterendeSøknad.tilForholdsmessigFordelingSøknad()
         }
         val response =
             bbmConsumer.opprettSøknader(
@@ -309,10 +312,22 @@ class ForholdsmessigFordelingSøknadOpprettService(
                 ),
             )
 
-        val søknadsid = response.søknadsid
+        val søknad =
+            ForholdsmessigFordelingSøknadBarn(
+                søknadsid = response.søknadsid,
+                behandlingstype = behandling.behandlingstypeForFF,
+                behandlingstema = stønadstype?.tilBehandlingstema() ?: Behandlingstema.BIDRAG,
+                søknadFomDato = søktFomDato,
+                mottattDato = LocalDate.now(),
+                innkreving = medInnkreving,
+                enhet = behandlerEnhet,
+                saksnummer = saksnummer,
+                status = Behandlingstatus.UNDER_BEHANDLING,
+                søktAvType = SøktAvType.NAV_BIDRAG,
+            )
 
-        opprettForsendelseForNySøknad(saksnummer, behandling, bmFødselsnummer, søknadsid.toString(), barnUtenSøknader)
-        return søknadsid
+        opprettForsendelseForNySøknad(saksnummer, behandling, bmFødselsnummer, søknad, barnUtenSøknader)
+        return søknad
     }
 
     /**
@@ -399,7 +414,7 @@ class ForholdsmessigFordelingSøknadOpprettService(
         saksnummer: String,
         behandling: Behandling,
         bmFødselsnummer: String,
-        søknadsid: String,
+        søknad: ForholdsmessigFordelingSøknadBarn,
         barn: List<SakKravhaver>,
     ) {
         forsendelseService.slettEllerOpprettForsendelse(
@@ -426,12 +441,13 @@ class ForholdsmessigFordelingSøknadOpprettService(
                 behandlingInfo =
                     BehandlingInfoDto(
                         behandlingId = behandling.id?.toString(),
-                        soknadId = søknadsid,
-                        soknadFra = SøktAvType.NAV_BIDRAG,
-                        behandlingType = behandling.tilBehandlingstype(),
-                        stonadType = behandling.stonadstype,
+                        soknadId = søknad.søknadsid?.toString(),
+                        soknadFra = søknad.søktAvType,
+                        behandlingType = søknad.behandlingstema?.name,
+                        soknadType = søknad.behandlingstype?.name,
+                        stonadType = søknad.behandlingstema?.tilStønadstype() ?: behandling.stonadstype,
                         engangsBelopType = behandling.engangsbeloptype,
-                        vedtakType = behandling.vedtakstype,
+                        vedtakType = søknad.behandlingstype?.tilVedtakstype() ?: behandling.vedtakstype,
                     ),
             ),
         )
