@@ -398,7 +398,12 @@ class ForholdsmessigFordelingSøknadOpprettService(
             return ForholdsmessigFordelingSøknadBarn(
                 søktAvType = SøktAvType.NAV_BIDRAG,
                 behandlingstype = behandling.behandlingstypeForFF,
-                behandlingstema = Behandlingstema.BIDRAG,
+                behandlingstema =
+                    if (stønadstype == Stønadstype.BIDRAG18AAR) {
+                        Behandlingstema.BIDRAG_18_ÅR
+                    } else {
+                        Behandlingstema.BIDRAG
+                    },
                 mottattDato = LocalDate.now(),
                 søknadFomDato = søktFomDato,
                 søknadsid = søknad.søknadsid,
