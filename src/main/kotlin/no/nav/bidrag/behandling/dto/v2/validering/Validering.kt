@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v2.validering
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
@@ -90,12 +91,12 @@ data class MaksGodkjentBeløpValideringsfeil(
 }
 
 data class InntektValideringsfeilV2Dto(
-    val barnetillegg: Collection<InntektValideringsfeil>? = emptySet(),
-    val utvidetBarnetrygd: InntektValideringsfeil? = InntektValideringsfeil(),
-    val kontantstøtte: Collection<InntektValideringsfeil>? = emptySet(),
-    val småbarnstillegg: InntektValideringsfeil? = InntektValideringsfeil(),
-    @Schema(name = "årsinntekter")
-    val årsinntekter: InntektValideringsfeil? = InntektValideringsfeil(),
+    val barnetillegg: Collection<InntektValideringsfeil>? = null,
+    val utvidetBarnetrygd: InntektValideringsfeil? = null,
+    val kontantstøtte: Collection<InntektValideringsfeil>? = null,
+    val småbarnstillegg: InntektValideringsfeil? = null,
+    @get:JsonProperty("årsinntekter")
+    val årsinntekter: InntektValideringsfeil? = null,
 ) {
     @get:JsonIgnore
     val harFeil
@@ -110,12 +111,13 @@ data class InntektValideringsfeilV2Dto(
 }
 
 data class InntektValideringsfeilDto(
-    val barnetillegg: Collection<InntektValideringsfeil>? = emptySet(),
-    val utvidetBarnetrygd: InntektValideringsfeil? = InntektValideringsfeil(),
-    val kontantstøtte: Collection<InntektValideringsfeil>? = emptySet(),
-    val småbarnstillegg: InntektValideringsfeil? = InntektValideringsfeil(),
-    @Schema(name = "årsinntekter")
-    val årsinntekter: Set<InntektValideringsfeil>? = emptySet(),
+    val barnetillegg: Collection<InntektValideringsfeil>? = null,
+    val utvidetBarnetrygd: InntektValideringsfeil? = null,
+    val kontantstøtte: Collection<InntektValideringsfeil>? = null,
+    val småbarnstillegg: InntektValideringsfeil? = null,
+    @get:JsonProperty("årsinntekter")
+    @get:Schema(name = "årsinntekter")
+    val årsinntekter: Set<InntektValideringsfeil>? = null,
 ) {
     @get:JsonIgnore
     val harFeil
@@ -132,15 +134,15 @@ data class InntektValideringsfeilDto(
 data class InntektValideringsfeil(
     val overlappendePerioder: Set<OverlappendePeriode> = emptySet(),
     val fremtidigPeriode: Boolean = false,
-    @Schema(description = "Liste med perioder hvor det mangler inntekter. Vil alltid være tom liste for ytelser")
+    @get:Schema(description = "Liste med perioder hvor det mangler inntekter. Vil alltid være tom liste for ytelser")
     val hullIPerioder: List<Datoperiode> = emptyList(),
-    @Schema(description = "Er sann hvis det ikke finnes noen valgte inntekter. Vil alltid være false hvis det er ytelse")
+    @get:Schema(description = "Er sann hvis det ikke finnes noen valgte inntekter. Vil alltid være false hvis det er ytelse")
     val manglerPerioder: Boolean = false,
-    @Schema(description = "Hvis det er inntekter som har periode som starter før virkningstidspunkt")
+    @get:Schema(description = "Hvis det er inntekter som har periode som starter før virkningstidspunkt")
     val perioderFørVirkningstidspunkt: Boolean = false,
     val ugyldigSluttPeriode: Boolean = false,
     val gjelderBarnRolle: RolleDto? = null,
-    @Schema(description = "Personident ytelsen gjelder for. Kan være null hvis det er en ytelse som ikke gjelder for et barn.")
+    @get:Schema(description = "Personident ytelsen gjelder for. Kan være null hvis det er en ytelse som ikke gjelder for et barn.")
     val gjelderBarn: String? = gjelderBarnRolle?.ident,
     @JsonIgnore
     val erYtelse: Boolean = false,
@@ -148,7 +150,7 @@ data class InntektValideringsfeil(
     val rolle: RolleDto? = null,
     @Deprecated("Skal fjernes")
     val ident: String? = rolle?.ident,
-    @Schema(
+    @get:Schema(
         description =
             "Er sann hvis det ikke finnes noe løpende periode. " +
                 "Det vil si en periode hvor datoTom er null. Er bare relevant for årsinntekter",
@@ -170,11 +172,11 @@ data class InntektValideringsfeil(
 
 data class OverlappendePeriode(
     val periode: Datoperiode,
-    @Schema(description = "Teknisk id på inntekter som overlapper")
+    @get:Schema(description = "Teknisk id på inntekter som overlapper")
     val idListe: MutableSet<Long>,
-    @Schema(description = "Inntektsrapportering typer på inntekter som overlapper")
+    @get:Schema(description = "Inntektsrapportering typer på inntekter som overlapper")
     val rapporteringTyper: MutableSet<Inntektsrapportering>,
-    @Schema(description = "Inntektstyper som inntektene har felles. Det der dette som bestemmer hvilken inntekter som overlapper.")
+    @get:Schema(description = "Inntektstyper som inntektene har felles. Det der dette som bestemmer hvilken inntekter som overlapper.")
     val inntektstyper: MutableSet<Inntektstype>,
 )
 
@@ -183,16 +185,16 @@ data class BoforholdPeriodeseringsfeil(
     val husstandsmedlem: Husstandsmedlem?,
     val hullIPerioder: List<Datoperiode> = emptyList(),
     val overlappendePerioder: List<OverlappendeBostatusperiode> = emptyList(),
-    @Schema(description = "Er sann hvis husstandsmedlem har en periode som starter senere enn starten av dagens måned.")
+    @get:Schema(description = "Er sann hvis husstandsmedlem har en periode som starter senere enn starten av dagens måned.")
     val fremtidigPeriode: Boolean = false,
     val ugyldigSluttperiode: Boolean = false,
-    @Schema(
+    @get:Schema(
         description = """Er sann hvis husstandsmedlem mangler perioder. 
         Dette vil si at husstandsmedlem ikke har noen perioder i det hele tatt."""",
     )
     val manglerPerioder: Boolean,
 ) {
-    @Schema(description = "Er sann hvis husstandsmedlem ikke har noen løpende periode. Det vil si en periode hvor datoTom er null")
+    @get:Schema(description = "Er sann hvis husstandsmedlem ikke har noen løpende periode. Det vil si en periode hvor datoTom er null")
     val ingenLøpendePeriode: Boolean = hullIPerioder.any { it.til == null }
 
     @get:JsonIgnore
@@ -219,7 +221,7 @@ data class BoforholdPeriodeseringsfeil(
         val navn: String?,
         val ident: String?,
         val fødselsdato: LocalDate,
-        @Schema(description = "Teknisk id på husstandsmedlem som har periodiseringsfeil")
+        @get:Schema(description = "Teknisk id på husstandsmedlem som har periodiseringsfeil")
         val husstandsmedlemId: Long,
         val erSøknadsbarn: Boolean,
     )
@@ -233,12 +235,12 @@ data class OverlappendeBostatusperiode(
 data class AndreVoksneIHusstandenPeriodeseringsfeil(
     val hullIPerioder: List<Datoperiode> = emptyList(),
     val overlappendePerioder: List<OverlappendeBostatusperiode> = emptyList(),
-    @Schema(description = "Er sann hvis det finnes en eller flere perioder som starter senere enn starten av dagens måned.")
+    @get:Schema(description = "Er sann hvis det finnes en eller flere perioder som starter senere enn starten av dagens måned.")
     val fremtidigPeriode: Boolean = false,
-    @Schema(description = """Er sann hvis det mangler sivilstand perioder."""")
+    @get:Schema(description = """Er sann hvis det mangler sivilstand perioder."""")
     val manglerPerioder: Boolean = false,
 ) {
-    @Schema(description = "Er sann hvis det ikke finnes noe løpende periode. Det vil si en periode hvor datoTom er null")
+    @get:Schema(description = "Er sann hvis det ikke finnes noe løpende periode. Det vil si en periode hvor datoTom er null")
     val ingenLøpendePeriode: Boolean = hullIPerioder.any { it.til == null }
 
     val harFeil
@@ -253,14 +255,14 @@ data class AndreVoksneIHusstandenPeriodeseringsfeil(
 data class SivilstandPeriodeseringsfeil(
     val hullIPerioder: List<Datoperiode>,
     val overlappendePerioder: List<SivilstandOverlappendePeriode>,
-    @Schema(description = "Er sann hvis det finnes en eller flere perioder som starter senere enn starten av dagens måned.")
+    @get:Schema(description = "Er sann hvis det finnes en eller flere perioder som starter senere enn starten av dagens måned.")
     val fremtidigPeriode: Boolean,
-    @Schema(description = """Er sann hvis det mangler sivilstand perioder."""")
+    @get:Schema(description = """Er sann hvis det mangler sivilstand perioder."""")
     val manglerPerioder: Boolean,
-    @Schema(description = """Er sann hvis en eller flere perioder har status UKJENT."""")
+    @get:Schema(description = """Er sann hvis en eller flere perioder har status UKJENT."""")
     val ugyldigStatus: Boolean,
 ) {
-    @Schema(description = "Er sann hvis det ikke finnes noe løpende periode. Det vil si en periode hvor datoTom er null")
+    @get:Schema(description = "Er sann hvis det ikke finnes noe løpende periode. Det vil si en periode hvor datoTom er null")
     val ingenLøpendePeriode: Boolean = hullIPerioder.any { it.til == null }
 
     val harFeil
@@ -346,7 +348,7 @@ data class MåBekrefteNyeOpplysninger(
         val navn: String?,
         val ident: String?,
         val fødselsdato: LocalDate,
-        @Schema(description = "Teknisk id på husstandsmedlem som har periodiseringsfeil")
+        @get:Schema(description = "Teknisk id på husstandsmedlem som har periodiseringsfeil")
         val husstandsmedlemId: Long,
     )
 }

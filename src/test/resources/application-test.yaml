@@ -166,6 +166,15 @@ no.nav.security.jwt:
 #            sql: trace
 #      flywaydb: debug
 spring:
+  
+#  jpa:
+##    open-in-view: false
+#    properties:
+#      hibernate:
+#        format_sql: true
+#    show-sql: true
+
+
   datasource:
     hikari:
       max-lifetime: 500000
@@ -177,7 +186,8 @@ spring:
 spring.config.activate.on-profile: "!testcontainer"
 
 spring:
-  flyway.enabled: false
+  flyway:
+    enabled: true
   datasource.type: com.zaxxer.hikari.HikariDataSource
   datasource.url: jdbc:h2:mem:testdb;MODE=PostgreSQL;INIT=RUNSCRIPT FROM 'classpath:db/init.sql'
   jpa.hibernate.hbmddl-auto: create-drop

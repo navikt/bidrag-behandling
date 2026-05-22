@@ -89,6 +89,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.BostatusPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningAndelAvBidragsevne
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnetilleggSkattesats
+import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragJustertForBPBarnetillegg
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragTilFordeling
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragTilFordelingLøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBidragTilFordelingPrivatAvtale
@@ -137,15 +138,12 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrun
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottakerReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.byggSluttberegningBarnebidragDetaljer
-import no.nav.bidrag.transport.behandling.felles.grunnlag.erIndeksEllerAldersjustering
-import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrenseForPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erSluttberegningGammelStruktur
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanser
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
-import no.nav.bidrag.transport.behandling.felles.grunnlag.finnDelberegningSjekkGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnDelberegningSjekkGrensePeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
@@ -453,7 +451,6 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                                 grunnlagsListe.finnIndeksår(
                                     resultat.barn.referanse,
                                     sistePeriode?.periode ?: ÅrMånedsperiode(YearMonth.now(), null),
-                                    sistePeriode?.grunnlagsreferanseListe ?: emptyList(),
                                 )
                             } else {
                                 null
@@ -655,7 +652,6 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                 rv.resultat.grunnlagListe.finnIndeksår(
                     resultat.barn.referanse,
                     sistePeriode?.periode ?: ÅrMånedsperiode(YearMonth.now(), null),
-                    sistePeriode?.grunnlagsreferanseListe ?: emptyList(),
                 )
 
             val perioder =
@@ -732,9 +728,11 @@ fun List<GrunnlagDto>.finnNesteIndeksårFraPrivatAvtale(grunnlagsreferanseListe:
 fun List<GrunnlagDto>.finnIndeksår(
     søknadsbarnReferanse: String,
     sistePeriode: ÅrMånedsperiode,
-    periodereferanseListe: List<String>,
 ): Int {
-    if (!erResultatEndringUnderGrense(søknadsbarnReferanse)) return Year.of(sistePeriode.fom.year).plusYears(1).value
+    val erIngenEndringUnderGrenseForSistePeriode = erResultatEndringUnderGrenseForPeriode(sistePeriode, søknadsbarnReferanse)
+    if (!erIngenEndringUnderGrenseForSistePeriode) {
+        return Year.of(sistePeriode.fom.year).plusYears(1).value
+    }
     val nesteKalkulertIndeksår =
         if (YearMonth.now().isAfter(YearMonth.now().withMonth(7))) {
             Year.now().plusYears(1).value
@@ -742,25 +740,17 @@ fun List<GrunnlagDto>.finnIndeksår(
             Year.now().value
         }
 
-    return if (!erResultatEndringUnderGrenseForPeriode(sistePeriode, søknadsbarnReferanse, periodereferanseListe)) {
+    return finnDelberegningSjekkGrensePeriode(sistePeriode, søknadsbarnReferanse)?.let { endringUnderGrensePeriode ->
+        val grunnlagsreferanseListe = endringUnderGrensePeriode.grunnlag.grunnlagsreferanseListe
+        finnNesteIndeksårFraBeløpshistorikk(grunnlagsreferanseListe)
+            ?: finnNesteIndeksårFraPrivatAvtale(grunnlagsreferanseListe)
+    } ?: run {
         secureLogger.info {
             "Ingen resultat på finnDelberegningSjekkGrensePeriodeOgBarn for liste $this " +
                 "og periode $sistePeriode og søknadsbarnReferanse $søknadsbarnReferanse"
         }
-        nesteKalkulertIndeksår
-    } else {
-        finnDelberegningSjekkGrensePeriode(sistePeriode, søknadsbarnReferanse)?.let { endringUnderGrensePeriode ->
-            val grunnlagsreferanseListe = endringUnderGrensePeriode.grunnlag.grunnlagsreferanseListe
-            finnNesteIndeksårFraBeløpshistorikk(grunnlagsreferanseListe)
-                ?: finnNesteIndeksårFraPrivatAvtale(grunnlagsreferanseListe)
-        } ?: run {
-            secureLogger.info {
-                "Ingen resultat på finnDelberegningSjekkGrensePeriodeOgBarn for liste $this " +
-                    "og periode $sistePeriode og søknadsbarnReferanse $søknadsbarnReferanse"
-            }
-            null
-        } ?: nesteKalkulertIndeksår
-    }
+        null
+    } ?: nesteKalkulertIndeksår
 }
 
 fun BeregnetSærbidragResultat.tilDto(behandling: Behandling) =
@@ -1687,6 +1677,11 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
     val bidragTilFordelingSøknadsbarn =
         bidragTilFordelingSøknadsbarnGrunnlag.map {
             val barn = hentPersonMedReferanse(it.gjelderBarnReferanse!!)!!.personObjekt
+            val delberegningJustertForBpsBarnetillegg =
+                finnOgKonverterGrunnlagSomErReferertAv<DelberegningBidragJustertForBPBarnetillegg>(
+                    Grunnlagstype.DELBEREGNING_BIDRAG_JUSTERT_FOR_BP_BARNETILLEGG,
+                    sumBidragTilBeregning.grunnlag,
+                ).find { it.gjelderBarnReferanse == it.gjelderBarnReferanse }
             ForholdsmessigFordelingBidragTilFordelingBarn(
                 utenlandskbidrag = false,
                 privatAvtale = false,
@@ -1700,6 +1695,16 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
                         løpendeBeløp = BigDecimal.ZERO,
                         faktiskBeløp = BigDecimal.ZERO,
                         beregnetBidrag = it.innhold.bidragTilFordeling,
+                        bruttoBidragEtterBarnetilleggBM = it.innhold.bruttoBidragEtterBarnetilleggBM,
+                        bruttoBidragEtterBarnetilleggBP =
+                            delberegningJustertForBpsBarnetillegg
+                                ?.innhold
+                                ?.bidragJustertForNettoBarnetilleggBP,
+                        bidragJustertForNettoBarnetilleggBP =
+                            delberegningJustertForBpsBarnetillegg
+                                ?.innhold
+                                ?.erBidragJustertTilNettoBarnetilleggBP,
+                        erVedtakKildeBBM = false,
                         beregnetBeløp = BigDecimal.ZERO,
                         reduksjonUnderholdskostnad = BigDecimal.ZERO,
                         samværsfradrag = BigDecimal.ZERO,
@@ -1928,6 +1933,11 @@ fun List<GrunnlagDto>.mapTilBeregnetBidragDto(
                     faktiskBeløp = løpendeBidrag.faktiskBeløp,
                     stønadstype = løpendeBidrag.stønadstype,
                     beregnetBidrag = it.innhold.bidragTilFordelingNOK,
+                    vedtaksid = løpendeBidrag.vedtaksid,
+                    bidragJustertForNettoBarnetilleggBP = løpendeBidrag.bidragJustertForNettoBarnetilleggBP,
+                    bruttoBidragEtterBarnetilleggBM = løpendeBidrag.bruttoBidragEtterBarnetilleggBM,
+                    bruttoBidragEtterBarnetilleggBP = løpendeBidrag.bruttoBidragEtterBarnetilleggBP,
+                    erVedtakKildeBBM = løpendeBidrag.erVedtakKildeBBM,
                     beregnetBeløp = løpendeBidrag.beregnetBeløp,
                     valutakode = løpendeBidrag.valutakode,
                     valutakurs = valutakursNOKTilValuta ?: BigDecimal.ONE,

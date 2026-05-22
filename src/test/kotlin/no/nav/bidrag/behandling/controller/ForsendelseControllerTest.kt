@@ -60,27 +60,15 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
             {
                 "gjelderIdent": "${testdataBM.ident}",
                 "mottaker": {
-                    "ident": "${testdataBM.ident}",
-                    "språk":null,
-                    "navn":null,
-                    "identType":null,
-                    "adresse":null
+                    "ident": "${testdataBM.ident}"
                 },
                 "dokumenter":[],
                 "saksnummer": "$SAKSNUMMER",
                 "enhet": "${BidragEnhet.ENHET_FARSKAP}",
                 "behandlingInfo": {
-                    "vedtakId": null,
-                    "behandlingId": null,
                     "soknadId": "$SOKNAD_ID",
-                    "engangsBelopType": null,
                     "stonadType": "FORSKUDD",
-                    "behandlingType": null,
-                    "vedtakType": null,
-                    "soknadType": null,
-                    "erFattetBeregnet": null,
                     "erVedtakIkkeTilbakekreving": false,
-                    "soknadFra": null,
                     "barnIBehandling":["${testdataBarn1.ident}"]
                 },
                 "tema": "FAR",
@@ -155,27 +143,15 @@ class ForsendelseControllerTest : KontrollerTestRunner() {
             {
                 "gjelderIdent": "${testdataBM.ident}",
                 "mottaker": {
-                    "ident": "${testdataBM.ident}",
-                    "språk":null,
-                    "navn":null,
-                    "identType":null,
-                    "adresse":null
+                    "ident": "${testdataBM.ident}"
                 },
                 "dokumenter":[],
                 "saksnummer": "$SAKSNUMMER",
                 "enhet": "${BidragEnhet.ENHET_FARSKAP}",
                 "behandlingInfo": {
-                    "vedtakId": null,
-                    "behandlingId": null,
                     "soknadId": "$SOKNAD_ID",
-                    "engangsBelopType": null,
                     "stonadType": "FORSKUDD",
-                    "behandlingType": null,
-                    "vedtakType": null,
-                    "soknadType": null,
-                    "erFattetBeregnet": null,
                     "erVedtakIkkeTilbakekreving": false,
-                    "soknadFra": null,
                     "barnIBehandling":["${testdataBarn1.ident}"]
                 },
                 "tema": "FAR",

@@ -31,7 +31,7 @@ data class OpprettVedtakConflictResponse(
 
 @Component
 class BidragVedtakConsumer(
-    @Value("\${BIDRAG_VEDTAK_URL}") private val bidragVedtakUrl: URI,
+    @Value($$"${BIDRAG_VEDTAK_URL}") private val bidragVedtakUrl: URI,
     @Qualifier("azure") restTemplate: RestTemplate,
 ) : AbstractRestClient(restTemplate, "bidrag-vedtak"),
     BeregningVedtakConsumer {
@@ -90,7 +90,7 @@ class BidragVedtakConsumer(
 
 // @Component
 // class BidragVedtakConsumerLocal(
-//    @Value("\${BIDRAG_VEDTAK_LOCAL_URL}") private val bidragVedtakUrl: URI,
+//    @Value($$"${BIDRAG_VEDTAK_LOCAL_URL}") private val bidragVedtakUrl: URI,
 //    @Qualifier("azure") restTemplate: RestTemplate,
 // ) : AbstractRestClient(restTemplate, "bidrag-vedtak") {
 //    private val bidragVedtakUri

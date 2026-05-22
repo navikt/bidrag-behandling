@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.dto.v1.behandling
 
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.OpphørsdetaljerRolleDto.EksisterendeOpphørsvedtakDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDtoV3
@@ -90,19 +91,20 @@ data class VirkningstidspunktDtoV3(
 
 data class VirkningstidspunktBarnDtoV2(
     val rolle: RolleDto,
-    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @get:Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val virkningstidspunkt: LocalDate? = null,
-    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @get:Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val opprinneligVirkningstidspunkt: LocalDate? = null,
     val opprinneligVedtakstidspunkt: LocalDate? = null,
     val omgjortVedtakVedtakstidspunkt: LocalDate? = null,
-    @Schema(name = "årsak", enumAsRef = true)
+    @get:Schema(name = "årsak", enumAsRef = true)
+    @get:JsonProperty("årsak")
     val årsak: VirkningstidspunktÅrsakstype? = null,
-    @Schema(enumAsRef = true)
+    @get:Schema(enumAsRef = true)
     val avslag: Resultatkode? = null,
-    @Schema(description = "Saksbehandlers begrunnelse")
+    @get:Schema(description = "Saksbehandlers begrunnelse")
     val begrunnelse: BegrunnelseDto,
     val begrunnelseVurderingAvSkolegang: BegrunnelseDto? = null,
     val begrunnelseVurderingAvSkolegangFraOpprinneligVedtak: BegrunnelseDto? = null,
@@ -115,9 +117,9 @@ data class VirkningstidspunktBarnDtoV2(
     val beregnTil: BeregnTil? = null,
     val beregnTilDato: LocalDate? = null,
     val globalOpphørsdato: LocalDate? = null,
-    @Schema(description = "Løpende opphørsvedtak detaljer. Er satt hvis det finnes en vedtak hvor bidraget er opphørt")
+    @get:Schema(description = "Løpende opphørsvedtak detaljer. Er satt hvis det finnes en vedtak hvor bidraget er opphørt")
     val eksisterendeOpphør: EksisterendeOpphørsvedtakDto? = null,
-    @Schema(description = "Manuell vedtak valgt for beregning av aldersjustering")
+    @get:Schema(description = "Manuell vedtak valgt for beregning av aldersjustering")
     val grunnlagFraVedtak: Int? = null,
     val kanSkriveVurderingAvSkolegang: Boolean = false,
     val etterfølgendeVedtak: EtterfølgendeVedtakDto? = null,
@@ -125,13 +127,13 @@ data class VirkningstidspunktBarnDtoV2(
     val valideringsfeil: VirkningstidspunktFeilDto?,
     val valideringsfeilV2: VirkningstidspunktFeilV2Dto? = null,
     val vedtakstype: Vedtakstype,
-    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @get:Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val søktFomDato: LocalDate,
-    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @get:Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val mottattdato: LocalDate,
-    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @get:Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val klageMottattdato: LocalDate? = null,
     val søktAv: SøktAvType,
@@ -140,29 +142,30 @@ data class VirkningstidspunktBarnDtoV2(
     val kanVelgeOpphør: Boolean = true,
 ) {
     @Deprecated("Bruk begrunnelse")
-    @Schema(description = "Bruk begrunnelse", deprecated = true)
+    @get:Schema(description = "Bruk begrunnelse", deprecated = true)
     val notat: BegrunnelseDto = begrunnelse
 }
 
 data class VirkningstidspunktDto(
-    @Schema(type = "string", format = "date", example = "01.12.2025")
+    @get:Schema(type = "string", format = "date", example = "01.12.2025")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val virkningstidspunkt: LocalDate? = null,
-    @Schema(type = "string", format = "date", example = "01.12.2025")
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @get:Schema(type = "string", format = "date", example = "01.12.2025")
+    @get:JsonFormat(pattern = "yyyy-MM-dd")
     val opprinneligVirkningstidspunkt: LocalDate? = null,
-    @Schema(name = "årsak", enumAsRef = true)
+    @get:Schema(name = "årsak", enumAsRef = true)
+    @get:JsonProperty("årsak")
     val årsak: VirkningstidspunktÅrsakstype? = null,
-    @Schema(enumAsRef = true)
+    @get:Schema(enumAsRef = true)
     val avslag: Resultatkode? = null,
-    @Schema(description = "Saksbehandlers begrunnelse")
+    @get:Schema(description = "Saksbehandlers begrunnelse")
     val begrunnelse: BegrunnelseDto,
     val harLøpendeBidrag: Boolean = false,
     val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
     val opphør: OpphørsdetaljerDto? = null,
 ) {
     @Deprecated("Bruk begrunnelse")
-    @Schema(description = "Bruk begrunnelse", deprecated = true)
+    @get:Schema(description = "Bruk begrunnelse", deprecated = true)
     val notat: BegrunnelseDto = begrunnelse
 }
 
@@ -174,7 +177,7 @@ data class OpphørsdetaljerDto(
 data class OpphørsdetaljerRolleDto(
     val rolle: RolleDto,
     val opphørsdato: LocalDate? = null,
-    @Schema(description = "Løpende opphørsvedtak detaljer. Er satt hvis det finnes en vedtak hvor bidraget er opphørt")
+    @get:Schema(description = "Løpende opphørsvedtak detaljer. Er satt hvis det finnes en vedtak hvor bidraget er opphørt")
     val eksisterendeOpphør: EksisterendeOpphørsvedtakDto? = null,
 ) {
     data class EksisterendeOpphørsvedtakDto(
@@ -195,6 +198,6 @@ data class BegrunnelseDto(
     val gjelder: RolleDto? = null,
 ) {
     @Deprecated("Bruk innhold")
-    @Schema(description = "Bruk innhold", deprecated = true)
+    @get:Schema(description = "Bruk innhold", deprecated = true)
     val kunINotat: String = innhold
 }

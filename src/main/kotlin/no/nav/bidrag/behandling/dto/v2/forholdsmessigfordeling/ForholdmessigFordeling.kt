@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.persistence.Column
 import jakarta.persistence.EnumType
@@ -48,7 +49,7 @@ data class ForholdsmessigFordelingBarnDto(
     val innkrevesFraDato: YearMonth?,
     val opphørsdato: YearMonth?,
     val sammeSakSomBehandling: Boolean,
-    @Schema(name = "åpneBehandlinger")
+    @get:Schema(name = "åpneBehandlinger")
     val åpneBehandlinger: List<ForholdsmessigFordelingÅpenBehandlingDto> = emptyList(),
     val privateAvtale: ForholdsmessigFordelingPrivateAvtaleDto? = null,
 )

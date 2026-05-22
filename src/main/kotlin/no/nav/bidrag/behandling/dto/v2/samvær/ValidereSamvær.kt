@@ -31,7 +31,7 @@ data class SamværValideringsfeilDto(
     val manglerSamvær: Boolean = false,
     val ugyldigSluttperiode: Boolean = false,
     val overlappendePerioder: Set<OverlappendePeriode> = emptySet(),
-    @Schema(description = "Liste med perioder hvor det mangler inntekter. Vil alltid være tom liste for ytelser")
+    @get:Schema(description = "Liste med perioder hvor det mangler inntekter. Vil alltid være tom liste for ytelser")
     val hullIPerioder: List<Datoperiode> = emptyList(),
 ) {
     val harPeriodiseringsfeil get() =

@@ -21,7 +21,7 @@ class JournalpostHendelseListener(
     val forsendelseService: ForsendelseService,
     val behandlingRepository: BehandlingRepository,
 ) {
-    @KafkaListener(groupId = "bidrag-behandling", topics = ["\${TOPIC_JOURNALPOST}"])
+    @KafkaListener(groupId = "bidrag-behandling", topics = [$$"${TOPIC_JOURNALPOST}"])
     @Transactional
     fun prossesserJournalpostHendelse(melding: ConsumerRecord<String, String>) {
         val hendelse = parseJournalpostHendelse(melding)

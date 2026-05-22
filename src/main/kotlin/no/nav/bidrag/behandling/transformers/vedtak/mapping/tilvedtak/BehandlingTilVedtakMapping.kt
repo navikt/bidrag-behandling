@@ -22,7 +22,6 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonMedIdent
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.fyllMellomromMedOpphørsperioder
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilVedtakDto
@@ -744,7 +743,6 @@ class BehandlingTilVedtakMapping(
                                     resultatVedtak.resultat.grunnlagListe.toList().finnIndeksår(
                                         søknadsbarnReferanse,
                                         sistePeriode.periode,
-                                        sistePeriode.grunnlagReferanseListe,
                                     )
                                 },
                         )
@@ -887,7 +885,6 @@ class BehandlingTilVedtakMapping(
                         grunnlagsliste.toList().finnIndeksår(
                             søknadsbarnReferanse,
                             sistePeriode.periode,
-                            sistePeriode.grunnlagReferanseListe,
                         ),
                 )
             } to
@@ -987,7 +984,6 @@ class BehandlingTilVedtakMapping(
                                     grunnlagListe.toList().finnIndeksår(
                                         søknadsbarnReferanse,
                                         sistePeriode.periode,
-                                        sistePeriode.grunnlagReferanseListe,
                                     )
                                 } else {
                                     null

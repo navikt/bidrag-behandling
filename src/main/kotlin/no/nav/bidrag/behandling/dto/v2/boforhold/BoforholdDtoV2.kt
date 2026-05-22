@@ -28,11 +28,11 @@ data class BoforholdDtoV2(
     val husstandsmedlem: Set<HusstandsmedlemDtoV2> = emptySet(),
     val andreVoksneIHusstanden: Set<BostatusperiodeDto> = emptySet(),
     val sivilstand: Set<SivilstandDto> = emptySet(),
-    @Schema(description = "Saksbehandlers begrunnelse", deprecated = false)
+    @get:Schema(description = "Saksbehandlers begrunnelse", deprecated = false)
     val begrunnelse: BegrunnelseDto,
     val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
     val valideringsfeil: BoforholdValideringsfeil = BoforholdValideringsfeil(),
-    @Schema(
+    @get:Schema(
         description =
             "Er sann hvis status på andre voksne i husstanden er 'BOR_IKKE_MED_ANDRE_VOKSNE'," +
                 " men det er 18 åring i husstanden som regnes som voksen i husstanden",
@@ -41,25 +41,25 @@ data class BoforholdDtoV2(
     val beregnetBoforhold: List<DelberegningBoforhold> = emptyList(),
 ) {
     @Deprecated("Erstattes av husstandsmedlem")
-    @Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
+    @get:Schema(description = "Erstattes av husstandsmedlem", deprecated = true)
     val husstandsbarn = husstandsmedlem
 
     @Deprecated("Erstattes av begrunnelse")
-    @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
+    @get:Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
     val notat: BegrunnelseDto = begrunnelse
 }
 
 data class HusstandsmedlemDtoV2(
     val id: Long?,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val kilde: Kilde,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val medIBehandling: Boolean,
     val perioder: Set<BostatusperiodeDto>,
     val ident: String? = null,
     val navn: String? = null,
     val stønadstype: Stønadstype? = null,
-    @Schema(type = "string", format = "date", example = "2025-01-25")
+    @get:Schema(type = "string", format = "date", example = "2025-01-25")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val fødselsdato: LocalDate?,
     val beregnFra: LocalDate?,

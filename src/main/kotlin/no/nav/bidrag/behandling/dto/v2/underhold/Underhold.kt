@@ -71,7 +71,7 @@ data class OppdatereUnderholdRequest(
 )
 
 data class OppdatereBegrunnelseRequest(
-    @Schema(
+    @get:Schema(
         description =
             "Id til underhold begrunnelsen gjelder for hvis søknadsbarn. " +
                 "Bidragsmottaker må være satt for andre barn hvis det finnes flere BMer",
@@ -87,11 +87,11 @@ data class UnderholdskostnadValideringsfeil(
     val tilleggsstønad: UnderholdskostnadValideringsfeilTabell? = null,
     val faktiskTilsynsutgift: UnderholdskostnadValideringsfeilTabell? = null,
     val stønadTilBarnetilsyn: UnderholdskostnadValideringsfeilTabell? = null,
-    @Schema(description = "Tilleggsstønadsperioder som ikke overlapper fullstendig med faktiske tilsynsutgifter.")
+    @get:Schema(description = "Tilleggsstønadsperioder som ikke overlapper fullstendig med faktiske tilsynsutgifter.")
     val tilleggsstønadsperioderUtenFaktiskTilsynsutgift: Set<DatoperiodeDto> = emptySet(),
-    @Schema(description = "Minst en periode må legges til hvis det ikke finnes noen offentlige opplysninger for stønad til barnetilsyn")
+    @get:Schema(description = "Minst en periode må legges til hvis det ikke finnes noen offentlige opplysninger for stønad til barnetilsyn")
     val manglerPerioderForTilsynsordning: Boolean = false,
-    @Schema(description = "Må ha fylt ut begrunnelse hvis minst en periode er lagt til underholdskostnad")
+    @get:Schema(description = "Må ha fylt ut begrunnelse hvis minst en periode er lagt til underholdskostnad")
     val manglerBegrunnelse: Boolean = false,
 ) {
     @get:JsonIgnore
@@ -129,14 +129,14 @@ data class UnderholdskostnadValideringsfeil(
 }
 
 data class UnderholdskostnadValideringsfeilTabell(
-    @Schema(description = "Overlappende perioder i stønad til barnetilsyn eller tillegsstønad.")
+    @get:Schema(description = "Overlappende perioder i stønad til barnetilsyn eller tillegsstønad.")
     val overlappendePerioder: List<OverlappendePeriode> = listOf(),
-    @Schema(description = "Perioder som starter senere enn starten av dagens måned.")
+    @get:Schema(description = "Perioder som starter senere enn starten av dagens måned.")
     val fremtidigePerioder: List<DatoperiodeDto> = listOf(),
-    @Schema(description = """Er sann hvis antall perioder er 0."""")
+    @get:Schema(description = """Er sann hvis antall perioder er 0."""")
     val harIngenPerioder: Boolean = false,
     val ugyldigPerioder: List<DatoperiodeDto> = listOf(),
-    @Schema(description = "Er sann hvis det er satt at BM har tilsynsordning for barnet men det mangler perioder for tilsynsutgifter.")
+    @get:Schema(description = "Er sann hvis det er satt at BM har tilsynsordning for barnet men det mangler perioder for tilsynsutgifter.")
     val manglerPerioderForTilsynsutgifter: Boolean = false,
 ) {
     @get:JsonIgnore

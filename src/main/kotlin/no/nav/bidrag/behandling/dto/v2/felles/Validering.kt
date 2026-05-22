@@ -7,6 +7,6 @@ import no.nav.bidrag.domene.tid.Datoperiode
 
 data class OverlappendePeriode(
     val periode: Datoperiode,
-    @Schema(description = "Teknisk id på inntekter som overlapper")
+    @get:Schema(description = "Teknisk id på inntekter som overlapper")
     val idListe: MutableSet<Long>,
 )

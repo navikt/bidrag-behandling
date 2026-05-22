@@ -13,20 +13,16 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.util.avrundetTilNærmesteTier
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragssakerRequest
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningRequestDto
 import no.nav.bidrag.transport.behandling.beregning.felles.BidragBeregningResponsDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningBarnebidrag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.byggSluttberegningBarnebidragDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe
-import no.nav.bidrag.transport.behandling.felles.grunnlag.finnSamværsklasse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnSluttberegningIReferanser
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentBeregnetBeløp
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentResultatBeløp
-import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakForStønad
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadsid
@@ -34,7 +30,6 @@ import org.springframework.context.annotation.Import
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDate
-import kotlin.collections.firstOrNull
 
 private val log = KotlinLogging.logger {}
 
@@ -226,6 +221,7 @@ class BeregningEvnevurderingService(
                 return null
             }
 
+        val beregningsetaljer = vedtakDto.grunnlagListe.byggSluttberegningBarnebidragDetaljer(sistePeriode.grunnlagReferanseListe)
         return BidragBeregningResponsDto.BidragBeregning(
             saksnummer = vedtakForStønad.stønadsendring.sak.verdi,
             personidentBarn = vedtakForStønad.stønadsendring.kravhaver,
@@ -235,6 +231,11 @@ class BeregningEvnevurderingService(
             beløpSamvær = BigDecimal.ZERO, // Brukes ikke
             stønadstype = Stønadstype.BIDRAG,
             samværsklasse = samværsklasse,
+            vedtaksid = vedtakDto.vedtaksid,
+            bruttoBidragEtterBarnetilleggBM = beregningsetaljer?.bruttoBidragEtterBarnetilleggBM,
+            bruttoBidragEtterBarnetilleggBP = beregningsetaljer?.bruttoBidragEtterBarnetilleggBP,
+            bidragJustertForNettoBarnetilleggBP = beregningsetaljer?.bidragJustertForNettoBarnetilleggBP,
+            erVedtakKildeBBM = true, // TODO: Endre dette til false når Christian og Tonje har testet ferdig,
         )
     }
 

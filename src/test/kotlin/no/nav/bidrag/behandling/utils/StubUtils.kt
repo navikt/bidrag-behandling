@@ -12,7 +12,6 @@ import com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor
 import com.github.tomakehurst.wiremock.client.WireMock.urlMatching
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching
 import com.github.tomakehurst.wiremock.matching.ContainsPattern
-import com.github.tomakehurst.wiremock.matching.MatchResult
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import com.github.tomakehurst.wiremock.verification.LoggedRequest
@@ -71,7 +70,6 @@ import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.SkyldnerStønaderResponse
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.HentGrunnlagDto
-import no.nav.bidrag.transport.behandling.vedtak.request.HentVedtakForStønadRequest
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
@@ -81,6 +79,7 @@ import no.nav.bidrag.transport.dokument.forsendelse.OpprettForsendelseRespons
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.person.PersonDto
 import no.nav.bidrag.transport.sak.BidragssakDto
+import no.nav.bidrag.transport.tilgang.TilgangskontrollResponse
 import org.junit.Assert
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -330,18 +329,8 @@ class StubUtils {
         WireMock.stubFor(
             WireMock
                 .post(urlMatching("/vedtak/vedtak/hent-vedtak"))
-                .andMatching {
-                    try {
-                        val request = commonObjectmapper.readValue<HentVedtakForStønadRequest>(it.bodyAsString)
-                        if (request.kravhaver.verdi == kravhaverIdent) {
-                            MatchResult.exactMatch()
-                        } else {
-                            MatchResult.noMatch()
-                        }
-                    } catch (e: Exception) {
-                        MatchResult.noMatch()
-                    }
-                }.willReturn(
+                .withRequestBody(ContainsPattern(kravhaverIdent))
+                .willReturn(
                     aClosedJsonResponse()
                         .withStatus(HttpStatus.OK.value())
                         .withBody(erstattVariablerITestFil("vedtak/$filnavn")),
@@ -426,10 +415,10 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.post(urlMatching("/tilgangskontroll/api/tilgang/sak")).willReturn(
+            WireMock.post(urlMatching("/tilgangskontroll/v2/api/tilgang/sak")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
-                    .withBody(result.toString()),
+                    .withBody(commonObjectmapper.writeValueAsString(TilgangskontrollResponse(result))),
             ),
         )
     }
@@ -439,14 +428,14 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
         personIdent: String? = null,
     ) {
-        val stub = WireMock.post(urlMatching("/tilgangskontroll/api/tilgang/person"))
+        val stub = WireMock.post(urlMatching("/tilgangskontroll/v2/api/tilgang/person"))
         if (!personIdent.isNullOrEmpty()) {
             stub.withRequestBody(ContainsPattern(personIdent))
         }
         stub.willReturn(
             aClosedJsonResponse()
                 .withStatus(status.value())
-                .withBody(result.toString()),
+                .withBody(commonObjectmapper.writeValueAsString(TilgangskontrollResponse(result))),
         )
         WireMock.stubFor(stub)
     }
@@ -456,14 +445,14 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
         personIdent: String? = null,
     ) {
-        val stub = WireMock.post(urlMatching("/tilgangskontroll/api/tilgang/person/sak"))
+        val stub = WireMock.post(urlMatching("/tilgangskontroll/v2/api/tilgang/person"))
         if (!personIdent.isNullOrEmpty()) {
             stub.withRequestBody(ContainsPattern(personIdent))
         }
         stub.willReturn(
             aClosedJsonResponse()
                 .withStatus(status.value())
-                .withBody(result.toString()),
+                .withBody(commonObjectmapper.writeValueAsString(TilgangskontrollResponse(result))),
         )
         WireMock.stubFor(stub)
     }
@@ -806,10 +795,10 @@ class StubUtils {
         status: HttpStatus = HttpStatus.OK,
     ) {
         WireMock.stubFor(
-            WireMock.post(urlMatching("/tilgangskontroll/api/tilgang/tema")).willReturn(
+            WireMock.post(urlMatching("/tilgangskontroll/v2/api/tilgang/tema")).willReturn(
                 aClosedJsonResponse()
                     .withStatus(status.value())
-                    .withBody(result.toString()),
+                    .withBody(commonObjectmapper.writeValueAsString(TilgangskontrollResponse(result))),
             ),
         )
     }

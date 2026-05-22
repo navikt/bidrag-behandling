@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v2.inntekt
 
 import com.fasterxml.jackson.annotation.JsonFormat
+import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
@@ -25,38 +26,38 @@ import java.time.LocalDate
 
 data class InntektDtoV2(
     val id: Long? = null,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val taMed: Boolean,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val rapporteringstype: Inntektsrapportering,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val beløp: BigDecimal,
-    @Schema(type = "string", format = "date", example = "2024-01-01")
+    @get:Schema(type = "string", format = "date", example = "2024-01-01")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoFom: LocalDate?,
-    @Schema(type = "string", format = "date", example = "2024-12-31")
+    @get:Schema(type = "string", format = "date", example = "2024-12-31")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate?,
-    @Schema(type = "string", format = "date", example = "2024-01-01")
+    @get:Schema(type = "string", format = "date", example = "2024-01-01")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val opprinneligFom: LocalDate?,
-    @Schema(type = "string", format = "date", example = "2024-12-31")
+    @get:Schema(type = "string", format = "date", example = "2024-12-31")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val opprinneligTom: LocalDate?,
-    @Schema(required = false, deprecated = true)
+    @get:Schema(required = false, deprecated = true)
     @Deprecated("Bruk gjelderRolleId")
     val ident: Personident?,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val gjelderRolleId: Long?,
-    @Schema(required = false, deprecated = true)
+    @get:Schema(required = false, deprecated = true)
     @Deprecated("Bruk gjelderBarnId")
     val gjelderBarn: Personident?,
     val gjelderBarnId: Long?,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val kilde: Kilde = Kilde.MANUELL,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val inntektsposter: Set<InntektspostDtoV2>,
-    @Schema(required = true)
+    @get:Schema(required = true)
     val inntektstyper: Set<Inntektstype> = emptySet(),
     val historisk: Boolean? = false,
 ) {
@@ -143,10 +144,11 @@ data class InntekterDtoV3(
     val kontantstøtte: Collection<InntektBarn> = emptySet(),
     val månedsinntekter: Set<InntektDtoV2> = emptySet(),
     val småbarnstillegg: Set<InntektDtoV2> = emptySet(),
-    @Schema(name = "årsinntekter")
+    @get:JsonProperty("årsinntekter")
+    @get:Schema(name = "årsinntekter")
     val årsinntekter: Set<InntektDtoV2> = emptySet(),
     val beregnetInntekt: BeregnetInntekterDto,
-    @Schema(description = "Saksbehandlers begrunnelser", deprecated = false)
+    @get:Schema(description = "Saksbehandlers begrunnelser", deprecated = false)
     val begrunnelse: BegrunnelseDto? = null,
     val begrunnelseFraOpprinneligVedtak: BegrunnelseDto? = null,
     val valideringsfeil: InntektValideringsfeilV2Dto,
@@ -158,16 +160,17 @@ data class InntekterDtoV2(
     val kontantstøtte: Set<InntektDtoV2> = emptySet(),
     val månedsinntekter: Set<InntektDtoV2> = emptySet(),
     val småbarnstillegg: Set<InntektDtoV2> = emptySet(),
-    @Schema(name = "årsinntekter")
+    @get:Schema(name = "årsinntekter")
+    @get:JsonProperty("årsinntekter")
     val årsinntekter: Set<InntektDtoV2> = emptySet(),
     val beregnetInntekter: List<BeregnetInntekterDto> = emptyList(),
-    @Schema(description = "Saksbehandlers begrunnelser", deprecated = false)
+    @get:Schema(description = "Saksbehandlers begrunnelser", deprecated = false)
     val begrunnelser: Set<BegrunnelseDto> = emptySet(),
     val begrunnelserFraOpprinneligVedtak: Set<BegrunnelseDto> = emptySet(),
     val valideringsfeil: InntektValideringsfeilDto = InntektValideringsfeilDto(),
 ) {
     @Deprecated("Bruk begrunnelser for begrunnelse per rolle")
-    @Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
+    @get:Schema(description = "Saksbehandlers begrunnelse", deprecated = true)
     val notat: BegrunnelseDto =
         if (begrunnelser.isNotEmpty()) {
             begrunnelser.find { Rolletype.BIDRAGSMOTTAKER == it.gjelder?.rolletype } ?: begrunnelser.first()
@@ -183,32 +186,32 @@ data class BeregnetInntekterDto(
 )
 
 data class InntektPerBarnDto(
-    @Schema(description = "Referanse til barn", deprecated = true) val inntektGjelderBarnIdent: Personident? = null,
-    @Schema(description = "Referanse til barn", deprecated = true) val inntektGjelderBarn: Rolle? = null,
-    @Schema(description = "Liste over summerte inntektsperioder") var summertInntektListe: List<DelberegningSumInntekt> = emptyList(),
+    @get:Schema(description = "Referanse til barn", deprecated = true) val inntektGjelderBarnIdent: Personident? = null,
+    @get:Schema(description = "Referanse til barn", deprecated = true) val inntektGjelderBarn: Rolle? = null,
+    @get:Schema(description = "Liste over summerte inntektsperioder") var summertInntektListe: List<DelberegningSumInntekt> = emptyList(),
 )
 
 data class OppdatereInntektBegrunnelseRespons(
-    @Schema(description = "Oppdatere begrunnelse for inntekt")
+    @get:Schema(description = "Oppdatere begrunnelse for inntekt")
     val oppdatertBegrunnelse: OppdatereBegrunnelse? = null,
 )
 
 data class OppdatereInntektBegrunnelseRequest(
-    @Schema(description = "Oppdatere begrunnelse for inntekt")
+    @get:Schema(description = "Oppdatere begrunnelse for inntekt")
     val oppdatereBegrunnelse: OppdatereBegrunnelse,
 )
 
 data class OppdatereInntektRequest(
-    @Schema(description = "Angi periodeinformasjon for inntekt")
+    @get:Schema(description = "Angi periodeinformasjon for inntekt")
     val oppdatereInntektsperiode: OppdaterePeriodeInntekt? = null,
     val oppdaterInnteksperiodeSkatteprosent: List<OppdatereSkatteprosentInntekt> = emptyList(),
-    @Schema(description = "Opprette eller oppdatere manuelt oppgitt inntekt")
+    @get:Schema(description = "Opprette eller oppdatere manuelt oppgitt inntekt")
     val oppdatereManuellInntekt: OppdatereManuellInntekt? = null,
-    @Schema(description = "Oppdatere begrunnelse for inntekt")
+    @get:Schema(description = "Oppdatere begrunnelse for inntekt")
     val oppdatereBegrunnelse: OppdatereBegrunnelse? = null,
-    @Schema(description = "Deprekert, bruk oppdatereBegrunnelse i stedet")
+    @get:Schema(description = "Deprekert, bruk oppdatereBegrunnelse i stedet")
     val oppdatereNotat: OppdatereBegrunnelse? = null,
-    @Schema(description = "Angi id til inntekt som skal slettes")
+    @get:Schema(description = "Angi id til inntekt som skal slettes")
     val sletteInntekt: Long? = null,
 ) {
     // TODO: Fjerne når migrering til oppdatereBegrunnelse er fullført
@@ -218,75 +221,75 @@ data class OppdatereInntektRequest(
 data class OppdatereInntektResponse(
     val inntekter: InntekterDtoV2,
     val inntekterV2: List<InntekterDtoRolle>,
-    @Schema(deprecated = true)
+    @get:Schema(deprecated = true)
     val gebyr: GebyrDto? = null,
     val gebyrV2: GebyrDtoV2? = null,
     val gebyrV3: GebyrDtoV3? = null,
     val beregnetGebyrErEndret: Boolean = false,
-    @Schema(description = "Periodiserte inntekter")
+    @get:Schema(description = "Periodiserte inntekter")
     val beregnetInntekter: List<BeregnetInntekterDto> = emptyList(),
-    @Schema(description = "Oppdatert begrunnelse")
+    @get:Schema(description = "Oppdatert begrunnelse")
     val begrunnelse: String? = null,
     val valideringsfeil: InntektValideringsfeilDto,
 ) {
     @Deprecated("Erstattes av begrunnelse")
-    @Schema(description = "Oppdatert begrunnelse", deprecated = true)
+    @get:Schema(description = "Oppdatert begrunnelse", deprecated = true)
     val notat: String? = begrunnelse
 }
 
 @Deprecated("Erstattes av OppdatereInntektRequest")
 @Schema(description = "Erstattes av OppdatereInntektRequest", deprecated = true)
 data class OppdatereInntekterRequestV2(
-    @Schema(description = "Angi periodeinformasjon for inntekter")
+    @get:Schema(description = "Angi periodeinformasjon for inntekter")
     val oppdatereInntektsperioder: Set<OppdaterePeriodeInntekt> = emptySet(),
-    @Schema(description = "Opprette eller oppdatere manuelt oppgitte inntekter")
+    @get:Schema(description = "Opprette eller oppdatere manuelt oppgitte inntekter")
     val oppdatereManuelleInntekter: Set<OppdatereManuellInntekt> = emptySet(),
-    @Schema(description = "Angi id til inntekter som skal slettes")
+    @get:Schema(description = "Angi id til inntekter som skal slettes")
     val sletteInntekter: Set<Long> = emptySet(),
     val notat: OppdatereBegrunnelse? = null,
 )
 
 data class OppdatereSkatteprosentInntekt(
-    @Schema(description = "Id til inntekt som skal oppdateres")
+    @get:Schema(description = "Id til inntekt som skal oppdateres")
     val id: Long,
     val skatteprosent: BigDecimal? = null,
 )
 
 data class OppdaterePeriodeInntekt(
-    @Schema(description = "Id til inntekt som skal oppdateres")
+    @get:Schema(description = "Id til inntekt som skal oppdateres")
     val id: Long,
-    @Schema(description = "Anig om inntekten skal inkluderes i beregning")
+    @get:Schema(description = "Anig om inntekten skal inkluderes i beregning")
     val taMedIBeregning: Boolean = false,
-    @Schema(description = "Angi periode inntekten skal dekke ved beregnings")
+    @get:Schema(description = "Angi periode inntekten skal dekke ved beregnings")
     val angittPeriode: Datoperiode? = null,
     val skatteprosent: BigDecimal? = null,
 )
 
 data class OppdatereManuellInntekt(
-    @Schema(
+    @get:Schema(
         description = "Inntektens databaseid. Oppgis ikke ved opprettelse av inntekt.",
         required = false,
     )
     val id: Long? = null,
-    @Schema(description = "Angir om inntekten skal inkluderes i beregning. Hvis ikke spesifisert inkluderes inntekten.")
+    @get:Schema(description = "Angir om inntekten skal inkluderes i beregning. Hvis ikke spesifisert inkluderes inntekten.")
     val taMed: Boolean = true,
-    @Schema(
+    @get:Schema(
         description = "Angir inntektens rapporteringstype.",
         required = true,
         example = "KONTANTSTØTTE",
     )
     val type: Inntektsrapportering,
-    @Schema(description = "Inntektens beløp i norske kroner", required = true)
+    @get:Schema(description = "Inntektens beløp i norske kroner", required = true)
     val beløp: BigDecimal,
     val beløpstype: InntektBeløpstype = InntektBeløpstype.ÅRSBELØP,
     val skatteprosent: BigDecimal? = null,
-    @Schema(type = "String", format = "date", example = "2024-01-01", nullable = false)
+    @get:Schema(type = "String", format = "date", example = "2024-01-01", nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoFom: LocalDate,
-    @Schema(type = "String", format = "date", example = "2024-12-31")
+    @get:Schema(type = "String", format = "date", example = "2024-12-31")
     @JsonFormat(pattern = "yyyy-MM-dd")
     val datoTom: LocalDate?,
-    @Schema(
+    @get:Schema(
         description = "Ident til personen inntekten gjenlder for.",
         type = "String",
         example = "12345678910",
@@ -295,7 +298,7 @@ data class OppdatereManuellInntekt(
     )
     @Deprecated("Bruk gjelderId")
     val ident: Personident?,
-    @Schema(
+    @get:Schema(
         description = "Id til rollen til personen inntekten gjenlder for.",
         type = "String",
         example = "12345678910",
@@ -303,7 +306,7 @@ data class OppdatereManuellInntekt(
         deprecated = true,
     )
     val gjelderId: Long? = null,
-    @Schema(
+    @get:Schema(
         description =
             "Ident til barnet en ytelse gjelder for. " +
                 "sBenyttes kun for ytelser som er koblet til ett spesifikt barn, f.eks kontantstøtte",
@@ -314,7 +317,7 @@ data class OppdatereManuellInntekt(
     )
     @Deprecated("Bruk gjelderBarnId")
     val gjelderBarn: Personident? = null,
-    @Schema(
+    @get:Schema(
         description =
             "Id til rollen til barnet en ytelse gjelder for. " +
                 "sBenyttes kun for ytelser som er koblet til ett spesifikt barn, f.eks kontantstøtte",
@@ -324,6 +327,6 @@ data class OppdatereManuellInntekt(
         deprecated = true,
     )
     val gjelderBarnId: Long? = null,
-    @Schema(description = "Spesifisere inntektstype for detaljpost")
+    @get:Schema(description = "Spesifisere inntektstype for detaljpost")
     val inntektstype: Inntektstype? = null,
 )
