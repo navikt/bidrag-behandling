@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.engangsbeløptype
 import no.nav.bidrag.behandling.transformers.vedtak.erOpphørEllerInnkreving
 import no.nav.bidrag.behandling.transformers.vedtak.stønadstype
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -193,10 +194,10 @@ class VedtakHendelseListener(
                                 vedtakId = vedtak.id.toString(),
                                 behandlingId = behandling.id!!.toString(),
                                 soknadFra = opprettForSøknad.søktAvType,
-                                stonadType = vedtak.stønadstype,
+                                stonadType = opprettForSøknad.behandlingstema?.tilStønadstype() ?: vedtak.stønadstype,
                                 engangsBelopType = if (vedtak.stønadstype == null) vedtak.engangsbeløptype else null,
                                 erFattetBeregnet = true,
-                                vedtakType = vedtak.type,
+                                vedtakType = opprettForSøknad.behandlingstype?.tilVedtakstype() ?: vedtak.type,
                             ),
                         roller = behandling.tilForsendelseRolleDto(sak, opprettForSøknad),
                     ),
