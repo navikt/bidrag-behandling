@@ -21,7 +21,7 @@
     <h2.version>2.3.232</h2.version>
     <shedlock.version>7.7.0</shedlock.version>
     <logback-encoder.version>9.0</logback-encoder.version>
-    <token-support.version>6.0.6</token-support.version>
+    <token-support.version>6.0.8</token-support.version>
     <springdoc.version>3.0.3</springdoc.version>
     <springframework-cloud.version>5.0.2</springframework-cloud.version>
     <kotest.version>5.9.1</kotest.version>
