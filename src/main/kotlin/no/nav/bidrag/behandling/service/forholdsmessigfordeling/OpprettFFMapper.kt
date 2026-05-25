@@ -48,6 +48,7 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriodeDto
 import no.nav.bidrag.transport.behandling.beregning.felles.HentSøknad
 import no.nav.bidrag.transport.behandling.beregning.felles.PartISøknad
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
@@ -126,6 +127,8 @@ fun Collection<SakKravhaver>.finnEldsteSøktFomDato(behandling: Behandling) =
                 it.åpneSøknader.filter { it.søknadFomDato != null }.map { it.søknadFomDato!! }
         } + listOf(behandling.søktFomDato)
     ).min()
+
+fun StønadPeriodeDto.løperBidragEtterDato(fraDato: YearMonth) = (periode.til == null || periode.til!! > fraDato)
 
 fun LøpendeBidragSakPeriode.løperBidragEtterDato(fraDato: YearMonth) = (periodeTil == null || periodeTil > fraDato)
 

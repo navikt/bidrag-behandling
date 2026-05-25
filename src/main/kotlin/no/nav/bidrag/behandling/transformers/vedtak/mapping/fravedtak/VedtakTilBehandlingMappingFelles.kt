@@ -1409,7 +1409,7 @@ private fun GrunnlagDto.tilRolle(
                     }
                 val personGrunnlag = grunnlagsliste.hentPerson(personIdent)?.personObjekt!!
                 val erRevurdering = søknader.all { it.behandlingstype?.erForholdsmessigFordeling == true }
-                val førsteSøknad = søknader.first()
+                val førsteSøknad = søknader.firstOrNull()
                 val bidragsmottakerIdent =
                     if (rolletype == Rolletype.BARN) {
                         when {
@@ -1421,7 +1421,7 @@ private fun GrunnlagDto.tilRolle(
                     }
 
                 ForholdsmessigFordelingRolle(
-                    tilhørerSak = stønadsendring?.sak?.verdi ?: førsteSøknad.saksnummer ?: behandling.saksnummer,
+                    tilhørerSak = stønadsendring?.sak?.verdi ?: førsteSøknad?.saksnummer ?: behandling.saksnummer,
                     behandlerenhet = behandling.behandlerEnhet,
                     delAvOpprinneligBehandling = personGrunnlag.delAvOpprinneligBehandling,
                     erRevurdering = erRevurdering,

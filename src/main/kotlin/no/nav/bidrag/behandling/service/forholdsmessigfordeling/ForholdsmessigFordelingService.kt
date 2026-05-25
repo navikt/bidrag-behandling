@@ -32,6 +32,8 @@ import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.transformers.behandling.erSamme
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
+import no.nav.bidrag.behandling.transformers.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato
+import no.nav.bidrag.behandling.transformers.finnesLøpendeBidragForRolle
 import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.løperPeriodeEtterBeregnTil
@@ -248,6 +250,14 @@ class ForholdsmessigFordelingService(
                 behandling.behandlingstypeForFF,
                 behandling.omgjøringsdetaljer,
             )
+
+        behandling.roller.forEach { rolle ->
+            val løpendeBidrag = løpendeBidraggsakerBP.find { rolle.erSammeRolle(it.kravhaver.verdi, it.type) }
+            rolle.forholdsmessigFordeling!!.løperBidragFra = løpendeBidrag?.periodeFra
+            rolle.forholdsmessigFordeling!!.løperBidragTil = løpendeBidrag?.periodeTil
+            rolle.forholdsmessigFordeling!!.harLøpendeBidrag =
+                løpendeBidrag?.løperBidragEtterDato(behandling.eldsteSøktFomDato.toYearMonth()) ?: false
+        }
 
         oppdaterSøknadStatuserForAlleRoller(behandling)
         slettDuplikatForholdsmessigFordelingSøknader(behandling)
@@ -469,10 +479,6 @@ class ForholdsmessigFordelingService(
         originalBM: String?,
     ) {
         val søknaderSøknadsbarn = relevanteKravhavere.filter { eksisterendeSøknadsbarn.contains(it.distinctKey) }.toSet()
-        val bidragssakerBpUtenÅpenBehandling =
-            relevanteKravhavere
-                .filter { !eksisterendeSøknadsbarn.contains(it.distinctKey) }
-                .filter { it.åpneSøknader.isEmpty() && it.åpneBehandlinger.isEmpty() }
 
         behandling.søknadsbarn.forEach { barn ->
             if (barn.forholdsmessigFordeling == null) {
@@ -494,7 +500,7 @@ class ForholdsmessigFordelingService(
                         emptyList()
                     } + behandling.tilFFBarnDetaljer()
 
-                val løpendeBidrag = bidragssakerBpUtenÅpenBehandling.find { bs -> bs.erSammePerson(barn.ident!!, barn.stønadstype) }
+                val løpendeBidrag = behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(barn)
                 barn.forholdsmessigFordeling =
                     ForholdsmessigFordelingRolle(
                         delAvOpprinneligBehandling = true,
@@ -504,8 +510,8 @@ class ForholdsmessigFordelingService(
                         bidragsmottaker = originalBM,
                         erRevurdering = false,
                         søknader = søknadsdetaljer.toMutableSet(),
-                        løperBidragFra = løpendeBidrag?.løperBidragFra,
-                        løperBidragTil = løpendeBidrag?.løperBidragTil,
+                        løperBidragFra = løpendeBidrag?.periode?.fom,
+                        løperBidragTil = løpendeBidrag?.periode?.til,
                         harLøpendeBidrag = løpendeBidrag?.løperBidragEtterDato(behandling.eldsteSøktFomDato.toYearMonth()) == true,
                     )
             }

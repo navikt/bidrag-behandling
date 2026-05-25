@@ -698,7 +698,7 @@ class BehandlingService(
                         saksnummer = request.saksnummer ?: behandling.saksnummer,
                     ),
                 )
-                forholdsmessigFordelingService.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
+//                forholdsmessigFordelingService.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
             } catch (e: Exception) {
                 log.error(e) { "Feil ved oppdatering av roller i behandling $behandlingId. Ruller tilbake til tidligere roller" }
                 // Fail fast so the transaction rolls back instead of flushing a broken persistence context.

@@ -374,6 +374,12 @@ class ForholdsmessigFordelingSøknadOpprettService(
                 behandlingstema = Behandlingstema.BIDRAG,
             )
         } else {
+            val behandlingstema =
+                if (stønadstype == Stønadstype.BIDRAG18AAR) {
+                    Behandlingstema.BIDRAG_18_ÅR
+                } else {
+                    Behandlingstema.BIDRAG
+                }
             val søknad =
                 bbmConsumer.opprettSøknader(
                     OpprettSøknadRequest(
@@ -383,12 +389,7 @@ class ForholdsmessigFordelingSøknadOpprettService(
                         behandlingstype = behandling.behandlingstypeForFF,
                         behandlerenhet = behandling.behandlerEnhet,
                         hovedsøknadsid = behandling.soknadsid,
-                        behandlingstema =
-                            if (stønadstype == Stønadstype.BIDRAG18AAR) {
-                                Behandlingstema.BIDRAG_18_ÅR
-                            } else {
-                                Behandlingstema.BIDRAG
-                            },
+                        behandlingstema = behandlingstema,
                         søknadFomDato = søktFomDato,
                         innkreving = medInnkreving,
                         barnListe = listOf(Barn(personident = barnIdent)),
@@ -398,12 +399,7 @@ class ForholdsmessigFordelingSøknadOpprettService(
             return ForholdsmessigFordelingSøknadBarn(
                 søktAvType = SøktAvType.NAV_BIDRAG,
                 behandlingstype = behandling.behandlingstypeForFF,
-                behandlingstema =
-                    if (stønadstype == Stønadstype.BIDRAG18AAR) {
-                        Behandlingstema.BIDRAG_18_ÅR
-                    } else {
-                        Behandlingstema.BIDRAG
-                    },
+                behandlingstema = behandlingstema,
                 mottattDato = LocalDate.now(),
                 søknadFomDato = søktFomDato,
                 søknadsid = søknad.søknadsid,
