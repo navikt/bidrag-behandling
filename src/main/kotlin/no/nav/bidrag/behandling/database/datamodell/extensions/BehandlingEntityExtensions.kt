@@ -143,6 +143,8 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
 
     fun getOpprettelseEllerOppdateringAvFFFeilet(): Boolean? = get(opprettelseEllerOppdateringAvFFFeilet)?.toBooleanStrictOrNull()
 
+    fun resetOpprettelseEllerOppdateringAvFFFeilet() = set(opprettelseEllerOppdateringAvFFFeilet, "false")
+
     private fun update(
         key: String,
         value: String?,

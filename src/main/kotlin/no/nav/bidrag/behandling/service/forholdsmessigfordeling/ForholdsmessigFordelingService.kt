@@ -469,11 +469,19 @@ class ForholdsmessigFordelingService(
                 behandling.omgjøringsdetaljer,
             )
 
+        // Feilhåndtering hvis opprettelse av FF feilet
+        if (behandling.metadata?.getOpprettelseEllerOppdateringAvFFFeilet() == true) {
+            oppdaterFFDetaljerPåSøknadsbarn(behandling, emptySet(), emptyList(), null)
+            val nyesteLøpendeBidragGrunnlag = sjekkBeregningKreverForholdsmessigFordeling(behandling).løpendeBidragBarn
+            val behandlerEnhet = kravhaverService.finnEnhetForBarnIBehandling(behandling)
+            overføringService.giSakTilgangTilEnhet(behandling, behandlerEnhet)
+            syncGebyrSøknadReferanse(behandling)
+            lagreOgOppdaterGrunnlag(behandling, nyesteLøpendeBidragGrunnlag)
+            behandling.metadata!!.resetOpprettelseEllerOppdateringAvFFFeilet()
+        }
+
         behandling.søknadsbarn.forEach { rolle ->
             val løpendeBidrag = løpendeBidraggsakerBP.find { rolle.erSammeRolle(it.kravhaver.verdi, it.type) }
-            if (rolle.forholdsmessigFordeling == null) {
-                oppdaterFFDetaljerPåSøknadsbarn(behandling, emptySet(), emptyList(), null)
-            }
             rolle.forholdsmessigFordeling!!.løperBidragFra = løpendeBidrag?.periodeFra
             rolle.forholdsmessigFordeling!!.løperBidragTil = løpendeBidrag?.periodeTil
             rolle.forholdsmessigFordeling!!.harLøpendeBidrag =
