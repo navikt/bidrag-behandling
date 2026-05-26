@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
 import no.nav.bidrag.behandling.dto.grunnlag.PersonStønad
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdatereVirkningstidspunkt
@@ -16,14 +17,10 @@ import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.transformers.behandling.finnRolle
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
-import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag
-import no.nav.bidrag.behandling.transformers.finnPeriodeLøperBidrag2
 import no.nav.bidrag.behandling.transformers.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato
 import no.nav.bidrag.behandling.transformers.harLøpendeBidragFørOpphørEllerLøpende
 import no.nav.bidrag.behandling.transformers.løperBidragFørOpphør
-import no.nav.bidrag.behandling.transformers.løperPeriodeEtterSøktFomDato
 import no.nav.bidrag.behandling.transformers.toRolle
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
@@ -34,7 +31,6 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadRequest
-import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadsBarnRequest
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.behandling.vedtak.Periode
 import no.nav.bidrag.transport.felles.toLocalDate
@@ -46,8 +42,11 @@ import java.time.LocalDate
 private val BARN_LOGGER = KotlinLogging.logger {}
 
 /**
- * Service for håndtering av barn-livssyklus i forholdsmessig fordeling.
- * Inkluderer opprettelse, sletting, oppdatering og feilregistrering av barn/roller i FF-behandlinger.
+ * Håndterer barn-livssyklus i forholdsmessig fordeling:
+ * - Legge til / slette barn fra FF-behandlinger
+ * - Status-overganger (søknadsbarn ↔ revurderingsbarn)
+ * - Feilregistrering av barn/søknader
+ * - Opphør og innkrevingsendringer
  */
 class ForholdsmessigFordelingBarnService(
     private val bbmConsumer: BidragBBMConsumer,
@@ -55,286 +54,11 @@ class ForholdsmessigFordelingBarnService(
     private val virkningstidspunktService: VirkningstidspunktService,
     private val underholdService: UnderholdService,
     private val kravhaverService: ForholdsmessigFordelingKravhaverService,
-    private val søknadOpprettService: ForholdsmessigFordelingSøknadOpprettService,
+    private val søknadService: ForholdsmessigFordelingSøknadService,
 ) {
-    /**
-     * Feilregistrerer et barn fra en FF-søknad og oppdaterer status på relaterte roller.
-     */
-    fun feilregistrerBarnFraFFSøknad(rolle: Rolle) {
-        val søknader =
-            rolle.forholdsmessigFordeling!!.søknaderUnderBehandling.filter {
-                it.behandlingstype == rolle.behandling.behandlingstypeForFF
-            }
-        val søknaderFeilregistrertBarn =
-            søknader.mapNotNull { søknad ->
-                val søknadsid = søknad.søknadsid!!
-                val personidentBarn = rolle.ident!!
-                BARN_LOGGER.info { "Feilregistrerer barn $personidentBarn fra søknad $søknadsid" }
-                try {
-                    bbmConsumer.feilregistrerSøknadsbarn(FeilregistrerSøknadsBarnRequest(søknadsid, personidentBarn))
-                    søknadsid
-                } catch (e: Exception) {
-                    BARN_LOGGER.error(e) { "Feil ved feilregistrering av søknad $søknadsid" }
-                    null
-                }
-            }
-        rolle.forholdsmessigFordeling!!
-            .søknaderUnderBehandling
-            .filter { søknaderFeilregistrertBarn.contains(it.søknadsid!!) }
-            .forEach {
-                it.status = Behandlingstatus.FEILREGISTRERT
-            }
-
-        val søknaderFeilregistrert =
-            søknaderFeilregistrertBarn.filter {
-                val søknad = bbmConsumer.hentSøknad(it)
-                søknad?.søknad?.behandlingStatusType == BehandlingStatusType.AVBRUTT
-            }
-
-        rolle.behandling.bidragsmottaker
-            ?.forholdsmessigFordeling
-            ?.søknaderUnderBehandling
-            ?.filter { søknaderFeilregistrert.contains(it.søknadsid!!) }
-            ?.forEach {
-                it.status = Behandlingstatus.FEILREGISTRERT
-            }
-
-        rolle.behandling.bidragspliktig
-            ?.forholdsmessigFordeling
-            ?.søknaderUnderBehandling
-            ?.filter { søknaderFeilregistrert.contains(it.søknadsid!!) }
-            ?.forEach {
-                it.status = Behandlingstatus.FEILREGISTRERT
-            }
-    }
-
-    /**
-     * Feilregistrerer en hel FF-søknad (brukes for revurderingssøknader).
-     */
-    fun feilregistrerFFSøknad(rolle: Rolle) {
-        if (rolle.forholdsmessigFordeling == null || !rolle.forholdsmessigFordeling!!.erRevurdering) return
-        rolle.forholdsmessigFordeling!!.søknaderUnderBehandling.forEach { søknad ->
-            val søknadsid = søknad.søknadsid
-            BARN_LOGGER.info { "Feilregistrerer søknad $søknadsid i behandling ${rolle.behandling.id}" }
-            try {
-                bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(søknadsid!!))
-                bbmConsumer.fjernSammeknytning(søknadsid)
-                søknad.status = Behandlingstatus.FEILREGISTRERT
-                if (rolle.bidragsmottaker != null) {
-                    rolle.bidragsmottaker!!
-                        .forholdsmessigFordeling!!
-                        .søknaderUnderBehandling
-                        .find { it.søknadsid == søknad.søknadsid }
-                        ?.let {
-                            it.status = Behandlingstatus.FEILREGISTRERT
-                        }
-                }
-            } catch (e: Exception) {
-                BARN_LOGGER.error(e) { "Feil ved feilregistrering av søknad $søknadsid i behandling ${rolle.behandling.id}" }
-            }
-        }
-    }
-
-    /**
-     * Feilregistrerer revurderingsbarn fra FF-søknad for barn som skal legges til på nytt.
-     */
-    fun feilregistrerRevurderingsbarnFraFFSøknad(
-        behandling: Behandling,
-        barn: List<OpprettRolleDto>,
-        stønadstype: Stønadstype?,
-    ) {
-        barn
-            .filter { it.rolletype == Rolletype.BARN }
-            .mapNotNull { nyRolle -> behandling.roller.find { it.erSammeRolle(nyRolle.ident!!.verdi, stønadstype) } }
-            .filter { it.forholdsmessigFordeling?.erRevurdering == true }
-            .forEach {
-                feilregistrerBarnFraFFSøknad(it)
-            }
-    }
-
-    /**
-     * Sjekker om behandlingen kan slettes (alle barn er revurderingsbarn).
-     */
-    fun kanBehandlingSlettes(
-        behandling: Behandling,
-        slettBarn: List<Rolle>,
-    ): Boolean {
-        val barnIkkeRevurdering =
-            behandling.søknadsbarn
-                .filter { slettBarn.isEmpty() || !slettBarn.mapNotNull { it.ident }.contains(it.ident) }
-                .filter { it.forholdsmessigFordeling == null || !it.forholdsmessigFordeling!!.erRevurdering }
-        return barnIkkeRevurdering.isEmpty()
-    }
-
-    /**
-     * Avslutter forholdsmessig fordeling ved å feilregistrere alle revurderingssøknader.
-     */
-    fun avsluttForholdsmessigFordeling(
-        behandling: Behandling,
-        slettBarn: List<Rolle>,
-    ) {
-        if (behandling.forholdsmessigFordeling == null) return
-        if (!behandling.forholdsmessigFordeling!!.erHovedbehandling) return
-
-        if (!kanBehandlingSlettes(behandling, slettBarn)) {
-            throw HttpClientErrorException(
-                HttpStatus.BAD_REQUEST,
-                "Kan ikke slette behandling fordi den inneholder flere søknader som ikke er revurdering",
-            )
-        }
-        behandling.søknadsbarn
-            .filter { it.forholdsmessigFordeling!!.erRevurdering }
-            .forEach {
-                feilregistrerFFSøknad(it)
-            }
-    }
-
-    /**
-     * Oppdaterer barn etter det er fattet innkrevingsvedtak.
-     * Feilregistrerer gammel søknad og oppretter ny med riktig innkrevingsstatus.
-     */
-    fun oppdaterBarnEtterInnkrevingsvedtak(
-        behandling: Behandling,
-        barn: PersonStønad,
-    ) {
-        val rolle = behandling.søknadsbarn.find { it.erSammeRolle(barn.personident!!.verdi, barn.stønadstype) } ?: return
-        val relevanteKravhavere = kravhaverService.hentAlleRelevanteKravhavere(behandling)
-
-        val rollerRevurderingsbarn =
-            behandling.søknadsbarn.filter { it.erRevurderingsbarn }.map {
-                PersonStønad(
-                    it.personident,
-                    it.stønadstype,
-                )
-            }
-        if (rolle.erRevurderingsbarn) {
-            val søknad = rolle.forholdsmessigFordeling!!.eldsteSøknad
-            if (søknad == null || !søknad.innkreving) {
-                feilregistrerBarnFraFFSøknad(rolle)
-                søknadOpprettService.opprettRollerOgRevurderingssøknadForSak(
-                    behandling,
-                    behandling.saksnummer,
-                    relevanteKravhavere.filter { it.erLik(rolle.ident!!, rolle.stønadstype) },
-                    behandling.behandlerEnhet,
-                    rolle.stønadstype,
-                    søknad?.søknadFomDato ?: rolle.forholdsmessigFordeling?.sisteOpprettetSøknad?.søknadFomDato
-                        ?: relevanteKravhavere
-                            .filter {
-                                rollerRevurderingsbarn.contains(PersonStønad(Personident(it.kravhaver), it.stønadstype))
-                            }.finnSøktFomRevurderingSøknad(behandling),
-                    true,
-                )
-            }
-        }
-    }
-
-    /**
-     * Sletter revurderingsbarn som ikke lenger har løpende bidrag eller privat avtale.
-     *
-     * Case 1: Slett revurderingsbarn hvis barnet har ingen bidrag som innkreves og privat avtalen slettes
-     * Case 2: Slett revurderingsbarn hvis bidraget opphøres før søkt fom dato på behandlingen.
-     */
-    fun slettRevurderingsbarn(
-        behandling: Behandling,
-        rolle: Rolle,
-    ) {
-        val rolleHarLøpendeBidrag = rolle.harLøpendeBidragFørOpphørEllerLøpende()
-        if (!rolle.erRevurderingsbarn || rolleHarLøpendeBidrag) return
-
-        val eldsteSøknad = rolle.forholdsmessigFordeling!!.eldsteSøknad
-        feilregistrerBarnFraFFSøknad(rolle)
-        behandlingService.slettRolleFraBehandling(behandling, rolle)
-        behandling.roller.remove(rolle)
-        secureLogger.info { "Slettet revurderingsbarn ${rolle.ident} fra behandling ${behandling.id}" }
-        behandlingService.sendOppdatertHendelse(behandling.id!!, false)
-        // Opprett forsendelse for varsling av at revurdering er trukket for barn
-        søknadOpprettService.opprettForsendelseForNySøknad(
-            rolle.saksnummer,
-            behandling,
-            rolle.bidragsmottaker!!.ident!!,
-            eldsteSøknad!!,
-            listOf(SakKravhaver(kravhaver = rolle.ident!!, saksnummer = rolle.saksnummer, stønadstype = rolle.stønadstype)),
-        )
-    }
-
-    /**
-     * Oppdaterer revurderingsbarn fra innkrevingssøknad til uten innkreving.
-     */
-    fun oppdaterRevurderingsbarnFraInnkrevingTilUtenInnkreving(
-        behandling: Behandling,
-        rolle: Rolle,
-    ) {
-        if (rolle.erRevurderingsbarn) {
-            val relevanteKravhavere = kravhaverService.hentAlleRelevanteKravhavere(behandling)
-            val søknad = rolle.forholdsmessigFordeling!!.eldsteSøknad
-            if (søknad == null || søknad.innkreving) {
-                feilregistrerBarnFraFFSøknad(rolle)
-                søknadOpprettService.opprettRollerOgRevurderingssøknadForSak(
-                    behandling,
-                    behandling.saksnummer,
-                    relevanteKravhavere.filter { it.erLik(rolle.ident!!, rolle.stønadstype) },
-                    behandling.behandlerEnhet,
-                    rolle.stønadstype,
-                    søknad?.søknadFomDato ?: rolle.forholdsmessigFordeling?.sisteOpprettetSøknad?.søknadFomDato!!,
-                    true,
-                )
-            }
-        }
-    }
-
-    /**
-     * Oppdaterer barn etter opphør av bidrag.
-     * Håndterer oppdatering av virkningstidspunkt, opphørsdato, og evt. sletting av revurderingsbarn.
-     */
-    fun oppdaterBarnEtterOpphør(
-        behandling: Behandling,
-        barnIdent: Personident,
-        stønadstype: Stønadstype?,
-        periode: Periode,
-    ) {
-        val rolle = behandling.søknadsbarn.find { it.erSammeRolle(barnIdent.verdi, stønadstype) } ?: return
-        val opphørsdato = periode.periode.fom.toLocalDate()
-
-        if (rolle.virkningstidspunkt != null && rolle.virkningstidspunkt!! > opphørsdato) {
-            val nyVirkning = if (opphørsdato > behandling.eldsteVirkningstidspunkt) behandling.eldsteVirkningstidspunkt else opphørsdato
-            virkningstidspunktService.oppdaterVirkningstidspunkt(
-                rolle.id,
-                nyVirkning,
-                behandling,
-                true,
-                rekalkulerOpplysningerVedEndring = false,
-            )
-        }
-        virkningstidspunktService.oppdaterOpphørsdato(
-            OppdaterOpphørsdatoRequestDto(
-                idRolle = rolle.id,
-                opphørsdato = periode.periode.fom.toLocalDate(),
-            ),
-            behandling,
-            tvingEndring = true,
-        )
-
-        if (!rolle.løperBidragFørOpphør()) {
-            if (rolle.erRevurderingsbarn) {
-                secureLogger.info {
-                    "Sletter revurderingsbarn ${rolle.personident?.verdi} " +
-                        "fra behandling ${behandling.id} etter det er fattet opphør av bidrag før søkt fom dato. " +
-                        "Barnet har ingen løpende bidrag lenger og trenger derfor ikke å være revurderingsbarn"
-                }
-                slettRevurderingsbarn(behandling, rolle)
-            } else {
-                virkningstidspunktService.oppdaterAvslagÅrsak(
-                    behandling,
-                    OppdatereVirkningstidspunkt(
-                        årsak = null,
-                        avslag = Resultatkode.fraKode(periode.resultatkode),
-                    ),
-                    tvingEndring = true,
-                )
-                oppdaterRevurderingsbarnFraInnkrevingTilUtenInnkreving(behandling, rolle)
-            }
-        }
-    }
+    // ═══════════════════════════════════════════════════════════════════
+    // region Legg til / slett barn
+    // ═══════════════════════════════════════════════════════════════════
 
     /**
      * Legger til eller sletter barn fra en behandling som er i FF.
@@ -418,6 +142,131 @@ class ForholdsmessigFordelingBarnService(
         slettBarnEllerBehandling(rollerSomSkalSlettes, request.behandling, request.søknadsid)
     }
 
+    /**
+     * Sletter barn fra behandling, eller sletter hele behandlingen hvis alle barn er revurderingsbarn.
+     */
+    fun slettBarnEllerBehandling(
+        slettBarn: List<Rolle>,
+        behandling: Behandling,
+        søknadsid: Long,
+        søknadBleSlettet: Boolean = false,
+    ) {
+        if (kanBehandlingSlettes(behandling, slettBarn)) {
+            avsluttForholdsmessigFordeling(behandling, slettBarn)
+            behandlingService.logiskSlettBehandling(behandling)
+            bbmConsumer.fjernSammeknytningHovedsøknad(behandling.soknadsid!!)
+        } else {
+            slettBarn.forEach { slettBarnFraBehandlingFF(it, behandling, søknadsid) }
+            behandlingService.sendOppdatertHendelse(behandling.id!!, false)
+        }
+        if (søknadBleSlettet) {
+            bbmConsumer.fjernSammeknytning(søknadsid)
+        }
+    }
+
+    /**
+     * Sletter revurderingsbarn som ikke lenger har løpende bidrag eller privat avtale.
+     */
+    fun slettRevurderingsbarn(
+        behandling: Behandling,
+        rolle: Rolle,
+    ) {
+        val rolleHarLøpendeBidrag = rolle.harLøpendeBidragFørOpphørEllerLøpende()
+        if (!rolle.erRevurderingsbarn || rolleHarLøpendeBidrag) return
+
+        val eldsteSøknad = rolle.forholdsmessigFordeling!!.eldsteSøknad
+        feilregistrerBarnFraFFSøknad(rolle)
+        behandlingService.slettRolleFraBehandling(behandling, rolle)
+        behandling.roller.remove(rolle)
+        secureLogger.info { "Slettet revurderingsbarn ${rolle.ident} fra behandling ${behandling.id}" }
+        behandlingService.sendOppdatertHendelse(behandling.id!!, false)
+        søknadService.opprettForsendelseForNySøknad(
+            rolle.saksnummer,
+            behandling,
+            rolle.bidragsmottaker!!.ident!!,
+            eldsteSøknad!!,
+            listOf(SakKravhaver(kravhaver = rolle.ident!!, saksnummer = rolle.saksnummer, stønadstype = rolle.stønadstype)),
+        )
+    }
+
+    /**
+     * Avslutter forholdsmessig fordeling ved å feilregistrere alle revurderingssøknader.
+     */
+    fun avsluttForholdsmessigFordeling(
+        behandling: Behandling,
+        slettBarn: List<Rolle>,
+    ) {
+        if (behandling.forholdsmessigFordeling == null) return
+        if (!behandling.forholdsmessigFordeling!!.erHovedbehandling) return
+
+        if (!kanBehandlingSlettes(behandling, slettBarn)) {
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Kan ikke slette behandling fordi den inneholder flere søknader som ikke er revurdering",
+            )
+        }
+        behandling.søknadsbarn
+            .filter { it.forholdsmessigFordeling!!.erRevurdering }
+            .forEach {
+                feilregistrerFFSøknad(it)
+            }
+    }
+
+    private fun kanBehandlingSlettes(
+        behandling: Behandling,
+        slettBarn: List<Rolle>,
+    ): Boolean {
+        val barnIkkeRevurdering =
+            behandling.søknadsbarn
+                .filter { slettBarn.isEmpty() || !slettBarn.mapNotNull { it.ident }.contains(it.ident) }
+                .filter { it.forholdsmessigFordeling == null || !it.forholdsmessigFordeling!!.erRevurdering }
+        return barnIkkeRevurdering.isEmpty()
+    }
+
+    private fun slettBarnFraBehandlingFF(
+        barn: Rolle,
+        behandling: Behandling,
+        søknadsid: Long,
+    ) {
+        barn.fjernSøknad(søknadsid)
+        barn.fjernGebyr(søknadsid)
+        if (barn.forholdsmessigFordeling!!.søknaderUnderBehandling.isNotEmpty()) {
+            barn.innkrevingstype = if (barn.harSøknadMedInnkreving) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
+            BARN_LOGGER.info {
+                "Barnet er koblet til flere søknader ${barn.forholdsmessigFordeling!!.søknader}" +
+                    " etter den ble slettet fra søknad $søknadsid. Gjør ingen endring. Behandlingid = ${behandling.id}"
+            }
+            return
+        }
+        BARN_LOGGER.info { "Sletter barn ${barn.ident} fra behandling ${behandling.id} og lager ny revurderingsøknad" }
+        barn.forholdsmessigFordeling!!.erRevurdering = true
+
+        val løpendeBidrag = behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(barn)
+        val skalOppretteFFSøknadMedInnkreving =
+            løpendeBidrag?.løperBidragEtterDato(behandling.eldsteSøktFomDato.toYearMonth()) == true
+
+        val søktFomDato = LocalDate.now().plusMonths(1).withDayOfMonth(1)
+
+        val søknad =
+            søknadService.leggTilEllerOpprettSøknadForRevurderingsbarn(
+                behandling,
+                barn.ident!!,
+                barn.stønadstype,
+                barn.forholdsmessigFordeling!!.tilhørerSak,
+                søktFomDato,
+                skalOppretteFFSøknadMedInnkreving,
+            )
+        barn.forholdsmessigFordeling!!.søknader.add(søknad)
+        barn.årsak = VirkningstidspunktÅrsakstype.REVURDERING_MÅNEDEN_ETTER
+        barn.innkrevingstype = if (skalOppretteFFSøknadMedInnkreving) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
+        virkningstidspunktService.oppdaterVirkningstidspunkt(
+            barn.id,
+            søktFomDato.withDayOfMonth(1),
+            behandling,
+            forrigeVirkningstidspunkt = behandling.eldsteVirkningstidspunkt,
+        )
+    }
+
     private fun opprettNyRolleForBarn(
         nyRolle: OpprettRolleDto,
         request: OppdaterBarnFraFFRequest,
@@ -462,7 +311,7 @@ class ForholdsmessigFordelingBarnService(
         ffRolleDetaljer: ForholdsmessigFordelingRolle,
         nyRolle: OpprettRolleDto,
         request: OppdaterBarnFraFFRequest,
-        søknadsdetaljerBarn: no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn,
+        søknadsdetaljerBarn: ForholdsmessigFordelingSøknadBarn,
         stønadstypeBeregnet: Stønadstype?,
         rollerSomSkalLeggesTil: MutableSet<Rolle>,
     ) {
@@ -514,73 +363,215 @@ class ForholdsmessigFordelingBarnService(
         rollerSomSkalLeggesTil.add(eksisterendeRolle)
     }
 
-    /**
-     * Sletter barn fra behandling, eller sletter hele behandlingen hvis alle barn er revurderingsbarn.
-     */
-    fun slettBarnEllerBehandling(
-        slettBarn: List<Rolle>,
-        behandling: Behandling,
-        søknadsid: Long,
-        søknadBleSlettet: Boolean = false,
-    ) {
-        if (kanBehandlingSlettes(behandling, slettBarn)) {
-            avsluttForholdsmessigFordeling(behandling, slettBarn)
-            behandlingService.logiskSlettBehandling(behandling)
-            bbmConsumer.fjernSammeknytningHovedsøknad(behandling.soknadsid!!)
-        } else {
-            slettBarn.forEach { slettBarnFraBehandlingFF(it, behandling, søknadsid) }
-            behandlingService.sendOppdatertHendelse(behandling.id!!, false)
-        }
-        if (søknadBleSlettet) {
-            bbmConsumer.fjernSammeknytning(søknadsid)
-        }
-    }
+    // endregion
+
+    // ═══════════════════════════════════════════════════════════════════
+    // region Oppdatering (innkreving, opphør)
+    // ═══════════════════════════════════════════════════════════════════
 
     /**
-     * Sletter et enkelt barn fra FF-behandling og oppretter ny revurderingssøknad.
+     * Oppdaterer barn etter det er fattet innkrevingsvedtak.
+     * Feilregistrerer gammel søknad og oppretter ny med riktig innkrevingsstatus.
      */
-    fun slettBarnFraBehandlingFF(
-        barn: Rolle,
+    fun oppdaterBarnEtterInnkrevingsvedtak(
         behandling: Behandling,
-        søknadsid: Long,
+        barn: PersonStønad,
     ) {
-        barn.fjernSøknad(søknadsid)
-        barn.fjernGebyr(søknadsid)
-        if (barn.forholdsmessigFordeling!!.søknaderUnderBehandling.isNotEmpty()) {
-            barn.innkrevingstype = if (barn.harSøknadMedInnkreving) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
-            BARN_LOGGER.info {
-                "Barnet er koblet til flere søknader ${barn.forholdsmessigFordeling!!.søknader}" +
-                    " etter den ble slettet fra søknad $søknadsid. Gjør ingen endring. Behandlingid = ${behandling.id}"
+        val rolle = behandling.søknadsbarn.find { it.erSammeRolle(barn.personident!!.verdi, barn.stønadstype) } ?: return
+        val relevanteKravhavere = kravhaverService.hentAlleRelevanteKravhavere(behandling)
+
+        val rollerRevurderingsbarn =
+            behandling.søknadsbarn.filter { it.erRevurderingsbarn }.map {
+                PersonStønad(
+                    it.personident,
+                    it.stønadstype,
+                )
             }
-            return
+        if (rolle.erRevurderingsbarn) {
+            val søknad = rolle.forholdsmessigFordeling!!.eldsteSøknad
+            if (søknad == null || !søknad.innkreving) {
+                feilregistrerBarnFraFFSøknad(rolle)
+                søknadService.opprettRollerOgRevurderingssøknadForSak(
+                    behandling,
+                    behandling.saksnummer,
+                    relevanteKravhavere.filter { it.erLik(rolle.ident!!, rolle.stønadstype) },
+                    behandling.behandlerEnhet,
+                    rolle.stønadstype,
+                    søknad?.søknadFomDato ?: rolle.forholdsmessigFordeling?.sisteOpprettetSøknad?.søknadFomDato
+                        ?: relevanteKravhavere
+                            .filter {
+                                rollerRevurderingsbarn.contains(PersonStønad(Personident(it.kravhaver), it.stønadstype))
+                            }.finnSøktFomRevurderingSøknad(behandling),
+                    true,
+                )
+            }
         }
-        BARN_LOGGER.info { "Sletter barn ${barn.ident} fra behandling ${behandling.id} og lager ny revurderingsøknad" }
-        barn.forholdsmessigFordeling!!.erRevurdering = true
-
-        val løpendeBidrag = behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(barn)
-        val skalOppretteFFSøknadMedInnkreving =
-            løpendeBidrag?.løperBidragEtterDato(behandling.eldsteSøktFomDato.toYearMonth()) == true
-
-        val søktFomDato = LocalDate.now().plusMonths(1).withDayOfMonth(1)
-
-        val søknad =
-            søknadOpprettService.leggTilEllerOpprettSøknadForRevurderingsbarn(
-                behandling,
-                barn.ident!!,
-                barn.stønadstype,
-                barn.forholdsmessigFordeling!!.tilhørerSak,
-                søktFomDato,
-                skalOppretteFFSøknadMedInnkreving,
-            )
-        barn.forholdsmessigFordeling!!.søknader.add(søknad)
-        // Oppdater virkning og årsak slik at det matcher med revurderingsøknaden
-        barn.årsak = VirkningstidspunktÅrsakstype.REVURDERING_MÅNEDEN_ETTER
-        barn.innkrevingstype = if (skalOppretteFFSøknadMedInnkreving) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
-        virkningstidspunktService.oppdaterVirkningstidspunkt(
-            barn.id,
-            søktFomDato.withDayOfMonth(1),
-            behandling,
-            forrigeVirkningstidspunkt = behandling.eldsteVirkningstidspunkt,
-        )
     }
+
+    /**
+     * Oppdaterer revurderingsbarn fra innkrevingssøknad til uten innkreving.
+     */
+    fun oppdaterRevurderingsbarnFraInnkrevingTilUtenInnkreving(
+        behandling: Behandling,
+        rolle: Rolle,
+    ) {
+        if (rolle.erRevurderingsbarn) {
+            val relevanteKravhavere = kravhaverService.hentAlleRelevanteKravhavere(behandling)
+            val søknad = rolle.forholdsmessigFordeling!!.eldsteSøknad
+            if (søknad == null || søknad.innkreving) {
+                feilregistrerBarnFraFFSøknad(rolle)
+                søknadService.opprettRollerOgRevurderingssøknadForSak(
+                    behandling,
+                    behandling.saksnummer,
+                    relevanteKravhavere.filter { it.erLik(rolle.ident!!, rolle.stønadstype) },
+                    behandling.behandlerEnhet,
+                    rolle.stønadstype,
+                    søknad?.søknadFomDato ?: rolle.forholdsmessigFordeling?.sisteOpprettetSøknad?.søknadFomDato!!,
+                    true,
+                )
+            }
+        }
+    }
+
+    /**
+     * Oppdaterer barn etter opphør av bidrag.
+     * Håndterer oppdatering av virkningstidspunkt, opphørsdato, og evt. sletting av revurderingsbarn.
+     */
+    fun oppdaterBarnEtterOpphør(
+        behandling: Behandling,
+        barnIdent: Personident,
+        stønadstype: Stønadstype?,
+        periode: Periode,
+    ) {
+        val rolle = behandling.søknadsbarn.find { it.erSammeRolle(barnIdent.verdi, stønadstype) } ?: return
+        val opphørsdato = periode.periode.fom.toLocalDate()
+
+        if (rolle.virkningstidspunkt != null && rolle.virkningstidspunkt!! > opphørsdato) {
+            val nyVirkning = if (opphørsdato > behandling.eldsteVirkningstidspunkt) behandling.eldsteVirkningstidspunkt else opphørsdato
+            virkningstidspunktService.oppdaterVirkningstidspunkt(
+                rolle.id,
+                nyVirkning,
+                behandling,
+                true,
+                rekalkulerOpplysningerVedEndring = false,
+            )
+        }
+        virkningstidspunktService.oppdaterOpphørsdato(
+            OppdaterOpphørsdatoRequestDto(
+                idRolle = rolle.id,
+                opphørsdato = periode.periode.fom.toLocalDate(),
+            ),
+            behandling,
+            tvingEndring = true,
+        )
+
+        if (!rolle.løperBidragFørOpphør()) {
+            if (rolle.erRevurderingsbarn) {
+                secureLogger.info {
+                    "Sletter revurderingsbarn ${rolle.personident?.verdi} " +
+                        "fra behandling ${behandling.id} etter det er fattet opphør av bidrag før søkt fom dato. " +
+                        "Barnet har ingen løpende bidrag lenger og trenger derfor ikke å være revurderingsbarn"
+                }
+                slettRevurderingsbarn(behandling, rolle)
+            } else {
+                virkningstidspunktService.oppdaterAvslagÅrsak(
+                    behandling,
+                    OppdatereVirkningstidspunkt(
+                        årsak = null,
+                        avslag = Resultatkode.fraKode(periode.resultatkode),
+                    ),
+                    tvingEndring = true,
+                )
+                oppdaterRevurderingsbarnFraInnkrevingTilUtenInnkreving(behandling, rolle)
+            }
+        }
+    }
+
+    // endregion
+
+    // ═══════════════════════════════════════════════════════════════════
+    // region Feilregistrering
+    // ═══════════════════════════════════════════════════════════════════
+
+    /**
+     * Feilregistrerer et barn fra en FF-søknad og oppdaterer status på relaterte roller.
+     */
+    fun feilregistrerBarnFraFFSøknad(rolle: Rolle) {
+        val søknader =
+            rolle.forholdsmessigFordeling!!.søknaderUnderBehandling.filter {
+                it.behandlingstype == rolle.behandling.behandlingstypeForFF
+            }
+        val søknaderFeilregistrertBarn =
+            søknader.mapNotNull { søknad ->
+                søknadService.feilregistrerBarnFraSøknad(rolle, søknad.søknadsid!!)
+            }
+
+        val søknaderFeilregistrert =
+            søknaderFeilregistrertBarn.filter {
+                val søknad = bbmConsumer.hentSøknad(it)
+                søknad?.søknad?.behandlingStatusType == BehandlingStatusType.AVBRUTT
+            }
+
+        rolle.behandling.bidragsmottaker
+            ?.forholdsmessigFordeling
+            ?.søknaderUnderBehandling
+            ?.filter { søknaderFeilregistrert.contains(it.søknadsid!!) }
+            ?.forEach {
+                it.status = Behandlingstatus.FEILREGISTRERT
+            }
+
+        rolle.behandling.bidragspliktig
+            ?.forholdsmessigFordeling
+            ?.søknaderUnderBehandling
+            ?.filter { søknaderFeilregistrert.contains(it.søknadsid!!) }
+            ?.forEach {
+                it.status = Behandlingstatus.FEILREGISTRERT
+            }
+    }
+
+    /**
+     * Feilregistrerer en hel FF-søknad (brukes for revurderingssøknader).
+     */
+    fun feilregistrerFFSøknad(rolle: Rolle) {
+        if (rolle.forholdsmessigFordeling == null || !rolle.forholdsmessigFordeling!!.erRevurdering) return
+        rolle.forholdsmessigFordeling!!.søknaderUnderBehandling.forEach { søknad ->
+            val søknadsid = søknad.søknadsid
+            BARN_LOGGER.info { "Feilregistrerer søknad $søknadsid i behandling ${rolle.behandling.id}" }
+            try {
+                bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(søknadsid!!))
+                bbmConsumer.fjernSammeknytning(søknadsid)
+                søknad.status = Behandlingstatus.FEILREGISTRERT
+                if (rolle.bidragsmottaker != null) {
+                    rolle.bidragsmottaker!!
+                        .forholdsmessigFordeling!!
+                        .søknaderUnderBehandling
+                        .find { it.søknadsid == søknad.søknadsid }
+                        ?.let {
+                            it.status = Behandlingstatus.FEILREGISTRERT
+                        }
+                }
+            } catch (e: Exception) {
+                BARN_LOGGER.error(e) { "Feil ved feilregistrering av søknad $søknadsid i behandling ${rolle.behandling.id}" }
+            }
+        }
+    }
+
+    /**
+     * Feilregistrerer revurderingsbarn fra FF-søknad for barn som skal legges til på nytt.
+     */
+    fun feilregistrerRevurderingsbarnFraFFSøknad(
+        behandling: Behandling,
+        barn: List<OpprettRolleDto>,
+        stønadstype: Stønadstype?,
+    ) {
+        barn
+            .filter { it.rolletype == Rolletype.BARN }
+            .mapNotNull { nyRolle -> behandling.roller.find { it.erSammeRolle(nyRolle.ident!!.verdi, stønadstype) } }
+            .filter { it.forholdsmessigFordeling?.erRevurdering == true }
+            .forEach {
+                feilregistrerBarnFraFFSøknad(it)
+            }
+    }
+
+    // endregion
 }

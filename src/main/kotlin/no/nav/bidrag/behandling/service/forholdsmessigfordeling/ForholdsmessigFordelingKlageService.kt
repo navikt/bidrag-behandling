@@ -37,7 +37,7 @@ class ForholdsmessigFordelingKlageService(
     private val underholdService: UnderholdService,
     private val virkningstidspunktService: VirkningstidspunktService,
     private val kravhaverService: ForholdsmessigFordelingKravhaverService,
-    private val søknadOpprettService: ForholdsmessigFordelingSøknadOpprettService,
+    private val søknadService: ForholdsmessigFordelingSøknadService,
     private val overføringService: ForholdsmessigFordelingOverføringService,
 ) {
     // Feilhåndtering - slett eller gjenopprett klagesøknader basert på påklaget søknad
@@ -327,7 +327,7 @@ class ForholdsmessigFordelingKlageService(
             }.forEach { (saksnummerLøpendeBidrag, løpendebidragssaker) ->
                 val saksnummer = saksnummerLøpendeBidrag.first
                 val søktFomDato = saksnummerLøpendeBidrag.third
-                søknadOpprettService.opprettRollerOgRevurderingssøknadForSak(
+                søknadService.opprettRollerOgRevurderingssøknadForSak(
                     behandling,
                     saksnummer,
                     løpendebidragssaker,
