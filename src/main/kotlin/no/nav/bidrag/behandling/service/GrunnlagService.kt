@@ -243,6 +243,11 @@ class GrunnlagService(
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
         val scope = CoroutineScope(Dispatchers.IO + SecurityCoroutineContext() + RequestContextAsyncContext())
 
+        // TODO: Synkronisering av FF skal skje hyppigere enn grunnlagsinnhenting men ikke hver gang
+        if (behandling.erIForholdsmessigFordeling && foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())) {
+            ffService!!.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
+        }
+
         if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhenting.toLong())) {
             sjekkOgOppdaterIdenter(behandling)
             val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()

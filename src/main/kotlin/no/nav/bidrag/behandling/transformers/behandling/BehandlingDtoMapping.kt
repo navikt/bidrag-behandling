@@ -20,7 +20,6 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
-import no.nav.bidrag.behandling.dto.v1.behandling.RolleSøknadDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
@@ -32,6 +31,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.SøknadDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.behandling.innhentesForRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektBarn
+import no.nav.bidrag.behandling.dto.v2.inntekt.InntektDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektPerBarnDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV3
@@ -573,15 +573,6 @@ fun Rolle.tilDto() =
         beregnTilDato = finnBeregnTil(),
         harLøpendeForskudd = behandling.finnesLøpendeForskuddForRolle(this),
         harLøpendeBidrag = behandling.finnesLøpendeBidragForRolle(this),
-        søknader =
-            søknader.filter { it.søknadsid != null }.map {
-                RolleSøknadDto(
-                    it.søknadsid!!,
-                    it.søktAvType,
-                    it.enhet,
-                    it.behandlingstype?.tilVedtakstype() ?: behandling.vedtakstype,
-                )
-            },
         bidragsmottaker =
             if (rolletype == Rolletype.BARN) {
                 forholdsmessigFordeling?.bidragsmottaker ?: behandling.bidragsmottaker?.ident
@@ -667,99 +658,187 @@ fun Set<Grunnlag>.tilBarnetilsynAktiveGrunnlagDto(): StønadTilBarnetilsynAktive
 fun Behandling.tilInntektDtoV3(
     gjeldendeAktiveGrunnlagsdata: List<Grunnlag> = emptyList(),
     rolle: Rolle,
-) = InntekterDtoV3(
-    barnetillegg =
+    beregnetInntektForRolle: List<InntektPerBarnDto>? = null,
+    valideringsfeilForRolle: InntektValideringsfeilV2Dto? = null,
+    inntektsnotat: String? = null,
+    inntektsnotatFraOpprinneligVedtak: String? = null,
+    månedsinntekterForRolle: Set<InntektDtoV2>? = null,
+    barnetilleggInntekterForRolle: List<Inntekt>? = null,
+    kontantstøtteInntekterForRolle: List<Inntekt>? = null,
+    roleInntekterCache: RoleInntekterCache? = null,
+): InntekterDtoV3 {
+    val sorterteBarn =
         rolle.barn
             .sortedWith(
                 sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
             ).filter { it.kreverGrunnlagForBeregning }
-            .map { barn ->
-                InntektBarn(
-                    gjelderBarn = barn.tilDto(),
-                    inntekter =
-                        inntekter
-                            .filter { it.type == Inntektsrapportering.BARNETILLEGG }
-                            .filter { it.inntektGjelderBarn(barn) && it.erSammeRolle(rolle) }
-                            .sorterEtterDatoOgBarn()
-                            .ekskluderYtelserFørVirkningstidspunkt()
-                            .tilInntektDtoV2()
-                            .toSet(),
-                )
-            },
-    utvidetBarnetrygd =
-        inntekter
-            .filter { it.type == Inntektsrapportering.UTVIDET_BARNETRYGD }
-            .filter { it.erSammeRolle(rolle) }
-            .sorterEtterDato()
-            .ekskluderYtelserFørVirkningstidspunkt()
-            .tilInntektDtoV2()
-            .toSet(),
-    kontantstøtte =
-        rolle.barn
-            .sortedWith(
-                sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
-            ).filter { it.kreverGrunnlagForBeregning }
-            .map { barn ->
-                InntektBarn(
-                    gjelderBarn = barn.tilDto(),
-                    inntekter =
-                        inntekter
-                            .filter { it.type == Inntektsrapportering.KONTANTSTØTTE }
-                            .filter { it.inntektGjelderBarn(barn) && it.erSammeRolle(rolle) }
-                            .sorterEtterDatoOgBarn()
-                            .ekskluderYtelserFørVirkningstidspunkt()
-                            .tilInntektDtoV2()
-                            .toSet(),
-                )
-            },
-    småbarnstillegg =
-        inntekter
-            .filter { it.type == Inntektsrapportering.SMÅBARNSTILLEGG }
-            .filter { it.erSammeRolle(rolle) }
-            .sorterEtterDato()
-            .ekskluderYtelserFørVirkningstidspunkt()
-            .tilInntektDtoV2()
-            .toSet(),
-    månedsinntekter =
-        gjeldendeAktiveGrunnlagsdata
-            .filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER && it.erBearbeidet }
-            .flatMap { grunnlag ->
-                grunnlag.konvertereData<SummerteInntekter<SummertMånedsinntekt>>()?.inntekter?.map {
-                    it.tilInntektDtoV2(
-                        grunnlag.rolle,
+
+    // Use precomputed inntekterPerType from cache, fall back to per-role computation
+    val inntekterPerType =
+        roleInntekterCache?.inntekterPerTypePerRolle?.get(rolle.id!!)
+            ?: inntekter.filter { it.erSammeRolle(rolle) }.groupBy { it.type }
+
+    // Use precomputed values if provided, otherwise use inntekterPerType
+    val barnetilleggInntekter =
+        barnetilleggInntekterForRolle ?: (
+            roleInntekterCache?.barnetilleggPerRolle?.get(rolle.id!!) ?: (
+                inntekterPerType[Inntektsrapportering.BARNETILLEGG]
+                    .orEmpty()
+                    .sorterEtterDatoOgBarn()
+                    .ekskluderYtelserFørVirkningstidspunkt()
+            )
+        )
+    val kontantstøtteInntekter =
+        kontantstøtteInntekterForRolle ?: (
+            roleInntekterCache?.kontantstøttePerRolle?.get(rolle.id!!) ?: (
+                inntekterPerType[Inntektsrapportering.KONTANTSTØTTE]
+                    .orEmpty()
+                    .sorterEtterDatoOgBarn()
+                    .ekskluderYtelserFørVirkningstidspunkt()
+            )
+        )
+    return InntekterDtoV3(
+        barnetillegg =
+            sorterteBarn
+                .map { barn ->
+                    InntektBarn(
+                        gjelderBarn = barn.tilDto(),
+                        inntekter =
+                            barnetilleggInntekter
+                                .filter { it.inntektGjelderBarn(barn) }
+                                .tilInntektDtoV2()
+                                .toSet(),
                     )
-                } ?: emptyList()
-            }.filter { it.gjelderRolle(rolle) }
-            .toSet(),
-    årsinntekter =
-        inntekter
-            .filter { it.erSammeRolle(rolle) }
-            .toSet()
-            .årsinntekterSortert(inkluderHistoriskeInntekter = true)
-            .tilInntektDtoV2()
-            .toSet(),
-    beregnetInntekt =
-        BeregnetInntekterDto(
-            rolle.tilPersonident()!!,
-            rolle.rolletype,
-            hentBeregnetInntekterForRolle(rolle),
-        ),
-    begrunnelse =
-        NotatService.henteInntektsnotat(this, rolle.id!!)?.let {
-            BegrunnelseDto(
-                innhold = it,
-                gjelder = rolle.tilDto(),
-            )
-        },
-    begrunnelseFraOpprinneligVedtak =
-        NotatService.henteInntektsnotat(this, rolle.id!!, false).takeIfNotNullOrEmpty {
-            BegrunnelseDto(
-                innhold = it,
-                gjelder = rolle.tilDto(),
-            )
-        },
-    valideringsfeil = hentInntekterValideringsfeilV2(rolle),
+                },
+        utvidetBarnetrygd =
+            inntekterPerType[Inntektsrapportering.UTVIDET_BARNETRYGD]
+                .orEmpty()
+                .sorterEtterDato()
+                .ekskluderYtelserFørVirkningstidspunkt()
+                .tilInntektDtoV2()
+                .toSet(),
+        kontantstøtte =
+            sorterteBarn
+                .map { barn ->
+                    InntektBarn(
+                        gjelderBarn = barn.tilDto(),
+                        inntekter =
+                            kontantstøtteInntekter
+                                .filter { it.inntektGjelderBarn(barn) }
+                                .tilInntektDtoV2()
+                                .toSet(),
+                    )
+                },
+        småbarnstillegg =
+            inntekterPerType[Inntektsrapportering.SMÅBARNSTILLEGG]
+                .orEmpty()
+                .sorterEtterDato()
+                .ekskluderYtelserFørVirkningstidspunkt()
+                .tilInntektDtoV2()
+                .toSet(),
+        månedsinntekter =
+            månedsinntekterForRolle
+                ?: gjeldendeAktiveGrunnlagsdata
+                    .filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER && it.erBearbeidet }
+                    .flatMap { grunnlag ->
+                        grunnlag.konvertereData<SummerteInntekter<SummertMånedsinntekt>>()?.inntekter?.map {
+                            it.tilInntektDtoV2(
+                                grunnlag.rolle,
+                            )
+                        } ?: emptyList()
+                    }.filter { it.gjelderRolle(rolle) }
+                    .toSet(),
+        årsinntekter =
+            inntekterPerType.values
+                .flatten()
+                .toSet()
+                .årsinntekterSortert(inkluderHistoriskeInntekter = true)
+                .tilInntektDtoV2()
+                .toSet(),
+        beregnetInntekt =
+            BeregnetInntekterDto(
+                rolle.tilPersonident()!!,
+                rolle.rolletype,
+                beregnetInntektForRolle ?: hentBeregnetInntekterForRolle(rolle),
+            ),
+        begrunnelse =
+            (inntektsnotat ?: NotatService.henteInntektsnotat(this, rolle.id!!))?.let {
+                BegrunnelseDto(
+                    innhold = it,
+                    gjelder = rolle.tilDto(),
+                )
+            },
+        begrunnelseFraOpprinneligVedtak =
+            (inntektsnotatFraOpprinneligVedtak ?: NotatService.henteInntektsnotat(this, rolle.id!!, false)).takeIfNotNullOrEmpty {
+                BegrunnelseDto(
+                    innhold = it,
+                    gjelder = rolle.tilDto(),
+                )
+            },
+        valideringsfeil = valideringsfeilForRolle ?: hentInntekterValideringsfeilV2(rolle),
+    )
+}
+
+fun List<Grunnlag>.tilMånedsinntekterPerRolle(): Map<Long, Set<InntektDtoV2>> =
+    this
+        .asSequence()
+        .filter { it.type == Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER && it.erBearbeidet }
+        .mapNotNull { grunnlag ->
+            val rolle = grunnlag.rolle
+            val rolleId = rolle.id ?: return@mapNotNull null
+            val inntekter =
+                grunnlag.konvertereData<SummerteInntekter<SummertMånedsinntekt>>()?.inntekter.orEmpty()
+
+            rolleId to inntekter.map { it.tilInntektDtoV2(rolle) }
+        }.groupBy(
+            keySelector = { it.first },
+            valueTransform = { it.second },
+        ).mapValues { (_, inntekterPerGrunnlag) ->
+            inntekterPerGrunnlag.flatten().toSet()
+        }
+
+/**
+ * Precomputes barnetillegg and kontantstøtte inntekter per role to avoid repeated filtering
+ * in [tilInntektDtoV3] when building DTOs for multiple roles.
+ *
+ * Returns a map where each role ID maps to all inntekter grouped by type for that role.
+ */
+data class RoleInntekterCache(
+    val barnetilleggPerRolle: Map<Long, List<Inntekt>>,
+    val kontantstøttePerRolle: Map<Long, List<Inntekt>>,
+    val inntekterPerTypePerRolle: Map<Long, Map<Inntektsrapportering, List<Inntekt>>>,
 )
+
+fun Behandling.buildRoleInntekterCache(): RoleInntekterCache {
+    val rolleInntekter = inntekter.groupBy { it.rolle?.id ?: return@groupBy null }.filterKeys { it != null }
+
+    val barnetilleggPerRolle = mutableMapOf<Long, List<Inntekt>>()
+    val kontantstøttePerRolle = mutableMapOf<Long, List<Inntekt>>()
+    val inntekterPerTypePerRolle = mutableMapOf<Long, Map<Inntektsrapportering, List<Inntekt>>>()
+
+    for ((rolleId, rolleInntekts) in rolleInntekter) {
+        if (rolleId != null) {
+            val inntekterPerType = rolleInntekts.groupBy { it.type }
+            barnetilleggPerRolle[rolleId] =
+                inntekterPerType[Inntektsrapportering.BARNETILLEGG]
+                    .orEmpty()
+                    .sorterEtterDatoOgBarn()
+                    .ekskluderYtelserFørVirkningstidspunkt()
+            kontantstøttePerRolle[rolleId] =
+                inntekterPerType[Inntektsrapportering.KONTANTSTØTTE]
+                    .orEmpty()
+                    .sorterEtterDatoOgBarn()
+                    .ekskluderYtelserFørVirkningstidspunkt()
+            inntekterPerTypePerRolle[rolleId] = inntekterPerType
+        }
+    }
+
+    return RoleInntekterCache(
+        barnetilleggPerRolle = barnetilleggPerRolle,
+        kontantstøttePerRolle = kontantstøttePerRolle,
+        inntekterPerTypePerRolle = inntekterPerTypePerRolle,
+    )
+}
 
 fun List<Inntekt>.filtrerInntektGjelderBarn(rolle: Rolle?) =
     filter { rolle == null || it.erSammeRolle(rolle) }
@@ -883,7 +962,7 @@ fun Rolle.hentVirkningstidspunktValideringsfeilRolle(): VirkningstidspunktFeilV2
                 false
             },
         kanIkkeSetteOpphørsdatoEtterEtterfølgendeVedtak =
-            if (avslagRolle == null && behandling.erKlageEllerOmgjøring && beregnTil != BeregnTil.INNEVÆRENDE_MÅNED) {
+            if (avslagRolle == null && behandling.erKlageEllerOmgjøring) {
                 val etterfølgendeVedtak = behandling.hentNesteEtterfølgendeVedtak(this)
                 val virkningstidspunktEtterfølgendeVedtak = etterfølgendeVedtak?.virkningstidspunkt
                 virkningstidspunktEtterfølgendeVedtak != null && opphørsdato != null &&

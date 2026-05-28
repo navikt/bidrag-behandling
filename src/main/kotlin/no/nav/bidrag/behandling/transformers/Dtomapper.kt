@@ -2,6 +2,7 @@
 package no.nav.bidrag.behandling.transformers
 
 import com.fasterxml.jackson.core.type.TypeReference
+import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
@@ -25,6 +26,7 @@ import no.nav.bidrag.behandling.database.datamodell.voksneIHusstanden
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.BoforholdValideringsfeil
 import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
+import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktBarnDtoV2
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV3
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
@@ -87,11 +89,15 @@ import no.nav.bidrag.behandling.service.TilgangskontrollService
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
+import no.nav.bidrag.behandling.transformers.behandling.RoleInntekterCache
+import no.nav.bidrag.behandling.transformers.behandling.buildRoleInntekterCache
 import no.nav.bidrag.behandling.transformers.behandling.erLik
 import no.nav.bidrag.behandling.transformers.behandling.finnOpphørsdatoBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.finnVirkningstidspunktBeregningBoforhold
+import no.nav.bidrag.behandling.transformers.behandling.hentBeregnetInntekterForRolle
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerInntekter
 import no.nav.bidrag.behandling.transformers.behandling.hentEndringerSivilstand
+import no.nav.bidrag.behandling.transformers.behandling.hentInntekterValideringsfeilV2
 import no.nav.bidrag.behandling.transformers.behandling.hentVirkningstidspunktValideringsfeil
 import no.nav.bidrag.behandling.transformers.behandling.hentVirkningstidspunktValideringsfeilRolle
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIArbeidsforhold
@@ -107,6 +113,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilGrunnlagsinnhentingsf
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV3
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
+import no.nav.bidrag.behandling.transformers.behandling.tilMånedsinntekterPerRolle
 import no.nav.bidrag.behandling.transformers.behandling.tilRolle
 import no.nav.bidrag.behandling.transformers.behandling.tilSøknadsdetaljerDto
 import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
@@ -122,6 +129,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilMaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilTotalBeregningDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
@@ -168,6 +176,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlin.collections.sortedBy
 
+private val log = KotlinLogging.logger {}
+
 @Component
 class Dtomapper(
     val tilgangskontrollService: TilgangskontrollService,
@@ -180,10 +190,12 @@ class Dtomapper(
     val vedtakTilBehandlingMapping: VedtakTilBehandlingMapping? = null,
     val bidragSakConsumer: BidragSakConsumer? = null,
 ) {
+    private fun Rolle.tilDtoCached(rolleDtoCache: Map<Long, RolleDto>): RolleDto = this.id?.let { rolleDtoCache[it] } ?: this.tilDto()
+
     fun tilDto(
         behandling: Behandling,
         lesemodus: Boolean = false,
-    ) = behandling.tilDto(behandling.ikkeAktiveGrunnlagsdata(), lesemodus)
+    ) = behandling.tilDtoIntern(lesemodus)
 
     fun hentManuelleVedtakForBehandling(
         behandling: Behandling,
@@ -233,18 +245,16 @@ class Dtomapper(
 
     fun tilTilleggsstønadDto(tilleggsstønad: Tilleggsstønad) = tilleggsstønad.tilDto()
 
-    fun tilAktivereGrunnlagResponseV2(behandling: Behandling) =
-        AktivereGrunnlagResponseV2(
+    fun tilAktivereGrunnlagResponseV2(behandling: Behandling): AktivereGrunnlagResponseV2 {
+        val sisteAktiv = behandling.grunnlagListe.toSet().hentSisteAktiv()
+        return AktivereGrunnlagResponseV2(
             boforhold = behandling.tilBoforholdV2(),
-            inntekter = behandling.tilInntektDtoV2(behandling.grunnlagListe.toSet().hentSisteAktiv(), true),
-            inntekterV2 = behandling.mapInntekterV2(),
-            aktiveGrunnlagsdata =
-                behandling.grunnlagListe
-                    .toSet()
-                    .hentSisteAktiv()
-                    .tilAktiveGrunnlagsdata(),
-            ikkeAktiverteEndringerIGrunnlagsdata = behandling.ikkeAktiveGrunnlagsdata(),
+            inntekter = behandling.tilInntektDtoV2(sisteAktiv, true),
+            inntekterV2 = behandling.mapInntekterV2(sisteAktiv),
+            aktiveGrunnlagsdata = sisteAktiv.tilAktiveGrunnlagsdata(),
+            ikkeAktiverteEndringerIGrunnlagsdata = behandling.ikkeAktiveGrunnlagsdata(sisteAktiv),
         )
+    }
 
     fun tilOppdatereBoforholdResponse(husstandsmedlem: Husstandsmedlem): OppdatereBoforholdResponse =
         husstandsmedlem.mapTilOppdatereBoforholdResponse()
@@ -667,7 +677,9 @@ class Dtomapper(
                 } ?: emptyList(),
         )
 
-    private fun Behandling.ikkeAktiveGrunnlagsdata(): IkkeAktiveGrunnlagsdata {
+    private fun Behandling.ikkeAktiveGrunnlagsdata(
+        aktiveGrunnlag: List<Grunnlag> = grunnlag.toSet().hentSisteAktiv(),
+    ): IkkeAktiveGrunnlagsdata {
         val behandling = this
         val roller =
             behandling.roller.filter { it.rolletype != Rolletype.BARN || it.avslag == null }.sortedBy {
@@ -678,8 +690,8 @@ class Dtomapper(
                 }
             }
         val inntekter = behandling.inntekter
-        val sisteInnhentedeIkkeAktiveGrunnlag = behandling.grunnlagListe.toSet().hentSisteIkkeAktiv()
-        val aktiveGrunnlag = behandling.grunnlagListe.toSet().hentSisteAktiv()
+        val grunnlagSet = behandling.grunnlagListe.toSet()
+        val sisteInnhentedeIkkeAktiveGrunnlag = grunnlagSet.hentSisteIkkeAktiv()
         return IkkeAktiveGrunnlagsdata(
             inntekter =
                 IkkeAktiveInntekter(
@@ -795,27 +807,41 @@ class Dtomapper(
 
     // TODO: Endre navn til BehandlingDto når v2-migreringen er ferdigstilt
     @Suppress("ktlint:standard:value-argument-comment")
-    private fun Behandling.tilDto(
-        ikkeAktiverteEndringerIGrunnlagsdata: IkkeAktiveGrunnlagsdata,
-        lesemodus: Boolean = false,
-    ): BehandlingDtoV2 {
+    private fun Behandling.tilDtoIntern(lesemodus: Boolean = false): BehandlingDtoV2 {
         val kanIkkeBehandlesBegrunnelse =
             if (!lesemodus) validerBehandlingService.kanBehandlesINyLøsning(tilKanBehandlesINyLøsningRequest()) else null
         val kanBehandles = kanIkkeBehandlesBegrunnelse == null
+        val sisteAktivGrunnlag = grunnlag.hentSisteAktiv()
+        val ikkeAktiverteEndringerIGrunnlagsdata by lazy { this.ikkeAktiveGrunnlagsdata(sisteAktivGrunnlag) }
         val aldersjusteringGrunnlag = grunnlagslisteFraVedtak?.finnAldersjusteringDetaljerGrunnlag()
         val aldersjusteringBeregning = hentAldersjusteringBeregning()
         val erAldersjusteringOgErAldersjustert =
             vedtakstype == Vedtakstype.ALDERSJUSTERING &&
                 (
-                    hentAldersjusteringBeregning()
-                        .any { it.resultat.beregnetBarnebidragPeriodeListe.isNotEmpty() } ||
-                        (
-                            aldersjusteringGrunnlag != null &&
-                                aldersjusteringGrunnlag.aldersjustert
-                        )
+                    aldersjusteringBeregning.any { it.resultat.beregnetBarnebidragPeriodeListe.isNotEmpty() } ||
+                        (aldersjusteringGrunnlag != null && aldersjusteringGrunnlag.aldersjustert)
                 )
         val grunnlagFraVedtak = aldersjusteringGrunnlag?.grunnlagFraVedtak
         this.grunnlagslisteFraVedtak = this.grunnlagslisteFraVedtak ?: aldersjusteringBeregning.firstOrNull()?.resultat?.grunnlagListe
+        val beregnTilDato = finnBeregnTilDato().toYearMonth()
+        val bpsBarnCache = bpsBarnUtenLøpendeBidrag()
+        val samværDto = tilSamværDto()
+        val sorterteRoller =
+            roller.sortedWith(
+                sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
+            )
+        val rolleDtoCache = sorterteRoller.associate { it.id!! to it.tilDto() }
+        val harGebyrsøknad = roller.any { it.harGebyrsøknad }
+        val gebyrBeregningCache: Map<Long, BeregnGebyrResultat> =
+            if (harGebyrsøknad) {
+                roller
+                    .filter { it.gebyr != null }
+                    .mapNotNull { rolle -> rolle.id?.let { id -> id to vedtakGrunnlagMapper.beregnGebyr(this, rolle) } }
+                    .toMap()
+            } else {
+                emptyMap()
+            }
+        val gebyrValideringsfeilCache = if (harGebyrsøknad) validerGebyr() else emptyList()
         val behandlingDto =
             BehandlingDtoV2(
                 id = id!!,
@@ -889,16 +915,14 @@ class Dtomapper(
                 saksnummer = saksnummer,
                 søknadsid = soknadsid,
                 behandlerenhet = behandlerEnhet,
-                gebyr = mapGebyr(),
-                gebyrV2 = mapGebyrV2(),
-                gebyrV3 = mapGebyrV3(),
+                gebyr = mapGebyr(gebyrBeregningCache, gebyrValideringsfeilCache, rolleDtoCache),
+                gebyrV2 = mapGebyrV2(gebyrBeregningCache, gebyrValideringsfeilCache, rolleDtoCache),
+                gebyrV3 = mapGebyrV3(gebyrBeregningCache, rolleDtoCache),
                 roller =
-                    roller
-                        .sortedWith(
-                            sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
-                        ).map { it.tilDto() }
+                    sorterteRoller
+                        .map { rolleDtoCache.getValue(it.id!!) }
                         .toSet(),
-                bpsBarnUtenLøpendeBidrag = bpsBarnUtenLøpendeBidrag(),
+                bpsBarnUtenLøpendeBidrag = bpsBarnCache,
                 søknadRefId = omgjøringsdetaljer?.soknadRefId,
                 vedtakRefId = omgjøringsdetaljer?.omgjørVedtakId,
                 omgjørVedtakId = omgjøringsdetaljer?.omgjørVedtakId,
@@ -911,12 +935,11 @@ class Dtomapper(
                         erVirkningstidspunktLiktForAlle,
                         erAvslagForAlle,
                         BeregnTil.INNEVÆRENDE_MÅNED,
-                        finnBeregnTilDato().toYearMonth(),
+                        beregnTilDato,
                         null,
                         eldsteVirkningstidspunkt.toYearMonth(),
                         emptyList(),
                     ),
-                inntekter = InntekterDtoV2(valideringsfeil = InntektValideringsfeilDto()),
                 inntekterV2 =
                     roller.sorterForInntektsbildet().map {
                         InntekterDtoRolle(
@@ -936,72 +959,118 @@ class Dtomapper(
         if (vedtakstype == Vedtakstype.INDEKSREGULERING) {
             return behandlingDto
         }
-        return behandlingDto.copy(
-            virkningstidspunktV3 =
-                VirkningstidspunktDtoV3(
-                    erLikForAlle = this.sammeVirkningstidspunktForAlle,
-                    erVirkningstidspunktLiktForAlle = erVirkningstidspunktLiktForAlle,
-                    erAvslagForAlle = erAvslagForAlle,
-                    eldsteVirkningstidspunkt = eldsteVirkningstidspunkt.toYearMonth(),
-                    beregnTil = søknadsbarn.first().beregnTil,
-                    beregnTilDato = finnBeregnTilDato().toYearMonth(),
-                    etterfølgendeVedtak = hentNesteEtterfølgendeVedtakFelles(),
-                    barn = mapVirkningstidspunktAlleBarnV3(),
-                ),
-            boforhold = tilBoforholdV2(),
-            inntekter =
-                tilInntektDtoV2(
-                    grunnlag.hentSisteAktiv(),
-                ),
-            inntekterV2 = mapInntekterV2(),
-            underholdskostnader = tilUnderholdskostnadDto(this, aldersjusteringBeregning, lesemodus),
-            aktiveGrunnlagsdata = grunnlag.hentSisteAktiv().tilAktiveGrunnlagsdata(),
-            utgift = tilUtgiftDto(),
-            samvær = tilSamværDto(),
-            samværV2 =
-                SamværDtoV2(
-                    this.sammeSamværForAlle,
-                    tilSamværDto() ?: emptyList(),
-                ),
-            ikkeAktiverteEndringerIGrunnlagsdata = if (kanBehandles) ikkeAktiverteEndringerIGrunnlagsdata else IkkeAktiveGrunnlagsdata(),
-            feilOppståttVedSisteGrunnlagsinnhenting =
-                grunnlagsinnhentingFeilet?.let {
-                    val typeRef: TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto>> =
-                        object : TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto>>() {}
+        val virkningstidspunktV3 =
+            VirkningstidspunktDtoV3(
+                erLikForAlle = this.sammeVirkningstidspunktForAlle,
+                erVirkningstidspunktLiktForAlle = erVirkningstidspunktLiktForAlle,
+                erAvslagForAlle = erAvslagForAlle,
+                eldsteVirkningstidspunkt = eldsteVirkningstidspunkt.toYearMonth(),
+                beregnTil = søknadsbarn.first().beregnTil,
+                beregnTilDato = beregnTilDato,
+                etterfølgendeVedtak = hentNesteEtterfølgendeVedtakFelles(),
+                barn = mapVirkningstidspunktAlleBarnV3(),
+            )
+        val boforhold = tilBoforholdV2()
+        val inntekterV2 = mapInntekterV2(sisteAktivGrunnlag)
+        val underholdskostnader = tilUnderholdskostnadDto(this, aldersjusteringBeregning, lesemodus)
+        val aktiveGrunnlagsdata = sisteAktivGrunnlag.tilAktiveGrunnlagsdata()
+        val utgift = tilUtgiftDto()
+        val samværV2 =
+            SamværDtoV2(
+                this.sammeSamværForAlle,
+                samværDto ?: emptyList(),
+            )
+        val ikkeAktiverteEndringer =
+            if (kanBehandles) {
+                ikkeAktiverteEndringerIGrunnlagsdata
+            } else {
+                IkkeAktiveGrunnlagsdata()
+            }
+        val feilOppståttVedSisteGrunnlagsinnhenting =
+            grunnlagsinnhentingFeilet?.let {
+                val typeRef: TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto>> =
+                    object : TypeReference<Map<Grunnlagsdatatype, GrunnlagFeilDto>>() {}
 
-                    objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
-                },
-            kanBehandlesINyLøsning = kanBehandles,
-            kanIkkeBehandlesBegrunnelse = kanIkkeBehandlesBegrunnelse,
-            privatAvtaleV3 =
-                if (erBidrag() && bidragspliktig != null) {
-                    tilPrivatAvtaleDtoV3()
-                } else {
-                    null
-                },
-        )
+                objectmapper.readValue(it, typeRef).tilGrunnlagsinnhentingsfeil(this)
+            }
+        val privatAvtaleV3 =
+            if (erBidrag() && bidragspliktig != null) {
+                tilPrivatAvtaleDtoV3(bpsBarnCache)
+            } else {
+                null
+            }
+        val dto =
+            behandlingDto.copy(
+                virkningstidspunktV3 = virkningstidspunktV3,
+                boforhold = boforhold,
+                inntekterV2 = inntekterV2,
+                underholdskostnader = underholdskostnader,
+                aktiveGrunnlagsdata = aktiveGrunnlagsdata,
+                utgift = utgift,
+                samvær = samværDto,
+                samværV2 = samværV2,
+                ikkeAktiverteEndringerIGrunnlagsdata = ikkeAktiverteEndringer,
+                feilOppståttVedSisteGrunnlagsinnhenting = feilOppståttVedSisteGrunnlagsinnhenting,
+                kanBehandlesINyLøsning = kanBehandles,
+                kanIkkeBehandlesBegrunnelse = kanIkkeBehandlesBegrunnelse,
+                privatAvtaleV3 = privatAvtaleV3,
+            )
+        return dto
     }
 
-    fun Behandling.mapInntekterV2() =
-        roller
-            .sorterForInntektsbildet()
-            .filter {
-                // Skal alltid vise inntekter for BM/BP (ikke barn).
-                // Men hvis barn ikke krever grunnlag pga avslag og ikke løpende bidrag så skal det ikke vises i innteksbilde
-                it.rolletype != Rolletype.BARN ||
-                    it.kreverGrunnlagForBeregning
-            }.map {
-                InntekterDtoRolle(
-                    gjelder = it.tilDto(),
-                    inntekter =
-                        tilInntektDtoV3(
-                            grunnlag.hentSisteAktiv(),
-                            it,
-                        ),
-                )
-            }
+    fun Behandling.mapInntekterV2(sisteAktivGrunnlag: List<Grunnlag> = grunnlag.hentSisteAktiv()) =
+        run {
+            val rollerForInntektsbilde =
+                roller
+                    .sorterForInntektsbildet()
+                    .filter {
+                        // Skal alltid vise inntekter for BM/BP (ikke barn).
+                        // Men hvis barn ikke krever grunnlag pga avslag og ikke løpende bidrag så skal det ikke vises i innteksbilde
+                        it.rolletype != Rolletype.BARN ||
+                            it.kreverGrunnlagForBeregning
+                    }
+            val beregnetInntekterForRolle =
+                rollerForInntektsbilde.associate { rolle ->
+                    rolle.id!! to this.hentBeregnetInntekterForRolle(rolle)
+                }
+            val valideringsfeilForRolle =
+                rollerForInntektsbilde.associate { rolle ->
+                    rolle.id!! to this.hentInntekterValideringsfeilV2(rolle)
+                }
+            val inntektsnotatForRolle =
+                rollerForInntektsbilde.associate { rolle ->
+                    rolle.id!! to NotatService.henteInntektsnotat(this, rolle.id!!)
+                }
+            val inntektsnotatFraOpprinneligVedtakForRolle =
+                rollerForInntektsbilde.associate { rolle ->
+                    rolle.id!! to NotatService.henteInntektsnotat(this, rolle.id!!, false)
+                }
+            val månedsinntekterForRolle = sisteAktivGrunnlag.tilMånedsinntekterPerRolle()
+            val roleInntekterCache = buildRoleInntekterCache()
 
-    fun Behandling.tilPrivatAvtaleDtoV3(): PrivatAvtaleDtoV3 {
+            rollerForInntektsbilde
+                .parallelStream()
+                .map { rolle ->
+                    InntekterDtoRolle(
+                        gjelder = rolle.tilDto(),
+                        inntekter =
+                            tilInntektDtoV3(
+                                sisteAktivGrunnlag,
+                                rolle,
+                                beregnetInntektForRolle = beregnetInntekterForRolle[rolle.id!!],
+                                valideringsfeilForRolle = valideringsfeilForRolle[rolle.id!!],
+                                inntektsnotat = inntektsnotatForRolle[rolle.id!!],
+                                inntektsnotatFraOpprinneligVedtak = inntektsnotatFraOpprinneligVedtakForRolle[rolle.id!!],
+                                månedsinntekterForRolle = månedsinntekterForRolle[rolle.id!!],
+                                roleInntekterCache = roleInntekterCache,
+                            ),
+                    )
+                }.toList()
+        }
+
+    fun Behandling.tilPrivatAvtaleDtoV3(
+        cachedBpsBarnUtenLøpendeBidrag: Set<BpsBarnUtenLøpendeBidragDto> = bpsBarnUtenLøpendeBidrag(),
+    ): PrivatAvtaleDtoV3 {
         val søknadsbarnPA =
             søknadsbarn
                 .filter { it.kreverGrunnlagForBeregning }
@@ -1039,13 +1108,19 @@ class Dtomapper(
                     )
                 }
 
-        val bpsSaker = bidragSakConsumer?.hentSakerPerson(bidragspliktig!!.ident!!) ?: emptyList()
+        val bpsSaker by lazy { bidragSakConsumer?.hentSakerPerson(bidragspliktig!!.ident!!) ?: emptyList() }
+        val alleBpsBarnUtenLøpendeBidrag = cachedBpsBarnUtenLøpendeBidrag
         val søknadsbarnIdent = søknadsbarn.map { it.ident }
         val andreBarnUtenLøpendeBidrag =
-            bpsBarnUtenLøpendeBidrag().filter { !søknadsbarnIdent.contains(it.ident) }.map { barn ->
+            alleBpsBarnUtenLøpendeBidrag.filter { !søknadsbarnIdent.contains(it.ident) }.map { barn ->
                 val privatAvtale = privatAvtale.find { it.person?.ident == barn.ident }
                 val beløpshistorikk = barn.finnBeløpshistorikk(privatAvtale?.stønadstype)
-                val sakForBarn = bpsSaker.find { it.barn.any { it.fødselsnummer?.verdi == barn.ident } }
+                val sakForBarn =
+                    if (barn.saksnummer.isNullOrBlank() || barn.enhet.isNullOrBlank()) {
+                        bpsSaker.find { it.barn.any { it.fødselsnummer?.verdi == barn.ident } }
+                    } else {
+                        null
+                    }
                 PrivatAvtaleAndreBarnDtoV2(
                     PersoninfoDto(
                         null,
@@ -1068,7 +1143,7 @@ class Dtomapper(
             privatAvtale
                 .filter { it.rolle == null && !identerAndreBarn.contains(it.person!!.ident!! + it.stønadstype?.name) }
                 .map { pa ->
-                    val eksisterendeBarn = bpsBarnUtenLøpendeBidrag().find { it.ident == pa.personIdent }
+                    val eksisterendeBarn = alleBpsBarnUtenLøpendeBidrag.find { it.ident == pa.personIdent }
                     val eksisterendeSøknadsbarn = søknadsbarn.find { it.ident == pa.personIdent }
                     val beløpshistorikk =
                         eksisterendeBarn?.finnBeløpshistorikk(pa.stønadstype)?.periodeListe?.map { it.periode }
@@ -1115,8 +1190,9 @@ class Dtomapper(
         return PrivatAvtaleDtoV3(søknadsbarn = søknadsbarnPA, andreBarn)
     }
 
-    private fun Behandling.mapVirkningstidspunktAlleBarnV3(): List<VirkningstidspunktBarnDtoV2> =
-        if (tilType() == TypeBehandling.BIDRAG) {
+    private fun Behandling.mapVirkningstidspunktAlleBarnV3(): List<VirkningstidspunktBarnDtoV2> {
+        val virkningstidspunktValideringsfeil = hentVirkningstidspunktValideringsfeil()
+        return if (tilType() == TypeBehandling.BIDRAG) {
             søknadsbarn
                 .sortedWith(
                     sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
@@ -1175,7 +1251,7 @@ class Dtomapper(
                         eksisterendeOpphør = finnEksisterendeVedtakMedOpphør(it),
                         opphørsdato = it.opphørsdato,
                         globalOpphørsdato = globalOpphørsdato,
-                        valideringsfeil = hentVirkningstidspunktValideringsfeil(),
+                        valideringsfeil = virkningstidspunktValideringsfeil,
                         valideringsfeilV2 = it.hentVirkningstidspunktValideringsfeilRolle(),
                         vedtakstype =
                             eldsteSøknad?.behandlingstype?.tilVedtakstype() ?: it.behandling.vedtakstype,
@@ -1212,7 +1288,7 @@ class Dtomapper(
                     harLøpendeBidrag = finnesLøpendeBidragForRolle(søknadsbarn.first()),
                     harLøpendeForskudd = søknadsbarn.any { finnesLøpendeForskuddForRolle(it) },
                     opphørsdato = globalOpphørsdato,
-                    valideringsfeil = hentVirkningstidspunktValideringsfeil(),
+                    valideringsfeil = virkningstidspunktValideringsfeil,
                     mottattdato = mottattdato,
                     søktAv = soknadFra,
                     søktFomDato = søktFomDato,
@@ -1227,6 +1303,7 @@ class Dtomapper(
                 ),
             )
         }
+    }
 
     fun tilUnderholdskostnadDto(
         behandling: Behandling,
@@ -1263,45 +1340,50 @@ class Dtomapper(
             behandling.underholdskostnader.tilDtos()
         }
 
-    fun Behandling.mapGebyrV3() =
-        if (roller.any { it.harGebyrsøknad }) {
-            val gebyrSaker = roller.flatMap { it.gebyrSøknader }.map { it.saksnummer }.distinct()
-            val saker =
-                gebyrSaker.map { sak ->
-                    GebyrSakDto(
-                        saksnummer = sak,
-                        gebyr18År =
-                            mapGebyrForSak(sak, true).sortedByDescending { it.rolle.rolletype },
-                        gebyrRoller = mapGebyrForSak(sak, false).sortedByDescending { it.rolle.rolletype },
-                    )
-                }
-            GebyrDtoV3(
-                saker = saker.sortedBy { it.saksnummer },
-            )
-        } else {
-            GebyrDtoV3(
-                saker = emptyList(),
-            )
-        }
+    fun Behandling.mapGebyrV3(
+        gebyrBeregningCache: Map<Long, BeregnGebyrResultat> = emptyMap(),
+        rolleDtoCache: Map<Long, RolleDto> = emptyMap(),
+    ) = if (roller.any { it.harGebyrsøknad }) {
+        val gebyrSaker = roller.flatMap { it.gebyrSøknader }.map { it.saksnummer }.distinct()
+        val saker =
+            gebyrSaker.map { sak ->
+                GebyrSakDto(
+                    saksnummer = sak,
+                    gebyr18År =
+                        mapGebyrForSak(sak, true, gebyrBeregningCache, rolleDtoCache).sortedByDescending { it.rolle.rolletype },
+                    gebyrRoller =
+                        mapGebyrForSak(sak, false, gebyrBeregningCache, rolleDtoCache).sortedByDescending { it.rolle.rolletype },
+                )
+            }
+        GebyrDtoV3(
+            saker = saker.sortedBy { it.saksnummer },
+        )
+    } else {
+        GebyrDtoV3(
+            saker = emptyList(),
+        )
+    }
 
     private fun Behandling.mapGebyrForSak(
         sak: String,
         gjelder18ÅrSøknad: Boolean,
+        gebyrBeregningCache: Map<Long, BeregnGebyrResultat> = emptyMap(),
+        rolleDtoCache: Map<Long, RolleDto> = emptyMap(),
     ): List<GebyrRolleV2Dto> =
         roller
             .filter { it.gebyr != null }
             .flatMap { rolle ->
+                val rolleDto = rolle.tilDtoCached(rolleDtoCache)
+                val beregnGebyr = gebyrBeregningCache[rolle.id!!] ?: vedtakGrunnlagMapper.beregnGebyr(this, rolle)
                 val gebyr = rolle.gebyr!!.finnGebyrForSak(sak).filter { it.gjelder18ÅrSøknad == gjelder18ÅrSøknad }
                 gebyr.map {
                     GebyrRolleV2Dto(
-                        rolle = rolle.tilDto(),
+                        rolle = rolleDto,
                         gebyrDetaljer =
-                            vedtakGrunnlagMapper
-                                .beregnGebyr(this, rolle)
-                                .tilDto(rolle, it.søknadsid),
+                            beregnGebyr.tilDto(rolle, it.søknadsid),
                         valideringsfeil =
                             GebyrValideringsfeilDto(
-                                gjelder = rolle.tilDto(),
+                                gjelder = rolleDto,
                                 søknad = rolle.tilSøknadsdetaljerDto(it.søknadsid),
                                 manglerBegrunnelse =
                                     if (it.manueltOverstyrtGebyr?.overstyrGebyr == true) {
@@ -1314,50 +1396,56 @@ class Dtomapper(
                 }
             }
 
-    fun Behandling.mapGebyrV2() =
-        if (roller.any { it.harGebyrsøknad }) {
-            GebyrDtoV2(
-                harFlereSøknader = roller.flatMap { it.gebyrSøknader.map { it.søknadsid } }.distinct().size > 1,
-                gebyrRoller =
-                    roller.sortedBy { it.rolletype }.filter { it.harGebyrsøknad }.map { rolle ->
-                        GebyrRolleDto(
-                            rolle = rolle.tilDto(),
-                            gebyrDetaljer =
-                                rolle.gebyrSøknader.map {
-                                    vedtakGrunnlagMapper
-                                        .beregnGebyr(this, rolle)
-                                        .tilDto(rolle, it.søknadsid)
-                                },
-                            valideringsfeil = validerGebyr().filter { it.gjelder.ident == rolle.ident }.takeIf { it.isNotEmpty() },
-                        )
-                    },
-            )
-        } else {
-            GebyrDtoV2(
-                harFlereSøknader = false,
-                gebyrRoller = emptyList(),
-            )
-        }
+    fun Behandling.mapGebyrV2(
+        gebyrBeregningCache: Map<Long, BeregnGebyrResultat> = emptyMap(),
+        gebyrValideringsfeilCache: List<GebyrValideringsfeilDto>? = null,
+        rolleDtoCache: Map<Long, RolleDto> = emptyMap(),
+    ) = if (roller.any { it.harGebyrsøknad }) {
+        val valideringsfeil = gebyrValideringsfeilCache ?: validerGebyr()
+        GebyrDtoV2(
+            harFlereSøknader = roller.flatMap { it.gebyrSøknader.map { it.søknadsid } }.distinct().size > 1,
+            gebyrRoller =
+                roller.sortedBy { it.rolletype }.filter { it.harGebyrsøknad }.map { rolle ->
+                    val beregnGebyr = gebyrBeregningCache[rolle.id!!] ?: vedtakGrunnlagMapper.beregnGebyr(this, rolle)
+                    val rolleDto = rolle.tilDtoCached(rolleDtoCache)
+                    GebyrRolleDto(
+                        rolle = rolleDto,
+                        gebyrDetaljer =
+                            rolle.gebyrSøknader.map {
+                                beregnGebyr.tilDto(rolle, it.søknadsid)
+                            },
+                        valideringsfeil = valideringsfeil.filter { it.gjelder.ident == rolle.ident }.takeIf { it.isNotEmpty() },
+                    )
+                },
+        )
+    } else {
+        GebyrDtoV2(
+            harFlereSøknader = false,
+            gebyrRoller = emptyList(),
+        )
+    }
 
-    fun Behandling.mapGebyr() =
-        if (roller.any { it.harGebyrsøknad }) {
-            GebyrDto(
-                gebyrRoller =
-                    roller.sortedBy { it.rolletype }.filter { it.harGebyrsøknad }.flatMap { rolle ->
-                        rolle.gebyrSøknader.map {
-                            vedtakGrunnlagMapper
-                                .beregnGebyr(this, rolle)
-                                .tilDto(rolle, it.søknadsid)
-                        }
-                    },
-                valideringsfeil = validerGebyr().takeIf { it.isNotEmpty() },
-            )
-        } else {
-            GebyrDto(
-                gebyrRoller = emptyList(),
-                valideringsfeil = null,
-            )
-        }
+    fun Behandling.mapGebyr(
+        gebyrBeregningCache: Map<Long, BeregnGebyrResultat> = emptyMap(),
+        gebyrValideringsfeilCache: List<GebyrValideringsfeilDto>? = null,
+        rolleDtoCache: Map<Long, RolleDto> = emptyMap(),
+    ) = if (roller.any { it.harGebyrsøknad }) {
+        GebyrDto(
+            gebyrRoller =
+                roller.sortedBy { it.rolletype }.filter { it.harGebyrsøknad }.flatMap { rolle ->
+                    val beregnGebyr = gebyrBeregningCache[rolle.id!!] ?: vedtakGrunnlagMapper.beregnGebyr(this, rolle)
+                    rolle.gebyrSøknader.map {
+                        beregnGebyr.tilDto(rolle, it.søknadsid)
+                    }
+                },
+            valideringsfeil = (gebyrValideringsfeilCache ?: validerGebyr()).takeIf { it.isNotEmpty() },
+        )
+    } else {
+        GebyrDto(
+            gebyrRoller = emptyList(),
+            valideringsfeil = null,
+        )
+    }
 
     fun PrivatAvtale.tilDtoV2(): PrivatAvtaleBarnDtoV2 =
         PrivatAvtaleBarnDtoV2(
