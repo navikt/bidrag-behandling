@@ -153,7 +153,6 @@ data class BehandlingDtoV2(
     val roller: Set<RolleDto> = emptySet(),
     val bpsBarnUtenLøpendeBidrag: Set<BpsBarnUtenLøpendeBidragDto> = emptySet(),
     val virkningstidspunktV3: VirkningstidspunktDtoV3,
-    val inntekter: InntekterDtoV2 = InntekterDtoV2(),
     val inntekterV2: List<InntekterDtoRolle> = emptyList(),
     val boforhold: BoforholdDtoV2 = BoforholdDtoV2(begrunnelse = BegrunnelseDto("")),
     val gebyr: GebyrDto? = null,
@@ -170,6 +169,15 @@ data class BehandlingDtoV2(
     val privatAvtaleV3: PrivatAvtaleDtoV3? = null,
     var underholdskostnader: Set<UnderholdDto> = emptySet(),
 ) {
+    @get:JsonIgnore
+    val inntekter get() =
+        InntekterDtoV2(
+            barnetillegg = inntekterV2.flatMap { it.inntekter.barnetillegg.flatMap { it.inntekter } }.toSet(),
+            kontantstøtte = inntekterV2.flatMap { it.inntekter.kontantstøtte.flatMap { it.inntekter } }.toSet(),
+            utvidetBarnetrygd = inntekterV2.flatMap { it.inntekter.utvidetBarnetrygd }.toSet(),
+            småbarnstillegg = inntekterV2.flatMap { it.inntekter.småbarnstillegg }.toSet(),
+            årsinntekter = inntekterV2.flatMap { it.inntekter.årsinntekter }.toSet(),
+        )
     val vedtakstypeVisningsnavn get() = vedtakstype.visningsnavnIntern(opprinneligVedtakstype)
 }
 
