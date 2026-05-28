@@ -177,6 +177,10 @@ data class BehandlingDtoV2(
             utvidetBarnetrygd = inntekterV2.flatMap { it.inntekter.utvidetBarnetrygd }.toSet(),
             småbarnstillegg = inntekterV2.flatMap { it.inntekter.småbarnstillegg }.toSet(),
             årsinntekter = inntekterV2.flatMap { it.inntekter.årsinntekter }.toSet(),
+            beregnetInntekter = inntekterV2.map { it.inntekter.beregnetInntekt },
+            begrunnelser = inntekterV2.mapNotNull { it.inntekter.begrunnelse }.toSet(),
+            månedsinntekter = inntekterV2.flatMap { it.inntekter.månedsinntekter }.toSet(),
+            begrunnelserFraOpprinneligVedtak = inntekterV2.mapNotNull { it.inntekter.begrunnelseFraOpprinneligVedtak }.toSet(),
         )
     val vedtakstypeVisningsnavn get() = vedtakstype.visningsnavnIntern(opprinneligVedtakstype)
 }
