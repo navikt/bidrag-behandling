@@ -465,7 +465,6 @@ class BehandlingControllerV2(
         @PathVariable behandlingsid: Long,
         @RequestParam("ikkeHentGrunnlag") ikkeHentGrunnlag: Boolean = false,
     ): BehandlingDtoV2 {
-        val lasterGrunnlagStatus = behandlingRepository.hentLasterGrunnlagStatus(behandlingsid)
         val behandling = behandlingService.henteBehandling(behandlingsid, ikkeHentGrunnlag)
         return dtomapper.tilDto(behandling)
     }
