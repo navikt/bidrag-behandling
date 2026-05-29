@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.grunnlag.SummerteInntekter
 import no.nav.bidrag.behandling.dto.v2.behandling.AndreVoksneIHusstandenDetaljerDto
 import no.nav.bidrag.behandling.dto.v2.behandling.TotalBeregningUtgifterDto
+import no.nav.bidrag.behandling.dto.v2.boforhold.HusstandsmedlemDtoV2
 import no.nav.bidrag.behandling.transformers.inntekt.erOpprinneligPeriodeInnenforVirkningstidspunktEllerOpphør
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
@@ -193,6 +194,14 @@ fun Husstandsmedlem.erSøknadsbarn() =
     this.behandling.søknadsbarn
         .map { it.ident }
         .contains(this.ident)
+
+fun List<HusstandsmedlemDtoV2>.sortert() =
+    sortedWith(
+        compareByDescending<HusstandsmedlemDtoV2> { it.medIBehandling }
+            .thenByDescending { it.kilde == Kilde.OFFENTLIG }
+            .thenBy { it.gjelderBarn?.stønadstype }
+            .thenBy { it.fødselsdato },
+    )
 
 fun Set<Husstandsmedlem>.sortert() =
     sortedWith(
