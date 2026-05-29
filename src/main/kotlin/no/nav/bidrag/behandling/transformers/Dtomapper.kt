@@ -249,7 +249,6 @@ class Dtomapper(
         val sisteAktiv = behandling.grunnlagListe.toSet().hentSisteAktiv()
         return AktivereGrunnlagResponseV2(
             boforhold = behandling.tilBoforholdV2(),
-            inntekter = behandling.tilInntektDtoV2(sisteAktiv, true),
             inntekterV2 = behandling.mapInntekterV2(sisteAktiv),
             aktiveGrunnlagsdata = sisteAktiv.tilAktiveGrunnlagsdata(),
             ikkeAktiverteEndringerIGrunnlagsdata = behandling.ikkeAktiveGrunnlagsdata(sisteAktiv),
@@ -286,7 +285,9 @@ class Dtomapper(
     fun Set<Underholdskostnad>.tilDtos() =
         this
             .filter { it.rolle == null || it.gjelderAndreBarn || it.rolle?.kreverGrunnlagForBeregning == true }
+            .parallelStream()
             .map { it.tilDto() }
+            .toList()
             .sortedWith(
                 compareByDescending<UnderholdDto> { it.gjelderBarn.kilde == Kilde.OFFENTLIG }
                     .thenByDescending { it.gjelderBarn.kilde == Kilde.MANUELL }
@@ -836,7 +837,9 @@ class Dtomapper(
             if (harGebyrsøknad) {
                 roller
                     .filter { it.gebyr != null }
-                    .mapNotNull { rolle -> rolle.id?.let { id -> id to vedtakGrunnlagMapper.beregnGebyr(this, rolle) } }
+                    .parallelStream()
+                    .map { rolle -> rolle.id?.let { id -> id to vedtakGrunnlagMapper.beregnGebyr(this, rolle) } }
+                    .toList()
                     .toMap()
             } else {
                 emptyMap()
@@ -915,8 +918,6 @@ class Dtomapper(
                 saksnummer = saksnummer,
                 søknadsid = soknadsid,
                 behandlerenhet = behandlerEnhet,
-                gebyr = mapGebyr(gebyrBeregningCache, gebyrValideringsfeilCache, rolleDtoCache),
-                gebyrV2 = mapGebyrV2(gebyrBeregningCache, gebyrValideringsfeilCache, rolleDtoCache),
                 gebyrV3 = mapGebyrV3(gebyrBeregningCache, rolleDtoCache),
                 roller =
                     sorterteRoller
@@ -1030,9 +1031,12 @@ class Dtomapper(
                             it.kreverGrunnlagForBeregning
                     }
             val beregnetInntekterForRolle =
-                rollerForInntektsbilde.associate { rolle ->
-                    rolle.id!! to this.hentBeregnetInntekterForRolle(rolle)
-                }
+                rollerForInntektsbilde
+                    .parallelStream()
+                    .map { rolle ->
+                        rolle.id!! to this.hentBeregnetInntekterForRolle(rolle)
+                    }.toList()
+                    .associate { it.first to it.second }
             val valideringsfeilForRolle =
                 rollerForInntektsbilde.associate { rolle ->
                     rolle.id!! to this.hentInntekterValideringsfeilV2(rolle)
@@ -1074,9 +1078,8 @@ class Dtomapper(
         val søknadsbarnPA =
             søknadsbarn
                 .filter { it.kreverGrunnlagForBeregning }
-                .sortedWith(
-                    sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
-                ).map { barn ->
+                .parallelStream()
+                .map { barn ->
                     val privatAvtale = privatAvtale.find { it.rolle?.erSammeRolle(barn) == true }
                     PrivatAvtaleBarnInfoDto(
                         gjelderBarn = barn.tilPersoninfoDto(Kilde.OFFENTLIG),
@@ -1106,7 +1109,10 @@ class Dtomapper(
                                 null
                             },
                     )
-                }
+                }.toList()
+                .sortedWith(
+                    sorterPersonEtterEldsteFødselsdato({ it.gjelderBarn.fødselsdato ?: LocalDate.MAX }, { it.gjelderBarn.sortKey }),
+                )
 
         val bpsSaker by lazy { bidragSakConsumer?.hentSakerPerson(bidragspliktig!!.ident!!) ?: emptyList() }
         val alleBpsBarnUtenLøpendeBidrag = cachedBpsBarnUtenLøpendeBidrag
@@ -1576,8 +1582,10 @@ class Dtomapper(
             husstandsmedlem =
                 husstandsmedlem.barn
                     .toSet()
-                    .sortert()
+                    .parallelStream()
                     .map { it.tilBostatusperiode() }
+                    .toList()
+                    .sortert()
                     .toSet(),
             andreVoksneIHusstanden = husstandsmedlem.voksneIHusstanden?.perioder?.tilBostatusperiode() ?: emptySet(),
             sivilstand = sivilstand.toSivilstandDto(),

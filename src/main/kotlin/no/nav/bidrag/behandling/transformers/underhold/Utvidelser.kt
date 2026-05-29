@@ -146,6 +146,18 @@ fun Grunnlag.justerePerioderForBearbeidaBarnetilsynEtterVirkningstidspunkt(overs
 
             behandling.overskriveBearbeidaBarnetilsynsgrunnlag(barnPersonId, justertePerioder, overskriveAktiverte)
         }
+
+    if (overskriveAktiverte) {
+        val aktiveGrunnlag =
+            behandling.henteAktiverteGrunnlag(
+                Grunnlagstype(Grunnlagsdatatype.BARNETILSYN, true),
+                Grunnlagsdatatype.BARNETILSYN.innhentesForRolle(behandling)!!,
+            )
+        // Fjerne perioder hvis det ikke er noe perioder for barnet lenger
+        aktiveGrunnlag.filter { a -> barnetilsyn.none { a.gjelder == it.barnPersonId } }.forEach {
+            behandling.overskriveBearbeidaBarnetilsynsgrunnlag(it.gjelder, emptySet(), overskriveAktiverte)
+        }
+    }
 }
 
 fun Underholdskostnad.erstatteOffentligePerioderIBarnetilsynstabellMedOppdatertGrunnlag() {
@@ -268,7 +280,7 @@ private fun Behandling.overskriveBearbeidaBarnetilsynsgrunnlag(
             )
         }
 
-    grunnlagSomSkalOverskrives.find { it.gjelder == gjelder }?.let {
+    grunnlagSomSkalOverskrives.filter { it.gjelder == gjelder }.forEach {
         it.data = tilJson(perioder)
         it.aktiv = it.aktiv?.let { LocalDateTime.now() }
     }

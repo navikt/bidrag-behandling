@@ -457,31 +457,6 @@ class BehandlingControllerV2(
         @PathVariable behandlingsid: Long,
         @RequestParam("ikkeHentGrunnlag") ikkeHentGrunnlag: Boolean = false,
     ): BehandlingDtoV2 {
-        val lasterGrunnlagStatus = behandlingRepository.hentLasterGrunnlagStatus(behandlingsid)
-//        if (lasterGrunnlagStatus.lasterGrunnlag()) {
-//            return BehandlingDtoV2(
-//                id = behandlingsid,
-//                lasterGrunnlag = true,
-//                type = TypeBehandling.BIDRAG,
-//                vedtakstype = Vedtakstype.ENDRING,
-//                opprettetTidspunkt = LocalDateTime.now(),
-//                saksnummer = "",
-//                søktAv = SøktAvType.BIDRAGSMOTTAKER,
-//                søktFomDato = LocalDate.now(),
-//                mottattdato = LocalDate.now(),
-//                behandlerenhet = "",
-//                virkningstidspunktV3 =
-//                    VirkningstidspunktDtoV3(
-//                        false,
-//                        false,
-//                        false,
-//                        BeregnTil.INNEVÆRENDE_MÅNED,
-//                        null,
-//                        null,
-//                        YearMonth.now(),
-//                    ),
-//            )
-//        }
         val behandling = behandlingService.henteBehandling(behandlingsid, ikkeHentGrunnlag)
         return dtomapper.tilDto(behandling)
     }
