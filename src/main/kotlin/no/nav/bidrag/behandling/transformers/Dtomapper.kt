@@ -249,7 +249,6 @@ class Dtomapper(
         val sisteAktiv = behandling.grunnlagListe.toSet().hentSisteAktiv()
         return AktivereGrunnlagResponseV2(
             boforhold = behandling.tilBoforholdV2(),
-            inntekter = behandling.tilInntektDtoV2(sisteAktiv, true),
             inntekterV2 = behandling.mapInntekterV2(sisteAktiv),
             aktiveGrunnlagsdata = sisteAktiv.tilAktiveGrunnlagsdata(),
             ikkeAktiverteEndringerIGrunnlagsdata = behandling.ikkeAktiveGrunnlagsdata(sisteAktiv),
@@ -838,7 +837,9 @@ class Dtomapper(
             if (harGebyrsøknad) {
                 roller
                     .filter { it.gebyr != null }
-                    .mapNotNull { rolle -> rolle.id?.let { id -> id to vedtakGrunnlagMapper.beregnGebyr(this, rolle) } }
+                    .parallelStream()
+                    .map { rolle -> rolle.id?.let { id -> id to vedtakGrunnlagMapper.beregnGebyr(this, rolle) } }
+                    .toList()
                     .toMap()
             } else {
                 emptyMap()
@@ -917,8 +918,6 @@ class Dtomapper(
                 saksnummer = saksnummer,
                 søknadsid = soknadsid,
                 behandlerenhet = behandlerEnhet,
-                gebyr = mapGebyr(gebyrBeregningCache, gebyrValideringsfeilCache, rolleDtoCache),
-                gebyrV2 = mapGebyrV2(gebyrBeregningCache, gebyrValideringsfeilCache, rolleDtoCache),
                 gebyrV3 = mapGebyrV3(gebyrBeregningCache, rolleDtoCache),
                 roller =
                     sorterteRoller

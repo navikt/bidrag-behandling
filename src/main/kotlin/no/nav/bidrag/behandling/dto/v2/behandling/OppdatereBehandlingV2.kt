@@ -7,7 +7,6 @@ import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.domene.ident.Personident
 
 data class AktivereGrunnlagResponseV2(
-    val inntekter: InntekterDtoV2,
     val inntekterV2: List<InntekterDtoRolle>,
     val boforhold: BoforholdDtoV2,
     val aktiveGrunnlagsdata: AktiveGrunnlagsdata,
