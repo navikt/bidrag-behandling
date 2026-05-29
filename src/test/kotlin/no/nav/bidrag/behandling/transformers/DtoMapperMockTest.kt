@@ -368,16 +368,26 @@ class DtoMapperMockTest {
         val behandlingDto = dtomapper.tilDto(behandling)
 
         behandlingDto.shouldNotBeNull()
-        val gebyr = behandlingDto.gebyr
+        val gebyr = behandlingDto.gebyrV3
         gebyr.shouldNotBeNull()
-        gebyr.gebyrRoller.shouldHaveSize(2)
-        assertSoftly(gebyr.gebyrRoller.find { it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }!!) {
+        gebyr.saker.flatMap { it.gebyrRoller }.shouldHaveSize(2)
+        assertSoftly(
+            gebyr.saker
+                .flatMap { it.gebyrRoller }
+                .find { it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }!!
+                .gebyrDetaljer,
+        ) {
             it.inntekt.skattepliktigInntekt shouldBe BigDecimal(900000)
             it.inntekt.maksBarnetillegg shouldBe BigDecimal(20000)
             it.inntekt.totalInntekt shouldBe BigDecimal(920000)
             it.beregnetIlagtGebyr shouldBe true
         }
-        assertSoftly(gebyr.gebyrRoller.find { it.rolle.rolletype == Rolletype.BIDRAGSPLIKTIG }!!) {
+        assertSoftly(
+            gebyr.saker
+                .flatMap { it.gebyrRoller }
+                .find { it.rolle.rolletype == Rolletype.BIDRAGSPLIKTIG }!!
+                .gebyrDetaljer,
+        ) {
             it.inntekt.skattepliktigInntekt shouldBe BigDecimal(20000)
             it.inntekt.maksBarnetillegg shouldBe null
             it.inntekt.totalInntekt shouldBe BigDecimal(20000)
@@ -420,10 +430,15 @@ class DtoMapperMockTest {
         val behandlingDto = dtomapper.tilDto(behandling)
 
         behandlingDto.shouldNotBeNull()
-        val gebyr = behandlingDto.gebyr
+        val gebyr = behandlingDto.gebyrV3
         gebyr.shouldNotBeNull()
-        gebyr.gebyrRoller.shouldHaveSize(2)
-        assertSoftly(gebyr.gebyrRoller.find { it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }!!) {
+        gebyr.saker.flatMap { it.gebyrRoller }.shouldHaveSize(2)
+        assertSoftly(
+            gebyr.saker
+                .flatMap { it.gebyrRoller }
+                .find { it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }!!
+                .gebyrDetaljer,
+        ) {
             it.inntekt.skattepliktigInntekt shouldBe BigDecimal(50000)
             it.inntekt.maksBarnetillegg shouldBe null
             it.inntekt.totalInntekt shouldBe BigDecimal(50000)
@@ -431,7 +446,12 @@ class DtoMapperMockTest {
             it.endeligIlagtGebyr shouldBe true
             it.begrunnelse shouldBe "Begrunnelse"
         }
-        assertSoftly(gebyr.gebyrRoller.find { it.rolle.rolletype == Rolletype.BIDRAGSPLIKTIG }!!) {
+        assertSoftly(
+            gebyr.saker
+                .flatMap { it.gebyrRoller }
+                .find { it.rolle.rolletype == Rolletype.BIDRAGSPLIKTIG }!!
+                .gebyrDetaljer,
+        ) {
             it.inntekt.skattepliktigInntekt shouldBe BigDecimal(500000)
             it.inntekt.maksBarnetillegg shouldBe BigDecimal(2000)
             it.inntekt.totalInntekt shouldBe BigDecimal(502000)
@@ -447,8 +467,11 @@ class DtoMapperMockTest {
         val behandlingDto = dtomapper.tilDto(behandling)
 
         behandlingDto.shouldNotBeNull()
-        behandlingDto.gebyr!!.gebyrRoller.shouldBeEmpty()
-        behandlingDto.gebyr!!.valideringsfeil shouldBe null
+        behandlingDto.gebyrV3!!.saker.shouldBeEmpty()
+        behandlingDto.gebyrV3!!
+            .saker
+            .map { it.gebyrRoller.mapNotNull { it.valideringsfeil } }
+            .shouldBeEmpty()
     }
 
     @Test
@@ -488,16 +511,21 @@ class DtoMapperMockTest {
         val behandlingDto = dtomapper.tilDto(behandling)
 
         behandlingDto.shouldNotBeNull()
-        val gebyr = behandlingDto.gebyr
+        val gebyr = behandlingDto.gebyrV3
         gebyr.shouldNotBeNull()
-        gebyr.gebyrRoller.shouldHaveSize(2)
-        gebyr.valideringsfeil!!.shouldHaveSize(1)
-        assertSoftly(gebyr.valideringsfeil!!.first()) {
+        gebyr.saker.flatMap { it.gebyrRoller }.shouldHaveSize(2)
+        gebyr.saker.flatMap { it.gebyrRoller.mapNotNull { it.valideringsfeil } }.shouldHaveSize(2)
+        assertSoftly(gebyr.saker.flatMap { it.gebyrRoller.mapNotNull { it.valideringsfeil } }.first()) {
             it.gjelder.rolletype shouldBe Rolletype.BIDRAGSPLIKTIG
             it.manglerBegrunnelse shouldBe true
             it.harFeil shouldBe true
         }
-        assertSoftly(gebyr.gebyrRoller.find { it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }!!) {
+        assertSoftly(
+            gebyr.saker
+                .flatMap { it.gebyrRoller }
+                .find { it.rolle.rolletype == Rolletype.BIDRAGSMOTTAKER }!!
+                .gebyrDetaljer,
+        ) {
             it.inntekt.skattepliktigInntekt shouldBe BigDecimal(90000)
             it.inntekt.maksBarnetillegg shouldBe null
             it.inntekt.totalInntekt shouldBe BigDecimal(90000)
@@ -506,7 +534,12 @@ class DtoMapperMockTest {
             it.erManueltOverstyrt shouldBe false
             it.begrunnelse shouldBe null
         }
-        assertSoftly(gebyr.gebyrRoller.find { it.rolle.rolletype == Rolletype.BIDRAGSPLIKTIG }!!) {
+        assertSoftly(
+            gebyr.saker
+                .flatMap { it.gebyrRoller }
+                .find { it.rolle.rolletype == Rolletype.BIDRAGSPLIKTIG }!!
+                .gebyrDetaljer,
+        ) {
             it.inntekt.skattepliktigInntekt shouldBe BigDecimal(0)
             it.inntekt.maksBarnetillegg shouldBe null
             it.inntekt.totalInntekt shouldBe BigDecimal(0)

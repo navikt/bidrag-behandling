@@ -1582,8 +1582,10 @@ class Dtomapper(
             husstandsmedlem =
                 husstandsmedlem.barn
                     .toSet()
-                    .sortert()
+                    .parallelStream()
                     .map { it.tilBostatusperiode() }
+                    .toList()
+                    .sortert()
                     .toSet(),
             andreVoksneIHusstanden = husstandsmedlem.voksneIHusstanden?.perioder?.tilBostatusperiode() ?: emptySet(),
             sivilstand = sivilstand.toSivilstandDto(),
