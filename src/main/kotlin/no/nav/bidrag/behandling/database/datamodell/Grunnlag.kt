@@ -68,7 +68,8 @@ open class Grunnlag(
                     gjelderBarnRolle!!
                         .erSammeRolle(person.personident!!.verdi, person.stønadstype)
             ) ||
-            (person.rolleId == null && person.personident?.verdi == gjelder)
+            (person.rolleId == null && person.personident?.verdi == gjelder) ||
+            (gjelderBarnRolle == null && gjelder == person.personident?.verdi)
 
     override fun toString(): String =
         try {
