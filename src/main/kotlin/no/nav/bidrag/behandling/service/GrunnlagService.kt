@@ -245,7 +245,7 @@ class GrunnlagService(
 
         // TODO: Synkronisering av FF skal skje hyppigere enn grunnlagsinnhenting men ikke hver gang
         if (behandling.erIForholdsmessigFordeling && foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())) {
-            ffService!!.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
+            ffService!!.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling, false)
         }
 
         if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhenting.toLong())) {

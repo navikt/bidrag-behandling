@@ -455,7 +455,10 @@ class ForholdsmessigFordelingService(
 
     /** Synkroniserer søknadsbarn, revurderingsbarn og søknadsstatus mot BBM for en FF-behandling */
     @Transactional
-    fun synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling: Behandling) {
+    fun synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(
+        behandling: Behandling,
+        oppdaterGrunnlag: Boolean = true,
+    ) {
         val løpendeBidraggsakerBP =
             kravhaverService.hentSisteLøpendeStønader(Personident(behandling.bidragspliktig!!.ident!!), behandling.finnBeregningsperiode())
 
@@ -476,7 +479,9 @@ class ForholdsmessigFordelingService(
             val behandlerEnhet = kravhaverService.finnEnhetForBarnIBehandling(behandling)
             overføringService.giSakTilgangTilEnhet(behandling, behandlerEnhet)
             syncGebyrSøknadReferanse(behandling)
-            lagreOgOppdaterGrunnlag(behandling, nyesteLøpendeBidragGrunnlag)
+            if (oppdaterGrunnlag) {
+                lagreOgOppdaterGrunnlag(behandling, nyesteLøpendeBidragGrunnlag)
+            }
             behandling.metadata!!.resetOpprettelseEllerOppdateringAvFFFeilet()
         }
 
