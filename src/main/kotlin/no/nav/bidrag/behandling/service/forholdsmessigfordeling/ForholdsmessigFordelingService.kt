@@ -260,7 +260,14 @@ class ForholdsmessigFordelingService(
                     }
                 val manueltOverstyrtDato =
                     request?.revurderingFraDato
-                        ?: request?.detaljerBarn?.find { it.ident == kravhaverSak.kravhaver }?.manueltOverstyrtRevurderingFraDato
+                        ?: request
+                            ?.detaljerBarn
+                            ?.find {
+                                kravhaverSak.erSammePerson(
+                                    it.ident,
+                                    it.stønadstype,
+                                )
+                            }?.manueltOverstyrtRevurderingFraDato
                         ?: revurderingFraDatoDefault
                 Triple(kravhaverSak.saksnummer!!, kravhaverSak.stønadstype, maxOfNullable(tidligstSøktFomDato, manueltOverstyrtDato))
             }.forEach { (saksnummerLøpendeBidrag, løpendebidragssaker) ->

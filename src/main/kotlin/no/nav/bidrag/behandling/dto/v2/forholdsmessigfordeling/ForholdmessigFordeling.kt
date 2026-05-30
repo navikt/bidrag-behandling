@@ -26,6 +26,7 @@ data class OpprettFFRequest(
     data class OpprettFFRequestBarnDetaljer(
         val manueltOverstyrtRevurderingFraDato: LocalDate? = null,
         val ident: String,
+        val stønadstype: Stønadstype,
     )
 }
 
