@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagLøpendeBidragFF
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
@@ -66,6 +67,7 @@ import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.behandling.vedtak.Periode
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.toYearMonth
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -86,6 +88,9 @@ class ForholdsmessigFordelingService(
     private val virkningstidspunktService: VirkningstidspunktService,
     private val underholdService: UnderholdService,
 ) {
+    @Value($$"${min-antall-minutter-siden-synkroniser-forholdsmessig-fordeling:60}")
+    lateinit var grenseSynkroniserFF: String
+
     private val kravhaverService =
         ForholdsmessigFordelingKravhaverService(
             sakConsumer = sakConsumer,
@@ -447,18 +452,22 @@ class ForholdsmessigFordelingService(
         }
     }
 
-    // endregion
-
-    // ═══════════════════════════════════════════════════════════════════
-    // region Synkroniser forholdsmessig fordeling flow
-    // ═══════════════════════════════════════════════════════════════════
+    private fun foretaNySynkroniseringAvFF(
+        behandling: Behandling,
+        antallMinutter: Long,
+    ): Boolean {
+        val ffSistSynkronisert = behandling.metadata?.getFFSistSynkronisert() ?: return true
+        return LocalDateTime.now().minusMinutes(antallMinutter) > ffSistSynkronisert
+    }
 
     /** Synkroniserer søknadsbarn, revurderingsbarn og søknadsstatus mot BBM for en FF-behandling */
     @Transactional
     fun synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(
         behandling: Behandling,
         oppdaterGrunnlag: Boolean = true,
-    ) {
+    ): Boolean {
+        if (!foretaNySynkroniseringAvFF(behandling, grenseSynkroniserFF.toLong())) return false
+
         val løpendeBidraggsakerBP =
             kravhaverService.hentSisteLøpendeStønader(Personident(behandling.bidragspliktig!!.ident!!), behandling.finnBeregningsperiode())
 
@@ -498,7 +507,8 @@ class ForholdsmessigFordelingService(
         if (behandling.erKlageEllerOmgjøring) {
             opprettSøknaderForKlageEllerOmgjøring(behandling, behandling.soknadsid!!)
             søknadService.knyttSammenManglendeSøknadsknytningerIBehandling(behandling)
-            return
+            behandling.oppdaterFFSistSynkronisert()
+            return true
         }
 
         leggTilRollerFraRelevanteSøknaderSomIkkeErIBehandling(behandling, alleSøknaderRelevantForBehandling)
@@ -513,6 +523,18 @@ class ForholdsmessigFordelingService(
         }
 
         søknadService.knyttSammenManglendeSøknadsknytningerIBehandling(behandling)
+
+        behandling.oppdaterFFSistSynkronisert()
+        return true
+    }
+
+    private fun Behandling.oppdaterFFSistSynkronisert() {
+        metadata =
+            run {
+                val metadata = metadata ?: BehandlingMetadataDo()
+                metadata.setFFSistSynkronisert(LocalDateTime.now())
+                metadata
+            }
     }
 
     @Transactional

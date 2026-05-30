@@ -538,10 +538,11 @@ class BehandlingService(
     ): Behandling {
         val behandling = hentBehandlingById(behandlingsid)
         if (!ikkeHentGrunnlag) {
-//            if (behandling.erIForholdsmessigFordeling) {
-//                forholdsmessigFordelingService?.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
-//                behandlingRepository.save(behandling)
-//            }
+            if (behandling.erIForholdsmessigFordeling) {
+                forholdsmessigFordelingService?.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling).ifTrue {
+                    behandlingRepository.save(behandling)
+                }
+            }
             grunnlagService.oppdaterGrunnlagForBehandlingAsync(behandling)
         }
         virkningstidspunktService.run {
