@@ -734,6 +734,7 @@ class ForholdsmessigFordelingService(
                                 rolletype = it.rolletype,
                                 fødselsdato = hentPersonFødselsdato(it.personident!!),
                                 ident = Personident(it.personident!!),
+                                behandlingstema = søknad.behandlingstema,
                             )
                         },
                 ),
