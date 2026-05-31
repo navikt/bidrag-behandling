@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.RolleSøknadDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
@@ -573,6 +574,15 @@ fun Rolle.tilDto() =
         beregnTilDato = finnBeregnTil(),
         harLøpendeForskudd = behandling.finnesLøpendeForskuddForRolle(this),
         harLøpendeBidrag = behandling.finnesLøpendeBidragForRolle(this),
+        søknader =
+            forholdsmessigFordeling?.søknaderUnderBehandling?.map {
+                RolleSøknadDto(
+                    søknadsId = it.søknadsid!!,
+                    søknadFra = it.søktAvType,
+                    vedtakstype = it.behandlingstype?.tilVedtakstype() ?: behandling.vedtakstype,
+                    enhet = it.enhet,
+                )
+            } ?: emptyList(),
         bidragsmottaker =
             if (rolletype == Rolletype.BARN) {
                 forholdsmessigFordeling?.bidragsmottaker ?: behandling.bidragsmottaker?.ident
