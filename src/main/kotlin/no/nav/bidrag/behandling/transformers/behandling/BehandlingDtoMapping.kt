@@ -582,6 +582,15 @@ fun Rolle.tilDto() =
                     vedtakstype = it.behandlingstype?.tilVedtakstype() ?: behandling.vedtakstype,
                     enhet = it.enhet,
                 )
+            } ?: behandling.soknadsid?.let {
+                listOf(
+                    RolleSøknadDto(
+                        søknadsId = behandling.soknadsid!!,
+                        søknadFra = behandling.soknadFra,
+                        vedtakstype = behandling.vedtakstype,
+                        enhet = behandling.behandlerEnhet,
+                    ),
+                )
             } ?: emptyList(),
         bidragsmottaker =
             if (rolletype == Rolletype.BARN) {
