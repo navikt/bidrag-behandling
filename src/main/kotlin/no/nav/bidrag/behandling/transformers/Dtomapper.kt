@@ -911,7 +911,7 @@ class Dtomapper(
                 opprettetTidspunkt = opprettetTidspunkt,
                 erVedtakFattet = vedtaksid != null,
                 erDelvedtakFattet = vedtakDetaljer?.fattetVedtak?.isNotEmpty() == true,
-                søktFomDato = søktFomDato,
+                søktFomDato = eldsteSøktFomDato,
                 mottattdato = mottattdato,
                 klageMottattdato = omgjøringsdetaljer?.klageMottattdato,
                 søktAv = soknadFra,
