@@ -1547,11 +1547,11 @@ fun List<GrunnlagDto>.finnAlleDelberegningerPrivatAvtalePeriode(
             it.periode.fom
         }
 
-fun List<GrunnlagDto>.finnAlleDelberegningUnderholdskostnad(rolle: Rolle): List<InnholdMedReferanse<DelberegningUnderholdskostnad>> =
+fun List<GrunnlagDto>.finnAlleDelberegningUnderholdskostnad(rolle: GrunnlagDto): List<InnholdMedReferanse<DelberegningUnderholdskostnad>> =
     this
         .filtrerOgKonverterBasertPåEgenReferanse<DelberegningUnderholdskostnad>(
             Grunnlagstype.DELBEREGNING_UNDERHOLDSKOSTNAD,
-        ).filter { it.gjelderBarnReferanse == rolle.tilGrunnlagsreferanse() }
+        ).filter { it.gjelderBarnReferanse == rolle.referanse }
         .sortedBy {
             it.innhold.periode.fom
         }
