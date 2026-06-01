@@ -369,9 +369,13 @@ class BehandlingTilGrunnlagMappingV2(
                                         it.gjelderBarnIdent.isNullOrEmpty()
                                 )
                         }
-                    }.groupBy { it.gjelderBarnIdent }
+                    }.groupBy { Pair(it.gjelderBarnRolle, it.gjelderBarnIdent) }
                     .map { (gjelderBarn, innhold) ->
-                        val søknadsbarnGrunnlag = personobjekter.hentPersonNyesteIdent(gjelderBarn)
+                        val søknadsbarnGrunnlag =
+                            personobjekter.hentPersonNyesteIdent(
+                                gjelderBarn.first?.ident ?: gjelderBarn.second,
+                                gjelderBarn.first?.stønadstype,
+                            )
                         innhold.map {
                             it.tilInntektsrapporteringPeriode(
                                 gjelder,
