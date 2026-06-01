@@ -156,6 +156,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
@@ -402,10 +403,11 @@ class Dtomapper(
                         grunnlagslisteFraVedtak!!
                     } as List<GrunnlagDto>
 
+                val personObjekt = underholdBeregning.hentPerson(it.ident, it.stønadstype)!!
                 BeregnetUnderholdskostnad(
                     it.tilPersoninfoDto(),
                     underholdBeregning
-                        .finnAlleDelberegningUnderholdskostnad(it)
+                        .finnAlleDelberegningUnderholdskostnad(personObjekt)
                         .tilUnderholdskostnadDto(underholdBeregning, erBisysVedtak),
                 )
             }.toSet()
