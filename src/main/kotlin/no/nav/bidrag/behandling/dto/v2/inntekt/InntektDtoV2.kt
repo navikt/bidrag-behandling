@@ -187,7 +187,7 @@ data class BeregnetInntekterDto(
 
 data class InntektPerBarnDto(
     @get:Schema(description = "Referanse til barn", deprecated = true) val inntektGjelderBarnIdent: Personident? = null,
-    @get:Schema(description = "Referanse til barn", deprecated = true) val inntektGjelderBarn: Rolle? = null,
+    @get:Schema(description = "Referanse til barn") val inntektGjelderBarn: RolleDto? = null,
     @get:Schema(description = "Liste over summerte inntektsperioder") var summertInntektListe: List<DelberegningSumInntekt> = emptyList(),
 )
 

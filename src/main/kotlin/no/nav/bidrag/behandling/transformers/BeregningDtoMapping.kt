@@ -164,6 +164,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.finnSøknadGrunnlag
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.toLocalDate
 import no.nav.bidrag.transport.felles.toYearMonth
+import no.nav.bidrag.transport.person.PersonStønad
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
@@ -299,13 +300,13 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
                 finnBeregnTilDatoBehandling(),
             ),
         opphørsdato = rolle.opphørsdatoYearMonth ?: globalOpphørsdatoYearMonth,
-        barnIdentListe =
+        barnListe =
             søknadsbarn
                 .filter { it.avslag == null }
                 .filter {
                     rolle.rolletype != Rolletype.BIDRAGSMOTTAKER || it.bidragsmottaker?.ident == null ||
                         it.bidragsmottaker?.ident == rolle.ident
-                }.map { Personident(it.ident!!) },
+                }.map { PersonStønad(it.ident!!, it.stønadstype) },
         gjelderIdent = Personident(rolle.ident!!),
         grunnlagListe =
             inntekter
@@ -325,7 +326,9 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
                             },
                         beløp = it.belop,
                         inntektsrapportering = it.type,
-                        inntektGjelderBarnIdent = it.gjelderBarnIdent.takeIfNotNullOrEmpty { Personident(it) },
+                        inntektGjelderBarn =
+                            it.gjelderBarnRolle.takeIfNotNullOrEmpty { PersonStønad(it.ident!!, it.stønadstype) }
+                                ?: it.gjelderBarnIdent.takeIfNotNullOrEmpty { PersonStønad(it) },
                         inntektEiesAvIdent = Personident(it.gjelderIdent!!),
                     )
                 },
