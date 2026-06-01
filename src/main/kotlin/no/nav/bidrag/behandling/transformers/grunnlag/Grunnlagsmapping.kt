@@ -28,7 +28,8 @@ import no.nav.bidrag.transport.behandling.inntekt.response.SummertÅrsinntekt
 import java.time.LocalDate
 import java.time.YearMonth
 
-fun RelatertPersonGrunnlagDto.erBarnTilBMUnder12År(virkningstidspunkt: LocalDate) = erBarn && fødselsdato.erUnder12År(virkningstidspunkt)
+fun RelatertPersonGrunnlagDto.erBarnTilBMUnder12År(virkningstidspunkt: LocalDate) =
+    erBarn && fødselsdato != null && fødselsdato.erUnder12År(virkningstidspunkt)
 
 val grunnlagstyperSomIkkeKreverAktivering = listOf(Grunnlagsdatatype.ANDRE_BARN, Grunnlagsdatatype.TILLEGGSSTØNAD)
 val summertAinntektstyper =
