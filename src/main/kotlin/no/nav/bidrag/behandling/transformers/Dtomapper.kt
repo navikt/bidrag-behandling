@@ -119,6 +119,7 @@ import no.nav.bidrag.behandling.transformers.behandling.tilSøknadsdetaljerDto
 import no.nav.bidrag.behandling.transformers.behandling.toSivilstand
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.boforhold.tilBostatusperiode
+import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.samvær.tilDto
 import no.nav.bidrag.behandling.transformers.underhold.tilStønadTilBarnetilsynDtos
 import no.nav.bidrag.behandling.transformers.underhold.valider
@@ -128,6 +129,7 @@ import no.nav.bidrag.behandling.transformers.utgift.tilDto
 import no.nav.bidrag.behandling.transformers.utgift.tilMaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.transformers.utgift.tilSærbidragKategoriDto
 import no.nav.bidrag.behandling.transformers.utgift.tilTotalBeregningDto
+import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BeregnGebyrResultat
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
@@ -403,11 +405,11 @@ class Dtomapper(
                         grunnlagslisteFraVedtak!!
                     } as List<GrunnlagDto>
 
-                val personObjekt = underholdBeregning.hentPerson(it.ident, it.stønadstype)!!
+                val personObjekt = underholdBeregning.hentPersonNyesteIdent(it.ident, it.stønadstype)
                 BeregnetUnderholdskostnad(
                     it.tilPersoninfoDto(),
                     underholdBeregning
-                        .finnAlleDelberegningUnderholdskostnad(personObjekt)
+                        .finnAlleDelberegningUnderholdskostnad(personObjekt ?: it.tilGrunnlagPerson())
                         .tilUnderholdskostnadDto(underholdBeregning, erBisysVedtak),
                 )
             }.toSet()
