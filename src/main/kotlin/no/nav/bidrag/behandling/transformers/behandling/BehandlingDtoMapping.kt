@@ -278,7 +278,7 @@ private fun oppdaterOpphørForRoller(
                 if (opphørsdato != null) {
                     virkningstidspunktService.oppdaterOpphørsdato(
                         OppdaterOpphørsdatoRequestDto(
-                            rolle.id!!,
+                            rolle.id,
                             opphørsdato,
                         ),
                         behandling,

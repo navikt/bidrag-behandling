@@ -128,13 +128,17 @@ fun Collection<SakKravhaver>.finnEldsteSøktFomDato(behandling: Behandling) =
         } + listOf(behandling.søktFomDato)
     ).min()
 
-fun StønadPeriodeDto.løperBidragEtterDato(fraDato: YearMonth) = (periode.til == null || periode.til!! > fraDato)
+fun StønadPeriodeDto.løperBidragEtterDato(fraDato: YearMonth) = periode.løperBidragEtterDato(fraDato)
 
-fun LøpendeBidragSakPeriode.løperBidragEtterDato(fraDato: YearMonth) = (periodeTil == null || periodeTil > fraDato)
+fun LøpendeBidragSakPeriode.løperBidragEtterDato(fraDato: YearMonth) = ÅrMånedsperiode(periodeFra, periodeTil).løperBidragEtterDato(fraDato)
 
 fun SakKravhaver.løperBidragEtterDato(fraDato: YearMonth) =
-    (løperBidragFra != null && løperBidragTil == null) ||
-        (løperBidragTil != null && løperBidragTil > fraDato)
+    løperBidragFra
+        ?.let {
+            ÅrMånedsperiode(it, løperBidragTil)
+        }.løperBidragEtterDato(fraDato)
+
+fun ÅrMånedsperiode?.løperBidragEtterDato(fraDato: YearMonth) = if (this == null) false else (til == null || til!! > fraDato)
 
 fun Collection<SakKravhaver>.finnSøktFomRevurderingSøknad(behandling: Behandling) =
     maxOf(finnEldsteSøktFomDato(behandling).withDayOfMonth(1), LocalDate.now().plusMonths(1).withDayOfMonth(1))

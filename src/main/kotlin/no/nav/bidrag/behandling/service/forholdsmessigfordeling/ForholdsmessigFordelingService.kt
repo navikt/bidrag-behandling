@@ -411,8 +411,8 @@ class ForholdsmessigFordelingService(
         behandling: Behandling,
         nyesteLøpendeBidragGrunnlag: List<LøpendeBidragGrunnlagForholdsmessigFordeling>,
     ) {
-        behandlingService.lagreBehandling(behandling)
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
+        opprettGrunnlagLøpendeBidrag(behandling, nyesteLøpendeBidragGrunnlag)
         oppdaterBehandlingEtterOppdatertRoller(
             behandling,
             underholdService,
@@ -420,7 +420,6 @@ class ForholdsmessigFordelingService(
             behandling.søknadsbarn.map { it.tilOpprettRolleDto() },
             emptyList(),
         )
-        opprettGrunnlagLøpendeBidrag(behandling, nyesteLøpendeBidragGrunnlag)
     }
 
     private fun opprettGrunnlagLøpendeBidrag(
@@ -559,8 +558,8 @@ class ForholdsmessigFordelingService(
         val beløpshistorikk = løpendeBidraggsakerBP.find { rolle.erSammeRolle(it.kravhaver.verdi, it.type) }
         val løperBidrag =
             if (beløpshistorikk != null) {
-                rolle.løperPeriodeEtterBeregnTil(
-                    ÅrMånedsperiode(beløpshistorikk.periodeFra, beløpshistorikk.periodeTil),
+                ÅrMånedsperiode(beløpshistorikk.periodeFra, beløpshistorikk.periodeTil).løperBidragEtterDato(
+                    behandling.eldsteSøktFomDato.toYearMonth(),
                 )
             } else {
                 false
