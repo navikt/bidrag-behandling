@@ -1,6 +1,7 @@
 package no.nav.bidrag.behandling.dto.v1.behandling
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import no.nav.bidrag.behandling.transformers.fødselsdatoSorteringJustering
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -26,6 +27,8 @@ data class RolleDto(
     val harLøpendeBidrag: Boolean? = false,
     val søknader: List<RolleSøknadDto> = emptyList(),
 ) {
+    val fødselsdatoSortering get() = if (erRevurdering == true) fødselsdato?.plusYears(fødselsdatoSorteringJustering) else fødselsdato
+
     @get:JsonIgnore
     val identifikator get() = ident + stønadstype
 }

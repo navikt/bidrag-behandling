@@ -11,8 +11,6 @@ import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessi
 import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
-import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktBarnDtoV2
-import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDto
 import no.nav.bidrag.behandling.dto.v1.behandling.VirkningstidspunktDtoV3
 import no.nav.bidrag.behandling.dto.v1.grunnlag.BpsBarnUtenLøpendeBidragDto
 import no.nav.bidrag.behandling.dto.v2.boforhold.BoforholdDtoV2
@@ -21,8 +19,6 @@ import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoRolle
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektspostDtoV2
-import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleBarnDto
-import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.PrivatAvtaleDtoV3
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværBarnDto
 import no.nav.bidrag.behandling.dto.v2.samvær.SamværDtoV2
@@ -31,6 +27,7 @@ import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.utgift.MaksGodkjentBeløpDto
 import no.nav.bidrag.behandling.dto.v2.validering.UtgiftValideringsfeilDto
 import no.nav.bidrag.behandling.transformers.PeriodeDeserialiserer
+import no.nav.bidrag.behandling.transformers.fødselsdatoSorteringJustering
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
@@ -256,8 +253,15 @@ data class PersoninfoDto(
     val fødselsdato: LocalDate? = null,
     val kilde: Kilde? = null,
     val medIBehandlingen: Boolean? = null,
+    val erRevurderingsbarn: Boolean,
     val stønadstype: Stønadstype? = null,
 ) {
+    val fødselsdatoSortering get() =
+        if (erRevurderingsbarn) {
+            fødselsdato?.plusYears(fødselsdatoSorteringJustering)
+        } else {
+            fødselsdato
+        }
     val sortKey get() = "${ident}_${navn}_$stønadstype"
 }
 

@@ -55,7 +55,7 @@ class ValiderBehandlingServiceTest {
     val bidragSakConsumer: BidragSakConsumer = mockkClass(BidragSakConsumer::class)
     val behandlingRepository: BehandlingRepository = mockkClass(BehandlingRepository::class)
 
-    val validerBehandlingService: ValiderBehandlingService = ValiderBehandlingService(bidragStønadConsumer, bidragSakConsumer, behandlingRepository)
+    val validerBehandlingService: ValiderBehandlingService = ValiderBehandlingService(bidragStønadConsumer, bidragSakConsumer)
 
     @BeforeEach
     fun initMock() {

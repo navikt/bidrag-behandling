@@ -411,8 +411,8 @@ class ForholdsmessigFordelingService(
         behandling: Behandling,
         nyesteLøpendeBidragGrunnlag: List<LøpendeBidragGrunnlagForholdsmessigFordeling>,
     ) {
-        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         opprettGrunnlagLøpendeBidrag(behandling, nyesteLøpendeBidragGrunnlag)
+        grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         oppdaterBehandlingEtterOppdatertRoller(
             behandling,
             underholdService,

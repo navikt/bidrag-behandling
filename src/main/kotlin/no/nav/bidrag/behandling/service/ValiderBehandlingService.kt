@@ -42,7 +42,6 @@ val bidragStønadstyperSomKanBehandles = listOf(Stønadstype.BIDRAG, Stønadstyp
 class ValiderBehandlingService(
     private val bidragBeløpshistorikkConsumer: BidragBeløpshistorikkConsumer,
     private val bidragSakConsumer: BidragSakConsumer,
-    private val behandlingRepository: BehandlingRepository,
 ) {
     fun kanBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? {
         val sak = bidragSakConsumer.hentSak(request.saksnummer)
@@ -118,8 +117,8 @@ class ValiderBehandlingService(
                 .any { it.type != Stønadstype.FORSKUDD }
         val kanBehandleInnkreving = erInnkreving && UnleashFeatures.TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG.isEnabled
         val kanBehandleFlereBarn =
-            UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled && request.vedtakstype != Vedtakstype.KLAGE ||
-                request.vedtakstype == Vedtakstype.KLAGE && UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled &&
+            (UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled && request.vedtakstype != Vedtakstype.KLAGE) ||
+                (request.vedtakstype == Vedtakstype.KLAGE && UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled) &&
                 UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled
         if (harBPStønadForFlereBarn &&
             !(kanBehandleInnkreving || kanBehandleFlereBarn)

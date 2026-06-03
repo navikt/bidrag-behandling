@@ -17,13 +17,13 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import no.nav.bidrag.behandling.database.datamodell.extensions.ÅrsakConverter
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
-import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
 import no.nav.bidrag.behandling.dto.grunnlag.PersonStønad
 import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.service.forholdsmessigfordeling.tilFFBarnDetaljer
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
+import no.nav.bidrag.behandling.transformers.fødselsdatoSorteringJustering
 import no.nav.bidrag.behandling.transformers.løperBidragEtterEldsteVirkning
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
@@ -149,6 +149,9 @@ open class Rolle(
     // Brukes ved blant annet sortering og filtrering for å finne unik rolle.
     // Det kan hende samme rolle er i samme behandling flere ganger (18 år og ordinær bidrag samtidig ved FF)
     val identifikator get() = "${ident}_${navn}_$stønadstype"
+
+    // Ønsker at revurderingsbarn havner bakerst i sortering men at de sorteres etter alder mellom seg
+    val fødselsdatoSortering get() = if (erRevurderingsbarn) fødselsdato.plusYears(fødselsdatoSorteringJustering) else fødselsdato
     val identStønadstypeNøkkel get() = "${ident}_${stønadstype ?: "null"}"
     val erDirekteAvslag get() = avslag != null
     val erAvvisning get() = avslag != null && avslag!!.erAvvisning()

@@ -200,4 +200,3 @@ fun finnBeregningsperiodeForKravhavere(
 }
 
 // endregion
-

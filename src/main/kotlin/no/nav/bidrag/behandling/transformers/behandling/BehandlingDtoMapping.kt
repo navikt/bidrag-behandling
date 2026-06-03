@@ -689,7 +689,7 @@ fun Behandling.tilInntektDtoV3(
     val sorterteBarn =
         rolle.barn
             .sortedWith(
-                sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
+                sorterPersonEtterEldsteFødselsdato({ it.fødselsdatoSortering }, { it.identifikator }),
             ).filter { it.kreverGrunnlagForBeregning }
 
     // Use precomputed inntekterPerType from cache, fall back to per-role computation
@@ -1397,7 +1397,7 @@ fun Behandling.hentBeregnetInntekterForRolle(rolle: Rolle) =
             )
         }.sortedWith(
             sorterPersonEtterEldsteFødselsdato({
-                it.inntektGjelderBarn?.fødselsdato ?: LocalDate.MAX
+                it.inntektGjelderBarn?.fødselsdatoSortering ?: LocalDate.MAX
             }, { it.inntektGjelderBarn?.identifikator }),
         )
 

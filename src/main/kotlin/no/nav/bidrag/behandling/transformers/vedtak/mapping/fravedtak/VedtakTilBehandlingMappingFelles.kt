@@ -157,6 +157,7 @@ fun VedtakDto.tilBeregningResultatForskudd(): List<ResultatBeregningBarnDto> =
                     barn.fødselsdato,
                     stønadstype = stønadsendring.type,
                     referanse = barnGrunnlag.referanse,
+                    erRevurderingsbarn = !barn.delAvOpprinneligBehandling,
                 ),
             perioder =
                 stønadsendring.periodeListe.map {
@@ -198,6 +199,7 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                             hentDirekteOppgjørBeløp(barnIdent.verdi),
                             stønadstype = stønadsendring.type,
                             referanse = barnGrunnlag?.referanse ?: "",
+                            erRevurderingsbarn = barn?.delAvOpprinneligBehandling != null && barn?.delAvOpprinneligBehandling == false,
                         ),
                     erAvvistRevurdering = erVedtakAvvistRevurderingsøknad(),
                     erAvvisning = stønadsendring.beslutning == Beslutningstype.AVVIST,
