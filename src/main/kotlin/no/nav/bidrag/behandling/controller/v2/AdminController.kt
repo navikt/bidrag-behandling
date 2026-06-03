@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import jakarta.persistence.EntityNotFoundException
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -193,6 +194,7 @@ class AdminController(
 
         behandling.grunnlagSistInnhentet = null
         behandling.grunnlagsinnhentingFeilet = null
+        behandling.metadata?.avsluttLastGrunnlagAsync()
         behandlingRepository.save(behandling)
     }
 
@@ -357,6 +359,26 @@ class AdminController(
         val behandling = behandlingRepository.findBehandlingById(behandlingId).getOrNull() ?: behandlingNotFoundException(behandlingId)
         val rolle = behandling.roller.find { it.ident == barnIdent }
         behandlingService.slettRolleFraBehandling(behandling, rolle!!)
+    }
+
+    @PostMapping("/admin/slettetbarn/feilfiks/{behandlingId}")
+    @Operation(
+        description =
+            "Fiks referanser i grunnlagstabellen etter barn er slettet",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @Transactional
+    fun slettetBarnFeilfiksBehandling(
+        @PathVariable behandlingId: Long,
+    ) {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).getOrNull() ?: behandlingNotFoundException(behandlingId)
+        behandling.grunnlag.forEach { grunnlag ->
+            try {
+                grunnlag.gjelderBarnRolle?.toString()
+            } catch (e: EntityNotFoundException) {
+                grunnlag.gjelderBarnRolle = null
+            }
+        }
     }
 
     @PostMapping("/admin/feilfiks/boforhold/perioder/fomtom/{behandlingId}")

@@ -1,5 +1,6 @@
 package no.nav.bidrag.behandling.dto.v1.behandling
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import java.time.LocalDate
@@ -21,4 +22,7 @@ data class RolleDto(
     val bidragsmottaker: String? = null,
     val harLøpendeForskudd: Boolean? = false,
     val harLøpendeBidrag: Boolean? = false,
-)
+) {
+    @get:JsonIgnore
+    val identifikator get() = ident + stønadstype
+}

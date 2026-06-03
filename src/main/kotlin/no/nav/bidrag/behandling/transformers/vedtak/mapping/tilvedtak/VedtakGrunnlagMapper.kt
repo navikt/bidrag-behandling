@@ -456,7 +456,7 @@ class VedtakGrunnlagMapper(
         BeregnApi()
             .beregnInntekt(tilInntektberegningDto(rolle))
             .inntektPerBarnListe
-            .filter { it.inntektGjelderBarnIdent != null }
+            .filter { it.inntektGjelderBarn?.ident != null }
             .flatMap { beregningBarn ->
                 beregningBarn.summertInntektListe.map {
                     GrunnlagDto(
@@ -464,7 +464,7 @@ class VedtakGrunnlagMapper(
                         type = Grunnlagstype.DELBEREGNING_SUM_INNTEKT,
                         innhold = POJONode(it),
                         gjelderReferanse = rolle.tilGrunnlagsreferanse(),
-                        gjelderBarnReferanse = beregningBarn.inntektGjelderBarnIdent!!.verdi,
+                        gjelderBarnReferanse = beregningBarn.inntektGjelderBarn!!.ident,
                     )
                 }
             }
