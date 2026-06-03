@@ -1357,11 +1357,13 @@ fun Behandling.hentBeregnetInntekterForRolle(rolle: Rolle) =
     BeregnApi()
         .beregnInntekt(tilInntektberegningDto(rolle))
         .inntektPerBarnListe
-        .sortedBy {
-            it.inntektGjelderBarnIdent?.verdi
-        }.map {
+        .map {
             InntektPerBarnDto(
-                inntektGjelderBarnIdent = it.inntektGjelderBarnIdent,
+                inntektGjelderBarn =
+                    it.inntektGjelderBarn
+                        ?.let { gjelderBarn ->
+                            roller.find { it.erSammeRolle(gjelderBarn.ident, gjelderBarn.stønadstype) }
+                        }?.tilDto(),
                 summertInntektListe =
                     it.summertInntektListe.map { delberegning ->
                         delberegning.copy(
@@ -1374,7 +1376,11 @@ fun Behandling.hentBeregnetInntekterForRolle(rolle: Rolle) =
                         )
                     },
             )
-        }
+        }.sortedWith(
+            sorterPersonEtterEldsteFødselsdato({
+                it.inntektGjelderBarn?.fødselsdato ?: LocalDate.MAX
+            }, { it.inntektGjelderBarn?.identifikator }),
+        )
 
 fun Behandling.tilReferanseId() = "bidrag_behandling_${id}_${opprettetTidspunkt.toEpochSecond(ZoneOffset.UTC)}"
 
