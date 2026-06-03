@@ -114,8 +114,7 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
                         finnFødselsdato(
                             gjelderPersonId,
                             fødselsdato,
-                        ) // Avbryter prosesering dersom fødselsdato til husstandsmedlem er ukjent
-                            ?: fantIkkeFødselsdatoTilSøknadsbarn(-1),
+                        ) ?: LocalDate.MAX,
                 ).valider(),
             ),
     )
