@@ -848,7 +848,6 @@ class Dtomapper(
             } else {
                 emptyMap()
             }
-        val gebyrValideringsfeilCache = if (harGebyrsøknad) validerGebyr() else emptyList()
         val behandlingDto =
             BehandlingDtoV2(
                 id = id!!,

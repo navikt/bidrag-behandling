@@ -323,7 +323,8 @@ class BehandlingTilGrunnlagMappingV2(
                         .tilInntektsrapporteringPeriode(
                             gjelder,
                             null,
-                            grunnlagListe,
+                            skalTasMed = true,
+                            grunnlagListe = grunnlagListe,
                         ).let {
                             it.copy(
                                 referanse = "${it.referanse}_$grunnlagsreferanseSimulert",
