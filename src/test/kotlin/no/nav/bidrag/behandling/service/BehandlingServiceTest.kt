@@ -444,7 +444,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                     it.inntekter.beregnetInntekter.find { it.rolle == Rolletype.BIDRAGSMOTTAKER }!!
                 beregnetInntekterBM.inntekter shouldHaveSize 3
                 val inntekterAlle =
-                    beregnetInntekterBM.inntekter.find { it.inntektGjelderBarnIdent == null }
+                    beregnetInntekterBM.inntekter.find { it.inntektGjelderBarn == null }
                 val inntekterBarn1 =
                     beregnetInntekterBM.inntekter.hentInntektForBarn(testdataBarn1.ident)
                 val inntekterBarn2 =

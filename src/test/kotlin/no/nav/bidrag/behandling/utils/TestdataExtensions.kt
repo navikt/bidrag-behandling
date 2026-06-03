@@ -6,7 +6,6 @@ import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntektPerBarnDto
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.sjablon.SjablonTallNavn
-import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SjablonSjablontallPeriode
@@ -16,7 +15,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErRefer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe
 
-fun List<InntektPerBarnDto>.hentInntektForBarn(barnIdent: String) = find { it.inntektGjelderBarnIdent == Personident(barnIdent) }
+fun List<InntektPerBarnDto>.hentInntektForBarn(barnIdent: String) = find { it.inntektGjelderBarn?.ident == barnIdent }
 
 fun List<BaseGrunnlag>.harReferanseTilGrunnlag(
     grunnlag: Grunnlagstype,
