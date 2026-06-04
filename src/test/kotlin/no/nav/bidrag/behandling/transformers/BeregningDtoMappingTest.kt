@@ -75,6 +75,7 @@ class BeregningDtoMappingTest {
                         testdataBarn1.fødselsdato,
                         stønadstype = Stønadstype.FORSKUDD,
                         referanse = testdataBarn1.tilRolle().tilGrunnlagsreferanse(),
+                        erRevurderingsbarn = false,
                     ),
                     løperForskudd = false,
                     BeregnetForskuddResultat(
@@ -125,6 +126,7 @@ class BeregningDtoMappingTest {
                             testdataBarn1.navn,
                             testdataBarn1.fødselsdato,
                             referanse = testdataBarn1.tilRolle().tilGrunnlagsreferanse(),
+                            erRevurderingsbarn = false,
                         ),
                     resultat =
                         BeregnetForskuddResultat(
@@ -188,6 +190,7 @@ class BeregningDtoMappingTest {
                     testDataPerson.navn,
                     testDataPerson.fødselsdato,
                     referanse = testdataBarn1.tilRolle().tilGrunnlagsreferanse(),
+                    erRevurderingsbarn = false,
                 ),
             resultat =
                 BeregnetForskuddResultat(
