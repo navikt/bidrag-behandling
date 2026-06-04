@@ -206,7 +206,7 @@ class BehandlingService(
 
     @Transactional
     fun opprettBehandling(opprettBehandling: OpprettBehandlingRequest): OpprettBehandlingResponse {
-        opprettBehandling.roller.forEach { rolle ->
+        opprettBehandling.rollerUnderBehandling.forEach { rolle ->
             rolle.ident?.let {
                 tilgangskontrollService.sjekkTilgangPersonISak(
                     it,
@@ -350,7 +350,7 @@ class BehandlingService(
         behandling.roller.addAll(
             HashSet(
                 // Ikke legg til barn som har lukket status
-                opprettBehandling.roller.filter { it.behandlingstatus == null || !it.behandlingstatus.lukketStatus }.map {
+                opprettBehandling.rollerUnderBehandling.map {
                     it.toRolle(behandling, stønadstype = opprettBehandling.stønadstype, søktFraDato = opprettBehandling.søktFomDato)
                 },
             ),
@@ -371,7 +371,7 @@ class BehandlingService(
         }
         if (TypeBehandling.BIDRAG == opprettBehandling.tilType() && opprettBehandling.vedtakstype.kreverGrunnlag()) {
             // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
-            opprettBehandling.roller.filter { Rolletype.BARN == it.rolletype }.forEach {
+            opprettBehandling.rollerUnderBehandling.filter { Rolletype.BARN == it.rolletype }.forEach {
                 behandling.underholdskostnader.add(
                     underholdService.oppretteUnderholdskostnad(behandling, BarnDto(personident = it.ident, stønadstype = it.stønadstype)),
                 )
@@ -628,7 +628,7 @@ class BehandlingService(
         behandlingId: Long,
         request: OppdaterRollerRequest,
     ): OppdaterRollerResponse {
-        val oppdaterRollerListe = request.roller
+        val oppdaterRollerListe = request.rollerUnderBehandling
         val behandling =
             behandlingRepository.findBehandlingById(behandlingId).get().let {
                 if (it.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {

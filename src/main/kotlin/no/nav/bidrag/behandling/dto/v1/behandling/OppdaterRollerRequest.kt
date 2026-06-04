@@ -6,7 +6,16 @@ data class OppdaterRollerRequest(
     @get:Schema(required = true) val roller: List<OpprettRolleDto>,
     val søknadsid: Long? = null,
     val saksnummer: String? = null,
-)
+) {
+    val rollerUnderBehandling get() =
+        roller.map {
+            if (it.behandlingstatus?.lukketStatus == true) {
+                it.copy(erSlettet = true)
+            } else {
+                it
+            }
+        }
+}
 
 data class OppdaterRollerResponse(
     @get:Schema(required = true) val status: OppdaterRollerStatus,
