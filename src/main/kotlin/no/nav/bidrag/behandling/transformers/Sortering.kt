@@ -24,7 +24,7 @@ fun Set<Rolle>.sorterForInntektsbildet() =
                 Rolletype.BARN -> 2
                 else -> 3
             }
-        }.then(sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator })),
+        }.then(sorterPersonEtterEldsteFødselsdato({ it.fødselsdatoSortering }, { it.identifikator })),
     )
 
 fun <T> sorterPersonEtterEldsteFødselsdato(

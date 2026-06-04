@@ -8,12 +8,22 @@ import no.nav.bidrag.commons.service.AppContext
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.HentStønadHistoriskRequest
+import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragssakerRequest
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssakerResponse
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.SkyldnerStønaderResponse
 import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 import no.nav.bidrag.transport.person.PersonDto
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpStatusCodeException
+
+fun hentLøpendeBidrag(bp: Personident): LøpendeBidragssakerResponse? =
+    try {
+        AppContext.getBean(BidragBeløpshistorikkConsumer::class.java).hentLøpendeBidrag(LøpendeBidragssakerRequest(bp))
+    } catch (e: Exception) {
+        secureLogger.debug(e) { "Feil ved henting av beløpshistorikk $bp" }
+        null
+    }
 
 fun hentStønad(req: HentStønadHistoriskRequest): StønadDto? =
     try {

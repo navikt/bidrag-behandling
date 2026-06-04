@@ -202,7 +202,7 @@ class BehandlingService(
 
     @Transactional
     fun opprettBehandling(opprettBehandling: OpprettBehandlingRequest): OpprettBehandlingResponse {
-        opprettBehandling.roller.forEach { rolle ->
+        opprettBehandling.rollerUnderBehandling.forEach { rolle ->
             rolle.ident?.let {
                 tilgangskontrollService.sjekkTilgangPersonISak(
                     it,
@@ -345,7 +345,8 @@ class BehandlingService(
         }
         behandling.roller.addAll(
             HashSet(
-                opprettBehandling.roller.map {
+                // Ikke legg til barn som har lukket status
+                opprettBehandling.rollerUnderBehandling.map {
                     it.toRolle(behandling, stønadstype = opprettBehandling.stønadstype, søktFraDato = opprettBehandling.søktFomDato)
                 },
             ),
@@ -366,7 +367,7 @@ class BehandlingService(
         }
         if (TypeBehandling.BIDRAG == opprettBehandling.tilType() && opprettBehandling.vedtakstype.kreverGrunnlag()) {
             // Oppretter underholdskostnad for alle barna i behandlingen ved bidrag
-            opprettBehandling.roller.filter { Rolletype.BARN == it.rolletype }.forEach {
+            opprettBehandling.rollerUnderBehandling.filter { Rolletype.BARN == it.rolletype }.forEach {
                 behandling.underholdskostnader.add(
                     underholdService.oppretteUnderholdskostnad(behandling, BarnDto(personident = it.ident, stønadstype = it.stønadstype)),
                 )
@@ -622,7 +623,7 @@ class BehandlingService(
         behandlingId: Long,
         request: OppdaterRollerRequest,
     ): OppdaterRollerResponse {
-        val oppdaterRollerListe = request.roller
+        val oppdaterRollerListe = request.rollerUnderBehandling
         val behandling =
             behandlingRepository.findBehandlingById(behandlingId).get().let {
                 if (it.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
@@ -642,6 +643,12 @@ class BehandlingService(
                 "Kan ikke oppdatere behandling hvor vedtak er fattet",
             )
         }
+
+        if (behandling.metadata?.lasterGrunnlagAsync() == true) {
+            // Ikke gjør noe endringer hvis grunnlag lastes i bakgrunnen for å unngå race condition i transaksjoner
+            return OppdaterRollerResponse(status = OppdaterRollerStatus.ROLLER_OPPDATERT)
+        }
+
         val oppdaterRollerNyesteIdent =
             oppdaterRollerListe.map { rolle ->
                 rolle.copy(

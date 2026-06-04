@@ -42,7 +42,6 @@ val bidragStønadstyperSomKanBehandles = listOf(Stønadstype.BIDRAG, Stønadstyp
 class ValiderBehandlingService(
     private val bidragBeløpshistorikkConsumer: BidragBeløpshistorikkConsumer,
     private val bidragSakConsumer: BidragSakConsumer,
-    private val behandlingRepository: BehandlingRepository,
 ) {
     fun kanBehandlesINyLøsning(request: KanBehandlesINyLøsningRequest): String? {
         val sak = bidragSakConsumer.hentSak(request.saksnummer)
@@ -77,12 +76,6 @@ class ValiderBehandlingService(
         if (!bidragStønadstyperSomKanBehandles.contains(request.stønadstype)) {
             return "Kan ikke behandle ${request.stønadstype?.tilVisningsnavn()} gjennom ny løsning"
         }
-        val erInnkreving =
-            listOf(Behandlingstype.INNKREVINGSGRUNNLAG, Behandlingstype.PRIVAT_AVTALE).contains(request.søknadstype) ||
-                request.vedtakstype == Vedtakstype.INNKREVING
-        if (request.søknadsbarn.size > 1 && !erInnkreving && !UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
-            return "Behandlingen har flere enn ett søknadsbarn"
-        }
 
         if (request.søknadstype == Behandlingstype.PRIVAT_AVTALE && !UnleashFeatures.TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG.isEnabled) {
             return "Kan ikke behandle privat avtale"
@@ -92,11 +85,7 @@ class ValiderBehandlingService(
         ) {
             return "Kan ikke behandle innkrevingsgrunnlag"
         }
-        if ((request.vedtakstype == Vedtakstype.KLAGE || request.harReferanseTilAnnenBehandling) &&
-            !UnleashFeatures.BIDRAG_KLAGE.isEnabled
-        ) {
-            return "Kan ikke behandle klage eller omgjøring"
-        }
+
         if (request.erBegrensetRevurdering() && !UnleashFeatures.BEGRENSET_REVURDERING.isEnabled) {
             return "Kan ikke behandle begrenset revurdering"
         }
@@ -108,24 +97,6 @@ class ValiderBehandlingService(
         if (bp == null || bp.erUkjent == true || bp.ident == null) return "Behandlingen mangler bidragspliktig"
         val bm = request.bidragsmottaker
         if (bm == null || bm.erUkjent == true || bm.ident == null) return "Behandlingen mangler bidragsmottaker"
-
-        val søknadsbarn = request.søknadsbarn.firstOrNull() ?: return "Behandlingen mangler søknadsbarn"
-        val harBPStønadForFlereBarn =
-            bidragBeløpshistorikkConsumer
-                .hentAlleStønaderForBidragspliktig(bp.ident)
-                .stønader
-                .filter { it.kravhaver.verdi != søknadsbarn.ident?.verdi }
-                .any { it.type != Stønadstype.FORSKUDD }
-        val kanBehandleInnkreving = erInnkreving && UnleashFeatures.TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG.isEnabled
-        val kanBehandleFlereBarn =
-            UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled && request.vedtakstype != Vedtakstype.KLAGE ||
-                request.vedtakstype == Vedtakstype.KLAGE && UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled &&
-                UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled
-        if (harBPStønadForFlereBarn &&
-            !(kanBehandleInnkreving || kanBehandleFlereBarn)
-        ) {
-            return "Bidragspliktig har historiske eller løpende bidrag for flere barn"
-        }
 
         if (request.søktFomDato != null && request.søktFomDato.isBefore(LocalDate.parse("2023-03-01")) &&
             !UnleashFeatures.GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK.isEnabled
@@ -144,19 +115,19 @@ class ValiderBehandlingService(
     fun validerKanBehandlesIBisys(behandling: BehandlingSimple) {
         if (!behandling.erBidrag()) return
 
-        if (behandling.forholdsmessigFordeling != null && behandling.kanFatteVedtak()) {
-            log.debug {
-                "Behandling ${behandling.id} kan ikke behandles i Bisys fordi det har blitt opprettet forholdsmessig fordeling"
-            }
-            throw HttpClientErrorException(
-                HttpStatus.PRECONDITION_FAILED,
-                "Behandling kan ikke behandles i Bisys",
-                commonObjectmapper.writeValueAsBytes(
-                    KanBehandlesINyLøsningResponse(listOf("Forholdsmessig fordeling er opprettet i ny løsning")),
-                ),
-                Charsets.UTF_8,
-            )
-        }
+//        if (behandling.forholdsmessigFordeling != null && behandling.kanFatteVedtak()) {
+//            log.debug {
+//                "Behandling ${behandling.id} kan ikke behandles i Bisys fordi det har blitt opprettet forholdsmessig fordeling"
+//            }
+//            throw HttpClientErrorException(
+//                HttpStatus.PRECONDITION_FAILED,
+//                "Behandling kan ikke behandles i Bisys",
+//                commonObjectmapper.writeValueAsBytes(
+//                    KanBehandlesINyLøsningResponse(listOf("Forholdsmessig fordeling er opprettet i ny løsning")),
+//                ),
+//                Charsets.UTF_8,
+//            )
+//        }
     }
 
     fun validerKanFattesINyLøsning(behandling: BehandlingSimple) {

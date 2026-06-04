@@ -275,8 +275,8 @@ open class Behandling(
         if (erIForholdsmessigFordeling) {
             søknadsbarn
                 .mapNotNull {
-                    it.forholdsmessigFordeling!!
-                        .eldsteSøknad
+                    it.forholdsmessigFordeling
+                        ?.eldsteSøknad
                         ?.søknadFomDato
                         ?.withDayOfMonth(1)
                 }.minOrNull() ?: søktFomDato.withDayOfMonth(1)

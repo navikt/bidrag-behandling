@@ -26,6 +26,7 @@ data class BehandlingSimple(
     val engangsbeløptype: Engangsbeløptype?,
     val forholdsmessigFordeling: ForholdsmessigFordeling?,
     val roller: List<RolleSimple> = emptyList(),
+    val privatAvtaleAndreBarnIdenter: List<String> = emptyList(),
 ) {
     constructor(
         id: Long? = null,
