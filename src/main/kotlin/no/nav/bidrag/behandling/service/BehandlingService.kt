@@ -648,6 +648,12 @@ class BehandlingService(
                 "Kan ikke oppdatere behandling hvor vedtak er fattet",
             )
         }
+
+        if (behandling.metadata?.lasterGrunnlagAsync() == true) {
+            // Ikke gjør noe endringer hvis grunnlag lastes i bakgrunnen for å unngå race condition i transaksjoner
+            return OppdaterRollerResponse(status = OppdaterRollerStatus.ROLLER_OPPDATERT)
+        }
+
         val oppdaterRollerNyesteIdent =
             oppdaterRollerListe.map { rolle ->
                 rolle.copy(
