@@ -453,7 +453,7 @@ fun Rolle.harLøpendeBidragFørOpphørEllerLøpende() =
 
 fun Rolle.løperBidragFørOpphør() =
     opphørsdato != null && finnLøperBidragFra() != null &&
-        opphørsdato!! > behandling.eldsteVirkningstidspunkt &&
+        opphørsdato!! > behandling.eldsteSøktFomDato &&
         opphørsdato!!.toYearMonth() > finnLøperBidragFra()!!
 
 fun Rolle.erRevurderingsbarnUtenLøpendeBidrag() =

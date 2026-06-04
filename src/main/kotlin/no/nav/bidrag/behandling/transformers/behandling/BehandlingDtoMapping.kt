@@ -423,22 +423,24 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
         if (harPrivatAvtaleAndreBarn) {
             return "Kan ikke fatte vedtak når det er lagt inn privat avtale for andre barn"
         }
-    } else if (!UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_SAKER.isEnabled) {
+    }
+
+    if (!UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_SAKER.isEnabled) {
         val sakerBp =
             hentAlleSaker(bidragspliktig!!.ident).filter {
                 it.saksnummer.verdi != saksnummer &&
                     it.bidragspliktig?.fødselsnummer?.verdi == bidragspliktig!!.ident
             }
         val søknadsbarnIdenter = søknadsbarn.map { it.ident }
-//        val andreBarnISaker =
-//            sakerBp
-//                .flatMap { it.barn.mapNotNull { it.fødselsnummer?.verdi } }
-//                .filter { !søknadsbarnIdenter.contains(it) }
-//                .distinct()
+        val barnIAndreSaker =
+            sakerBp
+                .flatMap { it.barn.mapNotNull { it.fødselsnummer?.verdi } }
+                .filter { !søknadsbarnIdenter.contains(it) }
+                .distinct()
         val bpHarLøpendeBidragIAndreSaker = løpendeBidrag?.bidragssakerListe?.any { it.sak.verdi != saksnummer } == true
 
-        if (sakerBp.isNotEmpty() && bpHarLøpendeBidragIAndreSaker) {
-            return "Kan ikke fatte vedtak når BP har løpende bidrag i flere saker"
+        if (sakerBp.isNotEmpty() && barnIAndreSaker.isNotEmpty()) {
+            return "Kan ikke fatte vedtak når BP har flere saker"
         }
         val harPrivatAvtaleAndreBarnAndreSaker =
             sakerBp.filter { it.saksnummer.verdi != saksnummer }.any {
@@ -460,7 +462,7 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
 
     val harOppfostringsbidrag =
         løpendeBidrag?.bidragssakerListe?.any {
-            it.valutakode.isNotEmpty() && it.valutakode != "NOK"
+            it.type == Stønadstype.OPPFOSTRINGSBIDRAG
         } == true
 
     if (harOppfostringsbidrag && !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_OPPFOSTRINGSBIDRAG.isEnabled) {
