@@ -83,7 +83,9 @@ class ForholdsmessigFordelingBarnService(
                 ?.behandlingstema
                 ?.tilStønadstype()
         val identerSomSkalSlettes = request.rollerSomSkalSlettes.mapNotNull { it.ident?.verdi }
-        feilregistrerRevurderingsbarnFraFFSøknad(request.behandling, request.rollerSomSkalLeggesTilDto, stønadstypeBeregnet)
+        if (!request.erRevurdering) {
+            feilregistrerRevurderingsbarnFraFFSøknad(request.behandling, request.rollerSomSkalLeggesTilDto, stønadstypeBeregnet)
+        }
         val relevanteKravhavere = kravhaverService.hentAlleRelevanteKravhavere(request.behandling)
 
         val rollerSomSkalLeggesTil = mutableSetOf<Rolle>()
