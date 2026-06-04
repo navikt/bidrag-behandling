@@ -115,19 +115,19 @@ class ValiderBehandlingService(
     fun validerKanBehandlesIBisys(behandling: BehandlingSimple) {
         if (!behandling.erBidrag()) return
 
-        if (behandling.forholdsmessigFordeling != null && behandling.kanFatteVedtak()) {
-            log.debug {
-                "Behandling ${behandling.id} kan ikke behandles i Bisys fordi det har blitt opprettet forholdsmessig fordeling"
-            }
-            throw HttpClientErrorException(
-                HttpStatus.PRECONDITION_FAILED,
-                "Behandling kan ikke behandles i Bisys",
-                commonObjectmapper.writeValueAsBytes(
-                    KanBehandlesINyLøsningResponse(listOf("Forholdsmessig fordeling er opprettet i ny løsning")),
-                ),
-                Charsets.UTF_8,
-            )
-        }
+//        if (behandling.forholdsmessigFordeling != null && behandling.kanFatteVedtak()) {
+//            log.debug {
+//                "Behandling ${behandling.id} kan ikke behandles i Bisys fordi det har blitt opprettet forholdsmessig fordeling"
+//            }
+//            throw HttpClientErrorException(
+//                HttpStatus.PRECONDITION_FAILED,
+//                "Behandling kan ikke behandles i Bisys",
+//                commonObjectmapper.writeValueAsBytes(
+//                    KanBehandlesINyLøsningResponse(listOf("Forholdsmessig fordeling er opprettet i ny løsning")),
+//                ),
+//                Charsets.UTF_8,
+//            )
+//        }
     }
 
     fun validerKanFattesINyLøsning(behandling: BehandlingSimple) {
