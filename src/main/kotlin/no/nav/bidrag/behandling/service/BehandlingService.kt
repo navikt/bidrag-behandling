@@ -349,7 +349,8 @@ class BehandlingService(
         }
         behandling.roller.addAll(
             HashSet(
-                opprettBehandling.roller.map {
+                // Ikke legg til barn som har lukket status
+                opprettBehandling.roller.filter { it.behandlingstatus == null || !it.behandlingstatus.lukketStatus }.map {
                     it.toRolle(behandling, stønadstype = opprettBehandling.stønadstype, søktFraDato = opprettBehandling.søktFomDato)
                 },
             ),
