@@ -3,10 +3,10 @@
 package no.nav.bidrag.behandling.database.repository
 
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple
 import no.nav.bidrag.behandling.database.datamodell.minified.RolleSimple
-import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.CrudRepository
@@ -57,17 +57,19 @@ interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandl
 
     @Query(
         """
-    SELECT count(*) FROM privat_avtale p WHERE p.behandling.id= :id and p.rolle is null
+    SELECT p FROM privat_avtale p inner join fetch p.person WHERE p.behandling.id= :id and p.rolle is null
 """
     )
-    fun findNumberOfPrivatAvtaleAndreBarn(id: Long): Int
+    fun findPrivatAvtaleAndreBarn(id: Long): List<PrivatAvtale>
 
 
     fun findBehandlingSimple(id: Long): BehandlingSimple {
         val behandling = findBehandlingSimpleData(id)
         val roller = findRolleSimpleData(id)
-        val harPrivatAvtaleAndreBarn = findNumberOfPrivatAvtaleAndreBarn(id) != 0
-        return behandling.copy(roller = roller, harPrivatAvtaleAndreBarn = harPrivatAvtaleAndreBarn)
+        val privatAvtaleAndreBarn = findPrivatAvtaleAndreBarn(id)
+        val harPrivatAvtaleAndreBarn = privatAvtaleAndreBarn.isNotEmpty()
+        val privatAvtaleAndreBarnIdenter = privatAvtaleAndreBarn.mapNotNull { it.person?.ident }
+        return behandling.copy(roller = roller, harPrivatAvtaleAndreBarn = harPrivatAvtaleAndreBarn, privatAvtaleAndreBarnIdenter = privatAvtaleAndreBarnIdenter)
     }
 
     fun findBehandlingById(id: Long): Optional<Behandling>

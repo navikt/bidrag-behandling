@@ -13,9 +13,7 @@ enum class UnleashFeatures(
     // Dette er for å unngå de slettes ved grunnlagsinnhenting
     GRUNNLAGSINNHENTING_FUNKSJONELL_FEIL_TEKNISK("behandling.grunnlag_behandle_funksjonell_feil_som_teknisk", false),
     FATTE_VEDTAK("behandling.fattevedtak_klage", false),
-    FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN("behandling.fattevedtak_flere_barn", false),
-    FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_OMGJØRING("behandling.fattevedtak_flere_barn_omgjoring", false),
-    FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG("behandling.fattevedtak_flere_barn_lopende_bidrag", false),
+
     BIDRAG_KLAGE("behandling.bidrag_klage", false),
     BEGRENSET_REVURDERING("behandling.begrenset_revurdering", false),
     VEDTAKSSPERRE("vedtakssperre", false),
@@ -29,6 +27,14 @@ enum class UnleashFeatures(
     SEND_BEHANDLING_HENDELSE("bisys.send_behandling_hendelse", false),
     HENT_GRUNNLAG_ASYNC("behandling.hent_grunnlag_async", false),
     FEILHÅNDTERING_INNTEKT_SOM_MANGLER("behandling.opprett_inntekt_som_mangler", false),
+
+    // Forhodlsmessig fordeling
+    FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN("behandling.fattevedtak_flere_barn", false),
+    FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_OMGJØRING("behandling.fattevedtak_flere_barn_omgjoring", false),
+    FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG("behandling.fattevedtak_flere_barn_lopende_bidrag", false),
+    FATTE_VEDTAK_BARNEBIDRAG_FLERE_SAKER("behandling.ff_bp_flere_saker", false),
+    FATTE_VEDTAK_BARNEBIDRAG_UTENLANDSK_VALUTA("behandling.fattevedtak_barnebidrag_utenlandskvaluta", false),
+    FATTE_VEDTAK_BARNEBIDRAG_OPPFOSTRINGSBIDRAG("behandling.fattevedtak_barnebidrag_oppfostringsbidrag", false),
     ;
 
     private var defaultValue = false

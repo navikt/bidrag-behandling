@@ -29,6 +29,7 @@ data class KanBehandlesINyLøsningRequest(
     val skruddAvManuelt: String? = null,
     val søktFomDato: LocalDate? = null,
     val mottattdato: LocalDate? = null,
+    val privatAvtaleAndreBarnIdenter: List<String> = emptyList(),
 ) {
     val bidragspliktig get() = roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
     val bidragsmottaker get() = roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
