@@ -42,7 +42,6 @@ class KanFatteVedtakTest {
         mockkStatic("no.nav.bidrag.behandling.service.SakServiceKt")
         mockkStatic("no.nav.bidrag.behandling.service.PersonServiceKt")
 
-        disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN)
         disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG)
         disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_SAKER)
         disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_UTENLANDSK_VALUTA)
@@ -102,7 +101,6 @@ class KanFatteVedtakTest {
                     ),
             )
 
-        enableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN)
         disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG)
 
         behandling.kanFatteVedtakBegrunnelse() shouldBe BEGRUNNELSE_ULIKE_VIRKNINGSTIDSPUNKT
@@ -112,7 +110,6 @@ class KanFatteVedtakTest {
     fun `skal ikke kunne fatte vedtak for behandling som mangler barn i saken`() {
         val behandling = opprettBehandlingSimple()
 
-        enableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN)
         disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG)
         every { hentSak(SAKSNUMMER) } returns opprettSak()
 
@@ -123,7 +120,6 @@ class KanFatteVedtakTest {
     fun `skal ikke fatte vedtak når ikke alle barn saken er inkludert i behandlingen`() {
         val behandling = opprettBehandlingSimple()
 
-        enableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN)
         disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG)
         every { hentSak(SAKSNUMMER) } returns null
 
@@ -137,7 +133,6 @@ class KanFatteVedtakTest {
                 harPrivatAvtaleAndreBarn = true,
             )
 
-        enableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN)
         disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG)
         every { hentSak(SAKSNUMMER) } returns opprettSak(testdataBarn1.ident)
 
@@ -148,7 +143,6 @@ class KanFatteVedtakTest {
     fun `skal ikke kunne fatte vedtak når BP har flere saker`() {
         val behandling = opprettBehandlingSimple()
 
-        enableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN)
         enableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG)
         disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_SAKER)
         every {
@@ -173,7 +167,6 @@ class KanFatteVedtakTest {
                 privatAvtaleAndreBarnIdenter = listOf(testdataBarn1.ident),
             )
 
-        enableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN)
         enableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG)
         disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_SAKER)
         every {

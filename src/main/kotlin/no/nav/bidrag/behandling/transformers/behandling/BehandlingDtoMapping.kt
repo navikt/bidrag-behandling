@@ -403,12 +403,9 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
         return "Kan ikke behandle søknad for bidrag uten bidragspliktig"
     }
 
-    val kanBehandleBidragFlereBarnHvorAlleBarnIkkeErDelAvBehandling =
-        UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled &&
-            UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled
     val løpendeBidrag = hentLøpendeBidrag(bidragspliktig!!.personident)
 
-    if (!kanBehandleBidragFlereBarnHvorAlleBarnIkkeErDelAvBehandling) {
+    if (!UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled) {
         if (søknadsbarn.mapNotNull { it.virkningstidspunkt ?: virkningstidspunkt }.toSet().size > 1) {
             return "Kan ikke fatte vedtak når søknadsbarna har ulike virkningstidspunkt"
         }
