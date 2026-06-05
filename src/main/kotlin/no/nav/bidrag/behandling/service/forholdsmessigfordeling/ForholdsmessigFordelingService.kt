@@ -43,6 +43,7 @@ import no.nav.bidrag.behandling.transformers.maxOfNullable
 import no.nav.bidrag.behandling.transformers.tilDato18årsBidrag
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
+import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
@@ -149,7 +150,7 @@ class ForholdsmessigFordelingService(
         request: OpprettFFRequest? = null,
     ) {
         try {
-            if (!UnleashFeatures.TILGANG_OPPRETTE_FF.isEnabled) {
+            if (TokenUtils.hentBruker() != null && !UnleashFeatures.TILGANG_OPPRETTE_FF.isEnabled) {
                 LOGGER.info { "Opprettelse av forholdsmessig fordeling er deaktivert" }
                 ugyldigForespørsel("Opprettelse av forholdsmessig fordeling er deaktivert")
             }

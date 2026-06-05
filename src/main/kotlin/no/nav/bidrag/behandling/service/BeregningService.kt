@@ -208,6 +208,21 @@ class BeregningService(
         } else {
             beregneBarnebidragV2FF(behandling, endeligBeregning, simulerBeregning)
         }
+
+//        else {
+//            val resultat = beregneBarnebidragV1(behandling, endeligBeregning)
+//            val grunnlagResultatVedtak =
+//                resultat
+//                    .filter {
+//                        it.resultatVedtak != null
+//                    }.flatMap { it.resultatVedtak!!.resultatVedtakListe.flatMap { it.resultat.grunnlagListe } }
+//            val grunnlagsliste = resultat.flatMap { it.resultat.grunnlagListe }
+//            ResultatBidragsberegning(
+//                grunnlagsliste = (grunnlagsliste + grunnlagResultatVedtak).toSet(),
+//                resultatBarn = resultat,
+//                vedtakstype = behandling.vedtakstype,
+//            )
+//        }
     }
 
     fun beregneBarnebidragV2FF(

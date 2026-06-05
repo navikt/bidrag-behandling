@@ -93,9 +93,6 @@ class VedtakHendelseListener(
     }
 
     private fun VedtakHendelse.oppdaterÅpenFFBehandlingHvisOpphørEllerInnkreving() {
-        if (!UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled) {
-            return
-        }
         val stønadsendringerBidrag =
             stønadsendringListe?.filter { it.type == Stønadstype.BIDRAG || it.type == Stønadstype.BIDRAG18AAR } ?: emptyList()
         if (stønadsendringerBidrag.isEmpty()) return
