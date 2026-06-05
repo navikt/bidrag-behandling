@@ -156,6 +156,10 @@ class ForholdsmessigFordelingService(
             }
             val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
             val erOppdateringAvBehandlingSomErIFF = behandling.erIForholdsmessigFordeling
+            if (behandling.erKlageEllerOmgjøring) {
+                klageService.opprettSøknaderForKlageEllerOmgjøring(behandling, behandling.soknadsid!!, request)
+                return
+            }
             val nyesteLøpendeBidragGrunnlag = sjekkBeregningKreverForholdsmessigFordeling(behandling).løpendeBidragBarn
 
             val originalBM = behandling.bidragsmottaker!!.ident
