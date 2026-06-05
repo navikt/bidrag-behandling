@@ -38,7 +38,6 @@ import no.nav.bidrag.behandling.transformers.finnSistePeriodeLøpendePeriodeInne
 import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
 import no.nav.bidrag.behandling.transformers.harLøpendeBidragFørOpphørEllerLøpende
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
-import no.nav.bidrag.behandling.transformers.løperPeriodeEtterBeregnTil
 import no.nav.bidrag.behandling.transformers.mapTilBeregnetBidragDto
 import no.nav.bidrag.behandling.transformers.maxOfNullable
 import no.nav.bidrag.behandling.transformers.tilDato18årsBidrag
@@ -705,7 +704,7 @@ class ForholdsmessigFordelingService(
         val alleRollerRelevantSomIkkeErIBehandling =
             alleSøknaderRelevantForBehandling
                 .flatMap { søknad ->
-                    søknad.partISøknadListe
+                    søknad.parterUnderBehandling
                         .filter { it.rolletype != Rolletype.BIDRAGSPLIKTIG }
                         .map { ps -> PersonStønad(Personident(ps.personident!!), søknad.behandlingstema.tilStønadstype()) }
                 }.distinct()
@@ -714,7 +713,7 @@ class ForholdsmessigFordelingService(
         alleRollerRelevantSomIkkeErIBehandling.forEach { rolle ->
             val søknad =
                 alleSøknaderRelevantForBehandling.find { søknad ->
-                    søknad.partISøknadListe.any { ps ->
+                    søknad.parterUnderBehandling.any { ps ->
                         rolle.personident!!.verdi == ps.personident &&
                             (rolle.stønadstype == null || rolle.stønadstype == søknad.behandlingstema.tilStønadstype())
                     }
@@ -724,11 +723,12 @@ class ForholdsmessigFordelingService(
                     behandling = behandling,
                     søknadsid = søknad.søknadsid,
                     saksnummer = søknad.saksnummer,
-                    bmIdent = søknad.partISøknadListe.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }?.personident,
+                    bmIdent = søknad.parterUnderBehandling.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }?.personident,
                     søktFraDato = søknad.søknadFomDato,
                     stønadstype = søknad.behandlingstema.tilStønadstype(),
+                    søknadsdetaljer = søknad.tilForholdsmessigFordelingSøknad(),
                     rollerSomSkalLeggesTilDto =
-                        søknad.partISøknadListe.map {
+                        søknad.parterUnderBehandling.map {
                             OpprettRolleDto(
                                 rolletype = it.rolletype,
                                 fødselsdato = hentPersonFødselsdato(it.personident!!),

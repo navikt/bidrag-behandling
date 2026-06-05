@@ -437,7 +437,6 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
                 .flatMap { it.barn.mapNotNull { it.fødselsnummer?.verdi } }
                 .filter { !søknadsbarnIdenter.contains(it) }
                 .distinct()
-        val bpHarLøpendeBidragIAndreSaker = løpendeBidrag?.bidragssakerListe?.any { it.sak.verdi != saksnummer } == true
 
         if (sakerBp.isNotEmpty() && barnIAndreSaker.isNotEmpty()) {
             return "Kan ikke fatte vedtak når BP har flere saker"
