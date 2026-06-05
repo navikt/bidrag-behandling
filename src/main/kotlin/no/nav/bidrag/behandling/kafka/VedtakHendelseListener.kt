@@ -18,6 +18,7 @@ import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.vedtak.engangsbeløptype
 import no.nav.bidrag.behandling.transformers.vedtak.erOpphørEllerInnkreving
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.stønadstype
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
@@ -32,6 +33,7 @@ import no.nav.bidrag.transport.behandling.vedtak.erFattetGjennomBidragBehandling
 import no.nav.bidrag.transport.behandling.vedtak.saksnummer
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import no.nav.bidrag.transport.felles.toYearMonth
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
@@ -129,7 +131,12 @@ class VedtakHendelseListener(
                 }
         val erVedtakInnkreving =
             stønadsendring.periodeListe.isNotEmpty() &&
-                stønadsendring.periodeListe.maxBy { it.periode.fom }.beløp != null
+                stønadsendring.periodeListe
+                    .filter {
+                        it.periode.fom.isBefore(behandling.finnBeregnTilDato().toYearMonth())
+                    }.maxBy { it.periode.fom }
+                    .beløp !=
+                null
         if (opphørsperiode != null) {
             forholdsmessigFordelingService
                 .oppdaterBarnEtterOpphør(
@@ -138,7 +145,8 @@ class VedtakHendelseListener(
                     stønadsendring.type,
                     opphørsperiode,
                 )
-        } else if (type != Vedtakstype.OPPHØR && erVedtakInnkreving) {
+        }
+        if (type != Vedtakstype.OPPHØR && erVedtakInnkreving) {
             if (behandling.søknadsbarn.none { it.erSammeRolle(stønadsendring.kravhaver.verdi, stønadsendring.type) }) {
                 // Henter og legger til barn som revurderingsbarn
                 behandling.privatAvtale.removeIf {
