@@ -33,7 +33,7 @@ data class ForholdsmessigFordelingRolle(
     var behandlingsid: Long? = null,
     var bidragsmottaker: String?,
     // Revurderingsdato første gang FF ble opprettet. Kan være manuelt overstyrt revurderignsdato
-    val revurderingsdatoVedOpprettelseAvFF: LocalDate? = null,
+    var revurderingsdatoVedOpprettelseAvFF: LocalDate? = null,
     var søknader: MutableSet<ForholdsmessigFordelingSøknadBarn> = mutableSetOf(),
 ) {
     fun løperBidragEtterDato(dato: YearMonth): Boolean =

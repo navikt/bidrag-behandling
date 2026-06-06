@@ -310,10 +310,12 @@ class ForholdsmessigFordelingKlageService(
         request: OpprettFFRequest?,
     ) {
         val tilknyttedeSøknaderOmgjortSøknad =
-            bbmConsumer.finnSammenknytningerHovedsøknad(
-                behandling.omgjøringsdetaljer!!.soknadRefId!!,
-                SøknadsknytningStatus.Deaktiv,
-            )
+            bbmConsumer
+                .finnSammenknytningerHovedsøknad(
+                    behandling.omgjøringsdetaljer!!.soknadRefId!!,
+                    SøknadsknytningStatus.Deaktiv,
+                ).søknader
+                .filter { it.behandlingStatusType == BehandlingStatusType.VEDTAK_FATTET }
 
         relevanteKravhavere
             .filter { !søknadsbarnOrdinæreSøknader.contains(it.kravhaver to it.stønadstype) }
@@ -327,9 +329,9 @@ class ForholdsmessigFordelingKlageService(
                         request,
                     )
                 val tilknyttetSøknad =
-                    tilknyttedeSøknaderOmgjortSøknad.søknader
+                    tilknyttedeSøknaderOmgjortSøknad
                         .filter { it.behandlingstema.tilStønadstype() == kravhaver.stønadstype }
-                        .find { it.parterUnderBehandling.finnBarn(kravhaver.kravhaver) != null }
+                        .find { it.parterVedtakFattet.finnBarn(kravhaver.kravhaver) != null }
                 Triple(
                     kravhaver.saksnummer!!,
                     kravhaver.stønadstype,

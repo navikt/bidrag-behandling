@@ -76,6 +76,7 @@ data class OppdaterBarnFraFFRequest(
 )
 
 val HentSøknad.parterUnderBehandling get() = partISøknadListe.filterBarnUnderBehandling()
+val HentSøknad.parterVedtakFattet get() = partISøknadListe.filterBarnVedtakFattet()
 
 fun List<PartISøknad>.filterBarnUnderBehandling() =
     filter {
@@ -196,7 +197,11 @@ fun finnSøktFomDatoForKravhaver(
         }
     val manueltOverstyrtDato =
         request.finnManueltOverstyrtRevurderingsdato(kravhaverSak) ?: barn?.forholdsmessigFordeling?.revurderingsdatoVedOpprettelseAvFF
-    return maxOfNullable(tidligstSøktFomDato, manueltOverstyrtDato) ?: revurderingFraDatoDefault
+    return if (manueltOverstyrtDato != null) {
+        maxOfNullable(tidligstSøktFomDato, manueltOverstyrtDato) ?: revurderingFraDatoDefault
+    } else {
+        revurderingFraDatoDefault
+    }
 }
 
 fun Behandling.tilFFDetaljerBM() =
@@ -268,6 +273,9 @@ fun opprettEllerOppdaterRolle(
         if (it.forholdsmessigFordeling == null) {
             it.forholdsmessigFordeling = ffDetaljer
         } else {
+            if (it.forholdsmessigFordeling!!.søknader.isEmpty()) {
+                it.forholdsmessigFordeling!!.revurderingsdatoVedOpprettelseAvFF = ffDetaljer.søknader.minOf { it.søknadFomDato!! }
+            }
             it.forholdsmessigFordeling!!.søknader.addAll(ffDetaljer.søknader)
         }
 
