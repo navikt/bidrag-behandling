@@ -26,10 +26,14 @@ import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingPrivateAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.OpprettFFRequest
+import no.nav.bidrag.behandling.service.hentPerson
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.behandling.finnRolle
 import no.nav.bidrag.behandling.transformers.boforhold.oppdaterePerioder
+import no.nav.bidrag.behandling.transformers.maxOfNullable
+import no.nav.bidrag.behandling.transformers.tilDato18årsBidrag
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
@@ -163,6 +167,37 @@ fun Behandling.tilFFDetaljerBP() =
         erRevurdering = false,
         bidragsmottaker = null,
     )
+
+fun OpprettFFRequest?.finnManueltOverstyrtRevurderingsdato(kravhaver: SakKravhaver): LocalDate? =
+    this
+        ?.detaljerBarn
+        ?.find {
+            kravhaver.erSammePerson(
+                it.ident,
+                it.stønadstype,
+            )
+        }?.manueltOverstyrtRevurderingFraDato
+
+fun finnSøktFomDatoForKravhaver(
+    alleKravhavere: Set<SakKravhaver>,
+    kravhaverSak: SakKravhaver,
+    behandling: Behandling,
+    request: OpprettFFRequest?,
+): LocalDate {
+    val barn = behandling.roller.find { it.erSammeRolle(kravhaverSak.kravhaver, kravhaverSak.stønadstype) }
+    val revurderingFraDatoDefault = alleKravhavere.finnSøktFomRevurderingSøknad(behandling)
+
+    val tidligstSøktFomDato =
+        if (kravhaverSak.stønadstype == Stønadstype.BIDRAG18AAR) {
+            val person = hentPerson(kravhaverSak.kravhaver)
+            person?.fødselsdato?.tilDato18årsBidrag()
+        } else {
+            behandling.eldsteSøktFomDato
+        }
+    val manueltOverstyrtDato =
+        request.finnManueltOverstyrtRevurderingsdato(kravhaverSak) ?: barn?.forholdsmessigFordeling?.revurderingsdatoVedOpprettelseAvFF
+    return maxOfNullable(tidligstSøktFomDato, manueltOverstyrtDato) ?: revurderingFraDatoDefault
+}
 
 fun Behandling.tilFFDetaljerBM() =
     ForholdsmessigFordelingRolle(

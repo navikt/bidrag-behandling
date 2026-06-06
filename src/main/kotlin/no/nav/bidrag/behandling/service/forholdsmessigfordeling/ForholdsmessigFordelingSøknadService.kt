@@ -207,6 +207,7 @@ class ForholdsmessigFordelingSøknadService(
                 tilhørerSak = saksnummer,
                 behandlerenhet = behandlerEnhet,
                 bidragsmottaker = bmFødselsnummer,
+                revurderingsdatoVedOpprettelseAvFF = søktFomDato,
                 søknader = mutableSetOf(),
             )
         opprettForsendelseForNySøknad(

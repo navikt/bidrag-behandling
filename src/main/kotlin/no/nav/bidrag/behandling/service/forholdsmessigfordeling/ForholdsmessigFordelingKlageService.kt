@@ -12,10 +12,7 @@ import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
-import no.nav.bidrag.behandling.service.hentPerson
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
-import no.nav.bidrag.behandling.transformers.maxOfNullable
-import no.nav.bidrag.behandling.transformers.tilDato18årsBidrag
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
@@ -317,41 +314,26 @@ class ForholdsmessigFordelingKlageService(
                 behandling.omgjøringsdetaljer!!.soknadRefId!!,
                 SøknadsknytningStatus.Deaktiv,
             )
-        val revurderingFraDatoDefault = relevanteKravhavere.finnSøktFomRevurderingSøknad(behandling)
 
         relevanteKravhavere
             .filter { !søknadsbarnOrdinæreSøknader.contains(it.kravhaver to it.stønadstype) }
             .sortedByDescending { it.stønadstype }
-            .groupBy { relevanteKravhaver ->
-                val tidligstSøktFomDato =
-                    if (relevanteKravhaver.stønadstype == Stønadstype.BIDRAG18AAR) {
-                        val person = hentPerson(relevanteKravhaver.kravhaver)
-                        person?.fødselsdato?.tilDato18årsBidrag()
-                    } else {
-                        behandling.eldsteSøktFomDato
-                    }
-                val manueltOverstyrtDato =
-                    request?.revurderingFraDato
-                        ?: request
-                            ?.detaljerBarn
-                            ?.find {
-                                relevanteKravhaver.erSammePerson(
-                                    it.ident,
-                                    it.stønadstype,
-                                )
-                            }?.manueltOverstyrtRevurderingFraDato
-                        ?: revurderingFraDatoDefault
+            .groupBy { kravhaver ->
+                val søktFomDato =
+                    finnSøktFomDatoForKravhaver(
+                        relevanteKravhavere,
+                        kravhaver,
+                        behandling,
+                        request,
+                    )
                 val tilknyttetSøknad =
                     tilknyttedeSøknaderOmgjortSøknad.søknader
-                        .filter { it.behandlingstema.tilStønadstype() == relevanteKravhaver.stønadstype }
-                        .find { it.parterUnderBehandling.finnBarn(relevanteKravhaver.kravhaver) != null }
+                        .filter { it.behandlingstema.tilStønadstype() == kravhaver.stønadstype }
+                        .find { it.parterUnderBehandling.finnBarn(kravhaver.kravhaver) != null }
                 Triple(
-                    relevanteKravhaver.saksnummer!!,
-                    relevanteKravhaver.stønadstype,
-                    tilknyttetSøknad?.søknadFomDato ?: maxOfNullable(
-                        tidligstSøktFomDato,
-                        manueltOverstyrtDato,
-                    ) ?: revurderingFraDatoDefault,
+                    kravhaver.saksnummer!!,
+                    kravhaver.stønadstype,
+                    tilknyttetSøknad?.søknadFomDato ?: søktFomDato,
                 )
             }.forEach { (saksnummerLøpendeBidrag, løpendebidragssaker) ->
                 val saksnummer = saksnummerLøpendeBidrag.first
