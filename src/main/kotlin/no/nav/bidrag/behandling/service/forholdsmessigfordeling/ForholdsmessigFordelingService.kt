@@ -153,11 +153,11 @@ class ForholdsmessigFordelingService(
             }
             val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
             val erOppdateringAvBehandlingSomErIFF = behandling.erIForholdsmessigFordeling
+            val nyesteLøpendeBidragGrunnlag = sjekkBeregningKreverForholdsmessigFordeling(behandling).løpendeBidragBarn
             if (behandling.erKlageEllerOmgjøring) {
-                klageService.opprettSøknaderForKlageEllerOmgjøring(behandling, behandling.soknadsid!!, request)
+                klageService.opprettSøknaderForKlageEllerOmgjøring(behandling, behandling.soknadsid!!, request, nyesteLøpendeBidragGrunnlag)
                 return
             }
-            val nyesteLøpendeBidragGrunnlag = sjekkBeregningKreverForholdsmessigFordeling(behandling).løpendeBidragBarn
 
             val originalBM = behandling.bidragsmottaker!!.ident
 
@@ -400,7 +400,7 @@ class ForholdsmessigFordelingService(
         behandling: Behandling,
         nyesteLøpendeBidragGrunnlag: List<LøpendeBidragGrunnlagForholdsmessigFordeling>,
     ) {
-        opprettGrunnlagLøpendeBidrag(behandling, nyesteLøpendeBidragGrunnlag)
+        kravhaverService.opprettGrunnlagLøpendeBidrag(behandling, nyesteLøpendeBidragGrunnlag)
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         oppdaterBehandlingEtterOppdatertRoller(
             behandling,

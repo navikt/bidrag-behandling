@@ -4,8 +4,12 @@ import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Grunnlag
+import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagLøpendeBidragFF
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
+import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.behandling.finnes
@@ -13,6 +17,7 @@ import no.nav.bidrag.behandling.transformers.filtrerSakerHvorPersonErBP
 import no.nav.bidrag.behandling.transformers.filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode
 import no.nav.bidrag.behandling.transformers.tilDato18årsBidrag
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -22,7 +27,9 @@ import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.belopshistorikk.request.LøpendeBidragPeriodeRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.HentSøknad
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.toYearMonth
+import java.time.LocalDateTime
 
 private const val FORETRUKKET_BEHANDLERENHET = "2103"
 private val STØTTEDE_BEHANDLERENHETER_FOR_FF = setOf("4883", FORETRUKKET_BEHANDLERENHET)
@@ -208,6 +215,42 @@ class ForholdsmessigFordelingKravhaverService(
                 }
             }.distinctBy { it.saksnummer to it.distinctKey }
             .toSet()
+    }
+
+    fun opprettGrunnlagLøpendeBidrag(
+        behandling: Behandling,
+        nyesteLøpendeBidragGrunnlag: List<LøpendeBidragGrunnlagForholdsmessigFordeling>,
+    ) {
+        val type = Grunnlagsdatatype.LØPENDE_BIDRAG_OPPRETT_FORHOLDSMESSIG_FORDELING
+
+        val eksisterendeGrunnlag =
+            behandling.grunnlag.hentSisteGrunnlagLøpendeBidragFF(behandling) ?: emptyList()
+        if (eksisterendeGrunnlag != nyesteLøpendeBidragGrunnlag) {
+            secureLogger.debug {
+                "Lagrer ny grunnlag løpende bidrag hvor siste aktive grunnlag var $eksisterendeGrunnlag"
+            }
+            val eksisterendeGrunnlagIdenter = eksisterendeGrunnlag.map { it.gjelderBarnIdent to it.gjelderStønadstype }
+            val nyeGrunnlag =
+                nyesteLøpendeBidragGrunnlag
+                    .filter { !eksisterendeGrunnlagIdenter.contains(it.gjelderBarnIdent to it.gjelderStønadstype) }
+
+            behandling.grunnlag.addAll(
+                nyeGrunnlag.map {
+                    val rolle = behandling.roller.find { r -> r.erSammeRolle(it.gjelderBarnIdent, it.gjelderStønadstype) }
+                    Grunnlag(
+                        behandling = behandling,
+                        type = type,
+                        gjelder = it.gjelderBarnIdent,
+                        gjelderBarnRolle = rolle,
+                        data = commonObjectmapper.writeValueAsString(it.løpendeBidragPerioder),
+                        innhentet = LocalDateTime.now(),
+                        aktiv = LocalDateTime.now(),
+                        rolle = behandling.bidragspliktig!!,
+                        erBearbeidet = false,
+                    )
+                },
+            )
+        }
     }
 
     fun hentÅpenSøknadFFForBP(

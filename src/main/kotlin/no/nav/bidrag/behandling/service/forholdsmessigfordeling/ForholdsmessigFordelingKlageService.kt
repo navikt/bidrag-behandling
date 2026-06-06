@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.consumer.dto.FinnSammenknytningerHovedsøknadRes
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
+import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.OpprettFFRequest
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.GrunnlagService
@@ -91,6 +92,7 @@ class ForholdsmessigFordelingKlageService(
         behandling: Behandling,
         opprettetEllerOppdaterSøknadsid: Long,
         request: OpprettFFRequest? = null,
+        nyesteLøpendeBidragGrunnlag: List<LøpendeBidragGrunnlagForholdsmessigFordeling> = emptyList(),
     ) {
         if (!UnleashFeatures.TILGANG_OPPRETTE_FF.isEnabled) {
             KLAGE_LOGGER.info { "Opprettelse av forholdsmessig fordeling er deaktivert" }
@@ -142,7 +144,7 @@ class ForholdsmessigFordelingKlageService(
             )
 
         overføringService.giSakTilgangTilEnhet(behandling, behandlerEnhet)
-        behandlingService.lagreBehandling(behandling, forceSave = true)
+        kravhaverService.opprettGrunnlagLøpendeBidrag(behandling, nyesteLøpendeBidragGrunnlag)
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         oppdaterBehandlingEtterOppdatertRoller(
             behandling,
