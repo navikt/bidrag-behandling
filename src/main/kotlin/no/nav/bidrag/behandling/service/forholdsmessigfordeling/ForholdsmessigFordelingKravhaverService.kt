@@ -151,7 +151,7 @@ class ForholdsmessigFordelingKravhaverService(
                             !behandlingRepository.erIForholdsmessigFordeling(søknad.behandlingsid!!)
                     )
             }.forEach { åpenSøknad ->
-                åpenSøknad.partISøknadListe
+                åpenSøknad.parterUnderBehandling
                     .filter { it.rolletype == Rolletype.BARN }
                     .forEach { barnFnr ->
                         val stønadstype = åpenSøknad.behandlingstema.tilStønadstype()

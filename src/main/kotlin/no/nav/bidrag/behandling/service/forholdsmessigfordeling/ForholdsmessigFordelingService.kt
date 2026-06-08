@@ -783,7 +783,7 @@ class ForholdsmessigFordelingService(
             .filter { it.behandlingstype?.erForholdsmessigFordeling == true }
             .forEach { lagretSøknad ->
                 val søknad = bbmConsumer.hentSøknad(lagretSøknad.søknadsid!!)
-                val rollerISøknad = søknad?.søknad?.partISøknadListe?.filterBarnUnderBehandling() ?: emptyList()
+                val rollerISøknad = søknad?.søknad?.parterUnderBehandling ?: emptyList()
                 if (rollerISøknad.size == 1 && rollerISøknad.first().personident == rolle.ident) {
                     søknadService.feilregistrerSøknad(lagretSøknad, behandling)
                 } else {

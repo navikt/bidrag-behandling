@@ -130,10 +130,16 @@ class ForholdsmessigFordelingKlageService(
 
         fjernSøknaderSomIkkeErDelAvKlagebehandlingen(behandling)
 
+        val gjenværendeKravhavere =
+            relevanteKravhavere
+                .filter { rk ->
+                    søknadsbarnOrdinæreSøknader.none {
+                        it.first == rk.kravhaver && it.second == rk.stønadstype
+                    }
+                }.toSet()
         opprettRevurderingssøknaderForGjenværendeKravhavere(
             behandling,
-            relevanteKravhavere,
-            søknadsbarnOrdinæreSøknader,
+            gjenværendeKravhavere,
             behandlerEnhet,
             request,
         )
@@ -256,7 +262,7 @@ class ForholdsmessigFordelingKlageService(
             filtrerTilknyttedeSøknaderForKlage(tilknyttedeSøknaderOmgjortSøknad, relevanteKravhavere)
 
         val søknadsbarnOpprettetSøknad =
-            opprettetSøknad.parterUnderBehandling.filterBarnUnderBehandling().map {
+            opprettetSøknad.parterUnderBehandling.map {
                 it.personident to opprettetSøknad.behandlingstema.tilStønadstype()
             }
         val søknadsbarnAndreSøknader =
@@ -267,8 +273,7 @@ class ForholdsmessigFordelingKlageService(
                     åpneSøknaderForVedtaksid,
                     hovedsøknadsid,
                 )
-                tilknyttetSøknad.parterUnderBehandling
-                    .filterBarnVedtakFattet()
+                tilknyttetSøknad.parterVedtakFattet
                     .map {
                         it.personident to tilknyttetSøknad.behandlingstema.tilStønadstype()
                     }
@@ -287,7 +292,7 @@ class ForholdsmessigFordelingKlageService(
             .filter { !it.behandlingstype.erForholdsmessigFordeling }
             .filter { it.behandlingStatusType == BehandlingStatusType.VEDTAK_FATTET }
             .filter { søknad ->
-                val parterISøknad = søknad.partISøknadListe.filterBarnVedtakFattet().map { it.personident!! }
+                val parterISøknad = søknad.parterVedtakFattet.map { it.personident!! }
                 søknad.søknadsid != hovedsøknadPåklagetVedtak ||
                     relevanteKravhavere.none {
                         parterISøknad.contains(it.kravhaver) &&
@@ -307,7 +312,6 @@ class ForholdsmessigFordelingKlageService(
     private fun opprettRevurderingssøknaderForGjenværendeKravhavere(
         behandling: Behandling,
         relevanteKravhavere: Set<SakKravhaver>,
-        søknadsbarnOrdinæreSøknader: List<Pair<String?, Stønadstype?>>,
         behandlerEnhet: String,
         request: OpprettFFRequest?,
     ) {
@@ -320,7 +324,6 @@ class ForholdsmessigFordelingKlageService(
                 .filter { it.behandlingStatusType == BehandlingStatusType.VEDTAK_FATTET }
 
         relevanteKravhavere
-            .filter { !søknadsbarnOrdinæreSøknader.contains(it.kravhaver to it.stønadstype) }
             .sortedByDescending { it.stønadstype }
             .groupBy { kravhaver ->
                 val søktFomDato =
