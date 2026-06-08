@@ -545,7 +545,7 @@ class ForholdsmessigFordelingSøknadService(
                 LOGGER.info {
                     "Slett søknadsknytning for søknad ${it.søknadsid} fra hovedsøknad ${behandling.soknadsid} i behandling ${behandling.id}"
                 }
-                bbmConsumer.fjernSammeknytning(it.søknadsid)
+                bbmConsumer.fjernSammenknytning(it.søknadsid)
             }
 
         if (alleSøknadsknytninger.søknader.none { it.søknadsid == behandling.soknadsid }) {
@@ -599,7 +599,7 @@ class ForholdsmessigFordelingSøknadService(
         try {
             val søknadsid = søknad.søknadsid ?: return false
             bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(søknadsid))
-            bbmConsumer.fjernSammeknytning(søknadsid)
+            bbmConsumer.fjernSammenknytning(søknadsid)
             søknad.status = Behandlingstatus.FEILREGISTRERT
             behandling.roller.forEach { rolle ->
                 val søknader = rolle.forholdsmessigFordeling?.søknaderUnderBehandling?.filter { it.søknadsid == søknadsid } ?: emptyList()

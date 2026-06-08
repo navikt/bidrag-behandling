@@ -1005,7 +1005,7 @@ class ForholdsmessigFordelingService(
             )
         åpneSaker.filter { it.behandlingstype == behandling.behandlingstypeForFF }.forEach {
             bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(it.søknadsid))
-            bbmConsumer.fjernSammeknytning(it.søknadsid)
+            bbmConsumer.fjernSammenknytning(it.søknadsid)
         }
     }
 

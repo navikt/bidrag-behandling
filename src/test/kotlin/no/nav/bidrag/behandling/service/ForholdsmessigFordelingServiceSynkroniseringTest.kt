@@ -89,7 +89,7 @@ class ForholdsmessigFordelingServiceSynkroniseringTest {
             }
         every { bbmConsumer.hentSøknad(any()) } returns null
         every { bbmConsumer.feilregistrerSøknad(any()) } returns Unit
-        every { bbmConsumer.fjernSammeknytning(any()) } returns Unit
+        every { bbmConsumer.fjernSammenknytning(any()) } returns Unit
         every { bbmConsumer.endreSammenknytningSøknad(any(), any()) } returns null
         every { bbmConsumer.sammeknyttSøknader(any(), any()) } returns null
         every { beløpshistorikkConsumer.hentAlleLøpendeStønaderIPeriode(any()) } returns
@@ -111,7 +111,7 @@ class ForholdsmessigFordelingServiceSynkroniseringTest {
 
         verify(exactly = 1) { grunnlagService.lagreBeløpshistorikkGrunnlag(behandling) }
         verify(exactly = 1) { grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling) }
-        verify(exactly = 1) { bbmConsumer.fjernSammeknytning(999L) }
+        verify(exactly = 1) { bbmConsumer.fjernSammenknytning(999L) }
         verify(exactly = 1) { bbmConsumer.endreSammenknytningSøknad(behandling.soknadsid!!, behandling.soknadsid!!) }
     }
 
@@ -123,7 +123,7 @@ class ForholdsmessigFordelingServiceSynkroniseringTest {
         service.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
 
         verify(exactly = 0) { bbmConsumer.finnSammenknytningerHovedsøknad(any()) }
-        verify(exactly = 0) { bbmConsumer.fjernSammeknytning(any()) }
+        verify(exactly = 0) { bbmConsumer.fjernSammenknytning(any()) }
         verify(exactly = 0) { bbmConsumer.endreSammenknytningSøknad(any(), any()) }
     }
 
@@ -139,7 +139,7 @@ class ForholdsmessigFordelingServiceSynkroniseringTest {
         service.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
 
         verify(exactly = 0) { bbmConsumer.endreSammenknytningSøknad(any(), any()) }
-        verify(exactly = 0) { bbmConsumer.fjernSammeknytning(any()) }
+        verify(exactly = 0) { bbmConsumer.fjernSammenknytning(any()) }
         behandling.soknadsid shouldBe behandling.soknadsid
     }
 
@@ -184,8 +184,8 @@ class ForholdsmessigFordelingServiceSynkroniseringTest {
 
         verify(exactly = 1) { bbmConsumer.feilregistrerSøknad(match { it.søknadsid == 1002L }) }
         verify(exactly = 1) { bbmConsumer.feilregistrerSøknad(match { it.søknadsid == 1003L }) }
-        verify(exactly = 1) { bbmConsumer.fjernSammeknytning(1002L) }
-        verify(exactly = 1) { bbmConsumer.fjernSammeknytning(1003L) }
+        verify(exactly = 1) { bbmConsumer.fjernSammenknytning(1002L) }
+        verify(exactly = 1) { bbmConsumer.fjernSammenknytning(1003L) }
 
         eldste.status shouldBe Behandlingstatus.UNDER_BEHANDLING
         duplikat1.status shouldBe Behandlingstatus.FEILREGISTRERT
@@ -231,7 +231,7 @@ class ForholdsmessigFordelingServiceSynkroniseringTest {
         service.slettDuplikatForholdsmessigFordelingSøknader(behandling)
 
         verify(exactly = 0) { bbmConsumer.feilregistrerSøknad(any()) }
-        verify(exactly = 0) { bbmConsumer.fjernSammeknytning(any()) }
+        verify(exactly = 0) { bbmConsumer.fjernSammenknytning(any()) }
     }
 
     @Test
@@ -277,8 +277,8 @@ class ForholdsmessigFordelingServiceSynkroniseringTest {
 
         verify(exactly = 1) { bbmConsumer.feilregistrerSøknad(match { it.søknadsid == 1002L }) }
         verify(exactly = 1) { bbmConsumer.feilregistrerSøknad(match { it.søknadsid == 1003L }) }
-        verify(exactly = 1) { bbmConsumer.fjernSammeknytning(1002L) }
-        verify(exactly = 0) { bbmConsumer.fjernSammeknytning(1003L) }
+        verify(exactly = 1) { bbmConsumer.fjernSammenknytning(1002L) }
+        verify(exactly = 0) { bbmConsumer.fjernSammenknytning(1003L) }
 
         eldste.status shouldBe Behandlingstatus.UNDER_BEHANDLING
         vellykketDuplikat.status shouldBe Behandlingstatus.FEILREGISTRERT
