@@ -758,6 +758,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                                 beregnetBidrag = beregning.beregnetBidrag,
                             )
                         },
+                    gjelderBarnRolle = behandling.finnRolle(gjelderBarnGrunnlag.personIdent!!, gjelderBarnGrunnlag.stønadstype),
                     gjelder = gjelderBarnGrunnlag.personIdent!!,
                     rolleIdent = gjelderGrunnlag.personIdent!!,
                     innhentetTidspunkt = LocalDateTime.now(),
