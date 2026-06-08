@@ -7,6 +7,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.BaseGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Grunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
+import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
@@ -14,7 +15,7 @@ import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 fun OpprettVedtakRequestDto.hentGrunnlagstyperForReferanser(
     grunnlagstype: Grunnlagstype,
     referanseListe: List<Grunnlagsreferanse>,
-) = grunnlagListe.filter { it.type == grunnlagstype && referanseListe.contains(it.referanse) }
+) = grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(grunnlagstype, referanseListe).toList()
 
 fun List<BaseGrunnlag>.grunnlagstyperForReferanser(
     grunnlagstype: Grunnlagstype,

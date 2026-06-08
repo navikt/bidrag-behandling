@@ -7,7 +7,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.every
-import io.mockk.impl.annotations.MockK
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
@@ -85,7 +84,7 @@ class GrunnlagMockService {
     lateinit var underholdService: UnderholdService
     val notatService = NotatService()
 
-    @MockK
+    @MockkBean
     lateinit var grunnlagConsumer: BidragGrunnlagConsumer
 
     lateinit var boforholdService: BoforholdService
@@ -436,7 +435,7 @@ class GrunnlagMockService {
         )
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         val grunnlag = behandling.grunnlag
-        grunnlag shouldHaveSize 6
+        grunnlag shouldHaveSize 8
         assertSoftly(grunnlag.find { it.type == Grunnlagsdatatype.ANDRE_BARN }!!) {
             it.aktiv.shouldNotBeNull()
             it.rolle.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER
@@ -522,7 +521,7 @@ class GrunnlagMockService {
         )
         grunnlagService.oppdatereGrunnlagForBehandling(behandling)
         val grunnlag = behandling.grunnlag
-        grunnlag shouldHaveSize 6
+        grunnlag shouldHaveSize 8
         assertSoftly(grunnlag.find { it.type == Grunnlagsdatatype.ANDRE_BARN }!!) {
             it.aktiv.shouldNotBeNull()
             it.rolle.rolletype shouldBe Rolletype.BIDRAGSMOTTAKER

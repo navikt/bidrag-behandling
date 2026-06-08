@@ -42,6 +42,7 @@ class KanFatteVedtakTest {
         mockkStatic("no.nav.bidrag.behandling.service.SakServiceKt")
         mockkStatic("no.nav.bidrag.behandling.service.PersonServiceKt")
 
+        disableUnleashFeature(UnleashFeatures.BEHANDLE_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG)
         disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG)
         disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_SAKER)
         disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_UTENLANDSK_VALUTA)
@@ -110,10 +111,22 @@ class KanFatteVedtakTest {
     fun `skal ikke kunne fatte vedtak for behandling som mangler barn i saken`() {
         val behandling = opprettBehandlingSimple()
 
-        disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG)
+        disableUnleashFeature(UnleashFeatures.BEHANDLE_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG)
         every { hentSak(SAKSNUMMER) } returns opprettSak()
 
         behandling.kanFatteVedtakBegrunnelse() shouldBe BEGRUNNELSE_MANGLER_BARN_I_SAKEN
+    }
+
+    @Test
+    fun `skal ikke kunne fatte vedtak for behandling som mangler barn i saken men skal kunne behandle`() {
+        val behandling = opprettBehandlingSimple()
+
+        enableUnleashFeature(UnleashFeatures.BEHANDLE_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG)
+        disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG)
+        every { hentSak(SAKSNUMMER) } returns opprettSak()
+
+        behandling.kanFatteVedtakBegrunnelse(true) shouldBe null
+        behandling.kanFatteVedtakBegrunnelse(false) shouldBe BEGRUNNELSE_MANGLER_BARN_I_SAKEN
     }
 
     @Test

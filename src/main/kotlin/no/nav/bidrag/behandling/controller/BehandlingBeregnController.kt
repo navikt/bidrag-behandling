@@ -187,7 +187,7 @@ class BehandlingBeregnController(
             )
         }
 
-        return beregningService.beregneBidrag(behandling, endeligBeregning).tilDto(behandling.kanFatteVedtakBegrunnelse())
+        return beregningService.beregneBidrag(behandling, endeligBeregning).tilDto(behandling.kanFatteVedtakBegrunnelse(false))
     }
 
     @Suppress("unused")

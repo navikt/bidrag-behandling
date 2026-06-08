@@ -11,9 +11,11 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
 import no.nav.bidrag.behandling.service.BeregningEvnevurderingService
@@ -365,6 +367,32 @@ class DtoMapperMockTest {
                     id = 1,
                 ),
             )
+        behandling.bidragsmottaker!!.gebyr =
+            GebyrRolle(
+                true,
+                true,
+                "Begrunnelse",
+                gebyrSøknader =
+                    mutableSetOf(
+                        GebyrRolleSøknad(
+                            saksnummer = behandling.saksnummer,
+                            søknadsid = behandling.soknadsid!!,
+                        ),
+                    ),
+            )
+        behandling.bidragspliktig!!.gebyr =
+            GebyrRolle(
+                true,
+                true,
+                "Begrunnelse",
+                gebyrSøknader =
+                    mutableSetOf(
+                        GebyrRolleSøknad(
+                            saksnummer = behandling.saksnummer,
+                            søknadsid = behandling.soknadsid!!,
+                        ),
+                    ),
+            )
         val behandlingDto = dtomapper.tilDto(behandling)
 
         behandlingDto.shouldNotBeNull()
@@ -426,7 +454,34 @@ class DtoMapperMockTest {
                 id = 1,
             ),
         )
-        behandling.bidragsmottaker!!.gebyr = GebyrRolle(true, true, "Begrunnelse")
+        behandling.bidragsmottaker!!.gebyr =
+            GebyrRolle(
+                true,
+                true,
+                "Begrunnelse",
+                gebyrSøknader =
+                    mutableSetOf(
+                        GebyrRolleSøknad(
+                            saksnummer = behandling.saksnummer,
+                            søknadsid = behandling.soknadsid!!,
+                            manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(ilagtGebyr = true),
+                        ),
+                    ),
+            )
+        behandling.bidragspliktig!!.gebyr =
+            GebyrRolle(
+                true,
+                true,
+                "Begrunnelse",
+                gebyrSøknader =
+                    mutableSetOf(
+                        GebyrRolleSøknad(
+                            saksnummer = behandling.saksnummer,
+                            søknadsid = behandling.soknadsid!!,
+                            manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(ilagtGebyr = true),
+                        ),
+                    ),
+            )
         val behandlingDto = dtomapper.tilDto(behandling)
 
         behandlingDto.shouldNotBeNull()
@@ -506,8 +561,32 @@ class DtoMapperMockTest {
             ),
         )
 
-        behandling.bidragsmottaker!!.gebyr = GebyrRolle(false, false, "Begrunnelse")
-        behandling.bidragspliktig!!.gebyr = GebyrRolle(true, true, null)
+        behandling.bidragsmottaker!!.gebyr =
+            GebyrRolle(
+                true,
+                true,
+                gebyrSøknader =
+                    mutableSetOf(
+                        GebyrRolleSøknad(
+                            saksnummer = behandling.saksnummer,
+                            søknadsid = behandling.soknadsid!!,
+                            manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(ilagtGebyr = false),
+                        ),
+                    ),
+            )
+        behandling.bidragspliktig!!.gebyr =
+            GebyrRolle(
+                true,
+                true,
+                gebyrSøknader =
+                    mutableSetOf(
+                        GebyrRolleSøknad(
+                            saksnummer = behandling.saksnummer,
+                            søknadsid = behandling.soknadsid!!,
+                            manueltOverstyrtGebyr = RolleManueltOverstyrtGebyr(ilagtGebyr = true),
+                        ),
+                    ),
+            )
         val behandlingDto = dtomapper.tilDto(behandling)
 
         behandlingDto.shouldNotBeNull()
