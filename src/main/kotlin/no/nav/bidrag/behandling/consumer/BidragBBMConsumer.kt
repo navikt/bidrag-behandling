@@ -1,10 +1,7 @@
 package no.nav.bidrag.behandling.consumer
 
-import jakarta.persistence.Cacheable
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.BBM_ALLE_BEREGNINGER_CACHE
 import no.nav.bidrag.behandling.config.CacheConfig.Companion.BBM_BEREGNING_CACHE
-import no.nav.bidrag.behandling.config.CacheConfig.Companion.BBM_BP_AAPNE_SOKADER
-import no.nav.bidrag.behandling.consumer.dto.DeaktiverHovedsøknadRequest
 import no.nav.bidrag.behandling.consumer.dto.FinnSammenknytningerHovedsøknadRequest
 import no.nav.bidrag.behandling.consumer.dto.FinnSammenknytningerHovedsøknadResponse
 import no.nav.bidrag.behandling.consumer.dto.SammenknyttSøknaderRequest
@@ -227,7 +224,7 @@ class BidragBBMConsumer(
         maxAttempts = 3,
         backoff = Backoff(delay = 200, maxDelay = 1000, multiplier = 2.0),
     )
-    fun fjernSammeknytning(søknadsid: Long) =
+    fun fjernSammenknytning(søknadsid: Long) =
         postForEntity<Unit>(
             bidragBBMUri.pathSegment("slettsammenknytningsoknad").build().toUri(),
             SlettSammenknytningForSøknadRequest(søknadsid),
