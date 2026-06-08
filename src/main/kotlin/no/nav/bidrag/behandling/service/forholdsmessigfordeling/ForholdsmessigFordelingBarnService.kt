@@ -162,7 +162,7 @@ class ForholdsmessigFordelingBarnService(
             behandlingService.sendOppdatertHendelse(behandling.id!!, false)
         }
         if (søknadBleSlettet) {
-            bbmConsumer.fjernSammeknytning(søknadsid)
+            bbmConsumer.fjernSammenknytning(søknadsid)
         }
     }
 
@@ -549,7 +549,7 @@ class ForholdsmessigFordelingBarnService(
             BARN_LOGGER.info { "Feilregistrerer søknad $søknadsid i behandling ${rolle.behandling.id}" }
             try {
                 bbmConsumer.feilregistrerSøknad(FeilregistrerSøknadRequest(søknadsid!!))
-                bbmConsumer.fjernSammeknytning(søknadsid)
+                bbmConsumer.fjernSammenknytning(søknadsid)
                 søknad.status = Behandlingstatus.FEILREGISTRERT
                 if (rolle.bidragsmottaker != null) {
                     rolle.bidragsmottaker!!
