@@ -83,7 +83,7 @@ class ForholdsmessigFordelingKlageService(
             val søknadSomSlettes = bbmConsumer.hentSøknad(søknadsidSomSlettes)!!.søknad
             if (søknadSomSlettes.refSøknadsid != behandling.soknadsid) {
                 opprettKlageSøknad(søknadSomSlettes, behandling, emptyList(), behandling.soknadsid)
-                bbmConsumer.fjernSammeknytning(søknadsidSomSlettes)
+                bbmConsumer.fjernSammenknytning(søknadsidSomSlettes)
             }
         }
     }
