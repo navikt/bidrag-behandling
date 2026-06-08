@@ -282,14 +282,11 @@ class ForholdsmessigFordelingKravhaverService(
         .filter { !behandlingstyperSomIkkeSkalInkluderesIFF.contains(it.behandlingstype) }
         .filter {
             (erKlageEllerOmgjøring && it.behandlingstype.erKlageEllerOmgjøring) ||
-                !it.behandlingstype.erKlageEllerOmgjøring
+                (!erKlageEllerOmgjøring && !it.behandlingstype.erKlageEllerOmgjøring)
         }.filter {
             (
                 erKlageEllerOmgjøring &&
-                    (
-                        (it.refVedtaksid == null || it.refVedtaksid == omgjøringsdetaljer?.omgjørVedtakId) ||
-                            (it.refSøknadsid == null || it.refSøknadsid == omgjøringsdetaljer?.soknadRefId)
-                    )
+                    ((it.refVedtaksid == omgjøringsdetaljer?.omgjørVedtakId) || (it.refSøknadsid == omgjøringsdetaljer?.soknadRefId))
             ) ||
                 !erKlageEllerOmgjøring
         }.sortedWith(
