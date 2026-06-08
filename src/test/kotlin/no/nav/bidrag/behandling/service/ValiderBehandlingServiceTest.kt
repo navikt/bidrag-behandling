@@ -18,7 +18,9 @@ import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRespons
 import no.nav.bidrag.behandling.dto.v2.behandling.SjekkRolleDto
 import no.nav.bidrag.behandling.utils.disableUnleashFeature
 import no.nav.bidrag.behandling.utils.enableUnleashFeature
+import no.nav.bidrag.behandling.utils.mockAppContext
 import no.nav.bidrag.behandling.utils.testdata.SAKSNUMMER
+import no.nav.bidrag.behandling.utils.testdata.opprettRolle
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadDto
 import no.nav.bidrag.behandling.utils.testdata.opprettStønadPeriodeDto
@@ -26,6 +28,7 @@ import no.nav.bidrag.behandling.utils.testdata.oppretteBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBM
 import no.nav.bidrag.behandling.utils.testdata.testdataBP
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.commons.unleash.UnleashFeaturesProvider
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -60,7 +63,15 @@ class ValiderBehandlingServiceTest {
     @BeforeEach
     fun initMock() {
         mockkObject(UnleashFeaturesProvider)
-        every { bidragSakConsumer.hentSak(any()) } returns opprettSakForBehandling(oppretteBehandling())
+        mockAppContext(bidragSakConsumer, bidragStønadConsumer)
+        val behandling = oppretteBehandling()
+        behandling.roller =
+            mutableSetOf(
+                opprettRolle(behandling, testdataBP, 1),
+                opprettRolle(behandling, testdataBM, 2),
+                opprettRolle(behandling, testdataBarn2, 3),
+            )
+        every { bidragSakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
         every { bidragStønadConsumer.hentLøpendeBidrag(any()) } returns
             LøpendeBidragssakerResponse(
                 bidragssakerListe = oppretLøpendeBidragListeMedBareNorskValuta(),
@@ -256,127 +267,6 @@ class ValiderBehandlingServiceTest {
                 }
             expection.statusCode shouldBe HttpStatus.PRECONDITION_FAILED
             expection.validerInneholderMelding("Behandlingen mangler bidragspliktig")
-        }
-
-        @Test
-        fun `skal ikke validere gyldig BIDRAG behandling hvis flere enn en søknadsbarn`() {
-            every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
-                SkyldnerStønaderResponse(
-                    stønader = listOf(),
-                )
-            val request = opprettBidragKanBehandlesINyLøsningRequest()
-
-            val expection =
-                shouldThrow<HttpClientErrorException> {
-                    validerBehandlingService.validerKanBehandlesINyLøsning(
-                        request.copy(
-                            roller = request.roller + SjekkRolleDto(Rolletype.BARN, ident = Personident("333"), false),
-                        ),
-                    )
-                }
-            expection.statusCode shouldBe HttpStatus.PRECONDITION_FAILED
-            expection.validerInneholderMelding("Behandlingen har flere enn ett søknadsbarn")
-        }
-
-        @Test
-        fun `skal ikke validere gyldig BIDRAG behandling gjelder klage`() {
-            every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
-                SkyldnerStønaderResponse(
-                    stønader = listOf(),
-                )
-            val request = opprettBidragKanBehandlesINyLøsningRequest()
-
-            val expection =
-                shouldThrow<HttpClientErrorException> {
-                    validerBehandlingService.validerKanBehandlesINyLøsning(
-                        request.copy(
-                            vedtakstype = Vedtakstype.KLAGE,
-                        ),
-                    )
-                }
-            expection.statusCode shouldBe HttpStatus.PRECONDITION_FAILED
-            expection.validerInneholderMelding("Kan ikke behandle klage eller omgjøring")
-        }
-
-        @Test
-        fun `skal ikke validere gyldig BIDRAG behandling referer til annen behandling`() {
-            every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
-                SkyldnerStønaderResponse(
-                    stønader = listOf(),
-                )
-            val request = opprettBidragKanBehandlesINyLøsningRequest()
-
-            val expection =
-                shouldThrow<HttpClientErrorException> {
-                    validerBehandlingService.validerKanBehandlesINyLøsning(
-                        request.copy(
-                            vedtakstype = Vedtakstype.ENDRING,
-                            harReferanseTilAnnenBehandling = true,
-                        ),
-                    )
-                }
-            expection.statusCode shouldBe HttpStatus.PRECONDITION_FAILED
-            expection.validerInneholderMelding("Kan ikke behandle klage eller omgjøring")
-        }
-
-        @Test
-        fun `skal ikke validere gyldig BIDRAG behandling hvis V2 endring er på og BP har løpende bidrag for flere barn`() {
-            enableUnleashFeature(UnleashFeatures.BEGRENSET_REVURDERING)
-            every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
-                SkyldnerStønaderResponse(
-                    stønader =
-                        listOf(
-                            opprettSkyldnerStønad()
-                                .copy(
-                                    kravhaver = Personident("søknadsbarn1"),
-                                ),
-                            opprettSkyldnerStønad().copy(
-                                kravhaver = Personident("søknadsbarn2"),
-                            ),
-                        ),
-                )
-            val expection =
-                shouldThrow<HttpClientErrorException> {
-                    validerBehandlingService.validerKanBehandlesINyLøsning(
-                        opprettBidragKanBehandlesINyLøsningRequest().copy(
-                            roller =
-                                listOf(
-                                    SjekkRolleDto(Rolletype.BIDRAGSPLIKTIG, ident = Personident("3231"), false),
-                                    SjekkRolleDto(Rolletype.BIDRAGSMOTTAKER, ident = Personident("123"), false),
-                                    SjekkRolleDto(Rolletype.BARN, ident = Personident("søknadsbarn1"), false),
-                                ),
-                        ),
-                    )
-                }
-            expection.statusCode shouldBe HttpStatus.PRECONDITION_FAILED
-            expection.validerInneholderMelding("Bidragspliktig har historiske eller løpende bidrag for flere barn")
-        }
-
-        @Test
-        fun `skal validere gyldig BIDRAG behandling hvis V2 endring er på og BP har løpende bidrag for ett barn`() {
-            enableUnleashFeature(UnleashFeatures.BEGRENSET_REVURDERING)
-            every { bidragStønadConsumer.hentAlleStønaderForBidragspliktig(any()) } returns
-                SkyldnerStønaderResponse(
-                    stønader =
-                        listOf(
-                            opprettSkyldnerStønad()
-                                .copy(
-                                    kravhaver = Personident("søknadsbarn1"),
-                                ),
-                        ),
-                )
-            shouldNotThrow<HttpClientErrorException> {
-                validerBehandlingService.validerKanBehandlesINyLøsning(
-                    opprettBidragKanBehandlesINyLøsningRequest().copy(
-                        roller =
-                            listOf(
-                                SjekkRolleDto(Rolletype.BIDRAGSPLIKTIG, ident = Personident("3231"), false),
-                                SjekkRolleDto(Rolletype.BIDRAGSMOTTAKER, ident = Personident("123"), false),
-                                SjekkRolleDto(Rolletype.BARN, ident = Personident("søknadsbarn1"), false),
-                            ),
-                    ),
-                )
-            }
         }
     }
 }

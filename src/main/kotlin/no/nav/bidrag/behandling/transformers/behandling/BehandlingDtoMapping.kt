@@ -388,7 +388,7 @@ fun oppdatereSamværForRoller(
     }
 }
 
-fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
+fun BehandlingSimple.kanFatteVedtakBegrunnelse(kanBehandleSjekk: Boolean = true): String? {
     // Skal kunne fatte vedtak hvis det er aldersjustering eller innkreving
     if (!erBidrag() || listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INNKREVING).contains(vedtakstype)) {
         return null
@@ -403,12 +403,15 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
         return "Kan ikke behandle søknad for bidrag uten bidragspliktig"
     }
 
-    val kanBehandleBidragFlereBarnHvorAlleBarnIkkeErDelAvBehandling =
-        UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled &&
-            UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled
     val løpendeBidrag = hentLøpendeBidrag(bidragspliktig!!.personident)
 
-    if (!kanBehandleBidragFlereBarnHvorAlleBarnIkkeErDelAvBehandling) {
+    val kanBehandleFlereBarnLøpendeBidrag =
+        if (kanBehandleSjekk) {
+            UnleashFeatures.BEHANDLE_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled
+        } else {
+            UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled
+        }
+    if (!kanBehandleFlereBarnLøpendeBidrag) {
         if (søknadsbarn.mapNotNull { it.virkningstidspunkt ?: virkningstidspunkt }.toSet().size > 1) {
             return "Kan ikke fatte vedtak når søknadsbarna har ulike virkningstidspunkt"
         }
@@ -437,7 +440,6 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
                 .flatMap { it.barn.mapNotNull { it.fødselsnummer?.verdi } }
                 .filter { !søknadsbarnIdenter.contains(it) }
                 .distinct()
-        val bpHarLøpendeBidragIAndreSaker = løpendeBidrag?.bidragssakerListe?.any { it.sak.verdi != saksnummer } == true
 
         if (sakerBp.isNotEmpty() && barnIAndreSaker.isNotEmpty()) {
             return "Kan ikke fatte vedtak når BP har flere saker"
@@ -476,7 +478,7 @@ fun BehandlingSimple.kanFatteVedtak(): Boolean = kanFatteVedtakBegrunnelse() == 
 
 fun Behandling.kanFatteVedtak(): Boolean = toSimple().kanFatteVedtak()
 
-fun Behandling.kanFatteVedtakBegrunnelse(): String? = toSimple().kanFatteVedtakBegrunnelse()
+fun Behandling.kanFatteVedtakBegrunnelse(kanBehandleSjekk: Boolean = true): String? = toSimple().kanFatteVedtakBegrunnelse(kanBehandleSjekk)
 
 fun Behandling.tilBehandlingDetaljerDtoV2() =
     BehandlingDetaljerDtoV2(

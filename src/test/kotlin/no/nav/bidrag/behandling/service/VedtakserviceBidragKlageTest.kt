@@ -97,6 +97,8 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
     fun initMocksKlage() {
         enableUnleashFeature(UnleashFeatures.FATTE_VEDTAK)
         bidragsberegningOrkestrator = mockkClass(BidragsberegningOrkestrator::class)
+//        bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator, klageOrkestratorV2, hentLøpendeBidragService, personConsumer, sakConsumer)
+//        every { bidragsberegningOrkestrator.utførBidragsberegningV3(any()) } returns BidragsberegningOrkestratorResponseV2()
         behandlingService =
             BehandlingService(
                 behandlingRepository,
@@ -250,7 +252,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 1,
                 emptyList(),
             )
-        every { bidragsberegningOrkestrator.utførBidragsberegningV2(any()) } returns
+        every { bidragsberegningOrkestrator.utførBidragsberegningV3(any()) } returns
             BidragsberegningOrkestratorResponseV2(
                 listOf(søknadsbarn.tilGrunnlagPerson()),
                 listOf(
@@ -376,7 +378,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 1,
                 emptyList(),
             )
-        every { bidragsberegningOrkestrator.utførBidragsberegningV2(any()) } returns
+        every { bidragsberegningOrkestrator.utførBidragsberegningV3(any()) } returns
             BidragsberegningOrkestratorResponseV2(
                 listOf(søknadsbarn.tilGrunnlagPerson()),
                 listOf(
@@ -500,7 +502,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
         }
-        every { bidragsberegningOrkestrator.utførBidragsberegningV2(any()) } returns
+        every { bidragsberegningOrkestrator.utførBidragsberegningV3(any()) } returns
             BidragsberegningOrkestratorResponseV2(
                 listOf(søknadsbarn.tilGrunnlagPerson()),
                 listOf(
@@ -670,7 +672,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
         }
-        every { bidragsberegningOrkestrator.utførBidragsberegningV2(any()) } returns
+        every { bidragsberegningOrkestrator.utførBidragsberegningV3(any()) } returns
             BidragsberegningOrkestratorResponseV2(
                 listOf(søknadsbarn.tilGrunnlagPerson()),
                 listOf(
@@ -838,7 +840,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
         }
-        every { bidragsberegningOrkestrator.utførBidragsberegningV2(any()) } returns
+        every { bidragsberegningOrkestrator.utførBidragsberegningV3(any()) } returns
             BidragsberegningOrkestratorResponseV2(
                 listOf(
                     søknadsbarn.tilGrunnlagPerson(),
@@ -1184,7 +1186,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
         }
-        every { bidragsberegningOrkestrator.utførBidragsberegningV2(any()) } returns
+        every { bidragsberegningOrkestrator.utførBidragsberegningV3(any()) } returns
             BidragsberegningOrkestratorResponseV2(
                 privaavtaleGrunnlag.toList() +
                     listOf(
@@ -1541,7 +1543,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
         }
-        every { bidragsberegningOrkestrator.utførBidragsberegningV2(any()) } returns
+        every { bidragsberegningOrkestrator.utførBidragsberegningV3(any()) } returns
             BidragsberegningOrkestratorResponseV2(
                 listOf(
                     søknadsbarn.tilGrunnlagPerson(),
@@ -1880,7 +1882,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
         }
-        every { bidragsberegningOrkestrator.utførBidragsberegningV2(any()) } returns
+        every { bidragsberegningOrkestrator.utførBidragsberegningV3(any()) } returns
             BidragsberegningOrkestratorResponseV2(
                 listOf(
                     søknadsbarn.tilGrunnlagPerson(),
@@ -2185,7 +2187,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
         }
-        every { bidragsberegningOrkestrator.utførBidragsberegningV2(any()) } returns
+        every { bidragsberegningOrkestrator.utførBidragsberegningV3(any()) } returns
             BidragsberegningOrkestratorResponseV2(
                 listOf(
                     søknadsbarn.tilGrunnlagPerson(),
@@ -2408,7 +2410,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
                 emptyList(),
             )
         }
-        every { bidragsberegningOrkestrator.utførBidragsberegningV2(any()) } returns
+        every { bidragsberegningOrkestrator.utførBidragsberegningV3(any()) } returns
             BidragsberegningOrkestratorResponseV2(
                 listOf(
                     søknadsbarn.tilGrunnlagPerson(),
