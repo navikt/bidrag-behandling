@@ -583,7 +583,7 @@ class GrunnlagService(
 
     suspend fun lagreBpsBarnUtenBidragsak(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
         if (!behandling.erBidrag() || behandling.bidragspliktig == null ||
-            !UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled
+            !UnleashFeatures.BEHANDLE_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled
         ) {
             return emptyMap()
         }

@@ -19,8 +19,6 @@ enum class UnleashFeatures(
     VEDTAKSSPERRE("vedtakssperre", false),
 
     TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG("behandling.behandle_innkrevingsgrunnlag", false),
-    TILGANG_BEHANDLE_BIDRAG_FLERE_BARN("behandling.behandle_bidrag_flere_barn", false),
-    BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG("behandling.bidrag_beregning_v2_lopende_bidrag", false),
     TILGANG_OPPRETTE_FF("behandling.opprette_ff", true),
     SEND_BEHANDLING_HENDELSE("bisys.send_behandling_hendelse", false),
     HENT_GRUNNLAG_ASYNC("behandling.hent_grunnlag_async", false),

@@ -184,7 +184,6 @@ interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandl
     )
     fun finnHovedbehandlingForBpVedFF(
         @Param("bpIdent") bpIdent: String,
-        @Param("vedtakstype") vedtakstype: String? = null,
         @Param("opprinneligVedtakId") opprinneligVedtakId: Int? = null
     ): Behandling?
 
