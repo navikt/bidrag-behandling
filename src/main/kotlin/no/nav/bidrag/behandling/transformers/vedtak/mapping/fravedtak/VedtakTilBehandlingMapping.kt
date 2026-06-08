@@ -203,6 +203,7 @@ class VedtakTilBehandlingMapping(
                     opprinneligVedtakstype = opprinneligVedtakstype,
                     opprinneligVedtakId = opprinneligVedtak,
                     innkrevingstype = innkrevingstype,
+                    erKlageEllerOmgjøring = opprinneligVedtak != omgjørVedtakId,
                     omgjørVedtakId = if (!lesemodus) omgjørVedtakId else null,
                     klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
                     soknadRefId = søknadRefId,

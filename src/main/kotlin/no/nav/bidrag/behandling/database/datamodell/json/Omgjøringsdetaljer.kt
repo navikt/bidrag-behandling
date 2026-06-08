@@ -31,6 +31,8 @@ data class Omgjøringsdetaljer(
     var innkrevingstype: Innkrevingstype? = null,
     val fattetDelvedtak: List<FattetVedtak> = emptyList(),
     val paragraf35c: List<OpprettParagraf35C> = emptyList(),
+    // Brukes ved lesemodus for å finne ut om vedtak er klage eller omgjøring
+    val erKlageEllerOmgjøring: Boolean = true,
 ) {
     val minsteVedtakstidspunkt get() = omgjortVedtakstidspunktListe.minOrNull()
 }
