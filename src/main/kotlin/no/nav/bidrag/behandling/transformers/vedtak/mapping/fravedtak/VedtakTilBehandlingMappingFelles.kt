@@ -123,6 +123,7 @@ import no.nav.bidrag.transport.sak.BidragssakDto
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlin.collections.sortedBy
 
 val VedtakDto.erBisysVedtak get() = behandlingId == null && this.søknadId != null
 
@@ -181,39 +182,42 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
         minstEnPeriodeHarSlåttUtTilFF = grunnlagListe.harSlåttUtTilForholdsmessigFordeling(),
         perioderSlåttUtTilFF = grunnlagListe.perioderSlåttUtTilFF(),
         resultatBarn =
-            stønadsendringListe.sortedBy { it.kravhaver.fødselsdato() }.map { stønadsendring ->
-                val barnIdent = stønadsendring.kravhaver
-                val barnGrunnlag = grunnlagListe.hentPerson(barnIdent.verdi)
-                val barn = barnGrunnlag?.innholdTilObjekt<Person>()
-                val erResultatUtenBeregning =
-                    stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode()?.resultatkode == "IV" ||
-                        type == Vedtakstype.INNKREVING
-                val orkestreringDetaljer = grunnlagListe.finnOrkestreringDetaljer(stønadsendring.grunnlagReferanseListe)
-                ResultatBidragsberegningBarnDto(
-                    resultatUtenBeregning = erResultatUtenBeregning,
-                    barn =
-                        ResultatRolle(
-                            barn?.ident ?: stønadsendring.kravhaver,
-                            hentPersonVisningsnavn(stønadsendring.kravhaver.verdi) ?: "",
-                            barn?.fødselsdato ?: LocalDate.now(),
-                            hentDirekteOppgjørBeløp(barnIdent.verdi),
-                            stønadstype = stønadsendring.type,
-                            referanse = barnGrunnlag?.referanse ?: "",
-                            erRevurderingsbarn = barn?.delAvOpprinneligBehandling != null && barn?.delAvOpprinneligBehandling == false,
-                        ),
-                    erAvvistRevurdering = erVedtakAvvistRevurderingsøknad(),
-                    erAvvisning = stønadsendring.beslutning == Beslutningstype.AVVIST,
-                    indeksår = stønadsendring.førsteIndeksreguleringsår,
-                    delvedtak = hentDelvedtak(stønadsendring),
-                    innkrevesFraDato = orkestreringDetaljer?.innkrevesFraDato,
-                    perioder =
-                        vedtakBeregning?.let {
-                            val stønadsendringBeregning =
-                                vedtakBeregning.finnStønadsendring(stønadsendring.tilStønadsid()) ?: return@let emptyList()
-                            it.hentBeregningsperioder(stønadsendringBeregning)
-                        } ?: hentBeregningsperioder(stønadsendring),
-                )
-            },
+            stønadsendringListe
+                .parallelStream()
+                .map { stønadsendring ->
+                    val barnIdent = stønadsendring.kravhaver
+                    val barnGrunnlag = grunnlagListe.hentPerson(barnIdent.verdi)
+                    val barn = barnGrunnlag?.innholdTilObjekt<Person>()
+                    val erResultatUtenBeregning =
+                        stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode()?.resultatkode == "IV" ||
+                            type == Vedtakstype.INNKREVING
+                    val orkestreringDetaljer = grunnlagListe.finnOrkestreringDetaljer(stønadsendring.grunnlagReferanseListe)
+                    ResultatBidragsberegningBarnDto(
+                        resultatUtenBeregning = erResultatUtenBeregning,
+                        barn =
+                            ResultatRolle(
+                                barn?.ident ?: stønadsendring.kravhaver,
+                                hentPersonVisningsnavn(stønadsendring.kravhaver.verdi) ?: "",
+                                barn?.fødselsdato ?: LocalDate.now(),
+                                hentDirekteOppgjørBeløp(barnIdent.verdi),
+                                stønadstype = stønadsendring.type,
+                                referanse = barnGrunnlag?.referanse ?: "",
+                                erRevurderingsbarn = barn?.delAvOpprinneligBehandling != null && barn?.delAvOpprinneligBehandling == false,
+                            ),
+                        erAvvistRevurdering = erVedtakAvvistRevurderingsøknad(),
+                        erAvvisning = stønadsendring.beslutning == Beslutningstype.AVVIST,
+                        indeksår = stønadsendring.førsteIndeksreguleringsår,
+                        delvedtak = hentDelvedtak(stønadsendring),
+                        innkrevesFraDato = orkestreringDetaljer?.innkrevesFraDato,
+                        perioder =
+                            vedtakBeregning?.let {
+                                val stønadsendringBeregning =
+                                    vedtakBeregning.finnStønadsendring(stønadsendring.tilStønadsid()) ?: return@let emptyList()
+                                it.hentBeregningsperioder(stønadsendringBeregning)
+                            } ?: hentBeregningsperioder(stønadsendring),
+                    )
+                }.toList()
+                .sortedBy { it.barn.fødselsdatoSortering },
     )
 
 fun VedtakDto.erVedtakUtenBeregning() =
