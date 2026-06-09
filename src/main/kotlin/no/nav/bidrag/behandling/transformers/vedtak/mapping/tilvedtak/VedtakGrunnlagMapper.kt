@@ -477,11 +477,8 @@ class VedtakGrunnlagMapper(
             val privatAvtaler =
                 behandling.privatAvtale
                     .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode()
-            if (privatAvtaler.isEmpty() || privatAvtaler
-                    .find { it.gjelderPerson(gjelderBarn.ident ?: "", gjelderBarn.stønadstype) }
-                    ?.perioderInnkreving
-                    ?.isEmpty() == true
-            ) {
+            val privatAvtaleBarn = privatAvtaler.find { it.gjelderPerson(gjelderBarn.ident ?: "", gjelderBarn.stønadstype) }
+            if (privatAvtaler.isEmpty() || privatAvtaleBarn == null || privatAvtaleBarn.perioderInnkreving.isEmpty()) {
                 return emptyList()
             }
             val grunnlag =
