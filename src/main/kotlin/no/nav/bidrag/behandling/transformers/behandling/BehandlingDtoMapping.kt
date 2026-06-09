@@ -20,6 +20,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.BegrunnelseDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
+import no.nav.bidrag.behandling.dto.v1.behandling.RolleSøknadDto
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsinnhentingsfeil
@@ -46,14 +47,12 @@ import no.nav.bidrag.behandling.service.NotatService
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.service.hentAlleSaker
-import no.nav.bidrag.behandling.service.hentAlleStønaderForBidragspliktig
+import no.nav.bidrag.behandling.service.hentLøpendeBidrag
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentSak
-import no.nav.bidrag.behandling.service.hentStønad
 import no.nav.bidrag.behandling.transformers.barn
 import no.nav.bidrag.behandling.transformers.bestemRollerSomKanHaInntekter
 import no.nav.bidrag.behandling.transformers.bestemRollerSomMåHaMinstEnInntekt
-import no.nav.bidrag.behandling.transformers.boforhold.tilBostatus
 import no.nav.bidrag.behandling.transformers.ekskluderYtelserFørVirkningstidspunkt
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erBidrag
@@ -86,8 +85,6 @@ import no.nav.bidrag.behandling.transformers.årsinntekterSortert
 import no.nav.bidrag.beregn.core.BeregnApi
 import no.nav.bidrag.beregn.core.util.avrundetTilToDesimaler
 import no.nav.bidrag.beregn.core.util.sluttenAvForrigeMåned
-import no.nav.bidrag.boforhold.BoforholdApi
-import no.nav.bidrag.boforhold.dto.BoforholdBarnRequestV3
 import no.nav.bidrag.boforhold.dto.BoforholdResponseV2
 import no.nav.bidrag.commons.service.forsendelse.bidragspliktig
 import no.nav.bidrag.commons.util.secureLogger
@@ -95,7 +92,6 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.behandling.tilBehandlingstema
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
-import no.nav.bidrag.domene.enums.person.Familierelasjon
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.særbidrag.Særbidragskategori
@@ -109,7 +105,6 @@ import no.nav.bidrag.domene.util.visningsnavn
 import no.nav.bidrag.organisasjon.dto.SaksbehandlerDto
 import no.nav.bidrag.sivilstand.dto.Sivilstand
 import no.nav.bidrag.sivilstand.response.SivilstandBeregnet
-import no.nav.bidrag.transport.behandling.belopshistorikk.request.HentStønadHistoriskRequest
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.grunnlag.response.BarnetilsynGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.SivilstandGrunnlagDto
@@ -128,7 +123,8 @@ private val log = KotlinLogging.logger {}
 fun KanBehandlesINyLøsningRequest.toSimple() =
     BehandlingSimple(
         id = null,
-        harPrivatAvtaleAndreBarn = false,
+        harPrivatAvtaleAndreBarn = privatAvtaleAndreBarnIdenter.isNotEmpty(),
+        privatAvtaleAndreBarnIdenter = privatAvtaleAndreBarnIdenter,
         omgjøringsdetaljer = null,
         forholdsmessigFordeling = null,
         virkningstidspunkt = søktFomDato,
@@ -277,7 +273,7 @@ private fun oppdaterOpphørForRoller(
                 if (opphørsdato != null) {
                     virkningstidspunktService.oppdaterOpphørsdato(
                         OppdaterOpphørsdatoRequestDto(
-                            rolle.id!!,
+                            rolle.id,
                             opphørsdato,
                         ),
                         behandling,
@@ -392,7 +388,8 @@ fun oppdatereSamværForRoller(
     }
 }
 
-fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
+fun BehandlingSimple.kanFatteVedtakBegrunnelse(kanBehandleSjekk: Boolean = true): String? {
+    // Skal kunne fatte vedtak hvis det er aldersjustering eller innkreving
     if (!erBidrag() || listOf(Vedtakstype.ALDERSJUSTERING, Vedtakstype.INNKREVING).contains(vedtakstype)) {
         return null
     }
@@ -402,83 +399,76 @@ fun BehandlingSimple.kanFatteVedtakBegrunnelse(): String? {
         return null
     }
 
-    if (søknadsbarn.size > 1 && !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled) {
-        return "Kan ikke fatte vedtak for bidrag med flere barn"
+    if (bidragspliktig == null && stønadstype in listOf(Stønadstype.BIDRAG, Stønadstype.BIDRAG18AAR)) {
+        return "Kan ikke behandle søknad for bidrag uten bidragspliktig"
     }
 
-    if (søknadsbarn.size > 1 && erKlageEllerOmgjøring && !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_OMGJØRING.isEnabled) {
-        return "Kan ikke fatte omgjøring/klagevedtak for bidrag med flere barn"
-    }
+    val løpendeBidrag = hentLøpendeBidrag(bidragspliktig!!.personident)
 
-    if (UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled &&
-        !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled
-    ) {
+    val kanBehandleFlereBarnLøpendeBidrag =
+        if (kanBehandleSjekk) {
+            UnleashFeatures.BEHANDLE_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled
+        } else {
+            UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled
+        }
+    if (!kanBehandleFlereBarnLøpendeBidrag) {
         if (søknadsbarn.mapNotNull { it.virkningstidspunkt ?: virkningstidspunkt }.toSet().size > 1) {
             return "Kan ikke fatte vedtak når søknadsbarna har ulike virkningstidspunkt"
         }
+
+        val gjeldendeSak = hentSak(saksnummer) ?: return "Kan ikke fatte vedtak for behandling som ikke inneholder alle barna i saken"
+
+        if (gjeldendeSak.barn.size != søknadsbarn.size) {
+            return "Kan ikke fatte vedtak for behandling som ikke inneholder alle barna i saken"
+        }
+
+        // Simulering av privat avtale andre barn uten at barna er del av behandlingen
+        if (harPrivatAvtaleAndreBarn) {
+            return "Kan ikke fatte vedtak når det er lagt inn privat avtale for andre barn"
+        }
+    }
+
+    if (!UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_SAKER.isEnabled) {
         val sakerBp =
             hentAlleSaker(bidragspliktig!!.ident).filter {
                 it.saksnummer.verdi != saksnummer &&
                     it.bidragspliktig?.fødselsnummer?.verdi == bidragspliktig!!.ident
             }
         val søknadsbarnIdenter = søknadsbarn.map { it.ident }
-        // SJekk at andre saker ikke er opprettet med samme barn som i søknaden. Tilfeller hvor sak ble opprettet med feil BM feks
-        val andreBarnISaker =
+        val barnIAndreSaker =
             sakerBp
                 .flatMap { it.barn.mapNotNull { it.fødselsnummer?.verdi } }
                 .filter { !søknadsbarnIdenter.contains(it) }
                 .distinct()
-        if (sakerBp.isNotEmpty() && andreBarnISaker.isNotEmpty()) {
+
+        if (sakerBp.isNotEmpty() && barnIAndreSaker.isNotEmpty()) {
             return "Kan ikke fatte vedtak når BP har flere saker"
         }
-        val gjeldendeSak = hentSak(saksnummer) ?: return "Kan ikke fatte vedtak for behandling som ikke inneholder alle barna i saken"
-//        val stønaderBp =
-//            hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident)
-//        val barnMedLøpendeBidrag =
-//            try {
-//                gjeldendeSak.barn.filter { barn ->
-//                    val stønadBarnInfo =
-//                        stønaderBp?.stønader?.find { it.kravhaver.verdi == barn.fødselsnummer?.verdi } ?: return@filter false
-//                    val stønadBarn =
-//                        hentStønad(
-//                            HentStønadHistoriskRequest(
-//                                type = stønadBarnInfo.type,
-//                                kravhaver = stønadBarnInfo.kravhaver,
-//                                sak = stønadBarnInfo.sak,
-//                                skyldner = bidragspliktig!!.personident,
-//                            ),
-//                        ) ?: return@filter true
-//                    if (stønadBarn.periodeListe.isEmpty()) return@filter false
-//                    val sistePeriode = stønadBarn.periodeListe.maxByOrNull { it.periode.fom } ?: return@filter true
-//                    sistePeriode.periode.til == null || sistePeriode.periode.til!! > søktFomDato.toYearMonth()
-//                }
-//            } catch (e: Exception) {
-//                gjeldendeSak.barn
-//            }
-        if (gjeldendeSak.barn.size != søknadsbarn.size) {
-            return "Kan ikke fatte vedtak for behandling som ikke inneholder alle barna i saken"
-        }
-//        if (barnMedLøpendeBidrag.size > søknadsbarn.size) {
-//            return "Kan ikke fatte vedtak for behandling som ikke inneholder alle barna i saken"
-//        }
-        if (harPrivatAvtaleAndreBarn) {
-            return "Kan ikke fatte vedtak når det er lagt inn privat avtale for andre barn"
+        val harPrivatAvtaleAndreBarnAndreSaker =
+            sakerBp.filter { it.saksnummer.verdi != saksnummer }.any {
+                it.barn.any { b -> b.fødselsnummer != null && privatAvtaleAndreBarnIdenter.contains(b.fødselsnummer!!.verdi) }
+            }
+        if (harPrivatAvtaleAndreBarnAndreSaker) {
+            return "Kan ikke fatte vedtak når BP har privat avtale for barn i andre saker"
         }
     }
 
-    if (bidragspliktig == null && stønadstype in listOf(Stønadstype.BIDRAG, Stønadstype.BIDRAG18AAR)) {
-        return "Kan ikke behandle søknad for bidrag uten bidragspliktig"
+    val harLøpendeBidragUtenlandskValuta =
+        løpendeBidrag?.bidragssakerListe?.any {
+            it.valutakode.isNotEmpty() && it.valutakode != "NOK"
+        } == true
+
+    if (harLøpendeBidragUtenlandskValuta && !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_UTENLANDSK_VALUTA.isEnabled) {
+        return "Kan ikke fatte vedtak hvor BP har løpende bidrag med utenlandsk valuta"
     }
-    val stønaderBp =
-        hentAlleStønaderForBidragspliktig(bidragspliktig!!.personident)
-            ?: return if (søknadsbarn.size == 1) null else "Kan ikke fatte vedtak for bidrag med flere barn"
-    val harBPStønadForFlereBarn =
-        stønaderBp
-            .stønader
-            .filter { it.kravhaver.verdi != søknadsbarn.first().ident }
-            .any { it.type != Stønadstype.FORSKUDD }
-    if (harBPStønadForFlereBarn && !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN.isEnabled) {
-        return "Kan ikke fatte vedtak hvor BP har løpende bidrag for andre barn"
+
+    val harOppfostringsbidrag =
+        løpendeBidrag?.bidragssakerListe?.any {
+            it.type == Stønadstype.OPPFOSTRINGSBIDRAG
+        } == true
+
+    if (harOppfostringsbidrag && !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_OPPFOSTRINGSBIDRAG.isEnabled) {
+        return "Kan ikke fatte vedtak hvor BP har løpende oppfostringsbidrag"
     }
 
     return null
@@ -488,7 +478,7 @@ fun BehandlingSimple.kanFatteVedtak(): Boolean = kanFatteVedtakBegrunnelse() == 
 
 fun Behandling.kanFatteVedtak(): Boolean = toSimple().kanFatteVedtak()
 
-fun Behandling.kanFatteVedtakBegrunnelse(): String? = toSimple().kanFatteVedtakBegrunnelse()
+fun Behandling.kanFatteVedtakBegrunnelse(kanBehandleSjekk: Boolean = true): String? = toSimple().kanFatteVedtakBegrunnelse(kanBehandleSjekk)
 
 fun Behandling.tilBehandlingDetaljerDtoV2() =
     BehandlingDetaljerDtoV2(
@@ -573,6 +563,24 @@ fun Rolle.tilDto() =
         beregnTilDato = finnBeregnTil(),
         harLøpendeForskudd = behandling.finnesLøpendeForskuddForRolle(this),
         harLøpendeBidrag = behandling.finnesLøpendeBidragForRolle(this),
+        søknader =
+            forholdsmessigFordeling?.søknaderUnderBehandling?.map {
+                RolleSøknadDto(
+                    søknadsId = it.søknadsid!!,
+                    søknadFra = it.søktAvType,
+                    vedtakstype = it.behandlingstype?.tilVedtakstype() ?: behandling.vedtakstype,
+                    enhet = it.enhet,
+                )
+            } ?: behandling.soknadsid?.let {
+                listOf(
+                    RolleSøknadDto(
+                        søknadsId = behandling.soknadsid!!,
+                        søknadFra = behandling.soknadFra,
+                        vedtakstype = behandling.vedtakstype,
+                        enhet = behandling.behandlerEnhet,
+                    ),
+                )
+            } ?: emptyList(),
         bidragsmottaker =
             if (rolletype == Rolletype.BARN) {
                 forholdsmessigFordeling?.bidragsmottaker ?: behandling.bidragsmottaker?.ident
@@ -670,7 +678,7 @@ fun Behandling.tilInntektDtoV3(
     val sorterteBarn =
         rolle.barn
             .sortedWith(
-                sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
+                sorterPersonEtterEldsteFødselsdato({ it.fødselsdatoSortering }, { it.identifikator }),
             ).filter { it.kreverGrunnlagForBeregning }
 
     // Use precomputed inntekterPerType from cache, fall back to per-role computation
@@ -1378,7 +1386,7 @@ fun Behandling.hentBeregnetInntekterForRolle(rolle: Rolle) =
             )
         }.sortedWith(
             sorterPersonEtterEldsteFødselsdato({
-                it.inntektGjelderBarn?.fødselsdato ?: LocalDate.MAX
+                it.inntektGjelderBarn?.fødselsdatoSortering ?: LocalDate.MAX
             }, { it.inntektGjelderBarn?.identifikator }),
         )
 
@@ -1703,6 +1711,7 @@ fun Behandling.tilKanBehandlesINyLøsningRequest() =
         harReferanseTilAnnenBehandling = omgjøringsdetaljer != null,
         søktFomDato = søktFomDato,
         mottattdato = mottattdato,
+        privatAvtaleAndreBarnIdenter = privatAvtale.filter { it.rolle == null }.mapNotNull { it.person?.ident },
         roller =
             roller.map {
                 SjekkRolleDto(

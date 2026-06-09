@@ -138,6 +138,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrun
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottakerReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
 import no.nav.bidrag.transport.behandling.felles.grunnlag.byggSluttberegningBarnebidragDetaljer
+import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrenseForPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erSluttberegningGammelStruktur
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
@@ -175,7 +176,16 @@ import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode 
 val ikkeBeregnForBarnetillegg = listOf(Inntektstype.BARNETILLEGG_TILTAKSPENGER, Inntektstype.BARNETILLEGG_SUMMERT)
 
 fun Rolle.mapTilResultatBarn() =
-    ResultatRolle(tilPersonident(), hentNavn(), fødselsdato, innbetaltBeløp, tilGrunnlagsreferanse(), stønadstype, grunnlagFraVedtakListe)
+    ResultatRolle(
+        tilPersonident(),
+        hentNavn(),
+        fødselsdato,
+        innbetaltBeløp,
+        tilGrunnlagsreferanse(),
+        stønadstype,
+        grunnlagFraVedtakListe,
+        erRevurderingsbarn,
+    )
 
 fun Rolle.tilPersonident() = ident?.let { Personident(it) }
 
@@ -279,10 +289,10 @@ fun BeregnGebyrResultat.tilDto(
                 maksBarnetillegg = maksBarnetillegg,
             ),
         beregnetIlagtGebyr = ilagtGebyr,
-        begrunnelse = if (erManueltOverstyrt) rolle.gebyr?.begrunnelse else null,
+        begrunnelse = if (erManueltOverstyrt) gebyr.manueltOverstyrtGebyr?.begrunnelse ?: rolle.gebyr?.begrunnelse else null,
         endeligIlagtGebyr =
             if (erManueltOverstyrt) {
-                rolle.gebyr!!.ilagtGebyr == true
+                gebyr.manueltOverstyrtGebyr?.ilagtGebyr ?: (rolle.gebyr!!.ilagtGebyr == true)
             } else {
                 ilagtGebyr
             },
@@ -493,7 +503,7 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                             },
                     )
                 }.toList()
-                .sortedBy { it.barn.fødselsdato },
+                .sortedBy { it.barn.fødselsdatoSortering },
     )
 
 private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<DelvedtakDto> =
@@ -1488,6 +1498,7 @@ fun List<GrunnlagDto>.tilsynsutgifterBarn(
                 person?.fødselsdato,
                 medIBehandlingen =
                     personGrunnlag?.type == Grunnlagstype.PERSON_SØKNADSBARN,
+                erRevurderingsbarn = false,
             ),
         totalTilsynsutgift = faktiskUtgiftPeriode.innhold.faktiskUtgiftBeløp,
         faktiskUtgiftBeregnet = delberegningFaktiskUtgiftPeriode.innhold.beregnetBeløp,
@@ -1715,7 +1726,12 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
                         stønadstype = Stønadstype.BIDRAG,
                     ),
                 barn =
-                    PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
+                    PersoninfoDto(
+                        ident = barn.ident,
+                        fødselsdato = barn.fødselsdato,
+                        navn = barn.navn,
+                        erRevurderingsbarn = !barn.delAvOpprinneligBehandling,
+                    ),
                 bidragTilFordeling = it.innhold.bidragTilFordeling,
             )
         }
@@ -1817,7 +1833,12 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                 erSøknadsbarn = false,
                 bidragTilFordeling = it.innhold.bidragTilFordelingNOK,
                 barn =
-                    PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
+                    PersoninfoDto(
+                        ident = barn.ident,
+                        fødselsdato = barn.fødselsdato,
+                        navn = barn.navn,
+                        erRevurderingsbarn = !barn.delAvOpprinneligBehandling,
+                    ),
                 beregnetBidrag =
                     BeregnetBidragBarnDto(
                         periode = periode,
@@ -1865,7 +1886,12 @@ private fun List<GrunnlagDto>.finnBidragTilFordelingLøpendeBidrag(
                 erSøknadsbarn = false,
                 bidragTilFordeling = periodeBeregnet.beløp,
                 barn =
-                    PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
+                    PersoninfoDto(
+                        ident = barn.ident,
+                        fødselsdato = barn.fødselsdato,
+                        navn = barn.navn,
+                        erRevurderingsbarn = !barn.delAvOpprinneligBehandling,
+                    ),
                 beregnetBidrag =
                     BeregnetBidragBarnDto(
                         periode = periode,
@@ -1926,7 +1952,12 @@ fun List<GrunnlagDto>.mapTilBeregnetBidragDto(
             stønadstype = løpendeBidrag.stønadstype,
             bidragTilFordeling = it.innhold.bidragTilFordelingNOK,
             barn =
-                PersoninfoDto(ident = barn.ident, fødselsdato = barn.fødselsdato, navn = barn.navn),
+                PersoninfoDto(
+                    ident = barn.ident,
+                    fødselsdato = barn.fødselsdato,
+                    navn = barn.navn,
+                    erRevurderingsbarn = !barn.delAvOpprinneligBehandling,
+                ),
             beregnetBidrag =
                 BeregnetBidragBarnDto(
                     periode = it.innhold.periode,

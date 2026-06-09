@@ -113,7 +113,16 @@ private val LOGGER = KotlinLogging.logger {}
 private fun Rolle.tilPersonident() = ident?.let { Personident(it) }
 
 private fun Rolle.mapTilResultatBarn() =
-    ResultatRolle(tilPersonident(), hentNavn(), fødselsdato, innbetaltBeløp, tilGrunnlagsreferanse(), stønadstype, grunnlagFraVedtakListe)
+    ResultatRolle(
+        tilPersonident(),
+        hentNavn(),
+        fødselsdato,
+        innbetaltBeløp,
+        tilGrunnlagsreferanse(),
+        stønadstype,
+        grunnlagFraVedtakListe,
+        erRevurderingsbarn,
+    )
 
 @Service
 class BeregningService(
@@ -192,31 +201,28 @@ class BeregningService(
             }
         }
 
-        val skalBeregneForFFV2 =
-            (!behandling.erKlageEllerOmgjøring || UnleashFeatures.BIDRAG_BEREGNING_V2_KLAGE.isEnabled) &&
-                UnleashFeatures.BIDRAG_BEREGNING_V2.isEnabled &&
-                (behandling.søknadsbarn.size > 1 || UnleashFeatures.BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG.isEnabled)
-
         return if (behandling.erInnkreving) {
             beregnInnkrevingsgrunnlag(behandling)
         } else if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
             beregnBidragAldersjustering(behandling)
-        } else if (skalBeregneForFFV2) {
-            beregneBarnebidragV2FF(behandling, endeligBeregning, simulerBeregning)
         } else {
-            val resultat = beregneBarnebidragV1(behandling, endeligBeregning)
-            val grunnlagResultatVedtak =
-                resultat
-                    .filter {
-                        it.resultatVedtak != null
-                    }.flatMap { it.resultatVedtak!!.resultatVedtakListe.flatMap { it.resultat.grunnlagListe } }
-            val grunnlagsliste = resultat.flatMap { it.resultat.grunnlagListe }
-            ResultatBidragsberegning(
-                grunnlagsliste = (grunnlagsliste + grunnlagResultatVedtak).toSet(),
-                resultatBarn = resultat,
-                vedtakstype = behandling.vedtakstype,
-            )
+            beregneBarnebidragV2FF(behandling, endeligBeregning, simulerBeregning)
         }
+
+//        else {
+//            val resultat = beregneBarnebidragV1(behandling, endeligBeregning)
+//            val grunnlagResultatVedtak =
+//                resultat
+//                    .filter {
+//                        it.resultatVedtak != null
+//                    }.flatMap { it.resultatVedtak!!.resultatVedtakListe.flatMap { it.resultat.grunnlagListe } }
+//            val grunnlagsliste = resultat.flatMap { it.resultat.grunnlagListe }
+//            ResultatBidragsberegning(
+//                grunnlagsliste = (grunnlagsliste + grunnlagResultatVedtak).toSet(),
+//                resultatBarn = resultat,
+//                vedtakstype = behandling.vedtakstype,
+//            )
+//        }
     }
 
     fun beregneBarnebidragV2FF(
@@ -327,7 +333,7 @@ class BeregningService(
                 byggGrunnlagForSimuleringPrivatAvtale(behandling, grunnlagslisteSøknadsbarn.toSet())
             }
         return BidragsberegningOrkestratorRequestV2(
-            skalHensyntaLøpendeBidrag = UnleashFeatures.BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG.isEnabled,
+            skalHensyntaLøpendeBidrag = UnleashFeatures.BEHANDLE_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled,
             beregningsperiode = beregningsperiode,
             grunnlagsliste = (grunnlagslisteSøknadsbarn + grunnlagslisteSimulertPrivatAvtale).toSet().toList(),
             erDirekteAvslag = behandling.erDirekteAvslag(),

@@ -294,7 +294,7 @@ class Dtomapper(
             .sortedWith(
                 compareByDescending<UnderholdDto> { it.gjelderBarn.kilde == Kilde.OFFENTLIG }
                     .thenByDescending { it.gjelderBarn.kilde == Kilde.MANUELL }
-                    .thenBy { it.gjelderBarn.fødselsdato }
+                    .thenBy { it.gjelderBarn.fødselsdatoSortering }
                     .thenBy { it.gjelderBarn.sortKey },
             ).toSet()
 
@@ -425,6 +425,7 @@ class Dtomapper(
             fødselsdato = personinfo?.fødselsdato ?: this.fødselsdato,
             kilde = kilde,
             medIBehandlingen = ident != null,
+            erRevurderingsbarn = erRevurderingsbarn,
             stønadstype = stønadstype,
         )
     }
@@ -443,6 +444,7 @@ class Dtomapper(
             navn = hentPersonVisningsnavn(personinfo?.ident?.verdi) ?: this.navn,
             fødselsdato = personinfo?.fødselsdato ?: this.fødselsdato,
             kilde = kilde,
+            erRevurderingsbarn = false,
             medIBehandlingen = rolle?.ident != null,
         )
     }
@@ -472,7 +474,7 @@ class Dtomapper(
             samvær
                 .filter { it.rolle.kreverGrunnlagForBeregning }
                 .sortedWith(
-                    sorterPersonEtterEldsteFødselsdato({ it.rolle.fødselsdato }, { it.rolle.identifikator }),
+                    sorterPersonEtterEldsteFødselsdato({ it.rolle.fødselsdatoSortering }, { it.rolle.identifikator }),
                 ).map { it.tilDto() }
         } else {
             null
@@ -833,7 +835,7 @@ class Dtomapper(
         val samværDto = tilSamværDto()
         val sorterteRoller =
             roller.sortedWith(
-                sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
+                sorterPersonEtterEldsteFødselsdato({ it.fødselsdatoSortering }, { it.identifikator }),
             )
         val rolleDtoCache = sorterteRoller.associate { it.id!! to it.tilDto() }
         val harGebyrsøknad = roller.any { it.harGebyrsøknad }
@@ -848,7 +850,6 @@ class Dtomapper(
             } else {
                 emptyMap()
             }
-        val gebyrValideringsfeilCache = if (harGebyrsøknad) validerGebyr() else emptyList()
         val behandlingDto =
             BehandlingDtoV2(
                 id = id!!,
@@ -915,7 +916,7 @@ class Dtomapper(
                 opprettetTidspunkt = opprettetTidspunkt,
                 erVedtakFattet = vedtaksid != null,
                 erDelvedtakFattet = vedtakDetaljer?.fattetVedtak?.isNotEmpty() == true,
-                søktFomDato = søktFomDato,
+                søktFomDato = eldsteSøktFomDato,
                 mottattdato = mottattdato,
                 klageMottattdato = omgjøringsdetaljer?.klageMottattdato,
                 søktAv = soknadFra,
@@ -1115,10 +1116,16 @@ class Dtomapper(
                     )
                 }.toList()
                 .sortedWith(
-                    sorterPersonEtterEldsteFødselsdato({ it.gjelderBarn.fødselsdato ?: LocalDate.MAX }, { it.gjelderBarn.sortKey }),
+                    sorterPersonEtterEldsteFødselsdato(
+                        { it.gjelderBarn.fødselsdatoSortering ?: LocalDate.MAX },
+                        { it.gjelderBarn.sortKey },
+                    ),
                 )
 
-        val bpsSaker by lazy { bidragSakConsumer?.hentSakerPerson(bidragspliktig!!.ident!!) ?: emptyList() }
+        val bpsSaker by lazy {
+            bidragSakConsumer?.hentSakerPerson(bidragspliktig!!.ident!!)?.filtrerSakerHvorPersonErBP(bidragspliktig!!.ident!!)
+                ?: emptyList()
+        }
         val alleBpsBarnUtenLøpendeBidrag = cachedBpsBarnUtenLøpendeBidrag
         val søknadsbarnIdent = søknadsbarn.map { it.ident }
         val andreBarnUtenLøpendeBidrag =
@@ -1139,6 +1146,7 @@ class Dtomapper(
                         barn.fødselsdato,
                         medIBehandlingen = false,
                         kilde = Kilde.OFFENTLIG,
+                        erRevurderingsbarn = false,
                         stønadstype = privatAvtale?.stønadstype,
                     ),
                     privatAvtale?.tilDtoV2(),
@@ -1205,7 +1213,7 @@ class Dtomapper(
         return if (tilType() == TypeBehandling.BIDRAG) {
             søknadsbarn
                 .sortedWith(
-                    sorterPersonEtterEldsteFødselsdato({ it.fødselsdato }, { it.identifikator }),
+                    sorterPersonEtterEldsteFødselsdato({ it.fødselsdatoSortering }, { it.identifikator }),
                 ).map {
                     val eldsteSøknad = it.forholdsmessigFordeling?.eldsteSøknad
                     val notat = henteNotatinnhold(this, NotatType.VIRKNINGSTIDSPUNKT, it)

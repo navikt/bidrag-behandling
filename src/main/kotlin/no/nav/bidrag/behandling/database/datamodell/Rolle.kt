@@ -22,6 +22,8 @@ import no.nav.bidrag.behandling.oppdateringAvBoforholdFeilet
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
+import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFBarnDetaljer
+import no.nav.bidrag.behandling.transformers.fødselsdatoSorteringJustering
 import no.nav.bidrag.behandling.transformers.løperBidragEtterEldsteVirkning
 import no.nav.bidrag.beregn.core.util.justerPeriodeTomOpphørsdato
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
@@ -147,6 +149,9 @@ open class Rolle(
     // Brukes ved blant annet sortering og filtrering for å finne unik rolle.
     // Det kan hende samme rolle er i samme behandling flere ganger (18 år og ordinær bidrag samtidig ved FF)
     val identifikator get() = "${ident}_${navn}_$stønadstype"
+
+    // Ønsker at revurderingsbarn havner bakerst i sortering men at de sorteres etter alder mellom seg
+    val fødselsdatoSortering get() = if (erRevurderingsbarn) fødselsdato.plusYears(fødselsdatoSorteringJustering) else fødselsdato
     val identStønadstypeNøkkel get() = "${ident}_${stønadstype ?: "null"}"
     val erDirekteAvslag get() = avslag != null
     val erAvvisning get() = avslag != null && avslag!!.erAvvisning()
@@ -164,6 +169,8 @@ open class Rolle(
         }
     val stønadstypeBarnEllerBehandling get() = stønadstype ?: behandling.stonadstype
     val virkningstidspunktRolle get() = virkningstidspunkt ?: behandling.virkningstidspunktEllerSøktFomDato
+
+    val søknader get() = forholdsmessigFordeling?.søknaderUnderBehandling ?: listOf(behandling.tilFFBarnDetaljer())
 
     fun finnSøknad(søknadsid: Long) =
         forholdsmessigFordeling
@@ -313,7 +320,9 @@ open class Rolle(
     val opphørSistePeriode get() = opphørTilDato != null
 
     override fun toString(): String =
-        "Rolle(id=$id, behandling=${behandling.id}, stønadstype=$stønadstype, behandlingstema=$behandlingstema, rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, deleted=$deleted, innbetaltBeløp=$innbetaltBeløp)"
+        "Rolle(id=$id, behandling=${behandling.id}, stønadstype=$stønadstype, behandlingstema=$behandlingstema, " +
+            "rolletype=$rolletype, ident=$ident, fødselsdato=$fødselsdato, opprettet=$opprettet, navn=$navn, " +
+            "deleted=$deleted, innbetaltBeløp=$innbetaltBeløp, virkningstidspunkt=$virkningstidspunkt, opphørsdato=$opphørsdato, årsak=$årsak, avslag=$avslag)"
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

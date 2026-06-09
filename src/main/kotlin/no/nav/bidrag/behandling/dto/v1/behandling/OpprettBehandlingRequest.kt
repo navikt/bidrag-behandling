@@ -47,6 +47,7 @@ data class OpprettBehandlingRequest(
     val kategori: OpprettKategoriRequestDto? = null,
     val innkrevingstype: Innkrevingstype? = Innkrevingstype.MED_INNKREVING,
 ) {
+    val rollerUnderBehandling get() = roller.filter { it.behandlingstatus == null || !it.behandlingstatus.lukketStatus }
     val gebyrGjelder18År get() = roller.any { it.harGebyrsøknad && it.rolletype == Rolletype.BARN }
 }
 
