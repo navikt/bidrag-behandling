@@ -19,7 +19,7 @@ enum class UnleashFeatures(
     VEDTAKSSPERRE("vedtakssperre", false),
 
     TILGANG_BEHANDLE_INNKREVINGSGRUNNLAG("behandling.behandle_innkrevingsgrunnlag", false),
-    TILGANG_OPPRETTE_FF("behandling.opprette_ff", true),
+    TILGANG_OPPRETTE_FF("behandling.opprette_ff", false),
     SEND_BEHANDLING_HENDELSE("bisys.send_behandling_hendelse", false),
     HENT_GRUNNLAG_ASYNC("behandling.hent_grunnlag_async", false),
     FEILHÅNDTERING_INNTEKT_SOM_MANGLER("behandling.opprett_inntekt_som_mangler", false),
