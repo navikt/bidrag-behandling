@@ -333,7 +333,7 @@ class BeregningService(
                 byggGrunnlagForSimuleringPrivatAvtale(behandling, grunnlagslisteSøknadsbarn.toSet())
             }
         return BidragsberegningOrkestratorRequestV2(
-            skalHensyntaLøpendeBidrag = UnleashFeatures.BIDRAG_BEREGNING_V2_LØPENDE_BIDRAG.isEnabled,
+            skalHensyntaLøpendeBidrag = UnleashFeatures.BEHANDLE_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled,
             beregningsperiode = beregningsperiode,
             grunnlagsliste = (grunnlagslisteSøknadsbarn + grunnlagslisteSimulertPrivatAvtale).toSet().toList(),
             erDirekteAvslag = behandling.erDirekteAvslag(),

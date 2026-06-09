@@ -110,7 +110,7 @@ class BehandlingService(
         behandling: Behandling,
         søknadsid: Long? = null,
     ) {
-        if (behandling.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
+        if (behandling.erIForholdsmessigFordeling && UnleashFeatures.BEHANDLE_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled) {
             if (søknadsid == null) {
                 forholdsmessigFordelingService!!.avsluttForholdsmessigFordeling(
                     behandling,
@@ -212,7 +212,7 @@ class BehandlingService(
         }
         val søknadsid = opprettBehandling.søknadsid
 
-        if (opprettBehandling.erBidrag() && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled &&
+        if (opprettBehandling.erBidrag() && UnleashFeatures.BEHANDLE_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled &&
             opprettBehandling.behandlingstype != null &&
             !behandlingstyperSomIkkeSkalInkluderesIFF.contains(opprettBehandling.behandlingstype)
         ) {
@@ -626,7 +626,7 @@ class BehandlingService(
         val oppdaterRollerListe = request.rollerUnderBehandling
         val behandling =
             behandlingRepository.findBehandlingById(behandlingId).get().let {
-                if (it.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
+                if (it.erIForholdsmessigFordeling && UnleashFeatures.BEHANDLE_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled) {
                     behandlingRepository.finnHovedbehandlingForBpVedFF(
                         it.bidragspliktig!!.ident!!,
                         it.vedtakstype.name,
@@ -683,7 +683,7 @@ class BehandlingService(
 
         // IMPORTANT: Do not remove roller here.
         // For FF-behandling, ForholdsmessigFordelingService must handle add/delete operations on a consistent graph.
-        if (behandling.erIForholdsmessigFordeling && UnleashFeatures.TILGANG_BEHANDLE_BIDRAG_FLERE_BARN.isEnabled) {
+        if (behandling.erIForholdsmessigFordeling && UnleashFeatures.BEHANDLE_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled) {
             val revurderingsbarnSomLeggesTil =
                 oppdaterRollerListe
                     .filter { r -> !r.erSlettet }
