@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
+import no.nav.bidrag.commons.security.utils.TokenUtils
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.SøknadsknytningStatus
@@ -94,7 +95,7 @@ class ForholdsmessigFordelingKlageService(
         request: OpprettFFRequest? = null,
         nyesteLøpendeBidragGrunnlag: List<LøpendeBidragGrunnlagForholdsmessigFordeling> = emptyList(),
     ) {
-        if (!UnleashFeatures.TILGANG_OPPRETTE_FF.isEnabled) {
+        if (TokenUtils.hentBruker() != null && !UnleashFeatures.TILGANG_OPPRETTE_FF.isEnabled) {
             KLAGE_LOGGER.info { "Opprettelse av forholdsmessig fordeling er deaktivert" }
             ugyldigForespørsel("Opprettelse av forholdsmessig fordeling er deaktivert")
         }
