@@ -756,7 +756,7 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
     val barnFødselsnummer = kravhaver
     val enhet = sak?.eierfogd?.verdi ?: eierfogd ?: "Ukjent"
 
-    val rolle = behandling.finnRolle(barnFødselsnummer)
+    val rolle = behandling.finnRolle(barnFødselsnummer, stønadstype)
     val åpneBehandlinger = åpneBehandlinger.map { it.tilFFBarnDto() } + åpneSøknader.map { it.tilFFBarnDto(sak, enhet) }
     val erSøknadsbarn = åpneBehandlinger.isNotEmpty() || rolle != null
     return ForholdsmessigFordelingBarnDto(

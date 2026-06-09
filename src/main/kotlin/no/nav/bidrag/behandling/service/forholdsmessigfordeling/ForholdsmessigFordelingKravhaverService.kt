@@ -95,12 +95,12 @@ class ForholdsmessigFordelingKravhaverService(
                     it.søknadstype != null && !behandlingstyperSomIkkeSkalInkluderesIFF.contains(it.søknadstype)
                 }.filter {
                     (
-                        it.vedtakstype == Vedtakstype.KLAGE && behandling.erKlageEllerOmgjøring && (
+                        it.erKlageEllerOmgjøring && behandling.erKlageEllerOmgjøring && (
                             it.omgjøringsdetaljer?.omgjørVedtakId == behandling.omgjøringsdetaljer?.omgjørVedtakId ||
                                 it.omgjøringsdetaljer?.soknadRefId == behandling.omgjøringsdetaljer?.soknadRefId
                         )
                     ) ||
-                        it.vedtakstype != Vedtakstype.KLAGE
+                        !it.erKlageEllerOmgjøring
                 }
         val åpneSøknader =
             hentÅpneSøknader(
