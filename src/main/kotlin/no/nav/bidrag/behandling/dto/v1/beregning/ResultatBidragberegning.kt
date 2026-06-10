@@ -174,7 +174,7 @@ data class ResultatUtførBidragsberegning(
                         tittel = "Forholdsmessig fordeling",
                         feiltype = feiltype,
                         begrunnelse = @Suppress("ktlint:standard:max-line-length")
-                        "Bidraget må forholdsmessig fordeles på grunn av manglende evne i minst en av periodene. Opprett forholdsmessig fordeling fra dialogen i sidemenyen",
+                        "Bidraget må forholdsmessig fordeles på grunn av manglende evne i minst en av periodene. Opprett forholdsmessig fordeling fra dialogen over",
                         resultatPeriode = emptyList(),
                     )
                 }
