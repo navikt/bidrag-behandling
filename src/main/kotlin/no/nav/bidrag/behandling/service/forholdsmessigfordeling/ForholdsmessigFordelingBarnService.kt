@@ -484,11 +484,17 @@ class ForholdsmessigFordelingBarnService(
                 }
                 slettRevurderingsbarn(behandling, rolle)
             } else {
+                val resultatkode = Resultatkode.fraKode(periode.resultatkode)
+                if (resultatkode == Resultatkode.OPPHØR) {
+                    // Ikke sett avslagskode mtp at vedtak er opphør som ikke er årsak som saksbehandler kan sette
+                    // Dette må da håndteres manuelt
+                    return
+                }
                 virkningstidspunktService.oppdaterAvslagÅrsak(
                     behandling,
                     OppdatereVirkningstidspunkt(
                         årsak = null,
-                        avslag = Resultatkode.fraKode(periode.resultatkode),
+                        avslag = resultatkode,
                     ),
                     tvingEndring = true,
                 )

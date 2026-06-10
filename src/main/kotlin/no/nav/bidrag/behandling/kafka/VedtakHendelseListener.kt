@@ -105,9 +105,7 @@ class VedtakHendelseListener(
                 val bp = stønadsendring.skyldner
                 val behandlinger = behandlingRepository.finnÅpneBidragsbehandlingerForBpMedFF(bp.verdi)
                 behandlinger
-                    .filter {
-                        it.erKlageEllerOmgjøring || erOpphørEllerInnkreving
-                    }.forEach { behandling ->
+                    .forEach { behandling ->
                         behandleBehandlingHvisOpphorEllerInnkreving(stønadsendring, behandling)
                     }
             }
@@ -119,6 +117,13 @@ class VedtakHendelseListener(
     ) {
         // Vedtak uten innkreving har ingen effekt på beløpshistorikk og vil derfor ikke føre til noe endring i behandling FF
         if (stønadsendring.innkreving != Innkrevingstype.MED_INNKREVING) return
+        // Ikke gjør endringer hvis vedtaket ikke er opphør/innkreving eller om behandling ikke er klage
+        if (!behandling.erKlageEllerOmgjøring && !erOpphørEllerInnkreving) {
+            grunnlagService.lagreBeløpshistorikkGrunnlag(behandling)
+            grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
+            return
+        }
+
         // Hent grunnlag beløpshistorikk slik at det er oppdatert
         grunnlagService.lagreBeløpshistorikkGrunnlag(behandling)
         grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
