@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTil
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.security.utils.TokenUtils
@@ -427,7 +428,7 @@ class ForholdsmessigFordelingKlageService(
                 it.forholdsmessigFordeling!!.løperBidragFra = løpendeBidrag?.periodeFra
                 it.forholdsmessigFordeling!!.løperBidragTil = løpendeBidrag?.periodeTil
                 it.forholdsmessigFordeling!!.harLøpendeBidrag =
-                    løpendeBidrag?.løperBidragEtterDato(behandling.eldsteSøktFomDato.toYearMonth()) == true
+                    løpendeBidrag?.løperBidragEtterDato(it.finnBeregnTil()) == true
                 it.innkrevingstype = if (originalSøknad.innkreving) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
                 it.bidragsmottaker!!
                     .forholdsmessigFordeling!!

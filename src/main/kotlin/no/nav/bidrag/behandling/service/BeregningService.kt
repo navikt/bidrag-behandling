@@ -280,7 +280,7 @@ class BeregningService(
                             avslagskode = søknadsbarn.avslag,
                             resultat = BeregnetBarnebidragResultat(),
                             opphørsdato = null,
-                            `løperBidrag` = behandling.løperBidragEtterEldsteVirkning(søknadsbarn),
+                            løperBidrag = behandling.løperBidragEtterEldsteVirkning(søknadsbarn),
                         )
                     } else {
                         mapTilBeregningresultatBarn(

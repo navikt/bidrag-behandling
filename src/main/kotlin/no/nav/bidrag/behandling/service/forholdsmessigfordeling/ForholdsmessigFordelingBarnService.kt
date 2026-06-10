@@ -21,6 +21,8 @@ import no.nav.bidrag.behandling.transformers.finnSistePeriodeLøpendePeriodeInne
 import no.nav.bidrag.behandling.transformers.harLøpendeBidragFørOpphørEllerLøpende
 import no.nav.bidrag.behandling.transformers.løperBidragFørOpphør
 import no.nav.bidrag.behandling.transformers.toRolle
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTil
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
@@ -251,7 +253,7 @@ class ForholdsmessigFordelingBarnService(
         } else {
             val løpendeBidrag = behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(barn)
             val skalOppretteFFSøknadMedInnkreving =
-                løpendeBidrag?.løperBidragEtterDato(behandling.eldsteSøktFomDato.toYearMonth()) == true
+                løpendeBidrag?.løperBidragEtterDato(barn.finnBeregnTil()) == true
 
             val søktFomDato = LocalDate.now().plusMonths(1).withDayOfMonth(1)
 
@@ -286,8 +288,14 @@ class ForholdsmessigFordelingBarnService(
         rollerSomSkalLeggesTil: MutableSet<Rolle>,
     ) {
         val rolle = nyRolle.toRolle(request.behandling, stønadstypeBeregnet, request.søktFraDato)
+        val beregnTil =
+            if (løpendeBidragRolle?.løperBidragTil != null) {
+                løpendeBidragRolle.løperBidragTil
+            } else {
+                request.behandling.finnBeregnTilDato().toYearMonth()
+            }
         val løperBidrag =
-            løpendeBidragRolle?.løperBidragEtterDato(request.søknadsdetaljer!!.søknadFomDato!!.toYearMonth()) == true
+            løpendeBidragRolle?.løperBidragEtterDato(beregnTil) == true
         rolle.forholdsmessigFordeling =
             ffRolleDetaljer.copy(
                 løperBidragFra = if (løperBidrag) løpendeBidragRolle.løperBidragFra else null,

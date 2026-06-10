@@ -38,6 +38,8 @@ import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
 import no.nav.bidrag.behandling.transformers.harLøpendeBidragFørOpphørEllerLøpende
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.mapTilBeregnetBidragDto
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTil
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.security.utils.TokenUtils
@@ -312,7 +314,7 @@ class ForholdsmessigFordelingService(
                         søknader = søknadsdetaljer.toMutableSet(),
                         løperBidragFra = løpendeBidrag?.periode?.fom,
                         løperBidragTil = løpendeBidrag?.periode?.til,
-                        harLøpendeBidrag = løpendeBidrag?.løperBidragEtterDato(behandling.eldsteSøktFomDato.toYearMonth()) == true,
+                        harLøpendeBidrag = løpendeBidrag?.løperBidragEtterDato(barn.finnBeregnTil()) == true,
                     )
             }
         }
@@ -489,7 +491,7 @@ class ForholdsmessigFordelingService(
             rolle.forholdsmessigFordeling!!.løperBidragFra = løpendeBidrag?.periodeFra
             rolle.forholdsmessigFordeling!!.løperBidragTil = løpendeBidrag?.periodeTil
             rolle.forholdsmessigFordeling!!.harLøpendeBidrag =
-                løpendeBidrag?.løperBidragEtterDato(behandling.eldsteSøktFomDato.toYearMonth()) ?: false
+                løpendeBidrag?.løperBidragEtterDato(rolle.finnBeregnTil()) ?: false
         }
 
         oppdaterSøknadStatuserForAlleRoller(behandling)
@@ -548,7 +550,7 @@ class ForholdsmessigFordelingService(
         val løperBidrag =
             if (beløpshistorikk != null) {
                 ÅrMånedsperiode(beløpshistorikk.periodeFra, beløpshistorikk.periodeTil).løperBidragEtterDato(
-                    behandling.eldsteSøktFomDato.toYearMonth(),
+                    rolle.finnBeregnTil(),
                 )
             } else {
                 false

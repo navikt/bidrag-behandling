@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.ForsendelseService
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.service.hentNyesteIdent
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstema
@@ -68,8 +69,8 @@ class ForholdsmessigFordelingSøknadService(
         val sak = sakConsumer.hentSak(saksnummer)
         val bmFødselsnummer = hentNyesteIdent(sak.bidragsmottaker?.fødselsnummer?.verdi)?.verdi
 
-        val barnUtenInnkreving = løpendeBidragssak.filter { !it.løperBidragEtterDato(søktFomDato.toYearMonth()) }
-        val barnMedInnkreving = løpendeBidragssak.filter { it.løperBidragEtterDato(søktFomDato.toYearMonth()) }
+        val barnUtenInnkreving = løpendeBidragssak.filter { !it.løperBidragEtterDato(behandling.finnBeregnTilDato().toYearMonth()) }
+        val barnMedInnkreving = løpendeBidragssak.filter { it.løperBidragEtterDato(behandling.finnBeregnTilDato().toYearMonth()) }
         val ffDetaljerBarn =
             ForholdsmessigFordelingSøknadBarn(
                 søknadsid = 0, // Settes senere når søknad opprettes
