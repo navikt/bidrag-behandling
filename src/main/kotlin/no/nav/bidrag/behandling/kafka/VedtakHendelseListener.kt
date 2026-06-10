@@ -166,6 +166,8 @@ class VedtakHendelseListener(
                     PersonStønad(stønadsendring.kravhaver, stønadsendring.type),
                 )
             }
+        } else {
+            forholdsmessigFordelingService.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
         }
     }
 
