@@ -444,7 +444,9 @@ class ForholdsmessigFordelingBarnService(
                     relevanteKravhavere.filter { it.erLik(rolle.ident!!, rolle.stønadstype) },
                     behandling.behandlerEnhet,
                     rolle.stønadstype,
-                    søknad?.søknadFomDato ?: rolle.forholdsmessigFordeling?.sisteOpprettetSøknad?.søknadFomDato!!,
+                    søknad?.søknadFomDato
+                        ?: rolle.forholdsmessigFordeling?.revurderingsdatoVedOpprettelseAvFF
+                        ?: rolle.forholdsmessigFordeling?.sisteOpprettetSøknad?.søknadFomDato!!,
                     true,
                 )
             }
