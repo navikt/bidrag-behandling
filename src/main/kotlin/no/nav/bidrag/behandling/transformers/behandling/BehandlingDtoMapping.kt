@@ -1365,24 +1365,33 @@ fun Behandling.hentBeregnetInntekterForRolle(rolle: Rolle) =
     BeregnApi()
         .beregnInntekt(tilInntektberegningDto(rolle))
         .inntektPerBarnListe
-        .map {
+        .map { barn ->
             InntektPerBarnDto(
                 inntektGjelderBarn =
-                    it.inntektGjelderBarn
+                    barn.inntektGjelderBarn
                         ?.let { gjelderBarn ->
                             roller.find { it.erSammeRolle(gjelderBarn.ident, gjelderBarn.stønadstype) }
                         }?.tilDto(),
                 summertInntektListe =
-                    it.summertInntektListe.map { delberegning ->
-                        delberegning.copy(
-                            barnetillegg = delberegning.barnetillegg?.avrundetTilToDesimaler,
-                            småbarnstillegg = delberegning.småbarnstillegg?.nærmesteHeltall,
-                            kontantstøtte = delberegning.kontantstøtte?.nærmesteHeltall,
-                            utvidetBarnetrygd = delberegning.utvidetBarnetrygd?.nærmesteHeltall,
-                            skattepliktigInntekt = delberegning.skattepliktigInntekt?.nærmesteHeltall,
-                            totalinntekt = delberegning.totalinntekt.avrundetTilToDesimaler,
-                        )
-                    },
+                    barn.summertInntektListe
+                        .filter { si ->
+                            val gjelderBarn =
+                                barn.inntektGjelderBarn?.let {
+                                    roller.find { rolle ->
+                                        rolle.erSammeRolle(it.ident, it.stønadstype)
+                                    }
+                                } ?: return@filter true
+                            si.periode.fom >= gjelderBarn.finnBeregnFra()
+                        }.map { delberegning ->
+                            delberegning.copy(
+                                barnetillegg = delberegning.barnetillegg?.avrundetTilToDesimaler,
+                                småbarnstillegg = delberegning.småbarnstillegg?.nærmesteHeltall,
+                                kontantstøtte = delberegning.kontantstøtte?.nærmesteHeltall,
+                                utvidetBarnetrygd = delberegning.utvidetBarnetrygd?.nærmesteHeltall,
+                                skattepliktigInntekt = delberegning.skattepliktigInntekt?.nærmesteHeltall,
+                                totalinntekt = delberegning.totalinntekt.avrundetTilToDesimaler,
+                            )
+                        },
             )
         }.sortedWith(
             sorterPersonEtterEldsteFødselsdato({

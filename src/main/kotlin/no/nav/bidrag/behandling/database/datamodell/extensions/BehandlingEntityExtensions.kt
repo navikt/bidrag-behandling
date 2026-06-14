@@ -57,6 +57,7 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
     private val opprettelseEllerOppdateringAvFFFeilet = "opprettelseEllerOppdateringAvFFFeilet"
     private val oppdateringAvFFRollerFeilet = "oppdateringAvFFRollerFeilet"
     private val opprettelseAvFFBehandlingFeilet = "opprettelseAvFFBehandlingFeilet"
+    private val ffSistSynkronisert = "ffSistSynkronisert"
     private val følgerAutomatiskVedtak = "følger_automatisk_vedtak"
     private val klagePåBisysVedtak = "klage_på_bisys_vedtak"
     private val lasterGrunnlagAsync = "laster_grunnlag_async_tidspunkt"
@@ -114,6 +115,10 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
 
     fun setOpprettelseAvFFBehandlingFeilet(value: String) = set(opprettelseAvFFBehandlingFeilet, value)
 
+    fun setFFSistSynkronisert(value: LocalDateTime) = set(ffSistSynkronisert, value.toString())
+
+    fun getFFSistSynkronisert() = get(ffSistSynkronisert)?.let { LocalDateTime.parse(it) }
+
     fun setOppdateringAvFFRollerFeilet(value: String) = set(oppdateringAvFFRollerFeilet, value)
 
     fun getOppprettelseAvBehandlingFeilet(): MutableSet<OpprettBehandlingRequest> =
@@ -142,6 +147,8 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
     fun getFølgerAutomatiskVedtak(): Int? = get(følgerAutomatiskVedtak)?.toIntOrNull()
 
     fun getOpprettelseEllerOppdateringAvFFFeilet(): Boolean? = get(opprettelseEllerOppdateringAvFFFeilet)?.toBooleanStrictOrNull()
+
+    fun resetOpprettelseEllerOppdateringAvFFFeilet() = set(opprettelseEllerOppdateringAvFFFeilet, "false")
 
     private fun update(
         key: String,

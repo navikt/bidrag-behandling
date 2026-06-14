@@ -5,7 +5,6 @@ import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.json.FattetVedtak
-import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.json.OpprettParagraf35C
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -13,14 +12,14 @@ import no.nav.bidrag.behandling.dto.internal.vedtak.BeregningVedtakResultat
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingFraVedtakRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
-import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
-import no.nav.bidrag.behandling.dto.v1.behandling.erBidrag
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBeregningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.validering.FatteVedtakFeil
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.dto.v2.vedtak.OppdaterParagraf35cDetaljerDto
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.ForholdsmessigFordelingService
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.behandlingstyperSomIkkeSkalInkluderesIFF
 import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtak
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
@@ -29,8 +28,6 @@ import no.nav.bidrag.behandling.transformers.dto.PåklagetVedtak
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
-import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.OppdaterBarnFraFFRequest
-import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.tilFFBarnDetaljer
 import no.nav.bidrag.behandling.transformers.skalInnkrevingKunneUtsettes
 import no.nav.bidrag.behandling.transformers.tilStønadsid
 import no.nav.bidrag.behandling.transformers.tilType
@@ -49,12 +46,10 @@ import no.nav.bidrag.beregn.core.util.justerVedtakstidspunktVedtak
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.rolle.Rolletype
-import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
-import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettVedtakRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.response.OpprettVedtakResponseDto
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
@@ -238,51 +233,10 @@ class VedtakService(
             ) {
                 val bp = konvertertBehandlingLesemodus.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
                 behandlingRepository!!
-                    .finnHovedbehandlingForBpVedFF(bp!!.ident!!, konvertertBehandlingLesemodus.vedtakstype.name, påklagetVedtak)
+                    .finnHovedbehandlingForBpVedFF(bp!!.ident!!, påklagetVedtak)
                     ?.let { behandling ->
-                        val bm = konvertertBehandlingLesemodus.roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
-                        val søknadsdetaljer = konvertertBehandlingLesemodus.tilFFBarnDetaljer()
-                        val søknadsbarnIkkeRevurdering = konvertertBehandlingLesemodus.søknadsbarn.filter { !it.erRevurderingsbarn }
-                        forholdsmessigFordelingService!!.leggTilEllerSlettBarnFraBehandlingSomErIFF(
-                            OppdaterBarnFraFFRequest(
-                                rollerSomSkalLeggesTilDto =
-                                    søknadsbarnIkkeRevurdering
-                                        .map {
-                                            OpprettRolleDto(
-                                                rolletype = it.rolletype,
-                                                ident = Personident(it.ident!!),
-                                                navn = it.navn,
-                                                fødselsdato = it.fødselsdato,
-                                                harGebyrsøknad = it.harGebyrsøknad,
-                                                behandlingstatus = it.behandlingstatus,
-                                                behandlingstema = it.behandlingstema,
-                                                opprinneligVirkningstidspunkt = it.opprinneligVirkningstidspunkt,
-                                                opphørsdato = it.opphørsdato,
-                                            )
-                                        },
-                                rollerSomSkalSlettes = emptyList(),
-                                behandling = behandling,
-                                søknadsid = request.søknadsid,
-                                saksnummer = konvertertBehandlingLesemodus.saksnummer,
-                                bmIdent = bm?.ident,
-                                behandlerenhet = konvertertBehandlingLesemodus.behandlerEnhet,
-                                erRevurdering =
-                                    konvertertBehandlingLesemodus.omgjøringsdetaljer?.opprinneligVedtakstype == Vedtakstype.REVURDERING,
-                                medInnkreving = konvertertBehandlingLesemodus.innkrevingstype == Innkrevingstype.MED_INNKREVING,
-                                søknadsdetaljer = søknadsdetaljer,
-                                søktFraDato = konvertertBehandlingLesemodus.søktFomDato,
-                                gebyrGjelder18År = søknadsbarnIkkeRevurdering.any { it.harGebyrsøknad },
-                                stønadstype = konvertertBehandlingLesemodus.stonadstype!!,
-                            ),
-                        )
-                        val revurderingsbarn = konvertertBehandlingLesemodus.roller.filter { it.erRevurderingsbarn }
-                        behandling.roller.addAll(
-                            revurderingsbarn.map {
-                                it.copy(behandling)
-                            },
-                        )
 
-                        forholdsmessigFordelingService!!.opprettRevurderingssøknaderForKlageEllerOmgjøring(behandling)
+                        forholdsmessigFordelingService!!.opprettSøknaderForKlageEllerOmgjøring(behandling, request.søknadsid)
 
                         return OpprettBehandlingResponse(behandling.id!!)
                     }
@@ -293,7 +247,7 @@ class VedtakService(
                     ?: throw RuntimeException("Fant ikke vedtak for vedtakid $refVedtaksid")
 
             if (konvertertBehandling.erIForholdsmessigFordeling) {
-                forholdsmessigFordelingService!!.opprettRevurderingssøknaderForKlageEllerOmgjøring(konvertertBehandling)
+                forholdsmessigFordelingService!!.opprettSøknaderForKlageEllerOmgjøring(konvertertBehandling, request.søknadsid)
             }
             konvertertBehandling.roller.forEach {
                 it.forholdsmessigFordeling?.søknader?.removeIf { it.erFraPåklagetVedtak }
@@ -308,12 +262,12 @@ class VedtakService(
                         val opphørsdato = if (it.isAfter(behandlingDo.virkningstidspunkt!!)) it else null
                         if (opphørsdato != null) {
                             virkningstidspunktService.oppdaterOpphørsdato(
-                                behandlingDo.id!!,
                                 OppdaterOpphørsdatoRequestDto(
                                     rolle.id!!,
                                     opphørsdato,
                                     true,
                                 ),
+                                behandlingDo,
                             )
                         }
                     }

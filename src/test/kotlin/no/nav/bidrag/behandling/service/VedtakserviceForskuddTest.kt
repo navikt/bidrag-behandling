@@ -110,6 +110,7 @@ class VedtakserviceForskuddTest : CommonVedtakTilBehandlingTest() {
                         .minusDays(1)
             }
         }
+
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
             NotatType.INNTEKT,

@@ -173,7 +173,7 @@ interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandl
         JOIN rolle br ON br.behandling_id = b.id
         WHERE br.rolletype = 'BIDRAGSPLIKTIG'
           AND br.ident = :bpIdent
-          and (('KLAGE' = :vedtakstype  and b.vedtakstype = 'KLAGE' and b.klagedetaljer is not null) or b.vedtakstype != 'KLAGE')
+          and ((:opprinneligVedtakId is not null and b.klagedetaljer is not null) or (:opprinneligVedtakId is null and b.klagedetaljer is null))
           AND b.deleted = false
           AND b.vedtakstidspunkt IS NULL
           and (:opprinneligVedtakId is null or (b.klagedetaljer ->> 'opprinneligVedtakId') = (:opprinneligVedtakId)::text)
@@ -184,7 +184,6 @@ interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandl
     )
     fun finnHovedbehandlingForBpVedFF(
         @Param("bpIdent") bpIdent: String,
-        @Param("vedtakstype") vedtakstype: String? = null,
         @Param("opprinneligVedtakId") opprinneligVedtakId: Int? = null
     ): Behandling?
 

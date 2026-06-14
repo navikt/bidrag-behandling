@@ -56,6 +56,7 @@ import no.nav.bidrag.behandling.dto.v2.validering.tilGrunnlagFeilDto
 import no.nav.bidrag.behandling.lagringAvGrunnlagFeiletException
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.ressursIkkeFunnetException
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonListeTilObjekt
 import no.nav.bidrag.behandling.transformers.Jsonoperasjoner.Companion.jsonTilObjekt
@@ -242,110 +243,114 @@ class GrunnlagService(
     fun oppdatereGrunnlagForBehandling(behandling: Behandling) {
         val scope = CoroutineScope(Dispatchers.IO + SecurityCoroutineContext() + RequestContextAsyncContext())
 
-        if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhenting.toLong())) {
-            sjekkOgOppdaterIdenter(behandling)
-            val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
+        try {
+            if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhenting.toLong())) {
+                sjekkOgOppdaterIdenter(behandling)
+                val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
 
-            fun Map<Grunnlagsdatatype, GrunnlagFeilDto>.lagreFeilrapportering(): Pair<PersonStønad, HentetGrunnlag>? {
-                feilrapporteringer += this
-                return null
-            }
-            val andreGrunnlagListe =
-                listOf(
-                    scope.async {
-                        hentOgLagreEtterfølgendeVedtak(behandling).lagreFeilrapportering()
-                    },
-                    scope.async {
-                        lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlagSuspend(behandling).lagreFeilrapportering()
-                    },
-                    scope.async {
-                        lagreBeløpshistorikkGrunnlagSuspend(behandling).lagreFeilrapportering()
-                    },
-                    scope.async {
-                        lagreBpsBarnUtenBidragsak(behandling).lagreFeilrapportering()
-                    },
-                    scope.async {
-                        lagreManuelleVedtakGrunnlag(behandling).lagreFeilrapportering()
-                    },
-                )
-            if (behandling.vedtakstype.kreverGrunnlag()) {
-                val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
-                behandling.grunnlagsinnhentingFeilet = null
+                fun Map<Grunnlagsdatatype, GrunnlagFeilDto>.lagreFeilrapportering(): Pair<PersonStønad, HentetGrunnlag>? {
+                    feilrapporteringer += this
+                    return null
+                }
+                val andreGrunnlagListe =
+                    listOf(
+                        scope.async {
+                            hentOgLagreEtterfølgendeVedtak(behandling).lagreFeilrapportering()
+                        },
+                        scope.async {
+                            lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlagSuspend(behandling).lagreFeilrapportering()
+                        },
+                        scope.async {
+                            lagreBeløpshistorikkGrunnlagSuspend(behandling).lagreFeilrapportering()
+                        },
+                        scope.async {
+                            lagreBpsBarnUtenBidragsak(behandling).lagreFeilrapportering()
+                        },
+                        scope.async {
+                            lagreManuelleVedtakGrunnlag(behandling).lagreFeilrapportering()
+                        },
+                    )
+                if (behandling.vedtakstype.kreverGrunnlag()) {
+                    val grunnlagRequestobjekter = BidragGrunnlagConsumer.henteGrunnlagRequestobjekterForBehandling(behandling)
+                    behandling.grunnlagsinnhentingFeilet = null
 
-                val grunnlagResponsObjekter =
-                    runBlocking {
-                        val deferredListe =
-                            andreGrunnlagListe +
-                                grunnlagRequestobjekter
-                                    .map { entry ->
-                                        scope.async {
-                                            hentGrunnlag(behandling, entry.key, entry.value)
+                    val grunnlagResponsObjekter =
+                        runBlocking {
+                            val deferredListe =
+                                andreGrunnlagListe +
+                                    grunnlagRequestobjekter
+                                        .map { entry ->
+                                            scope.async {
+                                                hentGrunnlag(behandling, entry.key, entry.value)
+                                            }
                                         }
-                                    }
-                        deferredListe.awaitAll()
-                    }.filterNotNull()
+                            deferredListe.awaitAll()
+                        }.filterNotNull()
 
-                grunnlagResponsObjekter.forEach {
-                    feilrapporteringer +=
-                        lagreGrunnlag(
-                            behandling,
-                            it,
-                        )
+                    grunnlagResponsObjekter.forEach {
+                        feilrapporteringer +=
+                            lagreGrunnlag(
+                                behandling,
+                                it,
+                            )
+                    }
+                } else {
+                    runBlocking {
+                        andreGrunnlagListe.awaitAll()
+                    }
+                }
+
+                behandling.grunnlagSistInnhentet = LocalDateTime.now()
+
+                if (feilrapporteringer.isNotEmpty()) {
+                    behandling.grunnlagsinnhentingFeilet =
+                        objectmapper.writeValueAsString(feilrapporteringer)
+                    secureLogger.warn {
+                        "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
+                            "Innhentingen ble derfor ikke gjort for følgende grunnlag: " +
+                            "${feilrapporteringer.map { "${it.key}: ${it.value}" }}"
+                    }
+                }
+            } else if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())) {
+                runBlocking {
+                    listOf(
+                        scope.async {
+                            hentOgLagreEtterfølgendeVedtak(behandling)
+                        },
+                        scope.async {
+                            lagreBeløpshistorikkGrunnlagSuspend(behandling)
+                        },
+                        scope.async {
+                            lagreBpsBarnUtenBidragsak(behandling)
+                        },
+                    ).awaitAll()
                 }
             } else {
-                runBlocking {
-                    andreGrunnlagListe.awaitAll()
+                val nesteInnhenting = behandling.grunnlagSistInnhentet?.plusMinutes(grenseInnhenting.toLong())
+
+                log.debug {
+                    "Grunnlag for behandling ${behandling.id} ble sist innhentet ${behandling.grunnlagSistInnhentet}. " +
+                        "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
                 }
             }
-
-            behandling.grunnlagSistInnhentet = LocalDateTime.now()
-
-            if (feilrapporteringer.isNotEmpty()) {
-                behandling.grunnlagsinnhentingFeilet =
-                    objectmapper.writeValueAsString(feilrapporteringer)
-                secureLogger.warn {
-                    "Det oppstod feil i fbm. innhenting av grunnlag for behandling ${behandling.id}. " +
-                        "Innhentingen ble derfor ikke gjort for følgende grunnlag: " +
-                        "${feilrapporteringer.map { "${it.key}: ${it.value}" }}"
+            if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())) {
+                secureLogger.info {
+                    "Aktiverer grunnlag automatisk hvis det ikke er noe endringer siden forrige grunnlagsinnhenting for behandling ${behandling.id} og saksnummer ${behandling.saksnummer}."
                 }
+                aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
+                aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
+                aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling)
+                aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
+                behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
+                aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteresForAlleRoller(behandling)
+                oppdaterVirkningstidspunktOgÅrsakForBarn(behandling)
+                inntektService.oppdaterInntektRolleOgGjelderBarnRolle(behandling)
             }
-        } else if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())) {
-            runBlocking {
-                listOf(
-                    scope.async {
-                        hentOgLagreEtterfølgendeVedtak(behandling)
-                    },
-                    scope.async {
-                        lagreBeløpshistorikkGrunnlagSuspend(behandling)
-                    },
-                    scope.async {
-                        lagreBpsBarnUtenBidragsak(behandling)
-                    },
-                ).awaitAll()
-            }
-        } else {
-            val nesteInnhenting = behandling.grunnlagSistInnhentet?.plusMinutes(grenseInnhenting.toLong())
-
-            log.debug {
-                "Grunnlag for behandling ${behandling.id} ble sist innhentet ${behandling.grunnlagSistInnhentet}. " +
-                    "Ny innhenting vil tidligst blir foretatt $nesteInnhenting."
-            }
+        } catch (e: Exception) {
+            secureLogger.error(e) { "Det skjedde en feil ved oppdatering av grunnlag" }
+        } finally {
+            behandling.metadata?.avsluttLastGrunnlagAsync()
         }
-        if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhentingBeløpshistorikk.toLong())) {
-            secureLogger.info {
-                "Aktiverer grunnlag automatisk hvis det ikke er noe endringer siden forrige grunnlagsinnhenting for behandling ${behandling.id} og saksnummer ${behandling.saksnummer}."
-            }
-            aktivereGrunnlagForBoforholdAndreVoksneIHusstandenHvisIngenEndringerMåAksepteres(behandling)
-            aktiverGrunnlagForBoforholdHvisIngenEndringerMåAksepteres(behandling)
-            aktiverGrunnlagForBoforholdTilBMSøknadsbarnHvisIngenEndringerMåAksepteres(behandling)
-            aktivereSivilstandHvisEndringIkkeKreverGodkjenning(behandling)
-            behandling.aktivereBarnetilsynHvisIngenEndringerMåAksepteres()
-            aktiverGrunnlagForInntekterHvisIngenEndringMåAksepteresForAlleRoller(behandling)
-            oppdaterVirkningstidspunktOgÅrsakForBarn(behandling)
-            inntektService.oppdaterInntektRolleOgGjelderBarnRolle(behandling)
-        }
-
-        behandling.metadata?.avsluttLastGrunnlagAsync()
     }
 
     suspend fun lagreManuelleVedtakGrunnlag(behandling: Behandling): Map<Grunnlagsdatatype, GrunnlagFeilDto> {
@@ -829,7 +834,7 @@ class GrunnlagService(
                     // Beløpshistorikk ble lagret på BP/BM men burde bli lagret på barnet da det gjelder barnet. Dette er en passiv migrering til ny oppsett
                     eksisterendeGrunnlag.rolle = sb
                 }
-            } catch (e: HttpClientErrorException) {
+            } catch (e: Exception) {
                 feilrapporteringer.put(
                     type,
                     GrunnlagFeilDto(

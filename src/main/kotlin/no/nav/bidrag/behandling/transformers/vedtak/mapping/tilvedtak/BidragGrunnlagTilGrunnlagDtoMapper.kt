@@ -60,7 +60,13 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlagAndreBarnTilBidragsmottaker(
 ): GrunnlagDto {
     val personnavn = navn ?: hentPersonVisningsnavn(gjelderPersonId)
 
-    val referanse = opprettPersonBarnBPBMReferanse(type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER, fødselsdato!!, gjelderPersonId, navn)
+    val referanse =
+        opprettPersonBarnBPBMReferanse(
+            type = Grunnlagstype.PERSON_BARN_BIDRAGSMOTTAKER,
+            fødselsdato ?: LocalDate.MAX,
+            gjelderPersonId,
+            navn,
+        )
     return GrunnlagDto(
         referanse = referanse,
         gjelderReferanse = gjelderReferanse,
@@ -76,8 +82,7 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlagAndreBarnTilBidragsmottaker(
                         finnFødselsdato(
                             gjelderPersonId,
                             fødselsdato,
-                        ) // Avbryter prosesering dersom fødselsdato til husstandsmedlem er ukjent
-                            ?: fantIkkeFødselsdatoTilSøknadsbarn(-1),
+                        ) ?: LocalDate.MAX,
                 ).valider(),
             ),
     )
@@ -109,8 +114,7 @@ fun RelatertPersonGrunnlagDto.tilPersonGrunnlag(): GrunnlagDto {
                         finnFødselsdato(
                             gjelderPersonId,
                             fødselsdato,
-                        ) // Avbryter prosesering dersom fødselsdato til husstandsmedlem er ukjent
-                            ?: fantIkkeFødselsdatoTilSøknadsbarn(-1),
+                        ) ?: LocalDate.MAX,
                 ).valider(),
             ),
     )

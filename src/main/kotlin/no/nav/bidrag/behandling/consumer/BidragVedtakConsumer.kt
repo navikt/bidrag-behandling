@@ -102,7 +102,7 @@ class BidragVedtakConsumer(
 //                bidragVedtakUri.build().toUri(),
 //                request,
 //            )
-//            //            OpprettVedtakResponseDto((Math.random() * 10000).toInt(), emptyList())
+// //            OpprettVedtakResponseDto((Math.random() * 10000).toInt(), emptyList())
 //        } catch (e: HttpStatusCodeException) {
 //            if (e.statusCode == HttpStatus.CONFLICT) {
 //                val resultat = e.getResponseBodyAs(OpprettVedtakConflictResponse::class.java)!!

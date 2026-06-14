@@ -17,7 +17,6 @@ import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
-import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -379,10 +378,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             behandling.søknadsbarn.first(),
             erDelAvBehandlingen = false,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -664,10 +660,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -763,10 +756,6 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -852,10 +841,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.avslag = Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG
         behandling.årsak = null
         søknadsbarn.årsak = null
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -983,10 +969,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.avslag = Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG
         behandling.årsak = null
         søknadsbarn.årsak = null
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1131,10 +1114,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
             behandling.søknadsbarn.first(),
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 2,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1258,10 +1238,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.PRIVAT_AVTALE,
             behandling.søknadsbarn.first(),
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1369,10 +1346,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.PRIVAT_AVTALE,
             behandling.søknadsbarn.first(),
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 2,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1509,10 +1483,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1642,10 +1613,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1907,10 +1875,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             behandling.søknadsbarn.first(),
             erDelAvBehandlingen = false,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1992,10 +1957,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -2112,10 +2074,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -2186,10 +2145,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -2263,10 +2219,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.søknadsbarn.first().innbetaltBeløp = innbetaltBeløp
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -2354,10 +2307,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.innkrevingstype = Innkrevingstype.UTEN_INNKREVING
         behandling.søknadsbarn.first().innbetaltBeløp = innbetaltBeløp
         behandling.grunnlag =
@@ -2421,10 +2371,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         søknadsbarn.årsak = null
         behandling.årsak = null
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -2567,10 +2514,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         behandling.søknadsbarn.first().avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -2653,10 +2597,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         behandling.søknadsbarn.first().avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,

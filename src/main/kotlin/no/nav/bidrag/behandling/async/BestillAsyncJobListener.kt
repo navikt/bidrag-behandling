@@ -7,6 +7,7 @@ import no.nav.bidrag.behandling.async.dto.GrunnlagInnhentingBestilling
 import no.nav.bidrag.behandling.async.dto.OpprettForsendelseBestilling
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.GrunnlagService
+import no.nav.bidrag.transport.felles.tilJsonString
 import org.springframework.context.event.EventListener
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
@@ -30,7 +31,7 @@ class BestillAsyncJobListener(
     @EventListener
     @Async
     fun behandleBestillingAvOppdateringAvRoller(bestilling: BehandlingOppdateringBestilling) {
-        log.info { "Async: Oppdaterer roller for behandling ${bestilling.behandlingId}" }
+        log.info { "Async: Oppdaterer roller for behandling ${bestilling.behandlingId} og request ${tilJsonString(bestilling.request)}" }
         behandlingService.oppdaterRoller(bestilling.behandlingId, bestilling.request)
     }
 

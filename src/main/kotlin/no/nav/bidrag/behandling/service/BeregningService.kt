@@ -252,6 +252,7 @@ class BeregningService(
                     }
                     val perioderBarn = resultatBarn.resultatVedtakListe.flatMap { it.periodeListe }.map { it.periode }
                     val minstEnPeriodeSlåttUtTilFF = perioderBarn.any { pb -> perioderSlåttUtTilFF.any { it.overlapper(pb) } }
+                    // For omgjøring
                     val erOmgjøringMedPerioder = endeligBeregning && behandling.erKlageEllerOmgjøring && perioderBarn.isNotEmpty()
                     val erAvvistRevurdering =
                         forholdsmessigFordelingDetaljer != null && forholdsmessigFordelingDetaljer.erRevurdering &&
@@ -279,7 +280,7 @@ class BeregningService(
                             avslagskode = søknadsbarn.avslag,
                             resultat = BeregnetBarnebidragResultat(),
                             opphørsdato = null,
-                            `løperBidrag` = behandling.løperBidragEtterEldsteVirkning(søknadsbarn),
+                            løperBidrag = behandling.løperBidragEtterEldsteVirkning(søknadsbarn),
                         )
                     } else {
                         mapTilBeregningresultatBarn(

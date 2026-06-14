@@ -16,8 +16,6 @@ Et lokalt Dockermiljø må være tilgjengelig for lokal kjøring. Forebredelsess
 > docker-compose build \
 > docker-compose up 2
 
-Hvis du kjører Testcontainers mot Colima lokalt, må Testcontainers bruke Docker-socketen inne i Colima-VM-en. Dette settes automatisk for testkjøring via `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock` i `pom.xml`.
-
 #### Bygge applikasjonen
 
 ###### Maven wrapper
@@ -38,7 +36,7 @@ formattere
 
 Profil: local (angis i program arguments)
 
-Start opp applikasjonen ved å kjøre [BidragBehandlingLocal.kt](src/test/kotlin/no/nav/bidrag/behandling/BidragBehandlingLocal.kt).
+Start opp applikasjonen ved å kjøre [BidragTemplateLocal.kt](src/test/kotlin/no/nav/bidrag/behandling/BidragSpringAppLocal.kt).
 
 Dette starter applikasjonen med profil `local` og henter miljøvariabler for Q1 miljøet fra filen [application-local.yaml](src/test/resources/application-local.yaml).
 

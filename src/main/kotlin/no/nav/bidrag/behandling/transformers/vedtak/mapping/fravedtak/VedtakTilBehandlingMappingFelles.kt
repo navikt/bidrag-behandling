@@ -22,6 +22,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.erForholdsmessigFordeling
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
@@ -41,7 +42,6 @@ import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
-import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.erForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.harOpprettetForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.kanOpprette35C
@@ -758,6 +758,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                                 beregnetBidrag = beregning.beregnetBidrag,
                             )
                         },
+                    gjelderBarnRolle = behandling.finnRolle(gjelderBarnGrunnlag.personIdent!!, gjelderBarnGrunnlag.stønadstype),
                     gjelder = gjelderBarnGrunnlag.personIdent!!,
                     rolleIdent = gjelderGrunnlag.personIdent!!,
                     innhentetTidspunkt = LocalDateTime.now(),
