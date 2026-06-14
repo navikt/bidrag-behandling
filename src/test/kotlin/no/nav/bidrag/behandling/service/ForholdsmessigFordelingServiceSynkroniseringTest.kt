@@ -79,6 +79,7 @@ class ForholdsmessigFordelingServiceSynkroniseringTest {
                 virkningstidspunktService,
                 underholdService,
             )
+        service.grenseSynkroniserFF = "60"
 
         every { grunnlagService.lagreBeløpshistorikkGrunnlag(any()) } returns emptyMap<Grunnlagsdatatype, GrunnlagFeilDto>()
         every { grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(any()) } returns
