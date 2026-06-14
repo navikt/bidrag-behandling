@@ -56,7 +56,9 @@ class HentBehandlingTest : BehandlingControllerTest() {
             rolleIdent = testdataBarn2.ident,
         )
 
-        val behandling = testdataManager.lagreBehandling(opprettBehandling())
+        val behandlingFørLagring = opprettBehandling()
+        behandlingFørLagring.oppdaterVirkningstidspunktForAlle(LocalDate.parse("2022-01-01"))
+        val behandling = testdataManager.lagreBehandling(behandlingFørLagring)
 
         // hvis
         val behandlingRes =
@@ -94,13 +96,13 @@ class HentBehandlingTest : BehandlingControllerTest() {
             }
 
             assertSoftly(inntekterAlle) {
-                summertInntektListe shouldHaveSize 3
+                summertInntektListe shouldHaveSize 4
                 summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
                 summertInntektListe[0].barnetillegg shouldBe null
                 summertInntektListe[0].kontantstøtte shouldBe null
             }
             assertSoftly(inntekterBarn2) {
-                summertInntektListe shouldHaveSize 3
+                summertInntektListe shouldHaveSize 4
                 summertInntektListe[0].skattepliktigInntekt shouldBe BigDecimal(55000)
                 summertInntektListe[0].barnetillegg shouldBe null
                 summertInntektListe[0].kontantstøtte shouldBe null
