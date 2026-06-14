@@ -488,10 +488,13 @@ class ForholdsmessigFordelingService(
 
         behandling.søknadsbarn.forEach { rolle ->
             val løpendeBidrag = løpendeBidraggsakerBP.find { rolle.erSammeRolle(it.kravhaver.verdi, it.type) }
-            rolle.forholdsmessigFordeling!!.løperBidragFra = løpendeBidrag?.periodeFra
-            rolle.forholdsmessigFordeling!!.løperBidragTil = løpendeBidrag?.periodeTil
-            rolle.forholdsmessigFordeling!!.harLøpendeBidrag =
-                løpendeBidrag?.løperBidragEtterDato(rolle.finnBeregnTil()) ?: false
+
+            rolle.forholdsmessigFordeling?.let {
+                it.løperBidragFra = løpendeBidrag?.periodeFra
+                it.løperBidragTil = løpendeBidrag?.periodeTil
+                it.harLøpendeBidrag =
+                    løpendeBidrag?.løperBidragEtterDato(rolle.finnBeregnTil()) ?: false
+            }
         }
 
         oppdaterSøknadStatuserForAlleRoller(behandling)
