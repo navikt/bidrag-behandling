@@ -165,6 +165,20 @@ class ForholdsmessigFordelingKlageService(
             behandling.søknadsbarn.map { it.tilOpprettRolleDto() },
             emptyList(),
         )
+
+        behandling.søknadsbarn
+            .groupBy {
+                it.saksnummer
+            }.forEach { (saksnummer, roller) ->
+                val hovedsøknad = behandling.hentSøknad(hovedsøknadsid)!!
+                søknadService.opprettForsendelseForNySøknad(
+                    saksnummer,
+                    behandling,
+                    "",
+                    hovedsøknad,
+                    barn = roller.map { SakKravhaver(saksnummer, kravhaver = it.ident!!, stønadstype = it.stønadstype) },
+                )
+            }
     }
 
     private fun hentÅpneSøknaderForVedtak(behandling: Behandling): List<HentSøknad> =

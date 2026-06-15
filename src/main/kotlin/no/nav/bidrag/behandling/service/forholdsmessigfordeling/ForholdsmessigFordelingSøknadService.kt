@@ -65,6 +65,7 @@ class ForholdsmessigFordelingSøknadService(
         stønadstype: Stønadstype? = null,
         søktFomDato: LocalDate,
         erOppdateringAvBehandlingSomErIFF: Boolean,
+        opprettForsendelse: Boolean = true,
     ) {
         val sak = sakConsumer.hentSak(saksnummer)
         val bmFødselsnummer = hentNyesteIdent(sak.bidragsmottaker?.fødselsnummer?.verdi)?.verdi
@@ -168,6 +169,7 @@ class ForholdsmessigFordelingSøknadService(
         erOppdateringAvBehandlingSomErIFF: Boolean,
         bmFødselsnummer: String?,
         ffDetaljerBarn: ForholdsmessigFordelingSøknadBarn,
+        opprettForsendelse: Boolean = true,
     ): Long? {
         if (barn.isEmpty()) {
             return null
@@ -184,6 +186,7 @@ class ForholdsmessigFordelingSøknadService(
                     søktFomDato,
                     medInnkreving,
                     bmFødselsnummer!!,
+                    opprettForsendelse,
                 )
             } else {
                 val søknader =
@@ -211,14 +214,15 @@ class ForholdsmessigFordelingSøknadService(
                 revurderingsdatoVedOpprettelseAvFF = søktFomDato,
                 søknader = mutableSetOf(),
             )
-        opprettForsendelseForNySøknad(
-            saksnummer = saksnummer,
-            behandling = behandling,
-            bmFødselsnummer = bmFødselsnummer!!,
-            søknad = søknad,
-            barn = barn,
-        )
-
+        if (opprettForsendelse) {
+            opprettForsendelseForNySøknad(
+                saksnummer = saksnummer,
+                behandling = behandling,
+                bmFødselsnummer = bmFødselsnummer!!,
+                søknad = søknad,
+//                barn = barn,
+            )
+        }
         barn.forEach { barnDetaljer ->
             val søknader =
                 setOfNotNull(ffDetaljerBarn.copy(søknadsid = søknad.søknadsid))
@@ -271,6 +275,7 @@ class ForholdsmessigFordelingSøknadService(
         søktFomDato: LocalDate,
         medInnkreving: Boolean,
         bmFødselsnummer: String,
+        opprettForsendelse: Boolean = true,
     ): ForholdsmessigFordelingSøknadBarn {
         val opprettSøknader =
             barnUtenSøknader.map {
@@ -336,7 +341,15 @@ class ForholdsmessigFordelingSøknadService(
                 søktAvType = SøktAvType.NAV_BIDRAG,
             )
 
-        opprettForsendelseForNySøknad(saksnummer, behandling, bmFødselsnummer, søknad, barnUtenSøknader)
+        if (opprettForsendelse) {
+            opprettForsendelseForNySøknad(
+                saksnummer,
+                behandling,
+                bmFødselsnummer,
+                søknad,
+//                barnUtenSøknader
+            )
+        }
         return søknad
     }
 
@@ -426,29 +439,19 @@ class ForholdsmessigFordelingSøknadService(
         behandling: Behandling,
         bmFødselsnummer: String,
         søknad: ForholdsmessigFordelingSøknadBarn,
-        barn: List<SakKravhaver>,
+        barn: List<SakKravhaver> = emptyList(),
     ) {
         forsendelseService.slettEllerOpprettForsendelse(
             InitalizeForsendelseRequest(
                 saksnummer = saksnummer,
                 enhet = behandling.behandlerEnhet,
                 roller =
-                    listOf(
+                    barn.map {
                         ForsendelseRolleDto(
-                            fødselsnummer = Personident(bmFødselsnummer),
-                            type = Rolletype.BIDRAGSMOTTAKER,
-                        ),
-                        ForsendelseRolleDto(
-                            fødselsnummer = Personident(behandling.bidragspliktig!!.ident!!),
-                            type = Rolletype.BIDRAGSPLIKTIG,
-                        ),
-                    ) +
-                        barn.map {
-                            ForsendelseRolleDto(
-                                fødselsnummer = Personident(it.kravhaver),
-                                type = Rolletype.BARN,
-                            )
-                        },
+                            fødselsnummer = Personident(it.kravhaver),
+                            type = Rolletype.BARN,
+                        )
+                    },
                 behandlingInfo =
                     BehandlingInfoDto(
                         behandlingId = behandling.id?.toString(),

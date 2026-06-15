@@ -189,7 +189,7 @@ class ForholdsmessigFordelingBarnService(
             behandling,
             rolle.bidragsmottaker!!.ident!!,
             eldsteSøknad!!,
-            listOf(SakKravhaver(kravhaver = rolle.ident!!, saksnummer = rolle.saksnummer, stønadstype = rolle.stønadstype)),
+//            listOf(SakKravhaver(kravhaver = rolle.ident!!, saksnummer = rolle.saksnummer, stønadstype = rolle.stønadstype)),
         )
     }
 
