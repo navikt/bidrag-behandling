@@ -789,7 +789,7 @@ class VedtakService(
                 if (behandling.erAvslagForAlle) {
                     behandling.byggOpprettVedtakRequestAvslagForBidrag(request?.enhet)
                 } else {
-                    behandling.byggOpprettVedtakRequestBidragAlle(request)
+                    behandling.byggOpprettVedtakRequestBidragAlle(request?.enhet)
                 }
             }.let {
                 val erAvvisning = it.stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST }
