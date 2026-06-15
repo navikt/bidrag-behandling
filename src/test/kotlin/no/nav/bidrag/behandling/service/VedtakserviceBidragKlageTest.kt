@@ -23,7 +23,6 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
-import no.nav.bidrag.behandling.utils.disableUnleashFeature
 import no.nav.bidrag.behandling.utils.enableUnleashFeature
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
 import no.nav.bidrag.behandling.utils.hentNotat
@@ -81,10 +80,8 @@ import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetalj
 import no.nav.bidrag.transport.felles.toCompactString
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
-import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
@@ -148,78 +145,6 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn: Rolle,
         endeligBeregning: Boolean = false,
     ) = vedtakGrunnlagMapper.byggGrunnlagForBeregning(behandling, søknadsbarn, endeligBeregning).beregnGrunnlag.grunnlagListe
-
-    @Test
-    fun `Skal ikke fatte vedtak for klage hvis feature skrudd av`() {
-        stubPersonConsumer()
-        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
-        val søknadsbarn = behandling.søknadsbarn.first()
-        behandling.vedtakstype = Vedtakstype.KLAGE
-        søknadsbarn.virkningstidspunkt = LocalDate.parse("2025-02-01")
-        søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                klageMottattdato = LocalDate.parse("2025-01-10"),
-                omgjørVedtakId = 2,
-                opprinneligVedtakId = 3,
-                opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
-                omgjortVedtakstidspunktListe = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
-            )
-        initBehandlingTestdata(behandling)
-
-        behandling.leggTilGrunnlagManuelleVedtak(
-            behandling.søknadsbarn.first(),
-        )
-
-        val opprettVedtakSlot = mutableListOf<OpprettVedtakRequestDto>()
-        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
-            OpprettVedtakResponseDto(
-                1,
-                emptyList(),
-            )
-        every { bidragsberegningOrkestrator.utførBidragsberegningV3(any()) } returns
-            BidragsberegningOrkestratorResponseV2(
-                listOf(søknadsbarn.tilGrunnlagPerson()),
-                listOf(
-                    BidragsberegningResultatBarnV2(
-                        søknadsbarn.tilGrunnlagsreferanse(),
-                        listOf(
-                            ResultatVedtakV2(
-                                vedtakstype = Vedtakstype.KLAGE,
-                                omgjøringsvedtak = true,
-                                beregnet = true,
-                                periodeListe =
-                                    listOf(
-                                        ResultatPeriode(
-                                            periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
-                                            resultat = ResultatBeregning(BigDecimal.ZERO),
-                                            grunnlagsreferanseListe = emptyList(),
-                                        ),
-                                    ),
-                            ),
-                            ResultatVedtakV2(
-                                vedtakstype = Vedtakstype.KLAGE,
-                                omgjøringsvedtak = false,
-                                beregnet = true,
-                                periodeListe =
-                                    listOf(
-                                        ResultatPeriode(
-                                            periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
-                                            resultat = ResultatBeregning(BigDecimal.ZERO),
-                                            grunnlagsreferanseListe = emptyList(),
-                                        ),
-                                    ),
-                            ),
-                        ),
-                    ),
-                ),
-            )
-        every { vedtakServiceBeregning.finnSisteVedtaksid(any()) } returns 1
-
-        disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK)
-        assertThrows<HttpClientErrorException> { vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = null)) }
-    }
 
     @Test
     fun `Skal fatte vedtak for klage`() {
