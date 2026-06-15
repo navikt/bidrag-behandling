@@ -314,7 +314,7 @@ class ForholdsmessigFordelingService(
                         søknader = søknadsdetaljer.toMutableSet(),
                         løperBidragFra = løpendeBidrag?.periode?.fom,
                         løperBidragTil = løpendeBidrag?.periode?.til,
-                        harLøpendeBidrag = løpendeBidrag?.løperBidragEtterDato(barn.finnBeregnTil()) == true,
+                        harLøpendeBidrag = løpendeBidrag?.løperBidragEtterDato(behandling.finnBeregnTilDato().toYearMonth()) == true,
                     )
             }
         }
@@ -493,7 +493,7 @@ class ForholdsmessigFordelingService(
                 it.løperBidragFra = løpendeBidrag?.periodeFra
                 it.løperBidragTil = løpendeBidrag?.periodeTil
                 it.harLøpendeBidrag =
-                    løpendeBidrag?.løperBidragEtterDato(rolle.finnBeregnTil()) ?: false
+                    løpendeBidrag?.løperBidragEtterDato(behandling.finnBeregnTilDato().toYearMonth()) ?: false
             }
         }
 

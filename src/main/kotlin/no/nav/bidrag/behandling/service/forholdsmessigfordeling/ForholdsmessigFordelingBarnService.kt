@@ -253,7 +253,7 @@ class ForholdsmessigFordelingBarnService(
         } else {
             val løpendeBidrag = behandling.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato(barn)
             val skalOppretteFFSøknadMedInnkreving =
-                løpendeBidrag?.løperBidragEtterDato(barn.finnBeregnTil()) == true
+                løpendeBidrag?.løperBidragEtterDato(behandling.finnBeregnTilDato().toYearMonth()) == true
 
             val søktFomDato = LocalDate.now().plusMonths(1).withDayOfMonth(1)
 

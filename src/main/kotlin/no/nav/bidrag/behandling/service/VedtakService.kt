@@ -467,9 +467,6 @@ class VedtakService(
         request: FatteVedtakRequestDto?,
         simuler: Boolean = false,
     ): BeregningVedtakResultat {
-        if (!UnleashFeatures.FATTE_VEDTAK.isEnabled) {
-            ugyldigForespørsel("Kan ikke fatte vedtak for klage")
-        }
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         validering.run { behandling.validerForBeregningBidrag() }
 
@@ -792,7 +789,7 @@ class VedtakService(
                 if (behandling.erAvslagForAlle) {
                     behandling.byggOpprettVedtakRequestAvslagForBidrag(request?.enhet)
                 } else {
-                    behandling.byggOpprettVedtakRequestBidragAlle(request?.enhet)
+                    behandling.byggOpprettVedtakRequestBidragAlle(request)
                 }
             }.let {
                 val erAvvisning = it.stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST }

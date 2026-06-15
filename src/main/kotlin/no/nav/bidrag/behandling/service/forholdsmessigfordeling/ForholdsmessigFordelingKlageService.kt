@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTil
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.security.utils.TokenUtils
@@ -424,11 +425,14 @@ class ForholdsmessigFordelingKlageService(
             }.forEach {
                 val løpendeBidrag =
                     løpendeBidraggsakerBP.hentBidragSakForKravhaver(it.ident!!, it.stønadstype)
-                it.forholdsmessigFordeling!!.søknader.add(forholdsmessigFordelingSøknad)
-                it.forholdsmessigFordeling!!.løperBidragFra = løpendeBidrag?.periodeFra
-                it.forholdsmessigFordeling!!.løperBidragTil = løpendeBidrag?.periodeTil
-                it.forholdsmessigFordeling!!.harLøpendeBidrag =
-                    løpendeBidrag?.løperBidragEtterDato(it.finnBeregnTil()) == true
+                it.forholdsmessigFordeling!!.let {
+                    it.søknader.add(forholdsmessigFordelingSøknad)
+                    it.løperBidragFra = løpendeBidrag?.periodeFra
+                    it.løperBidragTil = løpendeBidrag?.periodeTil
+                    it.harLøpendeBidrag =
+                        løpendeBidrag?.løperBidragEtterDato(behandling.finnBeregnTilDato().toYearMonth()) == true
+                }
+
                 it.innkrevingstype = if (originalSøknad.innkreving) Innkrevingstype.MED_INNKREVING else Innkrevingstype.UTEN_INNKREVING
                 it.bidragsmottaker!!
                     .forholdsmessigFordeling!!
