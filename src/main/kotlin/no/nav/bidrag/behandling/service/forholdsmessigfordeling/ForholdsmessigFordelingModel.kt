@@ -103,7 +103,7 @@ val HentSøknad.bidragspliktig get() = partISøknadListe.find { it.rolletype == 
 val HentSøknad.barn get() =
     partISøknadListe.filter {
         it.rolletype == Rolletype.BARN &&
-            it.behandlingstatus != Behandlingstatus.FEILREGISTRERT
+            it.behandlingstatus?.lukketStatus == false
     }
 
 fun HentSøknad.parterForRolle(rolletype: Rolletype) = partISøknadListe.filter { it.rolletype == rolletype }

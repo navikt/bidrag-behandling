@@ -23,6 +23,7 @@ import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.SøknadsknytningStatus
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
@@ -52,11 +53,6 @@ class ForholdsmessigFordelingKlageService(
         behandling: Behandling,
         søknadsidSomSlettes: Long,
     ) {
-        behandling.roller.filter { it.harSøknad(søknadsidSomSlettes) }.forEach {
-            val søknad = it.finnSøknad(søknadsidSomSlettes)!!
-            søknad.status = Behandlingstatus.FEILREGISTRERT
-        }
-
         if (behandling.soknadsid == søknadsidSomSlettes) {
             val tilknyttedeSøknader =
                 bbmConsumer.finnSammenknytningerHovedsøknad(
@@ -85,9 +81,16 @@ class ForholdsmessigFordelingKlageService(
         } else {
             val søknadSomSlettes = bbmConsumer.hentSøknad(søknadsidSomSlettes)!!.søknad
             if (søknadSomSlettes.refSøknadsid != behandling.soknadsid) {
+                // Var ikke hovedsøknad som ble slettet. Gjennopprett klagesøknad slik at samme struktur beholdes som i påklaget søknad
                 opprettKlageSøknad(søknadSomSlettes, behandling, emptyList(), behandling.soknadsid)
                 bbmConsumer.fjernSammenknytning(søknadsidSomSlettes)
             }
+        }
+
+        // Gjør dette helt til slutt da det sjekkes om barn var feilregistrert i original søknad ved gjennopprettelse
+        behandling.roller.filter { it.harSøknad(søknadsidSomSlettes) }.forEach {
+            val søknad = it.finnSøknad(søknadsidSomSlettes)!!
+            søknad.status = Behandlingstatus.FEILREGISTRERT
         }
     }
 
@@ -372,9 +375,21 @@ class ForholdsmessigFordelingKlageService(
             } else {
                 behandling.søknadstype!!
             }
+        val barnIOriginalSøknad =
+            behandling.roller.filter { it.harSøknad(originalSøknad.søknadsid) }.filter {
+                val søknad = it.finnSøknad(originalSøknad.søknadsid)!!
+                søknad.status?.lukketStatus == false
+            }
         val barnISøknad =
-            originalSøknad.barn
-                .filter { !it.behandlingstatus!!.erFeilregistrert }
+            originalSøknad.partISøknadListe
+                .filter { it.rolletype == Rolletype.BARN }
+                .filter { barn ->
+                    if (barnIOriginalSøknad.isEmpty()) {
+                        !barn.behandlingstatus!!.erFeilregistrert
+                    } else {
+                        barnIOriginalSøknad.any { it.erSammeRolle(barn.personident!!, originalSøknad.behandlingstema.tilStønadstype()) }
+                    }
+                }
 
         val barnISøknadIdenter = barnISøknad.map { it.personident }.toSet()
         val løpendeBidraggsakerBP =
