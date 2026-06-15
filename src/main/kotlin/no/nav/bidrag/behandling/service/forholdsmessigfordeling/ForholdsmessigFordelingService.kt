@@ -551,13 +551,9 @@ class ForholdsmessigFordelingService(
         val ffDetaljer = rolle.forholdsmessigFordeling ?: return
         val beløpshistorikk = løpendeBidraggsakerBP.find { rolle.erSammeRolle(it.kravhaver.verdi, it.type) }
         val løperBidrag =
-            if (beløpshistorikk != null) {
-                ÅrMånedsperiode(beløpshistorikk.periodeFra, beløpshistorikk.periodeTil).løperBidragEtterDato(
-                    rolle.finnBeregnTil(),
-                )
-            } else {
-                false
-            }
+            beløpshistorikk?.løperBidragEtterDato(
+                behandling.finnBeregnTilDato().toYearMonth(),
+            ) ?: false
 
         val eldsteSøknad = rolle.forholdsmessigFordeling!!.eldsteSøknad
         val erMedInnkreving =
