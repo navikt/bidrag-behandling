@@ -1766,6 +1766,12 @@ class Dtomapper(
             innhentet = LocalDateTime.now(),
         )
 
+    private data class Boperiode(
+        val person: RelatertPersonGrunnlagDto,
+        val fom: LocalDate,
+        val til: LocalDate?,
+    )
+
     private fun Set<Grunnlag>.tilPeriodeAndreVoksneIHusstandenNy(erAktivert: Boolean = true): Set<PeriodeAndreVoksneIHusstanden> {
         val grunnlag = if (erAktivert) hentSisteAktiv() else hentSisteIkkeAktiv()
         val behandling = firstOrNull()?.behandling ?: return emptySet()
@@ -1791,52 +1797,49 @@ class Dtomapper(
                         sistePeriode.periodeTil!!.withDayOfMonth(1) >= behandling.eldsteVirkningstidspunkt.withDayOfMonth(1)
                 }
 
-        // Collect all periods with their associated people
-        val periodePeopleMap = mutableMapOf<Datoperiode, MutableList<RelatertPersonGrunnlagDto>>()
+        // Hver bostatus-periode per person, begrenset til behandlingsperioden.
+        val boperioder =
+            filtrerteAndreVoksne.flatMap { person ->
+                person.borISammeHusstandDtoListe
+                    .filter { it.periodeFra != null && it.periodeFra!! <= behandling.finnBeregnTilDato() }
+                    .map { Boperiode(person, it.periodeFra!!, it.periodeTil) }
+            }
 
-        filtrerteAndreVoksne.forEach { person ->
-            person.borISammeHusstandDtoListe
-                .filter { it.periodeFra == null || it.periodeFra!! <= behandling.finnBeregnTilDato() }
-                .forEach { boStatus ->
-                    val periodeTil = boStatus.periodeTil
-                    val periodeFom = boStatus.periodeFra ?: return@forEach
-                    val periode = Datoperiode(periodeFom, periodeTil)
-                    periodePeopleMap.getOrPut(periode) { mutableListOf() }.add(person)
-                }
-        }
-
-        // Create PeriodeAndreVoksneIHusstanden entries grouped by period and number of people
         val perioderMedAndreVoksne =
-            periodePeopleMap
-                .toSortedMap(compareBy<Datoperiode> { it.fom }.thenBy { it.til ?: LocalDate.MAX })
-                .flatMap { (periode, people) ->
-                    // Group by count of people to create separate periods if count changes
-                    val countGroups = people.groupBy { people.size }
-                    countGroups.map { (count, peopleInGroup) ->
-                        PeriodeAndreVoksneIHusstanden(
-                            periode = periode,
-                            status = Bostatuskode.BOR_MED_ANDRE_VOKSNE,
-                            totalAntallHusstandsmedlemmer = count,
-                            husstandsmedlemmer =
-                                peopleInGroup.mapNotNull { person ->
-                                    try {
-                                        person.tilAndreVoksneIHusstandenDetaljerDto(
-                                            Saksnummer(
-                                                grunnlag
-                                                    .find { it.type == Grunnlagsdatatype.BOFORHOLD_ANDRE_VOKSNE_I_HUSSTANDEN }
-                                                    ?.behandling
-                                                    ?.saksnummer!!,
-                                            ),
-                                        )
-                                    } catch (e: Exception) {
-                                        null
-                                    }
-                                },
-                        )
-                    }
+            boperioder
+                .splittIkkeOverlappendePerioder()
+                .map { (periode, personerIPerioden) ->
+                    PeriodeAndreVoksneIHusstanden(
+                        periode = periode,
+                        status = Bostatuskode.BOR_MED_ANDRE_VOKSNE,
+                        totalAntallHusstandsmedlemmer = personerIPerioden.size,
+                        husstandsmedlemmer =
+                            personerIPerioden.mapNotNull { person ->
+                                runCatching { person.tilAndreVoksneIHusstandenDetaljerDto(Saksnummer(behandling.saksnummer)) }.getOrNull()
+                            },
+                    )
                 }.toSet()
 
         return behandling.fyllInnManglendePerioderForAndreVoksneIHusstanden(perioderMedAndreVoksne)
+    }
+
+    /**
+     * Splitter overlappende bostatus-perioder til ikke-overlappende delperioder.
+     * Bruker alle unike start- og sluttdatoer som grenser, og samler personene som bor
+     * i husstanden innenfor hver delperiode. Resultatet er sortert kronologisk.
+     */
+    private fun List<Boperiode>.splittIkkeOverlappendePerioder(): List<Pair<Datoperiode, List<RelatertPersonGrunnlagDto>>> {
+        if (isEmpty()) return emptyList()
+
+        val grenser = (map { it.fom } + mapNotNull { it.til?.plusDays(1) }).distinct().sorted()
+
+        return grenser.mapIndexedNotNull { index, fom ->
+            val til = grenser.getOrNull(index + 1)?.minusDays(1)
+            val personerIPerioden =
+                filter { it.fom <= (til ?: LocalDate.MAX) && (it.til == null || it.til >= fom) }
+                    .map { it.person }
+            personerIPerioden.takeIf { it.isNotEmpty() }?.let { Datoperiode(fom, til) to it }
+        }
     }
 
     private fun Behandling.fyllInnManglendePerioderForAndreVoksneIHusstanden(
