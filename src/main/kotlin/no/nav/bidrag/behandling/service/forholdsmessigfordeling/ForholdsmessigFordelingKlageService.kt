@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
+import no.nav.bidrag.behandling.transformers.erOverEllerLik18År
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTil
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
@@ -166,18 +167,39 @@ class ForholdsmessigFordelingKlageService(
             emptyList(),
         )
 
+        opprettVarselForsendelserForKlage(behandling, hovedsøknadsid)
+    }
+
+    private fun opprettVarselForsendelserForKlage(
+        behandling: Behandling,
+        hovedsøknadsid: Long,
+    ) {
         behandling.søknadsbarn
             .groupBy {
                 it.saksnummer
             }.forEach { (saksnummer, roller) ->
                 val hovedsøknad = behandling.hentSøknad(hovedsøknadsid)!!
+                val barnUnder18År = roller.filter { !it.fødselsdato.erOverEllerLik18År() }
                 søknadService.opprettForsendelseForNySøknad(
                     saksnummer,
                     behandling,
                     "",
                     hovedsøknad,
-                    barn = roller.map { SakKravhaver(saksnummer, kravhaver = it.ident!!, stønadstype = it.stønadstype) },
+                    barn = barnUnder18År.map { SakKravhaver(saksnummer, kravhaver = it.ident!!, stønadstype = it.stønadstype) },
                 )
+
+                val barnOver18År = roller.filter { it.fødselsdato.erOverEllerLik18År() }
+                if (barnOver18År.isNotEmpty()) {
+                    barnOver18År.forEach {
+                        søknadService.opprettForsendelseForNySøknad(
+                            saksnummer,
+                            behandling,
+                            "",
+                            hovedsøknad,
+                            barn = listOf(SakKravhaver(saksnummer, kravhaver = it.ident!!, stønadstype = it.stønadstype)),
+                        )
+                    }
+                }
             }
     }
 
