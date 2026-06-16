@@ -176,7 +176,7 @@ fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List
     underholdskostnader
         .flatMap { u ->
             u.barnetilsyn
-                .filter { inkluderIkkeAngitt || it.omfang != Tilsynstype.IKKE_ANGITT && it.under_skolealder != null }
+                .filter { inkluderIkkeAngitt || (it.omfang != Tilsynstype.IKKE_ANGITT && it.under_skolealder != null) }
                 .flatMap {
                     val underholdRolle =
                         u.rolle
@@ -285,7 +285,11 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
                     ?.find { vp -> resultatPeriode.periode.fom == vp.periode.fom }
                     ?.resultatkode!!
             } else {
-                val periode = vedtak.resultat.beregnetBarnebidragPeriodeListe.find { vp -> resultatPeriode.periode.fom == vp.periode.fom }!!
+                val periode =
+                    vedtak.resultat.beregnetBarnebidragPeriodeListe.find { vp ->
+                        resultatPeriode.periode.fom == vp.periode.fom ||
+                            (erOpphørsperiode && vp.periode.til == søknadsbarnRolle.opphørsdato?.toYearMonth())
+                    }!!
                 if (periode.resultat.beløp == null) Resultatkode.OPPHØR.name else Resultatkode.BEREGNET_BIDRAG.name
             }
         val referanse = "resultatFraVedtak_${vedtak.vedtaksid ?: resultatPeriode.periode.fom.toCompactString()}"
