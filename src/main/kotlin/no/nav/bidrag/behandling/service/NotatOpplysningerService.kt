@@ -824,7 +824,7 @@ private fun no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegn
                     forholdsmessigFordelingBeregningsdetaljer =
                         it.forholdsmessigFordeling?.let {
                             DokumentmalForholdsmessigFordelingBeregningsdetaljer(
-                                sumBidragTilFordeling = it.sumBidragTilFordeling,
+                                sumBidragTilFordeling = it.beregningFordelingAvBidrag.sumBidragTilFordeling,
                                 bidragTilFordelingForBarnet = it.bidragTilFordelingForBarnet,
                                 andelAvSumBidragTilFordelingFaktor = it.andelAvSumBidragTilFordelingFaktor,
                                 andelAvEvneBeløp = it.andelAvEvneBeløp,
@@ -832,16 +832,18 @@ private fun no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegn
                                 harBPFullEvne = it.harBPFullEvne,
                                 erKompletteGrunnlagForAlleLøpendeBidrag = it.erKompletteGrunnlagForAlleLøpendeBidrag,
                                 erForholdsmessigFordelt = it.erForholdsmessigFordelt,
-                                sumBidragTilFordelingSøknadsbarn = it.sumBidragTilFordelingSøknadsbarn,
-                                sumBidragTilFordelingIkkeSøknadsbarn = it.sumBidragTilFordelingIkkeSøknadsbarn,
-                                sumBidragTilFordelingPrivatAvtale = it.sumBidragTilFordelingPrivatAvtale,
-                                sumBidragSomIkkeKanFordeles = it.sumBidragSomIkkeKanFordeles,
-                                finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn = it.finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn,
-                                sumPrioriterteBidragTilFordeling = it.sumPrioriterteBidragTilFordeling,
+                                sumBidragTilFordelingSøknadsbarn = it.beregningFordelingAvBidrag.sumBidragTilFordelingSøknadsbarn,
+                                sumBidragTilFordelingIkkeSøknadsbarn = it.beregningFordelingAvBidrag.sumBidragTilFordelingIkkeSøknadsbarn,
+                                sumBidragTilFordelingPrivatAvtale = it.beregningFordelingAvBidrag.sumBidragTilFordelingPrivatAvtale,
+                                sumBidragSomIkkeKanFordeles = it.beregningFordelingAvBidrag.sumBidragSomIkkeKanFordeles,
+                                finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn =
+                                    it.beregningFordelingAvBidrag
+                                        .finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn,
+                                sumPrioriterteBidragTilFordeling = it.beregningFordelingAvBidrag.sumPrioriterteBidragTilFordeling,
                                 sumBidragTilFordelingJustertForPrioriterteBidrag = it.sumBidragTilFordelingJustertForPrioriterteBidrag,
                                 evneJustertForPrioriterteBidrag = it.evneJustertForPrioriterteBidrag,
                                 bidragTilFordelingAlle =
-                                    it.bidragTilFordelingAlle.map {
+                                    it.beregningFordelingAvBidrag.bidragTilFordelingAlle.map {
                                         DokumentmalForholdsmessigFordelingBidragTilFordelingBarn(
                                             utenlandskbidrag = it.utenlandskbidrag,
                                             oppfostringsbidrag = it.oppfostringsbidrag,

@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
+import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.transformers.filtrerMatchendePeriode
@@ -206,11 +207,11 @@ class BehandlingTilVedtakMapping(
             )
     }
 
-    fun Behandling.byggOpprettVedtakRequestBidragAlle(enhet: String? = null): OpprettVedtakRequestDto =
+    fun Behandling.byggOpprettVedtakRequestBidragAlle(request: FatteVedtakRequestDto? = null): OpprettVedtakRequestDto =
         if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
-            byggOpprettVedtakRequestBidragAldersjustering(enhet)
+            byggOpprettVedtakRequestBidragAldersjustering(request?.enhet)
         } else {
-            byggOpprettVedtakRequestBidrag(enhet)
+            byggOpprettVedtakRequestBidrag(request)
         }
 
     fun hentBeregningBarnebidrag(behandling: Behandling): ResultatadBeregningOrkestrering {
@@ -894,7 +895,7 @@ class BehandlingTilVedtakMapping(
         }
     }
 
-    private fun Behandling.byggOpprettVedtakRequestBidrag(enhet: String? = null): OpprettVedtakRequestDto {
+    private fun Behandling.byggOpprettVedtakRequestBidrag(request: FatteVedtakRequestDto? = null): OpprettVedtakRequestDto {
         val behandlingSaker = saker.associateWith { sakConsumer.hentSak(it) }
         val beregning = beregningService.beregneBidrag(id!!)
 
@@ -907,41 +908,54 @@ class BehandlingTilVedtakMapping(
             )
         }
 
-        return byggOpprettVedtakRequest(resultatBarn, behandlingSaker, enhet)
+        return byggOpprettVedtakRequest(resultatBarn, behandlingSaker, request)
     }
 
     private fun Behandling.byggOpprettVedtakRequest(
         beregning: List<ResultatBidragsberegningBarn>,
         behandlingSaker: Map<String, BidragssakDto>,
-        enhet: String?,
+        request: FatteVedtakRequestDto? = null,
     ): OpprettVedtakRequestDto {
         val behandling = this
         mapper.run {
+            val skalFatteVedtakForRevurderingsbarn =
+                request?.fatteVedtakRevurderingsbarn != null && request.fatteVedtakRevurderingsbarn.skalFatteVedtakForRevurderingsbarn
             val stønadsendringPerioder =
-                beregning.map { it.resultat.byggStønadsendringerForVedtak(behandling, it.barn) }
+                beregning.map {
+                    it.resultat.byggStønadsendringerForVedtak(
+                        behandling,
+                        it.barn,
+                        skalFatteVedtakForRevurderingsbarn = skalFatteVedtakForRevurderingsbarn,
+                    )
+                }
             val stønadsendringGrunnlag =
                 stønadsendringPerioder
                     .flatMap(StønadsendringPeriode::grunnlag)
                     .filter { it.type != Grunnlagstype.VIRKNINGSTIDSPUNKT }
             val barnMedAvvistRevurdering =
                 beregning
-                    .filter { it.erAvvistRevurdering }
-                    .map { b -> b.barn }
+                    .filter {
+                        (it.erAvvistRevurdering && !(it.barn.erRevurderingsbarn && skalFatteVedtakForRevurderingsbarn)) ||
+                            (it.barn.erRevurderingsbarn && !skalFatteVedtakForRevurderingsbarn)
+                    }.map { b -> b.barn }
             val grunnlagListeVedtak =
                 byggGrunnlagForVedtak(stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>)
-            val stønadsendringGrunnlagListe = byggGrunnlagGenerelt()
+            val stønadsendringGrunnlagListe = byggGrunnlagGenerelt(requestDto = request)
 
             val grunnlagListe =
                 (grunnlagListeVedtak + stønadsendringGrunnlag + stønadsendringGrunnlagListe).toSet()
             val engangsbeløpGebyr = mapEngangsbeløpGebyr(grunnlagListe.toList())
             val grunnlagVirkningstidspunkt = byggGrunnlagVirkningsttidspunkt()
 
-            return byggOpprettVedtakRequestObjekt(enhet).copy(
+            return byggOpprettVedtakRequestObjekt(request?.enhet).copy(
                 stønadsendringListe =
                     stønadsendringPerioder.map { periode ->
                         val sak = behandlingSaker.getValue(periode.barn.saksnummer)
+                        val erRevurderingsbarnMedFatteVedtak =
+                            periode.barn.erRevurderingsbarn && skalFatteVedtakForRevurderingsbarn
                         val erAvvisning =
-                            periode.perioder.isEmpty() || periode.barn.avslag?.erAvvisning() == true ||
+                            (!erRevurderingsbarnMedFatteVedtak && periode.perioder.isEmpty()) ||
+                                periode.barn.avslag?.erAvvisning() == true ||
                                 barnMedAvvistRevurdering.any { periode.barn.erSammeRolle(it.ident!!.verdi, it.stønadstype) }
                         val erAvslag = periode.barn.avslag != null
 
@@ -975,7 +989,7 @@ class BehandlingTilVedtakMapping(
                                         .referanse,
                             periodeListe = periode.perioder,
                             førsteIndeksreguleringsår =
-                                if (!erAvvisning && !erAvslag) {
+                                if (!erAvvisning && !erAvslag && periode.perioder.isNotEmpty()) {
                                     val sistePeriode =
                                         periode.perioder
                                             .filter {

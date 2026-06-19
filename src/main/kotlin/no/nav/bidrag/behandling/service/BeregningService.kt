@@ -30,6 +30,7 @@ import no.nav.bidrag.behandling.transformers.mapTilResultatBarn
 import no.nav.bidrag.behandling.transformers.maxOfNullable
 import no.nav.bidrag.behandling.transformers.minOfNullable
 import no.nav.bidrag.behandling.transformers.perioderSlåttUtTilFF
+import no.nav.bidrag.behandling.transformers.perioderSlåttUtTilFFForRevurderingsbarn
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonNyesteIdent
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.VedtakGrunnlagMapper
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.byggGrunnlagSøknad
@@ -208,21 +209,6 @@ class BeregningService(
         } else {
             beregneBarnebidragV2FF(behandling, endeligBeregning, simulerBeregning)
         }
-
-//        else {
-//            val resultat = beregneBarnebidragV1(behandling, endeligBeregning)
-//            val grunnlagResultatVedtak =
-//                resultat
-//                    .filter {
-//                        it.resultatVedtak != null
-//                    }.flatMap { it.resultatVedtak!!.resultatVedtakListe.flatMap { it.resultat.grunnlagListe } }
-//            val grunnlagsliste = resultat.flatMap { it.resultat.grunnlagListe }
-//            ResultatBidragsberegning(
-//                grunnlagsliste = (grunnlagsliste + grunnlagResultatVedtak).toSet(),
-//                resultatBarn = resultat,
-//                vedtakstype = behandling.vedtakstype,
-//            )
-//        }
     }
 
     fun beregneBarnebidragV2FF(
@@ -232,12 +218,21 @@ class BeregningService(
     ): ResultatBidragsberegning {
         val grunnlagBeregning = opprettGrunnlagBeregningBidragV2(behandling, endeligBeregning, simulerBeregning)
         val grunnlagslisteAlle = mutableListOf<GrunnlagDto>()
+        grunnlagslisteAlle.addAll(grunnlagBeregning.grunnlagsliste)
         return try {
             val resultatBeregning = utførBeregningFF(grunnlagBeregning)
 
             val resultat = resultatBeregning.resultat
-            val perioderSlåttUtTilFF = resultat.grunnlagListe.perioderSlåttUtTilFF().map { it.periode }
+            val perioderSlåttUtTilFFRevurderingsbarn =
+                resultat.grunnlagListe.perioderSlåttUtTilFFForRevurderingsbarn().map {
+                    it.periode
+                }
 
+            val inneholderRevurderingsbarn =
+                resultat.resultat.any {
+                    val personobjekt = resultat.grunnlagListe.hentPersonMedReferanse(it.søknadsbarnreferanse) ?: return@any false
+                    !personobjekt.personObjekt.delAvOpprinneligBehandling
+                }
             val resultatBarn =
                 resultat.resultat.map { resultatBarn ->
                     val søknadsbarn = behandling.søknadsbarn.find { resultatBarn.søknadsbarnreferanse == it.tilGrunnlagsreferanse() }!!
@@ -251,12 +246,9 @@ class BeregningService(
                         )
                     }
                     val perioderBarn = resultatBarn.resultatVedtakListe.flatMap { it.periodeListe }.map { it.periode }
-                    val minstEnPeriodeSlåttUtTilFF = perioderBarn.any { pb -> perioderSlåttUtTilFF.any { it.overlapper(pb) } }
-                    // For omgjøring
-                    val erOmgjøringMedPerioder = endeligBeregning && behandling.erKlageEllerOmgjøring && perioderBarn.isNotEmpty()
+
                     val erAvvistRevurdering =
-                        forholdsmessigFordelingDetaljer != null && forholdsmessigFordelingDetaljer.erRevurdering &&
-                            !minstEnPeriodeSlåttUtTilFF && !erOmgjøringMedPerioder
+                        (forholdsmessigFordelingDetaljer != null && forholdsmessigFordelingDetaljer.erRevurdering) && perioderBarn.isEmpty()
                     val grunnlagSøknadsbarn = resultat.grunnlagListe.hentPersonMedReferanse(resultatBarn.søknadsbarnreferanse)!!
                     val grunnlagBarn =
                         resultat.grunnlagListe.filter {
@@ -297,10 +289,11 @@ class BeregningService(
 
             grunnlagslisteAlle.addAll(resultat.grunnlagListe)
             ResultatBidragsberegning(
-                perioderSlåttUtTilFF = perioderSlåttUtTilFF,
-                grunnlagsliste = resultat.grunnlagListe.toSet(),
+                perioderSlåttUtTilFF = resultat.grunnlagListe.perioderSlåttUtTilFF().map { it.periode },
+                grunnlagsliste = grunnlagslisteAlle.toSet(),
                 ugyldigBeregning = resultatBeregning.tilBeregningFeilmelding(),
                 resultatBarn = resultatBarn,
+                inneholderRevurderingsbarn = inneholderRevurderingsbarn,
                 vedtakstype = behandling.vedtakstype,
             )
         } catch (e: Exception) {

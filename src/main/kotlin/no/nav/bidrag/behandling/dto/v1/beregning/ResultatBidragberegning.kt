@@ -199,6 +199,7 @@ data class ResultatUtførBidragsberegning(
 data class ResultatBidragsberegning(
     val perioderSlåttUtTilFF: List<ÅrMånedsperiode> = emptyList(),
     val grunnlagsliste: Set<GrunnlagDto> = emptySet(),
+    val inneholderRevurderingsbarn: Boolean = false,
     val vedtakstype: Vedtakstype,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val resultatBarn: List<ResultatBidragsberegningBarn> = emptyList(),
@@ -211,6 +212,7 @@ data class ResultatBidragsberegningBarn(
     val barn: ResultatRolle,
     val medInnkreving: Boolean = true,
     val erAvvistRevurdering: Boolean = false,
+    val fatteVedtakAnbefalt: Boolean = false,
     val beregningInnkrevingsgrunnlag: Boolean = false,
     val resultat: BeregnetBarnebidragResultat,
     val resultatVedtak: BidragsberegningOrkestratorResponse? = null,
@@ -250,9 +252,18 @@ data class ResultatBidragberegningDto(
     val kanFatteVedtak: Boolean = true,
     val kanFatteVedtakBegrunnelse: String? = null,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
+    // Hvis det er opprettet FF men BP har likevel nok evne ved sjekk mot beløpshistorikken for revurderingsbarna
+    val bpHarNokEvneForSøknadsbarna: Boolean = false,
+    // Viser varsel i frontend at minst en periode har slått ut til FF pga BP ikke har nok evne til å dekke U for alle barna
     val minstEnPeriodeHarSlåttUtTilFF: Boolean = false,
+    // Hvis saksbehandler skal få valg om å overstyre fatte vedtak.
+    // Dette vil si at BP har nok evne til å dekke U for søknadsbarn ved sjekk mot løpende bidrag for andre barna (etter FF slått ut men sjekk mot beløpshistorikk i "del 2")
+    val kanFatteVedtakForRevurderingsbarn: Boolean = false,
+    val skalFatteVedtakForRevurderingsbarn: Boolean = false,
+    val manueltOverstyrtFatteVedtakRevurderingsbarnBegrunnelse: String? = null,
     val resultatBarn: List<ResultatBidragsberegningBarnDto> = emptyList(),
     val perioderSlåttUtTilFF: List<PeriodeSlåttUtTilFF>,
+    val perioderSlåttUtTilFFRevurderingsbarn: List<PeriodeSlåttUtTilFF>,
 )
 
 data class ResultatBidragsberegningBarnDto(
@@ -437,14 +448,9 @@ data class PeriodeSlåttUtTilFF(
 )
 
 data class ForholdsmessigFordelingBeregningsdetaljer(
-    val sumBidragTilFordeling: BigDecimal,
-    val finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn: Boolean,
-    val sumBidragTilFordelingSøknadsbarn: BigDecimal,
-    val sumBidragTilFordelingIkkeSøknadsbarn: BigDecimal,
-    val sumBidragTilFordelingPrivatAvtale: BigDecimal,
-    val sumBidragSomIkkeKanFordeles: BigDecimal,
-    val sumPrioriterteBidragTilFordeling: BigDecimal,
     val bidragTilFordelingForBarnet: BigDecimal,
+    val beregningFordelingAvBidragSjekkEvnesprekk: ForholdsmessigFordelingBidragTilFordeling?,
+    val beregningFordelingAvBidrag: ForholdsmessigFordelingBidragTilFordeling,
     val andelAvSumBidragTilFordelingFaktor: BigDecimal,
     val andelAvEvneBeløp: BigDecimal,
     val bidragEtterFordeling: BigDecimal,
@@ -453,7 +459,22 @@ data class ForholdsmessigFordelingBeregningsdetaljer(
     val harBPFullEvne: Boolean,
     val erKompletteGrunnlagForAlleLøpendeBidrag: Boolean,
     val erForholdsmessigFordelt: Boolean,
+    val delberegningEvneRevurderingsbarn: DelberegningEvneRevurderingsbarn? = null,
+)
+
+data class ForholdsmessigFordelingBidragTilFordeling(
+    val sumBidragTilFordeling: BigDecimal,
+    val sumBidragTilFordelingSøknadsbarn: BigDecimal,
+    val sumBidragTilFordelingIkkeSøknadsbarn: BigDecimal,
+    val sumBidragTilFordelingPrivatAvtale: BigDecimal,
+    val sumBidragSomIkkeKanFordeles: BigDecimal,
+    val sumPrioriterteBidragTilFordeling: BigDecimal,
+    val finnesBarnMedLøpendeBidragSomIkkeErSøknadsbarn: Boolean,
     val bidragTilFordelingAlle: List<ForholdsmessigFordelingBidragTilFordelingBarn> = emptyList(),
+)
+
+data class DelberegningEvneRevurderingsbarn(
+    val harNokEvneForSøknadsbarn: Boolean = true,
 )
 
 data class ForholdsmessigFordelingBidragTilFordelingBarn(

@@ -45,8 +45,10 @@ import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
 import no.nav.bidrag.behandling.transformers.harOpprettetForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.kanOpprette35C
+import no.nav.bidrag.behandling.transformers.løpendePeriodeSlåttUtTilFFForRevurderingsbarn
 import no.nav.bidrag.behandling.transformers.opprettStønadDto
 import no.nav.bidrag.behandling.transformers.perioderSlåttUtTilFF
+import no.nav.bidrag.behandling.transformers.perioderSlåttUtTilFFForRevurderingsbarn
 import no.nav.bidrag.behandling.transformers.tilGrunnlagsdatatypeBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.tilGrunnlagstypeBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.tilStønadsid
@@ -181,6 +183,18 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
     ResultatBidragberegningDto(
         minstEnPeriodeHarSlåttUtTilFF = grunnlagListe.harSlåttUtTilForholdsmessigFordeling(),
         perioderSlåttUtTilFF = grunnlagListe.perioderSlåttUtTilFF(),
+        kanFatteVedtakForRevurderingsbarn = grunnlagListe.perioderSlåttUtTilFFForRevurderingsbarn().isNotEmpty(),
+        skalFatteVedtakForRevurderingsbarn =
+            grunnlagListe
+                .hentBehandlingDetaljer()
+                ?.fatteVedtakRevurderingsbarn
+                ?.foreslåttFatteVedtak ?: grunnlagListe.løpendePeriodeSlåttUtTilFFForRevurderingsbarn(),
+        perioderSlåttUtTilFFRevurderingsbarn = grunnlagListe.perioderSlåttUtTilFFForRevurderingsbarn(),
+        manueltOverstyrtFatteVedtakRevurderingsbarnBegrunnelse =
+            grunnlagListe
+                .hentBehandlingDetaljer()
+                ?.fatteVedtakRevurderingsbarn
+                ?.manueltOverstyrtForslagBegrunnelse,
         resultatBarn =
             stønadsendringListe
                 .parallelStream()
@@ -1140,7 +1154,7 @@ internal fun VedtakDto.notatMedType(
 ) = grunnlagListe
     .filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT)
     .filter {
-        gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse.isNullOrEmpty() && it.gjelderBarnReferanse.isNullOrEmpty() ||
+        gjelderReferanse.isNullOrEmpty() || (it.gjelderReferanse.isNullOrEmpty() && it.gjelderBarnReferanse.isNullOrEmpty()) ||
             it.gjelderReferanse == gjelderReferanse || it.gjelderBarnReferanse == gjelderReferanse
     }.map { it.innholdTilObjekt<NotatGrunnlag>() }
     .find { it.type == type && it.fraOmgjortVedtak == fraOmgjortVedtak }

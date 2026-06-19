@@ -11,6 +11,7 @@ import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderR
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
@@ -93,7 +94,10 @@ fun opprettGrunnlagsreferanseVirkningstidspunkt(
 
 fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM }
 
-fun Behandling.byggGrunnlagGenerelt(søknadsbarn: List<Rolle> = this.søknadsbarn): Set<GrunnlagDto> {
+fun Behandling.byggGrunnlagGenerelt(
+    søknadsbarn: List<Rolle> = this.søknadsbarn,
+    requestDto: FatteVedtakRequestDto? = null,
+): Set<GrunnlagDto> {
     val grunnlagListe = (byggGrunnlagNotater(søknadsbarn) + byggGrunnlagSøknad(søknadsbarn)).toMutableSet()
     grunnlagListe.addAll(byggGrunnlagBeløpshistorikkAlle())
     when (tilType()) {
@@ -106,7 +110,7 @@ fun Behandling.byggGrunnlagGenerelt(søknadsbarn: List<Rolle> = this.søknadsbar
         }
 
         TypeBehandling.BIDRAG -> {
-            grunnlagListe.addAll(byggGrunnlagBehandlingDetaljer())
+            grunnlagListe.addAll(byggGrunnlagBehandlingDetaljer(requestDto?.fatteVedtakRevurderingsbarn))
         }
 
         else -> {}

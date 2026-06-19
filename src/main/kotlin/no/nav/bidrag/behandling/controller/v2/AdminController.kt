@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.service.BoforholdService.Companion.tilbakestilleTilOffentligSivilstandshistorikkBasertPåGrunnlag
@@ -78,7 +79,7 @@ class AdminController(
         return beregningService.opprettGrunnlagBeregningBidragV2(behandling, true, false)
     }
 
-    @GetMapping("/admin/vedtak/input/{behandlingId}")
+    @PostMapping("/admin/vedtak/input/{behandlingId}")
     @Operation(
         description =
             "Opprett aldersjustering behandling for sak",
@@ -95,7 +96,8 @@ class AdminController(
     @Transactional
     fun opprettFatteVedtakRequest(
         @PathVariable behandlingId: Long,
-    ): List<OpprettVedtakRequestDto> = vedtakService.fatteVedtak(behandlingId, null, true).requests.map { it.second }
+        @RequestBody request: FatteVedtakRequestDto? = null,
+    ): List<OpprettVedtakRequestDto> = vedtakService.fatteVedtak(behandlingId, request, true).requests.map { it.second }
 
     @PostMapping("/admin/reset/fattevedtak/{behandlingId}")
     @Operation(

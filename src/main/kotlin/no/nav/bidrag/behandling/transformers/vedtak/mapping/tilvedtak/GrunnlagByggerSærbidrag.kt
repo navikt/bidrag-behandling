@@ -9,6 +9,7 @@ import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BehandlingDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningUtgift
+import no.nav.bidrag.transport.behandling.felles.grunnlag.FatteVedtakRevurderingsbarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SærbidragskategoriGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.UtgiftDirekteBetaltGrunnlag
@@ -109,7 +110,7 @@ fun Behandling.byggGrunnlagUtgiftDirekteBetalt() =
 fun Behandling.byggGrunnlagLøpendeBidragForholdsmessigFordeling(grunnlagsliste: MutableSet<GrunnlagDto>) =
     grunnlag.hentSisteGrunnlagLøpendeBidragFF(this).tilGrunnlagDto(grunnlagsliste)
 
-fun Behandling.byggGrunnlagBehandlingDetaljer() =
+fun Behandling.byggGrunnlagBehandlingDetaljer(fatteVedtakRevurderingsbarn: FatteVedtakRevurderingsbarn? = null) =
     setOf(
         GrunnlagDto(
             referanse = "behandling_detaljer",
@@ -118,6 +119,7 @@ fun Behandling.byggGrunnlagBehandlingDetaljer() =
                 POJONode(
                     BehandlingDetaljerGrunnlag(
                         opprettetForholdsmessigFordeling = erIForholdsmessigFordeling,
+                        fatteVedtakRevurderingsbarn = fatteVedtakRevurderingsbarn,
                     ),
                 ),
         ),
