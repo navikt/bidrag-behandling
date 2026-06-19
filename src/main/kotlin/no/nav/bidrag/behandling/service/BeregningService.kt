@@ -228,10 +228,29 @@ class BeregningService(
                     it.periode
                 }
 
-            val inneholderRevurderingsbarn =
+            val beregningenInneholderRevurderingsbarn =
                 resultat.resultat.any {
                     val personobjekt = resultat.grunnlagListe.hentPersonMedReferanse(it.søknadsbarnreferanse) ?: return@any false
                     !personobjekt.personObjekt.delAvOpprinneligBehandling
+                }
+
+            val avvisteRevurderingsbarn =
+                if (!beregningenInneholderRevurderingsbarn) {
+                    behandling.søknadsbarn
+                        .filter { it.erRevurderingsbarn }
+                        .map {
+                            ResultatBidragsberegningBarn(
+                                barn = it.mapTilResultatBarn(),
+                                avslagskode = it.avslag,
+                                erAvvistRevurdering = true,
+                                fatteVedtakAnbefalt = false,
+                                resultat = BeregnetBarnebidragResultat(),
+                                opphørsdato = null,
+                                løperBidrag = behandling.løperBidragEtterEldsteVirkning(it),
+                            )
+                        }
+                } else {
+                    emptyList()
                 }
             val resultatBarn =
                 resultat.resultat.map { resultatBarn ->
@@ -285,7 +304,7 @@ class BeregningService(
                             endeligResultat,
                         )
                     }
-                }
+                } + avvisteRevurderingsbarn
 
             grunnlagslisteAlle.addAll(resultat.grunnlagListe)
             ResultatBidragsberegning(
@@ -293,7 +312,7 @@ class BeregningService(
                 grunnlagsliste = grunnlagslisteAlle.toSet(),
                 ugyldigBeregning = resultatBeregning.tilBeregningFeilmelding(),
                 resultatBarn = resultatBarn,
-                inneholderRevurderingsbarn = inneholderRevurderingsbarn,
+                inneholderRevurderingsbarn = beregningenInneholderRevurderingsbarn,
                 vedtakstype = behandling.vedtakstype,
             )
         } catch (e: Exception) {
