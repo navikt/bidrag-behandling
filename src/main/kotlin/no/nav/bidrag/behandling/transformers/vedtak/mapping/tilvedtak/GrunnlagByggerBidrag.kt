@@ -372,45 +372,42 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
 
     val grunnlagListe = grunnlagListe.toSet()
     val periodeliste =
-        if (søknadsbarn.erRevurderingsbarn && !skalFatteVedtakForRevurderingsbarn) {
-            emptyList()
-        } else {
-            beregnetBarnebidragPeriodeListe.map {
-                val resultatSluttberegning = grunnlagListe.toList().resultatSluttberegning(it.grunnlagsreferanseListe)
-                val ikkeOmsorgForBarnet = resultatSluttberegning == Resultatkode.IKKE_OMSORG
-                val barnetErSelvforsørget = resultatSluttberegning == Resultatkode.BARNET_ER_SELVFORSØRGET
-                val erResultatIngenEndringUnderGrense =
-                    grunnlagListe.toList().erResultatEndringUnderGrenseForPeriode(
-                        it.periode,
-                        søknadsbarn.tilGrunnlagsreferanse(),
-                    )
-                val erIndeksregulering =
-                    grunnlagListe
-                        .toList()
-                        .filtrerBasertPåEgenReferanser(
-                            Grunnlagstype.SLUTTBEREGNING_INDEKSREGULERING,
-                            it.grunnlagsreferanseListe,
-                        ).isNotEmpty()
-                val erDirekteAvslag = søknadsbarn.avslag != null
-                OpprettPeriodeRequestDto(
-                    periode = it.periode,
-                    beløp = if (erDirekteAvslag || ikkeOmsorgForBarnet || barnetErSelvforsørget) null else it.resultat.beløp,
-                    valutakode = if (ikkeOmsorgForBarnet) null else "NOK",
-                    resultatkode =
-                        if (ikkeOmsorgForBarnet) {
-                            Resultatkode.IKKE_OMSORG_FOR_BARNET.name
-                        } else if (erResultatIngenEndringUnderGrense) {
-                            Resultatkode.INGEN_ENDRING_UNDER_GRENSE.name
-                        } else if (erIndeksregulering) {
-                            Resultatkode.INDEKSREGULERING.name
-                        } else if (erDirekteAvslag) {
-                            søknadsbarn.avslag!!.name
-                        } else {
-                            Resultatkode.BEREGNET_BIDRAG.name
-                        },
-                    grunnlagReferanseListe = it.grunnlagsreferanseListe,
+
+        beregnetBarnebidragPeriodeListe.map {
+            val resultatSluttberegning = grunnlagListe.toList().resultatSluttberegning(it.grunnlagsreferanseListe)
+            val ikkeOmsorgForBarnet = resultatSluttberegning == Resultatkode.IKKE_OMSORG
+            val barnetErSelvforsørget = resultatSluttberegning == Resultatkode.BARNET_ER_SELVFORSØRGET
+            val erResultatIngenEndringUnderGrense =
+                grunnlagListe.toList().erResultatEndringUnderGrenseForPeriode(
+                    it.periode,
+                    søknadsbarn.tilGrunnlagsreferanse(),
                 )
-            }
+            val erIndeksregulering =
+                grunnlagListe
+                    .toList()
+                    .filtrerBasertPåEgenReferanser(
+                        Grunnlagstype.SLUTTBEREGNING_INDEKSREGULERING,
+                        it.grunnlagsreferanseListe,
+                    ).isNotEmpty()
+            val erDirekteAvslag = søknadsbarn.avslag != null
+            OpprettPeriodeRequestDto(
+                periode = it.periode,
+                beløp = if (erDirekteAvslag || ikkeOmsorgForBarnet || barnetErSelvforsørget) null else it.resultat.beløp,
+                valutakode = if (ikkeOmsorgForBarnet) null else "NOK",
+                resultatkode =
+                    if (ikkeOmsorgForBarnet) {
+                        Resultatkode.IKKE_OMSORG_FOR_BARNET.name
+                    } else if (erResultatIngenEndringUnderGrense) {
+                        Resultatkode.INGEN_ENDRING_UNDER_GRENSE.name
+                    } else if (erIndeksregulering) {
+                        Resultatkode.INDEKSREGULERING.name
+                    } else if (erDirekteAvslag) {
+                        søknadsbarn.avslag!!.name
+                    } else {
+                        Resultatkode.BEREGNET_BIDRAG.name
+                    },
+                grunnlagReferanseListe = it.grunnlagsreferanseListe,
+            )
         }
 
     val opphørPeriode =

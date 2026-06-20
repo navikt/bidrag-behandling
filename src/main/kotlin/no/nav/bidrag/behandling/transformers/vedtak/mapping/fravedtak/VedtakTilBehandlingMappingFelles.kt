@@ -183,12 +183,16 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
     ResultatBidragberegningDto(
         minstEnPeriodeHarSlåttUtTilFF = grunnlagListe.harSlåttUtTilForholdsmessigFordeling(),
         perioderSlåttUtTilFF = grunnlagListe.perioderSlåttUtTilFF(),
-        kanFatteVedtakForRevurderingsbarn = grunnlagListe.perioderSlåttUtTilFFForRevurderingsbarn().isNotEmpty(),
+        kanFatteVedtakForRevurderingsbarn =
+            stønadsendringListe.any {
+                val person = grunnlagListe.hentPerson(it.kravhaver.verdi, it.type) ?: return@any false
+                !person.personObjekt.delAvOpprinneligBehandling
+            },
         skalFatteVedtakForRevurderingsbarn =
             grunnlagListe
                 .hentBehandlingDetaljer()
                 ?.fatteVedtakRevurderingsbarn
-                ?.foreslåttFatteVedtak ?: grunnlagListe.løpendePeriodeSlåttUtTilFFForRevurderingsbarn(),
+                ?.foreslåttFatteVedtak ?: true,
         perioderSlåttUtTilFFRevurderingsbarn = grunnlagListe.perioderSlåttUtTilFFForRevurderingsbarn(),
         manueltOverstyrtFatteVedtakRevurderingsbarnBegrunnelse =
             grunnlagListe

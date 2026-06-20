@@ -26,6 +26,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.hentPersonMedIdent
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilVedtakDto
+import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.beregn.barnebidrag.BeregnGebyrApi
 import no.nav.bidrag.beregn.barnebidrag.service.external.VedtakService
 import no.nav.bidrag.beregn.barnebidrag.utils.tilDto
@@ -896,6 +897,9 @@ class BehandlingTilVedtakMapping(
     }
 
     private fun Behandling.byggOpprettVedtakRequestBidrag(request: FatteVedtakRequestDto? = null): OpprettVedtakRequestDto {
+        if (erIForholdsmessigFordeling && søknadsbarn.any { it.erRevurderingsbarn } && request?.fatteVedtakRevurderingsbarn == null) {
+            ugyldigForespørsel("Mangler informasjon om det skal fattes vedtak for revurderingsbarn")
+        }
         val behandlingSaker = saker.associateWith { sakConsumer.hentSak(it) }
         val beregning = beregningService.beregneBidrag(id!!)
 
@@ -934,9 +938,9 @@ class BehandlingTilVedtakMapping(
                     .filter { it.type != Grunnlagstype.VIRKNINGSTIDSPUNKT }
             val barnMedAvvistRevurdering =
                 beregning
+                    .filter { it.barn.erRevurderingsbarn }
                     .filter {
-                        (it.erAvvistRevurdering && !(it.barn.erRevurderingsbarn && skalFatteVedtakForRevurderingsbarn)) ||
-                            (it.barn.erRevurderingsbarn && !skalFatteVedtakForRevurderingsbarn)
+                        (it.erAvvistRevurdering || !skalFatteVedtakForRevurderingsbarn)
                     }.map { b -> b.barn }
             val grunnlagListeVedtak =
                 byggGrunnlagForVedtak(stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>)
@@ -951,11 +955,8 @@ class BehandlingTilVedtakMapping(
                 stønadsendringListe =
                     stønadsendringPerioder.map { periode ->
                         val sak = behandlingSaker.getValue(periode.barn.saksnummer)
-                        val erRevurderingsbarnMedFatteVedtak =
-                            periode.barn.erRevurderingsbarn && skalFatteVedtakForRevurderingsbarn
                         val erAvvisning =
-                            (!erRevurderingsbarnMedFatteVedtak && periode.perioder.isEmpty()) ||
-                                periode.barn.avslag?.erAvvisning() == true ||
+                            periode.barn.avslag?.erAvvisning() == true ||
                                 barnMedAvvistRevurdering.any { periode.barn.erSammeRolle(it.ident!!.verdi, it.stønadstype) }
                         val erAvslag = periode.barn.avslag != null
 
