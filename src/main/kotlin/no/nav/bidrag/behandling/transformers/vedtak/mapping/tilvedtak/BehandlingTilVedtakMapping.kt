@@ -919,7 +919,7 @@ class BehandlingTilVedtakMapping(
         val behandling = this
         mapper.run {
             val skalFatteVedtakForRevurderingsbarn =
-                request?.fatteVedtakRevurderingsbarn != null && request.fatteVedtakRevurderingsbarn.skalFatteVedtakForRevurderingsbarn
+                request?.fatteVedtakRevurderingsbarn == null || request.fatteVedtakRevurderingsbarn.skalFatteVedtakForRevurderingsbarn
             val stønadsendringPerioder =
                 beregning.map {
                     it.resultat.byggStønadsendringerForVedtak(
