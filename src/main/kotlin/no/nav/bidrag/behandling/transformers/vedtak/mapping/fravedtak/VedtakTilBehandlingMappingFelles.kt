@@ -117,6 +117,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetalj
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
 import no.nav.bidrag.transport.behandling.vedtak.response.finnStønadsendring
+import no.nav.bidrag.transport.behandling.vedtak.response.gjelderRevurderingsbarn
 import no.nav.bidrag.transport.behandling.vedtak.response.løpteBidragEllerForskuddFraVirkningstidspunkt
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.felles.commonObjectmapper
@@ -222,7 +223,10 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                                 referanse = barnGrunnlag?.referanse ?: "",
                                 erRevurderingsbarn = barn?.delAvOpprinneligBehandling != null && barn?.delAvOpprinneligBehandling == false,
                             ),
-                        erAvvistRevurdering = erVedtakAvvistRevurderingsøknad(),
+                        erAvvistRevurdering =
+                            gjelderRevurderingsbarn(
+                                stønadsendring,
+                            ) && stønadsendring.beslutning == Beslutningstype.AVVIST,
                         erAvvisning = stønadsendring.beslutning == Beslutningstype.AVVIST,
                         indeksår = stønadsendring.førsteIndeksreguleringsår,
                         delvedtak = hentDelvedtak(stønadsendring),
