@@ -17,6 +17,18 @@ import java.util.Optional
 
 interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandlingRepository {
 
+    @Modifying(flushAutomatically = true)
+    @Query(
+        """update behandling b set metadata = coalesce(b.metadata, hstore('')) || hstore(:metadataKey, :jsonValue) where b.id = :behandlingId and b.deleted = false""",
+        nativeQuery = true,
+    )
+    fun lagreMetadataObjekt(
+        @Param("behandlingId") behandlingId: Long,
+        @Param("metadataKey") metadataKey: String,
+        @Param("jsonValue") jsonValue: String,
+    )
+
+
 
     @Modifying
     @Query("update behandling set metadata = coalesce(metadata, hstore('')) || hstore(array['laster_grunnlag_async_status', 'laster_grunnlag_async_tidspunkt'], array['BESTILT', now()::text]) where id = :id and deleted = false", nativeQuery = true)

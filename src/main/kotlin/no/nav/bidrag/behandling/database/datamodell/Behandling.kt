@@ -214,6 +214,13 @@ open class Behandling(
     @Transient
     var historiskeStønader: MutableSet<StønadDto> = mutableSetOf(),
 ) {
+    fun hentEllerInitaliserMetadata(): BehandlingMetadataDo {
+        if (metadata == null) {
+            metadata = BehandlingMetadataDo()
+        }
+        return metadata!!
+    }
+
     fun sammeBarnInkludertIBehandlingSom18ÅrOgOrdinærBidrag(ident: String): Boolean {
         val bidrag = roller.any { it.ident == ident && it.stønadstype == Stønadstype.BIDRAG }
         val bidrag18År = roller.any { it.ident == ident && it.stønadstype == Stønadstype.BIDRAG18AAR }

@@ -6,6 +6,7 @@ import io.hypersistence.utils.hibernate.type.json.internal.JacksonUtil
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Converter
 import no.nav.bidrag.behandling.config.UnleashFeatures
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagDetaljer.Companion.lasterGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.tilÅrsakstype
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
@@ -14,6 +15,7 @@ import no.nav.bidrag.behandling.transformers.toLocalDateTime
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
+import no.nav.bidrag.transport.behandling.felles.grunnlag.FatteVedtakRevurderingsbarn
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.hibernate.engine.spi.SessionFactoryImplementor
 import org.hibernate.engine.spi.SharedSessionContractImplementor
@@ -47,6 +49,8 @@ enum class LasterGrunnlagAsyncStatus {
 
 class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
     companion object {
+        const val FATTE_VEDTAK_REVURDERINGSBARN_INFORMASJON = "fatte_vedtak_revurderingsbarn_informasjon"
+
         fun from(initValue: Map<String, String> = hashMapOf()): BehandlingMetadataDo {
             val dokmap = BehandlingMetadataDo()
             dokmap.putAll(initValue)
@@ -62,6 +66,7 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
     private val klagePåBisysVedtak = "klage_på_bisys_vedtak"
     private val lasterGrunnlagAsync = "laster_grunnlag_async_tidspunkt"
     private val lasterGrunnlagAsyncStatus = "laster_grunnlag_async_status"
+    private val fatteVedtakRevurderingsbarnInformasjon = FATTE_VEDTAK_REVURDERINGSBARN_INFORMASJON
 
     fun bestillLastGrunnlagAsync() {
         update(lasterGrunnlagAsync, LocalDateTime.now().toString())
@@ -80,6 +85,33 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
             return
         }
         update(lasterGrunnlagAsyncStatus, LasterGrunnlagAsyncStatus.FERDIG.name)
+    }
+
+    fun hentFatteVedtakRevurderingsbarnInformasjon(): FatteVedtakRevurderingsbarn? =
+        try {
+            get(fatteVedtakRevurderingsbarnInformasjon)?.let {
+                commonObjectmapper.readValue<FatteVedtakRevurderingsbarn>(it)
+            }
+        } catch (e: Exception) {
+            null
+        }
+
+    fun lagreFatteVedtakRevurderingsbarnInformasjon(
+        behandlingId: Long,
+        behandlingRepository: BehandlingRepository,
+        info: FatteVedtakRevurderingsbarn,
+    ) {
+        try {
+            val jsonValue = commonObjectmapper.writeValueAsString(info)
+            update(fatteVedtakRevurderingsbarnInformasjon, jsonValue)
+            behandlingRepository.lagreMetadataObjekt(
+                behandlingId = behandlingId,
+                metadataKey = fatteVedtakRevurderingsbarnInformasjon,
+                jsonValue = jsonValue,
+            )
+        } catch (e: Exception) {
+            // Handle exception if needed
+        }
     }
 
     fun lasterGrunnlagDetaljer(): LasterGrunnlagDetaljer {

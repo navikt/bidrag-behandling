@@ -364,6 +364,7 @@ class VedtakService(
         return vedtakTilBehandlingMapping.run { vedtak.tilBeregningResultatSærbidrag() }
     }
 
+    @Transactional
     fun fatteVedtak(
         behandlingId: Long,
         request: FatteVedtakRequestDto? = null,
@@ -698,6 +699,7 @@ class VedtakService(
         }
     }
 
+    @Transactional
     fun fatteVedtakBidrag(
         behandling: Behandling,
         request: FatteVedtakRequestDto?,
@@ -717,6 +719,16 @@ class VedtakService(
         secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $vedtakRequest" }
 
         val response = fatteVedtak(vedtakRequest, simuler)
+        request?.fatteVedtakRevurderingsbarn?.let {
+            behandling
+                .hentEllerInitaliserMetadata()
+                .lagreFatteVedtakRevurderingsbarnInformasjon(
+                    behandlingId = behandling.id!!,
+                    behandlingRepository = behandlingRepository!!,
+                    info = it,
+                )
+        }
+
         vedtakRequestDtos.add(response.vedtaksid to vedtakRequest)
         if (!simuler) {
             behandlingService.oppdaterDelvedtakFattetStatus(

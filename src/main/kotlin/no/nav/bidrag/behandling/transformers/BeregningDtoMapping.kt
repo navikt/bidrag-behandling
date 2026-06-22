@@ -1720,16 +1720,11 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
             sluttberegning.grunnlagsreferanseListe,
         )
     val sumBidragTilBeregningSjekkMotEvnesprekk =
-        sumBidragTilFordelingGrunnlagsliste.firstOrNull {
-            !it.innhold.erKompletteGrunnlagForAlleLøpendeBidrag
-        }
+        sumBidragTilFordelingGrunnlagsliste.firstOrNull { it.referanse.endsWith("_2A") }
 
     val sumBidragTilBeregning =
         // Hvis lista er lengre enn 1 så betyr det at det er opprettet FF og at det finnes en bidrag til fordeling for sjekk mot beløpshistorikk og en annen del for endelig beregning av R-barn og søknadsbarn
-        sumBidragTilFordelingGrunnlagsliste.firstOrNull {
-            sumBidragTilFordelingGrunnlagsliste.size <= 1 ||
-                it.innhold.erKompletteGrunnlagForAlleLøpendeBidrag
-        }
+        sumBidragTilFordelingGrunnlagsliste.firstOrNull { !it.referanse.endsWith("_2A") }
             ?: return null
 
     val bidragTilFordeling =
@@ -1744,9 +1739,10 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
         ).firstOrNull() ?: return null
     return ForholdsmessigFordelingBeregningsdetaljer(
         beregningFordelingAvBidragSjekkEvnesprekk =
-            sumBidragTilBeregningSjekkMotEvnesprekk?.let {
-                byggForholdsmessigFordelingBeregningSumFordeling(it)
-            },
+            sumBidragTilBeregningSjekkMotEvnesprekk
+                ?.let {
+                    byggForholdsmessigFordelingBeregningSumFordeling(it)
+                },
         beregningFordelingAvBidrag = byggForholdsmessigFordelingBeregningSumFordeling(sumBidragTilBeregning),
         erKompletteGrunnlagForAlleLøpendeBidrag = sumBidragTilBeregning.innhold.erKompletteGrunnlagForAlleLøpendeBidrag,
         bidragTilFordelingForBarnet = bidragTilFordeling.innhold.bidragTilFordeling,
