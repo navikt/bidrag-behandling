@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.POJONode
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegningPeriodeDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
@@ -14,6 +15,7 @@ import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
@@ -26,6 +28,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.YearMonth
 
 class BeregningDtoMappingTest {
     @Test
@@ -112,6 +115,33 @@ class BeregningDtoMappingTest {
                     resultatKode shouldBe Resultatkode.BARNETS_INNTEKT
                 }
             }
+        }
+    }
+
+    @Test
+    fun `skal markere siste periode etter sortering`() {
+        val perioder =
+            listOf(
+                ResultatBarnebidragsberegningPeriodeDto(
+                    periode = ÅrMånedsperiode(YearMonth.of(2024, 5), null),
+                    vedtakstype = Vedtakstype.ENDRING,
+                    resultatKode = Resultatkode.REDUSERT_FORSKUDD_50_PROSENT,
+                ),
+                ResultatBarnebidragsberegningPeriodeDto(
+                    periode = ÅrMånedsperiode(YearMonth.of(2024, 1), null),
+                    vedtakstype = Vedtakstype.ENDRING,
+                    resultatKode = Resultatkode.REDUSERT_FORSKUDD_50_PROSENT,
+                ),
+            )
+
+        val markertePerioder = perioder.sortedBy { it.periode.fom }.markerSistePeriode()
+
+        assertSoftly(markertePerioder) {
+            shouldHaveSize(2)
+            this[0].periode.fom shouldBe YearMonth.of(2024, 1)
+            this[0].erSistePeriode shouldBe false
+            this[1].periode.fom shouldBe YearMonth.of(2024, 5)
+            this[1].erSistePeriode shouldBe true
         }
     }
 

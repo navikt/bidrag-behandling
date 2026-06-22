@@ -298,6 +298,7 @@ data class DelvedtakDto(
 
 data class ResultatBarnebidragsberegningPeriodeDto(
     val periode: ÅrMånedsperiode,
+    val erSistePeriode: Boolean = false,
     val ugyldigBeregning: UgyldigResultatPeriode? = null,
     val aldersjusteringDetaljer: AldersjusteringDetaljerGrunnlag? = null,
     val underholdskostnad: BigDecimal = BigDecimal(0),

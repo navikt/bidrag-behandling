@@ -2,11 +2,13 @@ package no.nav.bidrag.behandling.service
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.maps.shouldContainKey
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo.Companion.FATTE_VEDTAK_REVURDERINGSBARN_INFORMASJON
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.utils.testdata.erstattVariablerITestFil
@@ -56,6 +58,8 @@ class VedtakserviceBidragRevurderingsbarnTest : CommonVedtakTilBehandlingTest() 
         every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns OpprettVedtakResponseDto(1, emptyList())
 
         vedtakService.fatteVedtak(behandling.id!!, request)
+
+        behandling.metadata?.shouldContainKey(FATTE_VEDTAK_REVURDERINGSBARN_INFORMASJON)
 
         assertSoftly(opprettVedtakSlot.captured.stønadsendringListe) {
             shouldHaveSize(1)

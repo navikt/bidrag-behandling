@@ -382,6 +382,7 @@ fun opprettIndeksreguleringsperioder(
             )
         } + perioder
     ).sortedBy { it.periode.fom }
+        .markerSistePeriode()
 }
 
 fun opprettAldersjusteringPerioder(resultat: ResultatBidragsberegningBarn): List<ResultatBarnebidragsberegningPeriodeDto> {
@@ -442,6 +443,41 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                         (resultat.resultat.grunnlagListe.toSet() + grunnlagslisteDelvedtak).toList()
                     val aldersjusteringDetaljer = grunnlagsListe.finnAldersjusteringDetaljerGrunnlag(resultat.barn.referanse)
 
+                    val perioder =
+                        if (aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert) {
+                            listOf(
+                                ResultatBarnebidragsberegningPeriodeDto(
+                                    periode = aldersjusteringDetaljer.periode,
+                                    vedtakstype = Vedtakstype.ALDERSJUSTERING,
+                                    resultatKode = null,
+                                    aldersjusteringDetaljer = aldersjusteringDetaljer,
+                                ),
+                            )
+                        } else {
+                            resultat.resultat.beregnetBarnebidragPeriodeListe
+                                .parallelStream()
+                                .map {
+                                    //
+                                    val avslagskode = if (it.resultat.beløp == null) resultat.avslagskode else null
+                                    grunnlagsListe
+                                        .byggResultatBidragsberegning(
+                                            it.periode,
+                                            it.resultat.beløp,
+                                            avslagskode,
+                                            it.grunnlagsreferanseListe,
+                                            resultat.ugyldigBeregning,
+                                            grunnlagsListe.erResultatEndringUnderGrenseForPeriode(
+                                                it.periode,
+                                                resultat.barn.referanse,
+                                                it.grunnlagsreferanseListe,
+                                            ),
+                                            vedtakstype,
+                                            resultat.barn.ident!!,
+                                        ).copy()
+                                }.toList()
+                                .sortedBy { it.periode.fom }
+                                .markerSistePeriode()
+                        }
                     ResultatBidragsberegningBarnDto(
                         barn = resultat.barn,
                         innkrevesFraDato = resultat.innkrevesFraDato,
@@ -474,38 +510,7 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                                 null
                             },
                         delvedtak = delvedtakListe,
-                        perioder =
-                            if (aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert) {
-                                listOf(
-                                    ResultatBarnebidragsberegningPeriodeDto(
-                                        periode = aldersjusteringDetaljer.periode,
-                                        vedtakstype = Vedtakstype.ALDERSJUSTERING,
-                                        resultatKode = null,
-                                        aldersjusteringDetaljer = aldersjusteringDetaljer,
-                                    ),
-                                )
-                            } else {
-                                resultat.resultat.beregnetBarnebidragPeriodeListe
-                                    .parallelStream()
-                                    .map {
-                                        val avslagskode = if (it.resultat.beløp == null) resultat.avslagskode else null
-                                        grunnlagsListe.byggResultatBidragsberegning(
-                                            it.periode,
-                                            it.resultat.beløp,
-                                            avslagskode,
-                                            it.grunnlagsreferanseListe,
-                                            resultat.ugyldigBeregning,
-                                            grunnlagsListe.erResultatEndringUnderGrenseForPeriode(
-                                                it.periode,
-                                                resultat.barn.referanse,
-                                                it.grunnlagsreferanseListe,
-                                            ),
-                                            vedtakstype,
-                                            resultat.barn.ident!!,
-                                        )
-                                    }.toList()
-                                    .sortedBy { it.periode.fom }
-                            },
+                        perioder = perioder,
                     )
                 }.toList()
                 .sortedBy { it.barn.fødselsdatoSortering },
@@ -661,6 +666,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                             }
                         }.toList()
                         .sortedBy { it.periode.fom }
+                        .markerSistePeriode()
                 }
 
             val sistePeriode =
@@ -677,6 +683,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                     opprettPerioder() +
                         opprettAldersjusteringPerioder(resultat)
                 ).sortedBy { it.periode.fom }
+                    .markerSistePeriode()
             DelvedtakDto(
                 type = rv.vedtakstype,
                 delvedtak = rv.delvedtak,
@@ -689,6 +696,11 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                 perioder = if (erEndeligVedtak) opprettIndeksreguleringsperioder(resultat, perioder) else perioder,
             )
         }?.toList() ?: emptyList()
+
+fun List<ResultatBarnebidragsberegningPeriodeDto>.markerSistePeriode(): List<ResultatBarnebidragsberegningPeriodeDto> =
+    mapIndexed { index, periode ->
+        periode.copy(erSistePeriode = index == lastIndex)
+    }
 
 fun List<GrunnlagDto>.finnDelberegningSjekkGrensePeriodeOgBarn(
     periode: ÅrMånedsperiode,
