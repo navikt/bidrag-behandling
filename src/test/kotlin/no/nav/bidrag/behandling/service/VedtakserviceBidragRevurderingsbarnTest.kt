@@ -8,6 +8,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo.Companion.FATTE_VEDTAK_REVURDERINGSBARN_INFORMASJON
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
@@ -22,6 +23,7 @@ import no.nav.bidrag.behandling.utils.testdata.opprettAlleAktiveGrunnlagFraFil
 import no.nav.bidrag.behandling.utils.testdata.opprettGyldigBehandlingForBeregningOgVedtak
 import no.nav.bidrag.behandling.utils.testdata.opprettSakForBehandling
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
+import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.behandling.utils.testdata.testdataBarnBm
 import no.nav.bidrag.behandling.utils.testdata.testdataHusstandsmedlem1
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
@@ -29,6 +31,7 @@ import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
+import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BehandlingDetaljerGrunnlag
@@ -62,8 +65,11 @@ class VedtakserviceBidragRevurderingsbarnTest : CommonVedtakTilBehandlingTest() 
         behandling.metadata?.shouldContainKey(FATTE_VEDTAK_REVURDERINGSBARN_INFORMASJON)
 
         assertSoftly(opprettVedtakSlot.captured.stønadsendringListe) {
-            shouldHaveSize(1)
-            first().beslutning shouldBe Beslutningstype.AVVIST
+            shouldHaveSize(2)
+            val seSøknadsbarn = it.find { it.kravhaver.verdi == testdataBarn1.ident }!!
+            seSøknadsbarn.beslutning shouldBe Beslutningstype.ENDRING
+            val seRevurderingsbarn = it.find { it.kravhaver.verdi == testdataBarn2.ident }!!
+            seRevurderingsbarn.beslutning shouldBe Beslutningstype.ENDRING
         }
     }
 
@@ -87,7 +93,7 @@ class VedtakserviceBidragRevurderingsbarnTest : CommonVedtakTilBehandlingTest() 
         vedtakService.fatteVedtak(behandling.id!!, request)
 
         assertSoftly(opprettVedtakSlot.captured.stønadsendringListe) {
-            shouldHaveSize(1)
+            shouldHaveSize(2)
             first().beslutning shouldBe Beslutningstype.ENDRING
         }
     }
@@ -113,7 +119,7 @@ class VedtakserviceBidragRevurderingsbarnTest : CommonVedtakTilBehandlingTest() 
         vedtakService.fatteVedtak(behandling.id!!, request)
 
         assertSoftly(opprettVedtakSlot.captured.stønadsendringListe) {
-            shouldHaveSize(1)
+            shouldHaveSize(2)
             first().beslutning shouldBe Beslutningstype.ENDRING
         }
 
@@ -164,7 +170,20 @@ class VedtakserviceBidragRevurderingsbarnTest : CommonVedtakTilBehandlingTest() 
             opprettGyldigBehandlingForBeregningOgVedtak(
                 generateId = true,
                 typeBehandling = TypeBehandling.BIDRAG,
+                andreBarn =
+                    listOf(
+                        testdataBarn2,
+                    ),
             )
+        val revurderingsbarn =
+            Rolle(
+                ident = testdataBarn2.ident,
+                rolletype = Rolletype.BARN,
+                behandling = behandling,
+                fødselsdato = testdataBarn2.fødselsdato,
+                id = 6,
+            )
+        behandling.roller.add(revurderingsbarn)
         behandling.leggTilSamvær(
             ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)),
             samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1,
@@ -173,6 +192,17 @@ class VedtakserviceBidragRevurderingsbarnTest : CommonVedtakTilBehandlingTest() 
         behandling.leggTilSamvær(
             ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null),
             medId = true,
+        )
+        behandling.leggTilSamvær(
+            ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)),
+            samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1,
+            barn = testdataBarn2,
+            medId = true,
+        )
+        behandling.leggTilSamvær(
+            ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null),
+            medId = true,
+            barn = testdataBarn2,
         )
         behandling.leggTilTillegsstønad(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(4), null), medId = true)
         behandling.leggTilFaktiskTilsynsutgift(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), testdataHusstandsmedlem1, medId = true)
@@ -218,6 +248,11 @@ class VedtakserviceBidragRevurderingsbarnTest : CommonVedtakTilBehandlingTest() 
             behandling.søknadsbarn.first(),
         )
         behandling.leggTilNotat(
+            "Samvær",
+            NotatType.SAMVÆR,
+            behandling.søknadsbarn[1],
+        )
+        behandling.leggTilNotat(
             "Underhold barn",
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.søknadsbarn.first(),
@@ -233,8 +268,8 @@ class VedtakserviceBidragRevurderingsbarnTest : CommonVedtakTilBehandlingTest() 
             behandling.søknadsbarn.first(),
             erDelAvBehandlingen = true,
         )
-        val barn = behandling.søknadsbarn.first()
-        barn.forholdsmessigFordeling =
+
+        revurderingsbarn.forholdsmessigFordeling =
             ForholdsmessigFordelingRolle(
                 tilhørerSak = behandling.saksnummer,
                 behandlerenhet = behandling.behandlerEnhet,

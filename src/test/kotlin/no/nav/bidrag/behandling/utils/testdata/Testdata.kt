@@ -569,6 +569,7 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
     generateId: Boolean = false,
     vedtakstype: Vedtakstype = Vedtakstype.FASTSETTELSE,
     typeBehandling: TypeBehandling = TypeBehandling.FORSKUDD,
+    andreBarn: List<TestDataPerson> = emptyList(),
 ): Behandling {
     // given
     val behandling =
@@ -584,6 +585,18 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
     behandling.innkrevingstype = Innkrevingstype.MED_INNKREVING
     behandling.roller =
         oppretteBehandlingRoller(behandling, generateId, typeBehandling != TypeBehandling.FORSKUDD, typeBehandling)
+    behandling.roller.addAll(
+        andreBarn.mapIndexed { index, person ->
+            Rolle(
+                behandling = behandling,
+                navn = person.navn,
+                ident = person.ident,
+                fødselsdato = person.fødselsdato,
+                rolletype = Rolletype.BARN,
+                id = index + 100L,
+            )
+        },
+    )
     behandling.synkSøknadsbarnVirkningstidspunkt()
 
     val husstandsmedlem =
@@ -789,19 +802,48 @@ fun opprettGyldigBehandlingForBeregningOgVedtak(
                             rolle = it,
                         )
                     }.toMutableSet()
-            husstandsmedlem.add(
-                behandling.oppretteHusstandsmedlem(
-                    if (generateId) 2 else null,
-                    testdataBarn2.ident,
-                    testdataBarn2.navn,
-                    testdataBarn2.fødselsdato,
-                    behandling.virkningstidspunkt,
-                    behandling.virkningstidspunkt!!.plusMonths(8),
-                    behandling.bidragspliktig,
-                    true,
-                    typeBehandling = typeBehandling,
-                ),
-            )
+
+            if (andreBarn.none { it.ident == testdataBarn2.ident }) {
+                husstandsmedlem.add(
+                    behandling.oppretteHusstandsmedlem(
+                        if (generateId) 2 else null,
+                        testdataBarn2.ident,
+                        testdataBarn2.navn,
+                        testdataBarn2.fødselsdato,
+                        behandling.virkningstidspunkt,
+                        behandling.virkningstidspunkt!!.plusMonths(8),
+                        behandling.bidragspliktig,
+                        true,
+                        typeBehandling = typeBehandling,
+                    ),
+                )
+            } else {
+                husstandsmedlem.add(
+                    behandling.oppretteHusstandsmedlem(
+                        if (generateId) 1 else null,
+                        testdataBarn2.ident,
+                        testdataBarn2.navn,
+                        testdataBarn2.fødselsdato,
+                        behandling.virkningstidspunkt,
+                        behandling.virkningstidspunkt!!.plusMonths(5),
+                        typeBehandling = typeBehandling,
+                    ),
+                )
+                husstandsmedlem.add(
+                    behandling.oppretteHusstandsmedlem(
+                        if (generateId) 2 else null,
+                        testdataBarnBm2.ident,
+                        testdataBarnBm2.navn,
+                        testdataBarnBm2.fødselsdato,
+                        behandling.virkningstidspunkt,
+                        behandling.virkningstidspunkt!!.plusMonths(8),
+                        behandling.bidragspliktig,
+                        true,
+                        typeBehandling = typeBehandling,
+                    ),
+                )
+            }
+
             val inntekterBp =
                 mutableSetOf(
                     Inntekt(
