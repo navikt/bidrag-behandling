@@ -4,12 +4,14 @@ import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
+import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
 import no.nav.bidrag.behandling.database.datamodell.Inntektspost
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.database.datamodell.RolleManueltOverstyrtGebyr
 import no.nav.bidrag.behandling.database.datamodell.Sivilstand
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingRolle
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
@@ -45,7 +47,6 @@ import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
 import no.nav.bidrag.behandling.transformers.harOpprettetForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.kanOpprette35C
-import no.nav.bidrag.behandling.transformers.løpendePeriodeSlåttUtTilFFForRevurderingsbarn
 import no.nav.bidrag.behandling.transformers.opprettStønadDto
 import no.nav.bidrag.behandling.transformers.perioderSlåttUtTilFF
 import no.nav.bidrag.behandling.transformers.perioderSlåttUtTilFFForRevurderingsbarn
@@ -101,6 +102,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErRefer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedIdent
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentSøknadFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
@@ -606,31 +608,67 @@ internal fun VedtakDto.hentDirekteOppgjørBeløp(kravhaver: String) =
         .find { it.type == Engangsbeløptype.DIREKTE_OPPGJØR && it.kravhaver.verdi == kravhaver }
         ?.beløp
 
-internal fun List<GrunnlagDto>.oppdaterRolleGebyr(behandling: Behandling) =
-    filtrerBasertPåEgenReferanse(Grunnlagstype.SLUTTBEREGNING_GEBYR)
-        .groupBy { it.gjelderReferanse }
-        .forEach { (gjelderReferanse, grunnlag) ->
-            val person = hentPersonMedReferanse(gjelderReferanse)!!
-            val rolle = behandling.roller.find { it.erSammeRolle(person.personIdent!!, person.stønadstype) }!!
-            rolle.harGebyrsøknad = true
-            val sluttberegning = grunnlag.first().innholdTilObjekt<SluttberegningGebyr>()
-            val manueltOverstyrtGebyr =
-                finnGrunnlagSomErReferertAv(
-                    Grunnlagstype.MANUELT_OVERSTYRT_GEBYR,
-                    grunnlag.first(),
-                ).firstOrNull()?.innholdTilObjekt<ManueltOverstyrtGebyr>()
-            rolle.gebyr =
-                GebyrRolle(
-                    manueltOverstyrtGebyr != null,
-                    sluttberegning.ilagtGebyr,
-                    manueltOverstyrtGebyr?.begrunnelse,
-                    if (manueltOverstyrtGebyr != null) {
-                        !sluttberegning.ilagtGebyr
-                    } else {
-                        sluttberegning.ilagtGebyr
-                    },
-                )
-        }
+internal fun List<GrunnlagDto>.oppdaterRolleGebyr(
+    behandling: Behandling,
+    vedtakDto: VedtakDto,
+) = filtrerBasertPåEgenReferanse(Grunnlagstype.SLUTTBEREGNING_GEBYR)
+    .groupBy { it.gjelderReferanse }
+    .forEach { (gjelderReferanse, grunnlag) ->
+        val person = hentPersonMedReferanse(gjelderReferanse)!!
+        val rolle = behandling.roller.find { it.erSammeRolle(person.personIdent!!, person.stønadstype) }!!
+        rolle.harGebyrsøknad = true
+        val gebyrSluttberegninger =
+            grunnlag.map {
+                val sluttberegningGebyr = it.innholdTilObjekt<SluttberegningGebyr>()
+                val manueltOverstyrtGebyr =
+                    finnGrunnlagSomErReferertAv(
+                        Grunnlagstype.MANUELT_OVERSTYRT_GEBYR,
+                        it,
+                    ).firstOrNull()?.innholdTilObjekt<ManueltOverstyrtGebyr>()
+                Triple(sluttberegningGebyr, manueltOverstyrtGebyr, it)
+            }
+        val (sluttberegning, manueltOverstyrtGebyr) = gebyrSluttberegninger.first()
+
+        rolle.gebyr =
+            GebyrRolle(
+                manueltOverstyrtGebyr != null,
+                sluttberegning.ilagtGebyr,
+                manueltOverstyrtGebyr?.begrunnelse,
+                if (manueltOverstyrtGebyr != null) {
+                    !sluttberegning.ilagtGebyr
+                } else {
+                    sluttberegning.ilagtGebyr
+                },
+                gebyrSøknader =
+                    gebyrSluttberegninger
+                        .mapNotNull { (sluttberegningGebyr, manueltOverstyrtGebyr, grunnlag) ->
+                            val person = hentPersonMedReferanse(grunnlag.gjelderReferanse)!!
+                            val engangsbeløp =
+                                vedtakDto.engangsbeløpListe.find { engangsbeløp ->
+                                    engangsbeløp.grunnlagReferanseListe.contains(grunnlag.referanse)
+                                } ?: vedtakDto.engangsbeløpListe.find { engangsbeløp ->
+                                    engangsbeløp.skyldner.verdi == person.personIdent
+                                } ?: return@mapNotNull null
+
+                            val søknad = hentSøknadFraGrunnlagsreferanseListe(engangsbeløp.grunnlagReferanseListe)
+                            GebyrRolleSøknad(
+                                engangsbeløp.sak.verdi,
+                                søknad?.søknadsid ?: -1,
+                                søknad?.behandlingstema?.tilStønadstype() == Stønadstype.BIDRAG18AAR,
+                                engangsbeløp.referanse,
+                                null,
+                                manueltOverstyrtGebyr?.let {
+                                    RolleManueltOverstyrtGebyr(
+                                        overstyrGebyr = true,
+                                        ilagtGebyr = it.ilagtGebyr,
+                                        begrunnelse = it.begrunnelse,
+                                        !sluttberegningGebyr.ilagtGebyr,
+                                    )
+                                },
+                            )
+                        }.toMutableSet(),
+            )
+    }
 
 internal fun List<GrunnlagDto>.mapHusstandsmedlem(
     behandling: Behandling,
