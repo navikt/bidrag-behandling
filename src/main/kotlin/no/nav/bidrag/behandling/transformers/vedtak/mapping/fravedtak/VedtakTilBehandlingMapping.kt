@@ -235,7 +235,7 @@ class VedtakTilBehandlingMapping(
         }
 
         oppdaterDirekteOppgjørBeløp(behandling, lesemodus)
-        grunnlagListe.oppdaterRolleGebyr(behandling)
+        grunnlagListe.oppdaterRolleGebyr(behandling, this)
 
         behandling.inntekter = grunnlagListe.mapInntekter(behandling, lesemodus)
         behandling.husstandsmedlem = grunnlagListe.mapHusstandsmedlem(behandling, lesemodus)
