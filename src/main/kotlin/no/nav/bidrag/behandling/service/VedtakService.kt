@@ -364,7 +364,6 @@ class VedtakService(
         return vedtakTilBehandlingMapping.run { vedtak.tilBeregningResultatSærbidrag() }
     }
 
-    @Transactional
     fun fatteVedtak(
         behandlingId: Long,
         request: FatteVedtakRequestDto? = null,
@@ -699,7 +698,6 @@ class VedtakService(
         }
     }
 
-    @Transactional
     fun fatteVedtakBidrag(
         behandling: Behandling,
         request: FatteVedtakRequestDto?,
