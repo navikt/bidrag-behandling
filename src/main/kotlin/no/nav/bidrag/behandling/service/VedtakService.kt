@@ -782,6 +782,7 @@ class VedtakService(
                 vedtakRequest.type == Vedtakstype.ALDERSJUSTERING &&
                     vedtakRequest.stønadsendringListe.all { it.beslutning == Beslutningstype.ENDRING }
             if (aldersjusteringBeregnet) {
+                behandling.vedtaksid = response.vedtaksid
                 forsendelseService.opprettForsendelseForAldersjustering(behandling)
             } else if (vedtakRequest.type != Vedtakstype.ALDERSJUSTERING) {
                 opprettNotat(behandling)
