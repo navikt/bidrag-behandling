@@ -1732,7 +1732,7 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
             sluttberegning.grunnlagsreferanseListe,
         )
     val sumBidragTilBeregningSjekkMotEvnesprekk =
-        sumBidragTilFordelingGrunnlagsliste.firstOrNull { it.referanse.endsWith("_2A") }
+        sumBidragTilFordelingGrunnlagsliste.filter { it.referanse.endsWith("_2A") }.maxByOrNull { it.innhold.periode.fom }
 
     val sumBidragTilBeregning =
         // Hvis lista er lengre enn 1 så betyr det at det er opprettet FF og at det finnes en bidrag til fordeling for sjekk mot beløpshistorikk og en annen del for endelig beregning av R-barn og søknadsbarn
