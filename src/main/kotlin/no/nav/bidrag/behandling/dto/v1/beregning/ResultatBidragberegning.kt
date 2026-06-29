@@ -199,7 +199,8 @@ data class ResultatUtførBidragsberegning(
 data class ResultatBidragsberegning(
     val perioderSlåttUtTilFF: List<ÅrMånedsperiode> = emptyList(),
     val grunnlagsliste: Set<GrunnlagDto> = emptySet(),
-    val inneholderRevurderingsbarn: Boolean = false,
+    val minstEnPerioderHarSlåttUtTilFF: Boolean = false,
+    val inneholderBeregningForRevurderingsbarn: Boolean = false,
     val vedtakstype: Vedtakstype,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
     val resultatBarn: List<ResultatBidragsberegningBarn> = emptyList(),

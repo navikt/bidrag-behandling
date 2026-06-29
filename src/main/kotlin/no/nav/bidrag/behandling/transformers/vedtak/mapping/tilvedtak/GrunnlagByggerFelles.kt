@@ -339,46 +339,48 @@ fun byggGrunnlagVirkningstidspunktResultatvedtak(
             ),
     )
 
-fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<GrunnlagDto> = emptyList()) =
-    if (erBidrag()) {
-        søknadsbarn
-            .map { sb ->
-                val søknadsbarnGrunnlag = grunnlagFraBeregning.hentPerson(sb.ident) ?: sb.tilGrunnlagPerson()
-                val årsak = sb.årsak ?: årsak
-                val avslag = sb.avslag ?: avslag
-                GrunnlagDto(
-                    referanse = opprettGrunnlagsreferanseVirkningstidspunkt(sb),
-                    type = Grunnlagstype.VIRKNINGSTIDSPUNKT,
-                    gjelderBarnReferanse = søknadsbarnGrunnlag.referanse,
-                    innhold =
-                        POJONode(
-                            VirkningstidspunktGrunnlag(
-                                virkningstidspunkt = sb.virkningstidspunkt ?: virkningstidspunkt!!,
-                                opphørsdato = sb.opphørsdato,
-                                årsak = årsak,
-                                beregnTil = sb.beregnTil,
-                                beregnTilDato = finnBeregnTilDatoBehandling(sb).toYearMonth(),
-                                avslag = (årsak == null).ifTrue { avslag },
-                            ),
-                        ),
-                )
-            }.toSet()
-    } else {
-        setOf(
+fun Behandling.byggGrunnlagVirkningsttidspunkt(
+    søknadsbarn: List<Rolle> = this.søknadsbarn,
+    grunnlagFraBeregning: List<GrunnlagDto> = emptyList(),
+) = if (erBidrag()) {
+    søknadsbarn
+        .map { sb ->
+            val søknadsbarnGrunnlag = grunnlagFraBeregning.hentPerson(sb.ident) ?: sb.tilGrunnlagPerson()
+            val årsak = sb.årsak ?: årsak
+            val avslag = sb.avslag ?: avslag
             GrunnlagDto(
-                referanse = opprettGrunnlagsreferanseVirkningstidspunkt(),
+                referanse = opprettGrunnlagsreferanseVirkningstidspunkt(sb),
                 type = Grunnlagstype.VIRKNINGSTIDSPUNKT,
+                gjelderBarnReferanse = søknadsbarnGrunnlag.referanse,
                 innhold =
                     POJONode(
                         VirkningstidspunktGrunnlag(
-                            virkningstidspunkt = virkningstidspunkt!!,
+                            virkningstidspunkt = sb.virkningstidspunkt ?: virkningstidspunkt!!,
+                            opphørsdato = sb.opphørsdato,
                             årsak = årsak,
+                            beregnTil = sb.beregnTil,
+                            beregnTilDato = finnBeregnTilDatoBehandling(sb).toYearMonth(),
                             avslag = (årsak == null).ifTrue { avslag },
                         ),
                     ),
-            ),
-        )
-    }
+            )
+        }.toSet()
+} else {
+    setOf(
+        GrunnlagDto(
+            referanse = opprettGrunnlagsreferanseVirkningstidspunkt(),
+            type = Grunnlagstype.VIRKNINGSTIDSPUNKT,
+            innhold =
+                POJONode(
+                    VirkningstidspunktGrunnlag(
+                        virkningstidspunkt = virkningstidspunkt!!,
+                        årsak = årsak,
+                        avslag = (årsak == null).ifTrue { avslag },
+                    ),
+                ),
+        ),
+    )
+}
 
 fun Behandling.byggGrunnlagNotaterDirekteAvslag(): Set<GrunnlagDto> =
     byggGrunnlagBegrunnelseVirkningstidspunkt() +

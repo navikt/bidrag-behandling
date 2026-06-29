@@ -589,6 +589,7 @@ class BehandlingService(
             .filter { it.stonadstype != null }
             .map { ÅpenBehandling(it.stonadstype!!, it.id!!, emptyList()) }
 
+    @Transactional(readOnly = true)
     fun hentBehandlingById(behandlingId: Long): Behandling {
         val behandling =
             behandlingRepository

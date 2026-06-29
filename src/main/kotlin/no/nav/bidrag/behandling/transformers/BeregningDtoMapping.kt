@@ -53,6 +53,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregn
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnInnkrevesFraDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnSkalInnkrevesPeriode
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
+import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.barnebidragBeregningGrunnlagsreferanseSjekkEvnesprekkEtterFFPostfix
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvslag
@@ -421,7 +422,7 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
         ugyldigBeregning = ugyldigBeregning,
         minstEnPeriodeHarSlåttUtTilFF = grunnlagslisteList.harSlåttUtTilForholdsmessigFordeling(),
         skalFatteVedtakForRevurderingsbarn = resultatBarn.any { it.barn.erRevurderingsbarn && it.fatteVedtakAnbefalt },
-        kanFatteVedtakForRevurderingsbarn = inneholderRevurderingsbarn,
+        kanFatteVedtakForRevurderingsbarn = inneholderBeregningForRevurderingsbarn,
         perioderSlåttUtTilFF = grunnlagslisteList.perioderSlåttUtTilFF(),
         perioderSlåttUtTilFFRevurderingsbarn = grunnlagslisteList.perioderSlåttUtTilFFForRevurderingsbarn(),
         resultatBarn =
@@ -1732,11 +1733,16 @@ fun List<GrunnlagDto>.byggGrunnlagForholdsmessigFordeling(
             sluttberegning.grunnlagsreferanseListe,
         )
     val sumBidragTilBeregningSjekkMotEvnesprekk =
-        sumBidragTilFordelingGrunnlagsliste.filter { it.referanse.endsWith("_2A") }.maxByOrNull { it.innhold.periode.fom }
+        sumBidragTilFordelingGrunnlagsliste
+            .filter {
+                it.referanse.endsWith(barnebidragBeregningGrunnlagsreferanseSjekkEvnesprekkEtterFFPostfix)
+            }.maxByOrNull { it.innhold.periode.fom }
 
     val sumBidragTilBeregning =
         // Hvis lista er lengre enn 1 så betyr det at det er opprettet FF og at det finnes en bidrag til fordeling for sjekk mot beløpshistorikk og en annen del for endelig beregning av R-barn og søknadsbarn
-        sumBidragTilFordelingGrunnlagsliste.firstOrNull { !it.referanse.endsWith("_2A") }
+        sumBidragTilFordelingGrunnlagsliste.firstOrNull {
+            !it.referanse.endsWith(barnebidragBeregningGrunnlagsreferanseSjekkEvnesprekkEtterFFPostfix)
+        }
             ?: return null
 
     val bidragTilFordeling =

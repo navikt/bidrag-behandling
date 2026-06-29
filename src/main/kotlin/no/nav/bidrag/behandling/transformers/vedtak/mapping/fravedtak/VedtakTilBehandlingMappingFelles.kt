@@ -189,7 +189,7 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
         kanFatteVedtakForRevurderingsbarn =
             stønadsendringListe.any {
                 val person = grunnlagListe.hentPerson(it.kravhaver.verdi, it.type) ?: return@any false
-                !person.personObjekt.delAvOpprinneligBehandling
+                !person.personObjekt.delAvOpprinneligBehandling && it.beslutning == Beslutningstype.ENDRING
             },
         skalFatteVedtakForRevurderingsbarn =
             grunnlagListe

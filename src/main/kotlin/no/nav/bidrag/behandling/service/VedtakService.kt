@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
+import no.nav.bidrag.behandling.consumer.BidragVedtakConsumerLocal
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.json.FattetVedtak
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
@@ -46,6 +47,7 @@ import no.nav.bidrag.beregn.core.util.justerVedtakstidspunktVedtak
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.vedtak.BehandlingsrefKilde
 import no.nav.bidrag.domene.enums.vedtak.BeregnTil
 import no.nav.bidrag.domene.enums.vedtak.Beslutningstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
@@ -86,7 +88,7 @@ class VedtakService(
     private val virkningstidspunktService: VirkningstidspunktService,
     private val forholdsmessigFordelingService: ForholdsmessigFordelingService? = null,
     private val behandlingRepository: BehandlingRepository? = null,
-//    private val vedtakLocalConsumer: BidragVedtakConsumerLocal? = null,
+    private val vedtakLocalConsumer: BidragVedtakConsumerLocal? = null,
 ) {
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Int): Behandling? {
         try {
@@ -710,72 +712,83 @@ class VedtakService(
         }
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
 
-        val vedtakRequest = opprettFatteVedtakRequestForBidrag(behandling, request)
+        val vedtakRequester = opprettFatteVedtakRequestForBidrag(behandling, request)
         val vedtakRequestDtos: MutableList<Pair<Int, OpprettVedtakRequestDto>> = mutableListOf()
+        val vedtakResponser =
+            vedtakRequester.associate { vedtakRequest ->
+                vedtakRequest.validerGrunnlagsreferanser()
+                secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $vedtakRequest" }
+                val søknadsider =
+                    vedtakRequest.behandlingsreferanseListe
+                        .filter {
+                            it.kilde == BehandlingsrefKilde.BISYS_SØKNAD
+                        }.map { it.referanse.toLong() }
+                vedtakRequest.validerGrunnlagsreferanser()
+                secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $vedtakRequest" }
 
-        vedtakRequest.validerGrunnlagsreferanser()
-        secureLogger.info { "Fatter vedtak for behandling ${behandling.id} med forespørsel $vedtakRequest" }
+                val response = fatteVedtak(vedtakRequest, simuler)
+                request?.fatteVedtakRevurderingsbarn?.let {
+                    behandling
+                        .hentEllerInitaliserMetadata()
+                        .lagreFatteVedtakRevurderingsbarnInformasjon(
+                            behandlingId = behandling.id!!,
+                            behandlingRepository = behandlingRepository!!,
+                            info = it,
+                        )
+                }
 
-        val response = fatteVedtak(vedtakRequest, simuler)
-        request?.fatteVedtakRevurderingsbarn?.let {
-            behandling
-                .hentEllerInitaliserMetadata()
-                .lagreFatteVedtakRevurderingsbarnInformasjon(
-                    behandlingId = behandling.id!!,
-                    behandlingRepository = behandlingRepository!!,
-                    info = it,
+                vedtakRequestDtos.add(response.vedtaksid to vedtakRequest)
+                if (!simuler) {
+                    behandlingService.oppdaterDelvedtakFattetStatus(
+                        behandlingsid = behandling.id!!,
+                        fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
+                        resultat =
+                            FattetVedtak(
+                                vedtaksid = response.vedtaksid,
+                                vedtakstype = vedtakRequest.type,
+                                referanse = vedtakRequest.unikReferanse ?: "ukjent",
+                            ),
+                    )
+                    val aldersjusteringBeregnet =
+                        vedtakRequest.type == Vedtakstype.ALDERSJUSTERING &&
+                            vedtakRequest.stønadsendringListe.all { it.beslutning == Beslutningstype.ENDRING }
+                    if (aldersjusteringBeregnet) {
+                        forsendelseService.opprettForsendelseForAldersjustering(behandling)
+                    } else if (vedtakRequest.type != Vedtakstype.ALDERSJUSTERING) {
+                        opprettNotat(behandling)
+                    }
+                }
+
+                if (vedtakRequest.type == Vedtakstype.ALDERSJUSTERING && !simuler) {
+                    try {
+                        // Venter i 2 sekunder for å sikre at vedtaksbro har lest inn vedtaket og har oppdatert saksloggen
+                        Thread.sleep(2000)
+                    } catch (ie: InterruptedException) {
+                        Thread.currentThread().interrupt()
+                        LOGGER.warn(ie) { "Tråd avbrutt under venting" }
+                    }
+                }
+
+                LOGGER.info {
+                    "Fattet vedtak for behandling ${behandling.id} med ${
+                        behandling.årsak?.let { "årsakstype $it" }
+                            ?: "avslagstype ${behandling.avslag}"
+                    } med vedtaksid ${response.vedtaksid}"
+                }
+
+                fatteInnkrevingsvedtak(
+                    behandling,
+                    request?.enhet,
+                    response.vedtaksid,
+                    vedtakRequest,
+                    vedtakRequestDtos,
+                    simuler,
                 )
-        }
-
-        vedtakRequestDtos.add(response.vedtaksid to vedtakRequest)
-        if (!simuler) {
-            behandlingService.oppdaterDelvedtakFattetStatus(
-                behandlingsid = behandling.id!!,
-                fattetAvEnhet = request?.enhet ?: behandling.behandlerEnhet,
-                resultat =
-                    FattetVedtak(
-                        vedtaksid = response.vedtaksid,
-                        vedtakstype = vedtakRequest.type,
-                        referanse = vedtakRequest.unikReferanse ?: "ukjent",
-                    ),
-            )
-            val aldersjusteringBeregnet =
-                vedtakRequest.type == Vedtakstype.ALDERSJUSTERING &&
-                    vedtakRequest.stønadsendringListe.all { it.beslutning == Beslutningstype.ENDRING }
-            if (aldersjusteringBeregnet) {
-                forsendelseService.opprettForsendelseForAldersjustering(behandling)
-            } else if (vedtakRequest.type != Vedtakstype.ALDERSJUSTERING) {
-                opprettNotat(behandling)
+                søknadsider to response.vedtaksid
             }
-        }
 
-        if (vedtakRequest.type == Vedtakstype.ALDERSJUSTERING && !simuler) {
-            try {
-                // Venter i 2 sekunder for å sikre at vedtaksbro har lest inn vedtaket og har oppdatert saksloggen
-                Thread.sleep(2000)
-            } catch (ie: InterruptedException) {
-                Thread.currentThread().interrupt()
-                LOGGER.warn(ie) { "Tråd avbrutt under venting" }
-            }
-        }
-        LOGGER.info {
-            "Fattet vedtak for behandling ${behandling.id} med ${
-                behandling.årsak?.let { "årsakstype $it" }
-                    ?: "avslagstype ${behandling.avslag}"
-            } med vedtaksid ${response.vedtaksid}"
-        }
-
-        val vedtaksid = response.vedtaksid
-
-        fatteInnkrevingsvedtak(
-            behandling,
-            request?.enhet,
-            vedtakRequestDtos.first().first,
-            vedtakRequestDtos.first().second,
-            vedtakRequestDtos,
-            simuler,
-        )
-
+        val vedtaksid =
+            vedtakResponser.filterKeys { it.contains(behandling.soknadsid!!) }.values.firstOrNull() ?: vedtakResponser.values.first()
         if (!simuler) {
             behandlingService.oppdaterVedtakFattetStatus(
                 behandling.id!!,
@@ -791,17 +804,17 @@ class VedtakService(
     fun opprettFatteVedtakRequestForBidrag(
         behandling: Behandling,
         request: FatteVedtakRequestDto?,
-    ): OpprettVedtakRequestDto {
+    ): List<OpprettVedtakRequestDto> {
         validering.run { behandling.validerForBeregningBidrag() }
 
         return behandlingTilVedtakMapping
             .run {
                 if (behandling.erAvslagForAlle) {
-                    behandling.byggOpprettVedtakRequestAvslagForBidrag(request?.enhet)
+                    listOf(behandling.byggOpprettVedtakRequestAvslagForBidrag(request?.enhet))
                 } else {
                     behandling.byggOpprettVedtakRequestBidragAlle(request)
                 }
-            }.let {
+            }.map {
                 val erAvvisning = it.stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST }
                 it.copy(
                     innkrevingUtsattTilDato =
@@ -867,8 +880,8 @@ class VedtakService(
         if (simuler) {
             OpprettVedtakResponseDto(opprettSimulerVedtaksid(), emptyList())
         } else {
-            vedtakConsumer!!.fatteVedtak(request)
-//            vedtakLocalConsumer!!.fatteVedtak(request)
+//            vedtakConsumer!!.fatteVedtak(request)
+            vedtakLocalConsumer!!.fatteVedtak(request)
         }
 
     private fun opprettSimulerVedtaksid() = Math.random().times(100000).toInt()

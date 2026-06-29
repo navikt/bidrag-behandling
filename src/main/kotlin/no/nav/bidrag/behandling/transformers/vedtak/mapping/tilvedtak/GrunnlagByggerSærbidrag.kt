@@ -110,20 +110,25 @@ fun Behandling.byggGrunnlagUtgiftDirekteBetalt() =
 fun Behandling.byggGrunnlagLøpendeBidragForholdsmessigFordeling(grunnlagsliste: MutableSet<GrunnlagDto>) =
     grunnlag.hentSisteGrunnlagLøpendeBidragFF(this).tilGrunnlagDto(grunnlagsliste)
 
-fun Behandling.byggGrunnlagBehandlingDetaljer(fatteVedtakRevurderingsbarn: FatteVedtakRevurderingsbarn? = null) =
-    setOf(
-        GrunnlagDto(
-            referanse = "behandling_detaljer",
-            type = Grunnlagstype.BEHANDLING_DETALJER,
-            innhold =
-                POJONode(
-                    BehandlingDetaljerGrunnlag(
-                        opprettetForholdsmessigFordeling = erIForholdsmessigFordeling,
-                        fatteVedtakRevurderingsbarn = fatteVedtakRevurderingsbarn,
-                    ),
+fun Behandling.byggGrunnlagBehandlingDetaljer(
+    fatteVedtakRevurderingsbarn: FatteVedtakRevurderingsbarn? = null,
+    erAvvistRevurdering: Boolean = false,
+) = setOf(
+    GrunnlagDto(
+        referanse = "behandling_detaljer",
+        type = Grunnlagstype.BEHANDLING_DETALJER,
+        innhold =
+            POJONode(
+                BehandlingDetaljerGrunnlag(
+                    opprettetForholdsmessigFordeling = erIForholdsmessigFordeling,
+                    fatteVedtakRevurderingsbarn =
+                        fatteVedtakRevurderingsbarn?.copy(
+                            kunneFatteVedtak = !erAvvistRevurdering,
+                        ) ?: FatteVedtakRevurderingsbarn(kunneFatteVedtak = !erAvvistRevurdering),
                 ),
-        ),
-    )
+            ),
+    ),
+)
 
 fun Behandling.byggGrunnlagSærbidragKategori() =
     setOf(

@@ -584,7 +584,7 @@ class VedtakGrunnlagMapper(
                             grunnlagListe =
                                 (
                                     personobjekter + byggGrunnlagSøknad() +
-                                        byggGrunnlagVirkningsttidspunkt(personobjekter.map { it.tilDto() })
+                                        byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning = personobjekter.map { it.tilDto() })
                                 ).toList(),
                         )
                     } else {
