@@ -70,9 +70,11 @@ class TilgangskontrollService(
 
     fun harBeskyttelse(personident: Personident): Boolean {
         val diskresjonskode =
-            personConsumer
-                .hentPerson(personident)
-                .diskresjonskode
+            SikkerhetsKontekst.medApplikasjonKontekst {
+                personConsumer
+                    .hentPerson(personident)
+                    .diskresjonskode
+            }
         return if (diskresjonskode != null) {
             listOf(Diskresjonskode.P19, Diskresjonskode.SPSF, Diskresjonskode.SPFO).contains(diskresjonskode)
         } else {
