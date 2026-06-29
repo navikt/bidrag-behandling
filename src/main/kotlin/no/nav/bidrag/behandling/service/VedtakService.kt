@@ -3,7 +3,7 @@ package no.nav.bidrag.behandling.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
-import no.nav.bidrag.behandling.consumer.BidragVedtakConsumerLocal
+// import no.nav.bidrag.behandling.consumer.BidragVedtakConsumerLocal
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.json.FattetVedtak
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
@@ -88,7 +88,7 @@ class VedtakService(
     private val virkningstidspunktService: VirkningstidspunktService,
     private val forholdsmessigFordelingService: ForholdsmessigFordelingService? = null,
     private val behandlingRepository: BehandlingRepository? = null,
-    private val vedtakLocalConsumer: BidragVedtakConsumerLocal? = null,
+//    private val vedtakLocalConsumer: BidragVedtakConsumerLocal? = null,
 ) {
     fun konverterVedtakTilBehandlingForLesemodus(vedtakId: Int): Behandling? {
         try {
@@ -880,8 +880,8 @@ class VedtakService(
         if (simuler) {
             OpprettVedtakResponseDto(opprettSimulerVedtaksid(), emptyList())
         } else {
-//            vedtakConsumer!!.fatteVedtak(request)
-            vedtakLocalConsumer!!.fatteVedtak(request)
+            vedtakConsumer!!.fatteVedtak(request)
+//            vedtakLocalConsumer!!.fatteVedtak(request)
         }
 
     private fun opprettSimulerVedtaksid() = Math.random().times(100000).toInt()
