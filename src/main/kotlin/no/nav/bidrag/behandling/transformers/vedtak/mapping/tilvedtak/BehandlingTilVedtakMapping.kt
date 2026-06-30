@@ -946,16 +946,10 @@ class BehandlingTilVedtakMapping(
                 it.forholdsmessigFordeling?.søknaderUnderBehandling?.mapNotNull { it.søknadsid }
                     ?: listOfNotNull(soknadsid)
             }
-        val samletSøknadsidIkkeRevurdering = soknadsid ?: "samlet_ikke_revurdering"
         val groupedBarnSøknader =
             barnSøknad
                 .flatMap { (barn, søknader) ->
-                    val erRevurderingsbarn = barn.forholdsmessigFordeling?.erRevurdering == true
-                    if (erRevurderingsbarn) {
-                        søknader.map { søknad -> søknad to barn }
-                    } else {
-                        listOf(samletSøknadsidIkkeRevurdering to barn)
-                    }
+                    søknader.map { søknad -> søknad to barn }
                 }.groupBy { (søknad, _) -> søknad }
                 .map { it.value.first().first to it.value.map { (_, barn) -> barn } }
                 .associate { it.first to it.second }
