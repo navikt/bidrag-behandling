@@ -1009,7 +1009,7 @@ class BehandlingTilVedtakMapping(
                     if (erAvvistRevurdering) {
                         GebyrResulat(emptyList(), emptySet())
                     } else {
-                        mapEngangsbeløpGebyr(grunnlagListe.toList(), sak.saksnummer.verdi)
+                        mapEngangsbeløpGebyr(grunnlagListe.toList(), sak.saksnummer.verdi, søknadsid)
                     }
                 val grunnlagVirkningstidspunkt = byggGrunnlagVirkningsttidspunkt(søknadsbarn)
 
@@ -1209,6 +1209,7 @@ class BehandlingTilVedtakMapping(
     private fun Behandling.mapEngangsbeløpGebyr(
         grunnlagsliste: List<GrunnlagDto>,
         sak: String? = null,
+        søknadsid: Long? = null,
     ): GebyrResulat {
         val gebyrGrunnlagsliste: MutableSet<BaseGrunnlag> = mutableSetOf()
         val barnMedGebyr = søknadsbarn.filter { it.harGebyrsøknad }
@@ -1220,7 +1221,7 @@ class BehandlingTilVedtakMapping(
                     sak == null || it.forholdsmessigFordeling == null ||
                         it.forholdsmessigFordeling!!.tilhørerSak == sak
                 }.flatMap { rolle ->
-                    rolle.gebyrSøknader.distinctBy { it.referanse }.map {
+                    rolle.gebyrSøknader.filter { søknadsid == null || søknadsid == it.søknadsid }.distinctBy { it.referanse }.map {
                         val grunnlagslisteGebyrRolle =
                             grunnlagsliste + setOfNotNull(rolle.byggGrunnlagManueltOverstyrtGebyrRolle(it.søknadsid))
                         val beregning = mapper.beregnGebyr(this, rolle, grunnlagslisteGebyrRolle, it.referanse)
@@ -1254,7 +1255,7 @@ class BehandlingTilVedtakMapping(
         val gebyrBp =
             if (bidragspliktig!!.harGebyrsøknad) {
                 val rolle = bidragspliktig!!
-                rolle.gebyrSøknader.distinctBy { it.referanse }.map {
+                rolle.gebyrSøknader.filter { søknadsid == null || søknadsid == it.søknadsid }.distinctBy { it.referanse }.map {
                     val grunnlagslisteGebyrRolle =
                         grunnlagsliste + setOfNotNull(rolle.byggGrunnlagManueltOverstyrtGebyrRolle(it.søknadsid))
                     val beregning = mapper.beregnGebyr(this, bidragspliktig!!, grunnlagslisteGebyrRolle, it.referanse)
