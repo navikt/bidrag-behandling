@@ -478,8 +478,15 @@ internal fun List<GrunnlagDto>.mapRoller(
     opprinneligVirkningstidspunkt: LocalDate,
     sak: BidragssakDto? = null,
 ): MutableSet<Rolle> =
-    filter { grunnlagstyperRolle.contains(it.type) }
-        .distinctBy { it.personIdent to it.stønadstype }
+    filter {
+        if (it.type == Grunnlagstype.PERSON_SØKNADSBARN && !lesemodus) {
+            vedtak.stønadsendringListe.any { s ->
+                it.personIdent == s.kravhaver.verdi && it.stønadstype == s.type
+            }
+        } else {
+            grunnlagstyperRolle.contains(it.type)
+        }
+    }.distinctBy { it.personIdent to it.stønadstype }
         .mapIndexed { i, rolle ->
             val stønadsendring =
                 vedtak.stønadsendringListe.find {
