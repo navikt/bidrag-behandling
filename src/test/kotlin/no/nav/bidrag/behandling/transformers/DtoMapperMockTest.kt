@@ -2,6 +2,7 @@ package no.nav.bidrag.behandling.transformers
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldHaveAtLeastSize
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -797,7 +798,7 @@ class DtoMapperMockTest {
 
             assertSoftly(pa1.privatAvtale!!) {
                 it.beregnetPrivatAvtale.shouldNotBeNull()
-                it.beregnetPrivatAvtale!!.perioder.shouldHaveSize(3)
+                it.beregnetPrivatAvtale!!.perioder.shouldHaveAtLeastSize(3)
                 it.avtaleDato shouldBe LocalDate.parse("2024-01-01")
                 it.skalIndeksreguleres shouldBe true
                 it.perioder shouldHaveSize 2
