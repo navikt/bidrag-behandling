@@ -878,6 +878,7 @@ class VedtakTilBehandlingMapping(
             filtrerBasertPåEgenReferanse(
                 Grunnlagstype.SAMVÆRSPERIODE,
             ).groupBy { it.gjelderBarnReferanse }
+                .filterBarnIBehandling(this, behandling)
                 .map { (gjelderReferanse, perioder) ->
                     val person = hentPersonMedReferanse(gjelderReferanse)!!
                     val samvær =

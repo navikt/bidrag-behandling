@@ -128,6 +128,7 @@ import no.nav.bidrag.transport.sak.BidragssakDto
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlin.collections.component1
 import kotlin.collections.sortedBy
 
 val VedtakDto.erBisysVedtak get() = behandlingId == null && this.søknadId != null
@@ -760,6 +761,15 @@ fun List<GrunnlagDto>.innhentetTidspunkt(grunnlagstype: Grunnlagstype) =
             commonObjectmapper.treeToValue(it, LocalDateTime::class.java)
         } ?: LocalDateTime.now()
 
+fun <T> Map<String?, List<T>>.filterBarnIBehandling(
+    grunnlagListe: List<GrunnlagDto>,
+    behandling: Behandling,
+): Map<String?, List<T>> =
+    filter { (gjelderReferanse) ->
+        val person = grunnlagListe.hentPersonMedReferanse(gjelderReferanse)!!
+        behandling.roller.any { it.erSammeRolle(person.personIdent!!, person.stønadstype) }
+    }
+
 fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
     behandling: Behandling,
     lesemodus: Boolean,
@@ -783,6 +793,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
         },
     filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.MANUELLE_VEDTAK)
         .groupBy { it.gjelderBarnReferanse }
+        .filterBarnIBehandling(this, behandling)
         .map { (gjelderBarn, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
             val gjelderBarnGrunnlag = hentPersonMedReferanse(gjelderBarn)!!
@@ -800,6 +811,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
     if (behandling.erBidrag()) {
         filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.LØPENDE_BIDRAG)
             .groupBy { it.gjelderBarnReferanse }
+            .filterBarnIBehandling(this, behandling)
             .map { (gjelderBarn, grunnlagListe) ->
                 val grunnlag = grunnlagListe.first()
                 val gjelderBarnGrunnlag = hentPersonMedReferanse(gjelderBarn)!!
@@ -839,6 +851,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
     filtrerBasertPåEgenReferanse
         (grunnlagType = Grunnlagstype.ETTERFØLGENDE_MANUELLE_VEDTAK)
         .groupBy { it.gjelderBarnReferanse }
+        .filterBarnIBehandling(this, behandling)
         .map { (gjelderBarn, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
             val gjelderBarnGrunnlag = hentPersonMedReferanse(gjelderBarn)!!
@@ -858,6 +871,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
             filtrerOgKonverterBasertPåEgenReferanse<BeløpshistorikkGrunnlag>(
                 grunnlagType = it.tilGrunnlagstypeBeløpshistorikk(),
             ).groupBy { it.gjelderBarnReferanse }
+                .filterBarnIBehandling(this, behandling)
                 .map { (gjelderBarnReferanse, grunnlagsliste) ->
                     val grunnlag = grunnlagsliste.firstOrNull()
                     val gjelderBarn = hentPersonMedReferanse(gjelderBarnReferanse)!!
