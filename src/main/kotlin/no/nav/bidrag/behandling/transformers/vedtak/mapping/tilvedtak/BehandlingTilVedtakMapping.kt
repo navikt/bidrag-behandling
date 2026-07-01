@@ -55,6 +55,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
+import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
@@ -151,6 +152,8 @@ class BehandlingTilVedtakMapping(
 
         val bidragspliktigGrunnlag = beregningGrunnlagsliste.bidragspliktig ?: bidragspliktig!!.tilGrunnlagPerson()
         val bidragsmottakerGrunnlag = beregningGrunnlagsliste.bidragsmottaker ?: bidragsmottaker!!.tilGrunnlagPerson()
+        val virkningstidspunktGrunnlag = beregningGrunnlagsliste.filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT)
+        val virkningstidspunktGrunnlagReferanser = virkningstidspunktGrunnlag.map { it.gjelderBarnReferanse }
         val grunnlagPersoner =
             setOf(
                 bidragspliktigGrunnlag,
@@ -158,7 +161,9 @@ class BehandlingTilVedtakMapping(
             ).map { it.tilOpprettRequestDto() }
         val grunnlagManuelleVedtak = byggGrunnlagManuelleVedtak(beregningGrunnlagsliste).map { it.tilOpprettRequestDto() }
         val stønadsendringGrunnlag =
-            byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning = beregningGrunnlagsliste).map {
+            byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning = beregningGrunnlagsliste)
+                .filter { !virkningstidspunktGrunnlagReferanser.contains(it.gjelderBarnReferanse) }
+                .map {
                 it.tilOpprettRequestDto()
             }
         val grunnlagsliste =
