@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.dto.FinnSammenknytningerHovedsøknadResponse
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordelingSøknadBarn
 import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
@@ -15,7 +16,6 @@ import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.erOverEllerLik18År
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTil
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
@@ -142,7 +142,7 @@ class ForholdsmessigFordelingKlageService(
                 .filter { rk ->
                     søknadsbarnOrdinæreSøknader.none {
                         it.first == rk.kravhaver && it.second == rk.stønadstype
-                    }
+                    } && behandling.søknadsbarn.any { s -> s.ident == rk.kravhaver && s.stønadstype == rk.stønadstype }
                 }.toSet()
         opprettRevurderingssøknaderForGjenværendeKravhavere(
             behandling,
@@ -301,7 +301,7 @@ class ForholdsmessigFordelingKlageService(
             )
 
         val tilknyttetSøknaderIkkeHovedsøknad =
-            filtrerTilknyttedeSøknaderForKlage(tilknyttedeSøknaderOmgjortSøknad, relevanteKravhavere)
+            filtrerTilknyttedeSøknaderForKlage(tilknyttedeSøknaderOmgjortSøknad, relevanteKravhavere, behandling.søknadsbarn)
 
         val søknadsbarnOpprettetSøknad =
             opprettetSøknad.parterUnderBehandling.map {
@@ -328,18 +328,26 @@ class ForholdsmessigFordelingKlageService(
     private fun filtrerTilknyttedeSøknaderForKlage(
         tilknyttedeSøknaderOmgjortSøknad: FinnSammenknytningerHovedsøknadResponse,
         relevanteKravhavere: Set<SakKravhaver>,
+        søknadsbarn: List<Rolle>,
     ): List<HentSøknad> {
         val hovedsøknadPåklagetVedtak = tilknyttedeSøknaderOmgjortSøknad.hovedsøknadsid
+
         return tilknyttedeSøknaderOmgjortSøknad.søknader
             .filter { !it.behandlingstype.erForholdsmessigFordeling }
             .filter { it.behandlingStatusType == BehandlingStatusType.VEDTAK_FATTET }
             .filter { søknad ->
                 val parterISøknad = søknad.parterVedtakFattet.map { it.personident!! }
-                søknad.søknadsid != hovedsøknadPåklagetVedtak ||
+                val søknadHarIngenRelevanteKravhavere =
                     relevanteKravhavere.none {
                         parterISøknad.contains(it.kravhaver) &&
                             it.stønadstype == søknad.behandlingstema.tilStønadstype()
                     }
+                val søknadsbarnErDelAvSøknad =
+                    søknadsbarn.any { s ->
+                        parterISøknad.contains(s.ident) &&
+                            s.stønadstype == søknad.behandlingstema.tilStønadstype()
+                    }
+                (søknad.søknadsid != hovedsøknadPåklagetVedtak && søknadsbarnErDelAvSøknad) || søknadHarIngenRelevanteKravhavere
             }
     }
 
