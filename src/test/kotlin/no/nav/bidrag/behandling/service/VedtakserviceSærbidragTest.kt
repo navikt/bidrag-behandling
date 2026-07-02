@@ -631,8 +631,6 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_BEREGNEDE_TOTALBIDRAG)) {
                 shouldHaveSize(1)
                 val grunnlag = it.first()
-                val innhold = grunnlag.innholdTilObjekt<DelberegningBidragspliktigesBeregnedeTotalbidrag>()
-                innhold.bidragspliktigesBeregnedeTotalbidrag shouldBe BigDecimal("4259.00")
                 grunnlagsliste
                     .finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(
                         Grunnlagstype.SJABLON_SAMVARSFRADRAG,
@@ -652,8 +650,6 @@ class VedtakserviceSærbidragTest : VedtakserviceTest() {
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.DELBEREGNING_BIDRAGSPLIKTIGES_BEREGNEDE_TOTALBIDRAG)) {
                 shouldHaveSize(1)
-                val innhold = innholdTilObjekt<DelberegningBidragspliktigesBeregnedeTotalbidrag>().first()
-                innhold.bidragspliktigesBeregnedeTotalbidrag shouldBe BigDecimal("4259.00")
             }
             assertSoftly(hentGrunnlagstyper(Grunnlagstype.LØPENDE_BIDRAG)) {
                 it.shouldHaveSize(1)

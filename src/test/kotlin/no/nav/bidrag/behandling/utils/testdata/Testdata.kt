@@ -2198,7 +2198,7 @@ fun Behandling.leggTilBarnetillegg(
         Inntekt(
             id = if (medId) 1 else null,
             belop = BigDecimal(3000),
-            datoFom = virkningstidspunkt!!.plusMonths(5),
+            datoFom = virkningstidspunkt!!.plusMonths(1),
             datoTom = null,
             ident = rolle.ident!!,
             taMed = true,

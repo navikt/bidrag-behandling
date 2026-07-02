@@ -148,22 +148,17 @@ class BehandlingTilVedtakMapping(
             )
         }
         // Ønsker ikke virkningstidspunkt grunnlag fra aldersjusteringen
-        val beregningGrunnlagsliste = beregning.grunnlagslisteList
+        val beregningGrunnlagsliste = beregning.grunnlagslisteList.filter { it.type != Grunnlagstype.VIRKNINGSTIDSPUNKT }
 
         val bidragspliktigGrunnlag = beregningGrunnlagsliste.bidragspliktig ?: bidragspliktig!!.tilGrunnlagPerson()
         val bidragsmottakerGrunnlag = beregningGrunnlagsliste.bidragsmottaker ?: bidragsmottaker!!.tilGrunnlagPerson()
-        val virkningstidspunktGrunnlag = beregningGrunnlagsliste.filtrerBasertPåEgenReferanse(Grunnlagstype.VIRKNINGSTIDSPUNKT)
-        val virkningstidspunktGrunnlagReferanser = virkningstidspunktGrunnlag.map { it.gjelderBarnReferanse }
         val grunnlagPersoner =
             setOf(
                 bidragspliktigGrunnlag,
                 bidragsmottakerGrunnlag,
             ).map { it.tilOpprettRequestDto() }
         val grunnlagManuelleVedtak = byggGrunnlagManuelleVedtak(beregningGrunnlagsliste).map { it.tilOpprettRequestDto() }
-        val stønadsendringGrunnlag =
-            byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning = beregningGrunnlagsliste)
-                .filter { !virkningstidspunktGrunnlagReferanser.contains(it.gjelderBarnReferanse) }
-                .map {
+        val stønadsendringGrunnlag = byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning = beregningGrunnlagsliste).map {
                 it.tilOpprettRequestDto()
             }
         val grunnlagsliste =
