@@ -158,7 +158,8 @@ class BehandlingTilVedtakMapping(
                 bidragsmottakerGrunnlag,
             ).map { it.tilOpprettRequestDto() }
         val grunnlagManuelleVedtak = byggGrunnlagManuelleVedtak(beregningGrunnlagsliste).map { it.tilOpprettRequestDto() }
-        val stønadsendringGrunnlag = byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning = beregningGrunnlagsliste).map {
+        val stønadsendringGrunnlag =
+            byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning = beregningGrunnlagsliste).map {
                 it.tilOpprettRequestDto()
             }
         val grunnlagsliste =

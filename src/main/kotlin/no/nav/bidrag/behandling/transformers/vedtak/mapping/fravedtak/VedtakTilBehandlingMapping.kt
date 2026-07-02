@@ -477,6 +477,7 @@ class VedtakTilBehandlingMapping(
     ): MutableSet<PrivatAvtale> =
         filtrerBasertPåEgenReferanse(Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG)
             .groupBy { if (it.gjelderBarnReferanse.isNullOrEmpty()) it.gjelderReferanse else it.gjelderBarnReferanse }
+            .filterBarnIBehandling(this, behandling)
             .map {
                 val privatAvtaleGrunnlag =
                     filtrerOgKonverterBasertPåFremmedReferanse<PrivatAvtaleGrunnlagV2>(
