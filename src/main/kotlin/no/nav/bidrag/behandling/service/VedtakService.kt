@@ -39,6 +39,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregni
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.tilBeregningResultatForskudd
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.ResultatadBeregningOrkestrering
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.dto.VedtakRequstDto
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnInnkrevesFraDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.leggTilVedtaksidPåAldersjusteringGrunnlag
 import no.nav.bidrag.behandling.transformers.vedtak.takeIfNotNullOrEmpty
@@ -713,8 +714,15 @@ class VedtakService(
         }
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
 
-        val vedtakRequester = opprettFatteVedtakRequestForBidrag(behandling, request)
+        val (vedtakRequester, erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder) =
+            opprettFatteVedtakRequestForBidrag(
+                behandling,
+                request,
+            )
         val vedtakRequestDtos: MutableList<Pair<Int, OpprettVedtakRequestDto>> = mutableListOf()
+        if (erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder) {
+            forholdsmessigFordelingService!!.fjernSammeknytningHovedsøknad(behandling)
+        }
         val vedtakResponser =
             vedtakRequester.associate { vedtakRequest ->
                 vedtakRequest.validerGrunnlagsreferanser()
@@ -806,26 +814,34 @@ class VedtakService(
     fun opprettFatteVedtakRequestForBidrag(
         behandling: Behandling,
         request: FatteVedtakRequestDto?,
-    ): List<OpprettVedtakRequestDto> {
+    ): VedtakRequstDto {
         validering.run { behandling.validerForBeregningBidrag() }
 
         return behandlingTilVedtakMapping
             .run {
                 if (behandling.erAvslagForAlle) {
-                    listOf(behandling.byggOpprettVedtakRequestAvslagForBidrag(request?.enhet))
+                    VedtakRequstDto(
+                        listOf(behandling.byggOpprettVedtakRequestAvslagForBidrag(request?.enhet)),
+                        erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder = false,
+                    )
                 } else {
                     behandling.byggOpprettVedtakRequestBidragAlle(request)
                 }
-            }.map {
-                val erAvvisning = it.stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST }
-                it.copy(
-                    innkrevingUtsattTilDato =
-                        if (behandling.skalInnkrevingKunneUtsettes() && !erAvvisning) {
-                            request?.innkrevingUtsattAntallDager?.let {
-                                LocalDate.now().plusDays(it)
-                            }
-                        } else {
-                            null
+            }.let { vedtakRequest ->
+                vedtakRequest.copy(
+                    requests =
+                        vedtakRequest.requests.map {
+                            val erAvvisning = it.stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST }
+                            it.copy(
+                                innkrevingUtsattTilDato =
+                                    if (behandling.skalInnkrevingKunneUtsettes() && !erAvvisning) {
+                                        request?.innkrevingUtsattAntallDager?.let {
+                                            LocalDate.now().plusDays(it)
+                                        }
+                                    } else {
+                                        null
+                                    },
+                            )
                         },
                 )
             }

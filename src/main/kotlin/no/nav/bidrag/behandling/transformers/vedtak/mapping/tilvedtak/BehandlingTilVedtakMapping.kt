@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.behandling.transformers.utgift.totalBeløpBetaltAvBp
 import no.nav.bidrag.behandling.transformers.vedtak.StønadsendringPeriode
 import no.nav.bidrag.behandling.transformers.vedtak.hentPersonMedIdent
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.dto.VedtakRequstDto
 import no.nav.bidrag.behandling.transformers.vedtak.personIdentNav
 import no.nav.bidrag.behandling.transformers.vedtak.reelMottakerEllerBidragsmottaker
 import no.nav.bidrag.behandling.transformers.vedtak.tilVedtakDto
@@ -55,12 +56,9 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
-import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
-import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
-import no.nav.bidrag.transport.behandling.felles.grunnlag.personObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.stønadstype
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettEngangsbeløpRequestDto
 import no.nav.bidrag.transport.behandling.vedtak.request.OpprettGrunnlagRequestDto
@@ -217,9 +215,12 @@ class BehandlingTilVedtakMapping(
             )
     }
 
-    fun Behandling.byggOpprettVedtakRequestBidragAlle(request: FatteVedtakRequestDto? = null): List<OpprettVedtakRequestDto> =
+    fun Behandling.byggOpprettVedtakRequestBidragAlle(request: FatteVedtakRequestDto? = null): VedtakRequstDto =
         if (vedtakstype == Vedtakstype.ALDERSJUSTERING) {
-            listOf(byggOpprettVedtakRequestBidragAldersjustering(request?.enhet))
+            VedtakRequstDto(
+                listOf(byggOpprettVedtakRequestBidragAldersjustering(request?.enhet)),
+                erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder = false,
+            )
         } else {
             byggOpprettVedtakRequestBidrag(request)
         }
@@ -905,7 +906,7 @@ class BehandlingTilVedtakMapping(
         }
     }
 
-    private fun Behandling.byggOpprettVedtakRequestBidrag(request: FatteVedtakRequestDto? = null): List<OpprettVedtakRequestDto> {
+    private fun Behandling.byggOpprettVedtakRequestBidrag(request: FatteVedtakRequestDto? = null): VedtakRequstDto {
         if (erIForholdsmessigFordeling && søknadsbarn.any { it.erRevurderingsbarn } && request?.fatteVedtakRevurderingsbarn == null) {
             ugyldigForespørsel("Mangler informasjon om det skal fattes vedtak for revurderingsbarn")
         }
@@ -921,11 +922,14 @@ class BehandlingTilVedtakMapping(
             )
         }
 
-        return if (erIForholdsmessigFordeling && !beregning.inneholderBeregningForRevurderingsbarn) {
-            byggOpprettVedtakRequestSplittetFF(beregning, behandlingSaker, request)
-        } else {
-            listOf(byggOpprettVedtakRequest(resultatBarn, behandlingSaker, request))
-        }
+        val erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder = erIForholdsmessigFordeling && beregning.bpHarFullEvneIAllePerioder
+        val requests =
+            if (erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder) {
+                byggOpprettVedtakRequestSplittetFF(beregning, behandlingSaker, request)
+            } else {
+                listOf(byggOpprettVedtakRequest(resultatBarn, behandlingSaker, request))
+            }
+        return VedtakRequstDto(requests, erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder)
     }
 
     // Fatte vedetak når forholdsmessig fordeling ikke går til FF
@@ -1628,7 +1632,7 @@ class BehandlingTilVedtakMapping(
                         if (avslag != null) {
                             byggOpprettVedtakRequestAvslagForBidrag()
                         } else {
-                            byggOpprettVedtakRequestBidragAlle().first()
+                            byggOpprettVedtakRequestBidragAlle().requests.first()
                         }
                     }
 

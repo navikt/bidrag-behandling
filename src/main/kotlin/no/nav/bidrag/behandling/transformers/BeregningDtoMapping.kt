@@ -422,7 +422,7 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
         ugyldigBeregning = ugyldigBeregning,
         minstEnPeriodeHarSlåttUtTilFF = grunnlagslisteList.harSlåttUtTilForholdsmessigFordeling(),
         skalFatteVedtakForRevurderingsbarn = resultatBarn.any { it.barn.erRevurderingsbarn && it.fatteVedtakAnbefalt },
-        kanFatteVedtakForRevurderingsbarn = inneholderBeregningForRevurderingsbarn,
+        kanFatteVedtakForRevurderingsbarn = !bpHarFullEvneIAllePerioder && inneholderBeregningForRevurderingsbarn,
         perioderSlåttUtTilFF = grunnlagslisteList.perioderSlåttUtTilFF(),
         perioderSlåttUtTilFFRevurderingsbarn = grunnlagslisteList.perioderSlåttUtTilFFForRevurderingsbarn(),
         resultatBarn =

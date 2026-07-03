@@ -142,6 +142,10 @@ class ForholdsmessigFordelingService(
     // region Opprett forholdsmessig fordeling flow
     // ═══════════════════════════════════════════════════════════════════
 
+    fun fjernSammeknytningHovedsøknad(behandling: Behandling) {
+        bbmConsumer.fjernSammeknytningHovedsøknad(behandling.soknadsid!!)
+    }
+
     @Transactional
     fun opprettEllerOppdaterForholdsmessigFordeling(
         behandlingId: Long,

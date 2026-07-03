@@ -227,6 +227,7 @@ class BeregningService(
                     val personobjekt = resultat.grunnlagListe.hentPersonMedReferanse(it.søknadsbarnreferanse) ?: return@filter false
                     !personobjekt.personObjekt.delAvOpprinneligBehandling
                 }
+            val bpHarFullEvneIAllePerioder = resultat.grunnlagListe.perioderSlåttUtTilFF().isEmpty()
 
             val resultatBarn =
                 resultat.resultat
@@ -291,6 +292,7 @@ class BeregningService(
                 ugyldigBeregning = resultatBeregning.tilBeregningFeilmelding(),
                 resultatBarn = resultatBarn,
                 minstEnPerioderHarSlåttUtTilFF = resultat.grunnlagListe.perioderSlåttUtTilFF().isNotEmpty(),
+                bpHarFullEvneIAllePerioder = bpHarFullEvneIAllePerioder,
                 inneholderBeregningForRevurderingsbarn =
                     resultatRevurderingsbarn.isNotEmpty() && resultatRevurderingsbarn.none { it.avvistRevurderingsbarn },
                 vedtakstype = behandling.vedtakstype,
