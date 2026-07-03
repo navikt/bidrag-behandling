@@ -100,6 +100,7 @@ class ForholdsmessigFordelingKlageService(
         opprettetEllerOppdaterSøknadsid: Long,
         request: OpprettFFRequest? = null,
         nyesteLøpendeBidragGrunnlag: List<LøpendeBidragGrunnlagForholdsmessigFordeling> = emptyList(),
+        erManuellOpprettelseEllerOppdateringAvFF: Boolean = false,
     ) {
         if (TokenUtils.hentBruker() != null && !UnleashFeatures.TILGANG_OPPRETTE_FF.isEnabled) {
             KLAGE_LOGGER.info { "Opprettelse av forholdsmessig fordeling er deaktivert" }
@@ -140,7 +141,7 @@ class ForholdsmessigFordelingKlageService(
         val gjenværendeKravhavere =
             relevanteKravhavere
                 .filter { rk ->
-                    søknadsbarnOrdinæreSøknader.none {
+                    erManuellOpprettelseEllerOppdateringAvFF || søknadsbarnOrdinæreSøknader.none {
                         it.first == rk.kravhaver && it.second == rk.stønadstype
                     } && behandling.søknadsbarn.any { s -> s.ident == rk.kravhaver && s.stønadstype == rk.stønadstype }
                 }.toSet()

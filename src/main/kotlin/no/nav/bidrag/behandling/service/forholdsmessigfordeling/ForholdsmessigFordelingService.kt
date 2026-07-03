@@ -161,7 +161,13 @@ class ForholdsmessigFordelingService(
             val erOppdateringAvBehandlingSomErIFF = behandling.erIForholdsmessigFordeling
             val nyesteLøpendeBidragGrunnlag = sjekkBeregningKreverForholdsmessigFordeling(behandling).løpendeBidragBarn
             if (behandling.erKlageEllerOmgjøring) {
-                klageService.opprettSøknaderForKlageEllerOmgjøring(behandling, behandling.soknadsid!!, request, nyesteLøpendeBidragGrunnlag)
+                klageService.opprettSøknaderForKlageEllerOmgjøring(
+                    behandling,
+                    behandling.soknadsid!!,
+                    request,
+                    nyesteLøpendeBidragGrunnlag,
+                    true,
+                )
                 return
             }
 
@@ -504,7 +510,7 @@ class ForholdsmessigFordelingService(
         oppdaterSøknadStatuserForAlleRoller(behandling)
         slettDuplikatForholdsmessigFordelingSøknader(behandling)
         if (behandling.erKlageEllerOmgjøring) {
-            opprettSøknaderForKlageEllerOmgjøring(behandling, behandling.soknadsid!!)
+            opprettSøknaderForKlageEllerOmgjøring(behandling, behandling.soknadsid!!, erManuellOpprettelseEllerOppdateringAvFF = true)
             søknadService.knyttSammenManglendeSøknadsknytningerIBehandling(behandling)
             behandling.oppdaterFFSistSynkronisert()
             return true
@@ -809,9 +815,11 @@ class ForholdsmessigFordelingService(
     fun opprettSøknaderForKlageEllerOmgjøring(
         behandling: Behandling,
         opprettetEllerOppdaterSøknadsid: Long,
+        erManuellOpprettelseEllerOppdateringAvFF: Boolean = false,
     ) = klageService.opprettSøknaderForKlageEllerOmgjøring(
         behandling,
         opprettetEllerOppdaterSøknadsid,
+        erManuellOpprettelseEllerOppdateringAvFF = erManuellOpprettelseEllerOppdateringAvFF,
     )
 
     @Transactional
