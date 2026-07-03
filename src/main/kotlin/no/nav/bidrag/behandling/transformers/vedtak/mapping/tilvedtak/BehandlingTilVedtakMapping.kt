@@ -437,7 +437,7 @@ class BehandlingTilVedtakMapping(
 
     fun byggOpprettVedtakRequestBidragEndeligKlage(
         behandling: Behandling,
-        enhet: String?,
+        request: FatteVedtakRequestDto?,
         resultat: ResultatadBeregningOrkestrering,
     ): OpprettVedtakRequestDto {
         val beregninger =
@@ -459,7 +459,7 @@ class BehandlingTilVedtakMapping(
                     behandling,
                     resultat.sak,
                     endeligVedtak,
-                    enhet,
+                    request,
                     stønadsendringPerioder,
                     beregningBarn.barn,
                     søknadsbarnRolle.innkrevingstype ?: behandling.innkrevingstype!!,
@@ -484,7 +484,7 @@ class BehandlingTilVedtakMapping(
     fun opprettVedtakRequestDelvedtak(
         behandling: Behandling,
         sak: BidragssakDto,
-        enhet: String?,
+        request: FatteVedtakRequestDto?,
         beregningBarn: ResultatBidragsberegningBarn,
         klagevedtakErEnesteVedtak: Boolean,
     ): List<Pair<ResultatRolle, ResultatDelvedtak>> {
@@ -510,7 +510,7 @@ class BehandlingTilVedtakMapping(
                                     .resultatVedtak
                                     .resultatVedtakListe
                                     .find { it.endeligVedtak }!!,
-                                enhet,
+                                request,
                                 stønadsendringPerioder,
                                 beregningBarn.barn,
                                 Innkrevingstype.UTEN_INNKREVING,
@@ -561,7 +561,7 @@ class BehandlingTilVedtakMapping(
                                     behandling,
                                     sak,
                                     resultatVedtak,
-                                    enhet,
+                                    request,
                                     stønadsendringPerioder,
                                     beregningBarn.barn,
                                     innkreving,
@@ -577,13 +577,13 @@ class BehandlingTilVedtakMapping(
     fun opprettVedtakRequestDelvedtakV2(
         behandling: Behandling,
         sak: BidragssakDto,
-        enhet: String?,
+        request: FatteVedtakRequestDto?,
         beregningBarn: List<ResultatBidragsberegningBarn>,
         klagevedtakErEnesteVedtak: Boolean,
     ): List<ResultatDelvedtak> =
         beregningBarn
             .flatMap {
-                opprettVedtakRequestDelvedtak(behandling, sak, enhet, it, klagevedtakErEnesteVedtak)
+                opprettVedtakRequestDelvedtak(behandling, sak, request, it, klagevedtakErEnesteVedtak)
             }.mergeOmgjøringsvedtak()
             .sortedByDescending { it.omgjøringsvedtak }
 
@@ -623,7 +623,7 @@ class BehandlingTilVedtakMapping(
         behandling: Behandling,
         sak: BidragssakDto,
         resultatVedtak: ResultatVedtak,
-        enhet: String?,
+        request: FatteVedtakRequestDto?,
         stønadsendringPerioder: List<StønadsendringPeriode> = emptyList(),
         barn: ResultatRolle,
         innkreving: Innkrevingstype = Innkrevingstype.MED_INNKREVING,
@@ -661,7 +661,7 @@ class BehandlingTilVedtakMapping(
                             stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>,
                         ),
                     )
-                    stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagGenerelt())
+                    stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagGenerelt(requestDto = request))
                 }
             } else if (resultatVedtak.delvedtak) {
                 // Fjern eksisterende virkningstpunkt grunnlag før det legges på ny
@@ -714,7 +714,7 @@ class BehandlingTilVedtakMapping(
                         "endeligvedtak"
                     }
                 }
-            return behandling.byggOpprettVedtakRequestObjekt(enhet).copy(
+            return behandling.byggOpprettVedtakRequestObjekt(request?.enhet).copy(
                 unikReferanse = behandling.opprettUnikReferanse(referansePostfix),
                 type = resultatVedtak.vedtakstype,
                 stønadsendringListe =
@@ -1123,7 +1123,6 @@ class BehandlingTilVedtakMapping(
                     it.resultat.byggStønadsendringerForVedtak(
                         behandling,
                         it.barn,
-                        skalFatteVedtakForRevurderingsbarn = skalFatteVedtakForRevurderingsbarn,
                     )
                 }
             val stønadsendringGrunnlag =

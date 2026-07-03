@@ -8,6 +8,7 @@ import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessi
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
+import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.hentNyesteIdent
@@ -364,7 +365,6 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
     behandling: Behandling,
     søknadsbarn: ResultatRolle,
     erEndeligVedtak: Boolean = true,
-    skalFatteVedtakForRevurderingsbarn: Boolean = false,
 ): StønadsendringPeriode {
     val søknadsbarn =
         behandling.søknadsbarn.find { it.erSammeRolle(søknadsbarn.ident!!.verdi, søknadsbarn.stønadstype) }
