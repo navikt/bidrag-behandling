@@ -143,7 +143,7 @@ class ForholdsmessigFordelingService(
     // ═══════════════════════════════════════════════════════════════════
 
     fun fjernSammeknytningHovedsøknad(behandling: Behandling) {
-        bbmConsumer.fjernSammeknytningHovedsøknad(behandling.soknadsid!!)
+        bbmConsumer.fjernSammenknytning(behandling.soknadsid!!)
     }
 
     @Transactional
