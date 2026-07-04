@@ -114,6 +114,7 @@ data class ResultatadBeregningOrkestrering(
     val sak: BidragssakDto,
     val delvedtak: List<ResultatDelvedtak> = emptyList(),
     val beregning: List<ResultatBidragsberegningBarn>,
+    val bpHarFullEvneIAllePerioder: Boolean = false,
 ) {
     val klagevedtakErEnesteVedtak get() =
         beregning.all {
@@ -237,7 +238,11 @@ class BehandlingTilVedtakMapping(
                 "Kan ikke fatte vedtak: $begrunnelse",
             )
         }
-        return ResultatadBeregningOrkestrering(sak, beregning = resultatBarn)
+        return ResultatadBeregningOrkestrering(
+            sak,
+            beregning = resultatBarn,
+            bpHarFullEvneIAllePerioder = beregning.bpHarFullEvneIAllePerioder,
+        )
     }
 
     fun byggOpprettVedtakRequestInnkreving(
@@ -463,7 +468,11 @@ class BehandlingTilVedtakMapping(
                     stønadsendringPerioder,
                     beregningBarn.barn,
                     søknadsbarnRolle.innkrevingstype ?: behandling.innkrevingstype!!,
-                    if (beregningBarn.erAvvistRevurdering) Beslutningstype.AVVIST else Beslutningstype.ENDRING,
+                    if (beregningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request)) {
+                        Beslutningstype.AVVIST
+                    } else {
+                        Beslutningstype.ENDRING
+                    },
                 )
             }
 
@@ -481,6 +490,112 @@ class BehandlingTilVedtakMapping(
         }
     }
 
+    /**
+     * Splits omgjøring vedtak requests by søknadsid when BP has full evne in all periods (forholdsmessig fordeling scenario).
+     * This mirrors the logic in byggOpprettVedtakRequestSplittetFF but for omgjøring context.
+     */
+    fun Behandling.byggOpprettVedtakRequestSplittetFFOmgjøring(
+        request: FatteVedtakRequestDto?,
+        resultat: ResultatadBeregningOrkestrering,
+    ): List<OpprettVedtakRequestDto> {
+        if (!erIForholdsmessigFordeling) {
+            throw HttpClientErrorException(
+                HttpStatus.BAD_REQUEST,
+                "Kan ikke fatte flere vedtak når behandling ikke er i forholdsmessig fordeling",
+            )
+        }
+
+        val behandling = this
+        val barnSøknad =
+            søknadsbarn.associateWith {
+                it.forholdsmessigFordeling?.søknaderUnderBehandling?.mapNotNull { it.søknadsid }
+                    ?: listOfNotNull(soknadsid)
+            }
+        val groupedBarnSøknader =
+            barnSøknad
+                .flatMap { (barn, søknader) ->
+                    søknader.map { søknad -> søknad to barn }
+                }.groupBy { (søknad, _) -> søknad }
+                .map { it.value.first().first to it.value.map { (_, barn) -> barn } }
+                .associate { it.first to it.second }
+                .entries
+                .sortedByDescending { it.value.size }
+                .associate { it.key to it.value }
+
+        val søknadsbarnSomDetHarBlittOpprettVedtakFor = mutableSetOf<String>()
+
+        return groupedBarnSøknader.mapNotNull { (søknadsid, barnForSøknad) ->
+            val søknadsbarnFiltered = barnForSøknad.filter { !søknadsbarnSomDetHarBlittOpprettVedtakFor.contains(it.ident) }
+            if (søknadsbarnFiltered.isEmpty()) return@mapNotNull null
+
+            søknadsbarnSomDetHarBlittOpprettVedtakFor.addAll(søknadsbarnFiltered.mapNotNull { it.ident })
+
+            // Filter beregninger to only include those matching the current søknad's barn
+            val beregningerForSøknad =
+                resultat.beregning.filter { beregningBarn ->
+                    søknadsbarnFiltered.any { it.erSammeRolle(beregningBarn.barn.ident!!.verdi, beregningBarn.barn.stønadstype) }
+                }
+
+            if (beregningerForSøknad.isEmpty()) return@mapNotNull null
+
+            // Build vedtak request for this søknad's beregninger
+            val beregninger =
+                beregningerForSøknad.map { beregningBarn ->
+                    val søknadsbarnRolle =
+                        behandling.søknadsbarn.find { sb ->
+                            sb.erSammeRolle(beregningBarn.barn.ident!!.verdi, beregningBarn.barn.stønadstype)
+                        }
+                            ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!)
+                    val endeligVedtak =
+                        beregningBarn
+                            .resultatVedtak!!
+                            .resultatVedtakListe
+                            .find { it.endeligVedtak }!!
+
+                    val stønadsendringPerioder =
+                        listOf(
+                            endeligVedtak.resultat,
+                        ).map { it.byggStønadsendringerForEndeligVedtak(behandling, beregningBarn.barn, resultat.delvedtak) }
+                    byggVedtakForKlage(
+                        behandling,
+                        resultat.sak,
+                        endeligVedtak,
+                        request,
+                        stønadsendringPerioder,
+                        beregningBarn.barn,
+                        søknadsbarnRolle.innkrevingstype ?: behandling.innkrevingstype!!,
+                        if (beregningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request)) {
+                            Beslutningstype.AVVIST
+                        } else {
+                            Beslutningstype.ENDRING
+                        },
+                    )
+                }
+
+            return@mapNotNull if (beregninger.size == 1) {
+                beregninger.first().copy(
+                    unikReferanse = opprettUnikReferanse("søknad_$søknadsid"),
+                )
+            } else {
+                val samletStønadsendringListe = beregninger.flatMap { it.stønadsendringListe }
+                val samletEngangsbeløpListe = beregninger.flatMap { it.engangsbeløpListe }
+                val samletGrunnlagListe = beregninger.flatMap { it.grunnlagListe }.distinct()
+                beregninger.first().copy(
+                    unikReferanse = opprettUnikReferanse("søknad_$søknadsid"),
+                    stønadsendringListe = samletStønadsendringListe,
+                    engangsbeløpListe = samletEngangsbeløpListe,
+                    grunnlagListe = samletGrunnlagListe,
+                )
+            }
+        }
+    }
+
+    private fun ResultatBidragsberegningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request: FatteVedtakRequestDto?): Boolean {
+        val skalFatteVedtakForRevurderingsbarn =
+            request?.fatteVedtakRevurderingsbarn == null || request?.fatteVedtakRevurderingsbarn?.skalFatteVedtakForRevurderingsbarn == true
+        return erAvvistRevurdering || (barn.erRevurderingsbarn && !skalFatteVedtakForRevurderingsbarn)
+    }
+
     fun opprettVedtakRequestDelvedtak(
         behandling: Behandling,
         sak: BidragssakDto,
@@ -488,7 +603,7 @@ class BehandlingTilVedtakMapping(
         beregningBarn: ResultatBidragsberegningBarn,
         klagevedtakErEnesteVedtak: Boolean,
     ): List<Pair<ResultatRolle, ResultatDelvedtak>> {
-        return if (beregningBarn.erAvvistRevurdering) {
+        return if (beregningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request)) {
             val stønadsendringPerioder =
                 listOf(
                     beregningBarn.resultatVedtak!!

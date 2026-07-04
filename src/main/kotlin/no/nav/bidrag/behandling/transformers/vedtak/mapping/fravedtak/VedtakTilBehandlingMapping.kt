@@ -15,6 +15,7 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
+import no.nav.bidrag.behandling.database.datamodell.json.FatteVedtakDetaljerFraOmgjortVedtakForRevurderingsbarn
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
@@ -192,8 +193,14 @@ class VedtakTilBehandlingMapping(
         val sak = hentSak(behandling.saksnummer)
         behandling.roller = grunnlagListe.mapRoller(påklagetVedtak ?: this, behandling, lesemodus, omgjortVedtakVirkningstidspunkt, sak)
 
-        behandling.omgjøringsdetaljer =
-            if (!lesemodus || inkluderKlagedetaljer || opprinneligVedtak != omgjørVedtakId) {
+        val skalLagreOmgjøringsdetaljer = !lesemodus || inkluderKlagedetaljer || opprinneligVedtak != omgjørVedtakId
+        if (skalLagreOmgjøringsdetaljer) {
+            val stønadsendringerRevurderingsbarn =
+                stønadsendringListe.filter {
+                    val person = grunnlagListe.hentPerson(it.kravhaver.verdi, it.type)
+                    person != null && !person.personObjekt.delAvOpprinneligBehandling
+                }
+            behandling.omgjøringsdetaljer =
                 Omgjøringsdetaljer(
                     opprinneligVedtakstype = opprinneligVedtakstype,
                     opprinneligVedtakId = opprinneligVedtak,
@@ -208,11 +215,21 @@ class VedtakTilBehandlingMapping(
                     sisteVedtakBeregnetUtNåværendeMåned = sisteVedtakBeregnetUtNåværendeMåned?.vedtaksid,
                     sisteVedtakstidspunktBeregnetUtNåværendeMåned = sisteVedtakBeregnetUtNåværendeMåned?.vedtakstidspunkt,
                     omgjortVedtakstidspunktListe = vedtakstidspunktListe.toMutableSet(),
+                    fatteVedtakDetaljerRevurderingsbarn =
+                        if (stønadsendringerRevurderingsbarn.isNotEmpty()) {
+                            val behandlingDetaljer = grunnlagListe.hentBehandlingDetaljer()
+                            FatteVedtakDetaljerFraOmgjortVedtakForRevurderingsbarn(
+                                bleFattetVedtakForRevurderingsbarn =
+                                    stønadsendringerRevurderingsbarn.any {
+                                        it.beslutning == Beslutningstype.ENDRING
+                                    },
+                                fatteVedtakRevurderingsbarn = behandlingDetaljer?.fatteVedtakRevurderingsbarn,
+                            )
+                        } else {
+                            null
+                        },
                 )
-            } else {
-                null
-            }
-
+        }
         if (!lesemodus) {
             behandlingRepository.save(behandling)
         }

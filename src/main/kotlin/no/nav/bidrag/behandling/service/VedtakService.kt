@@ -485,7 +485,7 @@ class VedtakService(
                     behandlingTilVedtakMapping.opprettVedtakRequestDelvedtakV2(
                         behandling,
                         beregning.sak,
-                        request?.enhet,
+                        request,
                         beregning.beregning,
                         beregning.klagevedtakErEnesteVedtak,
                     ),
@@ -539,18 +539,43 @@ class VedtakService(
                         )
                     }
 
-                val requestEndeligVedtak =
-                    behandlingTilVedtakMapping.byggOpprettVedtakRequestBidragEndeligKlage(
-                        behandling,
-                        request?.enhet,
-                        requestDelvedtak.copy(delvedtak = oppdatertDelvedtak),
-                    )
+                val oppdatertDelvedtakOrkestrering = requestDelvedtak.copy(delvedtak = oppdatertDelvedtak)
+                val erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder =
+                    behandling.erIForholdsmessigFordeling && beregning.bpHarFullEvneIAllePerioder
 
-                requestEndeligVedtak.validerGrunnlagsreferanser()
-                val response = fatteVedtak(requestEndeligVedtak, simuler)
-                secureLogger.info { "Fattet endelig vedtak med forespørsel $requestEndeligVedtak og vedtaksid ${response.vedtaksid}" }
-                vedtakRequestDtos.add(response.vedtaksid to requestEndeligVedtak)
-                response to requestEndeligVedtak
+                val endeligVedtakRequests =
+                    if (erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder) {
+                        behandlingTilVedtakMapping.run {
+                            behandling.byggOpprettVedtakRequestSplittetFFOmgjøring(
+                                request,
+                                oppdatertDelvedtakOrkestrering,
+                            )
+                        }
+                    } else {
+                        listOf(
+                            behandlingTilVedtakMapping.byggOpprettVedtakRequestBidragEndeligKlage(
+                                behandling,
+                                request,
+                                oppdatertDelvedtakOrkestrering,
+                            ),
+                        )
+                    }
+
+                // Fatter all endelig vedtak requests
+                var hovedVedtakResponse: Pair<OpprettVedtakResponseDto, OpprettVedtakRequestDto>? = null
+                endeligVedtakRequests.forEach { requestEndeligVedtak ->
+                    requestEndeligVedtak.validerGrunnlagsreferanser()
+                    secureLogger.info { "Fatter endelig vedtak med forespørsel $requestEndeligVedtak" }
+                    val response = fatteVedtak(requestEndeligVedtak, simuler)
+                    secureLogger.info { "Fattet endelig vedtak med vedtaksid ${response.vedtaksid}" }
+                    vedtakRequestDtos.add(response.vedtaksid to requestEndeligVedtak)
+                    if (hovedVedtakResponse == null) {
+                        hovedVedtakResponse = response to requestEndeligVedtak
+                    }
+                }
+
+                requireNotNull(hovedVedtakResponse) { "Ingen endelig vedtak ble fattet" }
+                hovedVedtakResponse!!
             }
 
         if (behandling.innkrevingstype == Innkrevingstype.UTEN_INNKREVING) {
