@@ -597,10 +597,11 @@ class BehandlingTilVedtakMapping(
     private fun ResultatBidragsberegningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request: FatteVedtakRequestDto?): Boolean {
         val skalFatteVedtakForRevurderingsbarn =
             request?.fatteVedtakRevurderingsbarn == null || request?.fatteVedtakRevurderingsbarn?.skalFatteVedtakForRevurderingsbarn == true
-        val erOmgjøringOgBleFattetVedtakIOpprinnelig =
-            omgjøringsdetaljer != null && omgjøringsdetaljer.fatteVedtakDetaljerRevurderingsbarn?.bleFattetVedtakForRevurderingsbarn == true
-        return !erOmgjøringOgBleFattetVedtakIOpprinnelig &&
-            (erAvvistRevurdering || (barn.erRevurderingsbarn && !skalFatteVedtakForRevurderingsbarn))
+        if (erAvvistRevurdering && omgjøringsdetaljer != null) {
+            return omgjøringsdetaljer.fatteVedtakDetaljerRevurderingsbarn?.bleFattetVedtakForRevurderingsbarn != null &&
+                !omgjøringsdetaljer.fatteVedtakDetaljerRevurderingsbarn.bleFattetVedtakForRevurderingsbarn
+        }
+        return (erAvvistRevurdering || (barn.erRevurderingsbarn && !skalFatteVedtakForRevurderingsbarn))
     }
 
     fun opprettVedtakRequestDelvedtak(

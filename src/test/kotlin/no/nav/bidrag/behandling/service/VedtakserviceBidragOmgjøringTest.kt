@@ -110,22 +110,20 @@ class VedtakserviceBidragOmgjøringTest : CommonVedtakTilBehandlingTest() {
     }
 
     @Test
-    fun `opprettVedtakRequestDelvedtakV2 - enkelt barn - omgjøringsvedtak fattet som delvedtak og endelig vedtak fattet separat`() {
+    fun `Skal bare fatte vedtak for klagevedtak hvis klagevedtak er eneste vedtak`() {
         stubPersonConsumer()
         val behandling = opprettOmgjøringsbehandling()
         val opprettVedtakSlot = mockVedtakFatteVedtak()
 
-        mockBidragsberegning(behandling)
+        mockBidragsberegning(behandling, klagevedtakEnesteVedtak = true)
 
         vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto())
 
-        opprettVedtakSlot shouldHaveSize 2
-        verify(exactly = 2) { vedtakConsumer.fatteVedtak(any()) }
+        opprettVedtakSlot shouldHaveSize 1
+        verify(exactly = 1) { vedtakConsumer.fatteVedtak(any()) }
         assertSoftly(opprettVedtakSlot) {
             first().type shouldBe Vedtakstype.KLAGE
             first().stønadsendringListe shouldHaveSize 1
-            get(1).type shouldBe Vedtakstype.KLAGE
-            get(1).stønadsendringListe shouldHaveSize 1
         }
     }
 
@@ -150,7 +148,7 @@ class VedtakserviceBidragOmgjøringTest : CommonVedtakTilBehandlingTest() {
     }
 
     @Test
-    fun `fatter ett endelig vedtak nar behandling ikke er i forholdsmessig fordeling`() {
+    fun `fatter ett endelig vedtak når behandling ikke er i forholdsmessig fordeling`() {
         stubPersonConsumer()
         val behandling = opprettOmgjøringsbehandling(toBarn = true)
         val opprettVedtakSlot = mockVedtakFatteVedtak()
@@ -186,7 +184,7 @@ class VedtakserviceBidragOmgjøringTest : CommonVedtakTilBehandlingTest() {
     }
 
     @Test
-    fun `fatter ett endelig vedtak nar FF men BP ikke har full evne i alle perioder`() {
+    fun `fatter ett endelig vedtak når FF men BP ikke har full evne i alle perioder`() {
         stubPersonConsumer()
         val behandling = opprettOmgjøringsbehandling(toBarn = true, forholdsmessigFordeling = true)
         behandling.søknadsbarn.first().forholdsmessigFordeling = opprettForholdsmessigFordelingRolle(behandling, 101L)
@@ -253,6 +251,7 @@ class VedtakserviceBidragOmgjøringTest : CommonVedtakTilBehandlingTest() {
         behandling: Behandling,
         bpHarIkkeFullEvneIAllePerioder: Boolean = false,
         revurderingsbarnHarTommePerioder: Boolean = false,
+        klagevedtakEnesteVedtak: Boolean = false,
     ) {
         val vedtakidsEtterfølgende = 99
         val grunnlagListe =
@@ -282,83 +281,239 @@ class VedtakserviceBidragOmgjøringTest : CommonVedtakTilBehandlingTest() {
                     emptyList()
                 }
 
+        val referanseReferertVedtak = "referert_vedtak_revurderingsbarn"
         every { bidragsberegningOrkestrator.utførBidragsberegningV3(any()) } returns
             BidragsberegningOrkestratorResponseV2(
                 grunnlagListe,
                 behandling.søknadsbarn.map { søknadsbarn ->
-                    val erRevurderingsbarn = revurderingsbarnHarTommePerioder && søknadsbarn.erRevurderingsbarn
-                    BidragsberegningResultatBarnV2(
-                        søknadsbarn.tilGrunnlagsreferanse(),
-                        listOf(
-                            ResultatVedtakV2(
-                                vedtakstype = Vedtakstype.KLAGE,
-                                omgjøringsvedtak = true,
-                                beregnet = true,
-                                delvedtak = true,
-                                periodeListe =
-                                    if (erRevurderingsbarn) {
-                                        emptyList()
-                                    } else {
-                                        listOf(
-                                            ResultatPeriode(
-                                                periode =
-                                                    ÅrMånedsperiode(
-                                                        behandling.virkningstidspunkt!!,
-                                                        behandling.finnBeregnTilDatoBehandling(søknadsbarn),
+                    val erRevurderingsbarn = søknadsbarn.erRevurderingsbarn
+                    if (erRevurderingsbarn) {
+                        BidragsberegningResultatBarnV2(
+                            søknadsbarn.tilGrunnlagsreferanse(),
+                            avvistRevurderingsbarn = revurderingsbarnHarTommePerioder,
+                            resultatVedtakListe =
+                                listOf(
+                                    ResultatVedtakV2(
+                                        vedtakstype = Vedtakstype.KLAGE,
+                                        omgjøringsvedtak = !revurderingsbarnHarTommePerioder,
+                                        beregnet = !revurderingsbarnHarTommePerioder,
+                                        delvedtak = true,
+                                        periodeListe =
+                                            if (revurderingsbarnHarTommePerioder) {
+                                                emptyList()
+                                            } else {
+                                                listOf(
+                                                    ResultatPeriode(
+                                                        periode =
+                                                            ÅrMånedsperiode(
+                                                                behandling.virkningstidspunkt!!,
+                                                                behandling.finnBeregnTilDatoBehandling(søknadsbarn),
+                                                            ),
+                                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                                        grunnlagsreferanseListe = emptyList(),
                                                     ),
-                                                resultat = ResultatBeregning(BigDecimal.ZERO),
-                                                grunnlagsreferanseListe = emptyList(),
+                                                )
+                                            },
+                                    ),
+                                    ResultatVedtakV2(
+                                        vedtakstype = Vedtakstype.KLAGE,
+                                        omgjøringsvedtak = false,
+                                        beregnet = false,
+                                        delvedtak = false,
+                                        grunnlagslisteDelvedtak =
+                                            listOf(
+                                                GrunnlagDto(
+                                                    type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                                                    innhold =
+                                                        POJONode(
+                                                            ResultatFraVedtakGrunnlag(
+                                                                vedtaksid = vedtakidsEtterfølgende,
+                                                                omgjøringsvedtak = false,
+                                                                beregnet = false,
+                                                                vedtakstype = Vedtakstype.ENDRING,
+                                                                opprettParagraf35c = false,
+                                                            ),
+                                                        ),
+                                                    referanse = referanseReferertVedtak,
+                                                ),
                                             ),
-                                        )
-                                    },
-                            ),
-                            ResultatVedtakV2(
-                                vedtakstype = Vedtakstype.KLAGE,
-                                omgjøringsvedtak = false,
-                                beregnet = true,
-                                delvedtak = true,
-                                periodeListe =
-                                    if (erRevurderingsbarn) {
-                                        emptyList()
-                                    } else {
-                                        listOf(
-                                            ResultatPeriode(
-                                                periode =
-                                                    ÅrMånedsperiode(
-                                                        behandling.virkningstidspunkt!!,
-                                                        behandling.finnBeregnTilDatoBehandling(søknadsbarn),
+                                        periodeListe =
+                                            if (revurderingsbarnHarTommePerioder) {
+                                                listOf(
+                                                    ResultatPeriode(
+                                                        periode =
+                                                            ÅrMånedsperiode(
+                                                                behandling.virkningstidspunkt!!,
+                                                                behandling.finnBeregnTilDatoBehandling(søknadsbarn),
+                                                            ),
+                                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                                        grunnlagsreferanseListe = listOf(referanseReferertVedtak),
                                                     ),
-                                                resultat = ResultatBeregning(BigDecimal.ZERO),
-                                                grunnlagsreferanseListe = emptyList(),
-                                            ),
-                                        )
-                                    },
-                            ),
-                            ResultatVedtakV2(
-                                vedtakstype = Vedtakstype.ENDRING,
-                                omgjøringsvedtak = false,
-                                delvedtak = true,
-                                beregnet = false,
-                                grunnlagslisteDelvedtak =
+                                                )
+                                            } else {
+                                                listOf(
+                                                    ResultatPeriode(
+                                                        periode =
+                                                            ÅrMånedsperiode(
+                                                                behandling.virkningstidspunkt!!,
+                                                                behandling.finnBeregnTilDatoBehandling(søknadsbarn),
+                                                            ),
+                                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                                        grunnlagsreferanseListe = emptyList(),
+                                                    ),
+                                                )
+                                            },
+                                    ),
+                                ),
+                        )
+                    } else {
+                        BidragsberegningResultatBarnV2(
+                            søknadsbarn.tilGrunnlagsreferanse(),
+                            avvistRevurderingsbarn = revurderingsbarnHarTommePerioder,
+                            resultatVedtakListe =
+                                if (klagevedtakEnesteVedtak) {
                                     listOf(
-                                        GrunnlagDto(
-                                            type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
-                                            innhold =
-                                                POJONode(
-                                                    ResultatFraVedtakGrunnlag(
-                                                        vedtaksid = vedtakidsEtterfølgende,
-                                                        omgjøringsvedtak = false,
-                                                        beregnet = false,
-                                                        vedtakstype = Vedtakstype.ENDRING,
-                                                        opprettParagraf35c = false,
+                                        ResultatVedtakV2(
+                                            vedtakstype = Vedtakstype.KLAGE,
+                                            omgjøringsvedtak = true,
+                                            beregnet = true,
+                                            delvedtak = true,
+                                            periodeListe =
+                                                listOf(
+                                                    ResultatPeriode(
+                                                        periode =
+                                                            ÅrMånedsperiode(
+                                                                behandling.virkningstidspunkt!!,
+                                                                behandling.finnBeregnTilDatoBehandling(søknadsbarn),
+                                                            ),
+                                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                                        grunnlagsreferanseListe = emptyList(),
                                                     ),
                                                 ),
-                                            referanse = "",
                                         ),
-                                    ),
-                            ),
-                        ),
-                    )
+                                        ResultatVedtakV2(
+                                            vedtakstype = Vedtakstype.KLAGE,
+                                            omgjøringsvedtak = false,
+                                            beregnet = false,
+                                            delvedtak = false,
+                                            grunnlagslisteDelvedtak = emptyList(),
+                                            periodeListe =
+                                                listOf(
+                                                    ResultatPeriode(
+                                                        periode =
+                                                            ÅrMånedsperiode(
+                                                                behandling.virkningstidspunkt!!,
+                                                                behandling.finnBeregnTilDatoBehandling(søknadsbarn),
+                                                            ),
+                                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                                        grunnlagsreferanseListe = emptyList(),
+                                                    ),
+                                                ),
+                                        ),
+                                    )
+                                } else {
+                                    listOf(
+                                        ResultatVedtakV2(
+                                            vedtakstype = Vedtakstype.KLAGE,
+                                            omgjøringsvedtak = false,
+                                            beregnet = false,
+                                            delvedtak = true,
+                                            grunnlagslisteDelvedtak =
+                                                listOf(
+                                                    GrunnlagDto(
+                                                        type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                                                        innhold =
+                                                            POJONode(
+                                                                ResultatFraVedtakGrunnlag(
+                                                                    vedtaksid = vedtakidsEtterfølgende,
+                                                                    omgjøringsvedtak = false,
+                                                                    beregnet = false,
+                                                                    vedtakstype = Vedtakstype.ENDRING,
+                                                                    opprettParagraf35c = false,
+                                                                ),
+                                                            ),
+                                                        referanse = referanseReferertVedtak,
+                                                    ),
+                                                ),
+                                            periodeListe =
+                                                listOf(
+                                                    ResultatPeriode(
+                                                        periode =
+                                                            ÅrMånedsperiode(
+                                                                behandling.virkningstidspunkt!!,
+                                                                behandling.virkningstidspunkt!!.plusMonths(1),
+                                                            ),
+                                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                                        grunnlagsreferanseListe = listOf(referanseReferertVedtak),
+                                                    ),
+                                                ),
+                                        ),
+                                        ResultatVedtakV2(
+                                            vedtakstype = Vedtakstype.KLAGE,
+                                            omgjøringsvedtak = true,
+                                            beregnet = true,
+                                            delvedtak = true,
+                                            periodeListe =
+                                                listOf(
+                                                    ResultatPeriode(
+                                                        periode =
+                                                            ÅrMånedsperiode(
+                                                                behandling.virkningstidspunkt!!.plusMonths(1),
+                                                                behandling.finnBeregnTilDatoBehandling(søknadsbarn),
+                                                            ),
+                                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                                        grunnlagsreferanseListe = emptyList(),
+                                                    ),
+                                                ),
+                                        ),
+                                        ResultatVedtakV2(
+                                            vedtakstype = Vedtakstype.KLAGE,
+                                            omgjøringsvedtak = false,
+                                            beregnet = false,
+                                            delvedtak = false,
+                                            grunnlagslisteDelvedtak =
+                                                listOf(
+                                                    GrunnlagDto(
+                                                        type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                                                        innhold =
+                                                            POJONode(
+                                                                ResultatFraVedtakGrunnlag(
+                                                                    vedtaksid = vedtakidsEtterfølgende,
+                                                                    omgjøringsvedtak = false,
+                                                                    beregnet = false,
+                                                                    vedtakstype = Vedtakstype.ENDRING,
+                                                                    opprettParagraf35c = false,
+                                                                ),
+                                                            ),
+                                                        referanse = referanseReferertVedtak,
+                                                    ),
+                                                ),
+                                            periodeListe =
+                                                listOf(
+                                                    ResultatPeriode(
+                                                        periode =
+                                                            ÅrMånedsperiode(
+                                                                behandling.virkningstidspunkt!!,
+                                                                behandling.virkningstidspunkt!!.plusMonths(1),
+                                                            ),
+                                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                                        grunnlagsreferanseListe = listOf(referanseReferertVedtak),
+                                                    ),
+                                                    ResultatPeriode(
+                                                        periode =
+                                                            ÅrMånedsperiode(
+                                                                behandling.virkningstidspunkt!!.plusMonths(1),
+                                                                behandling.finnBeregnTilDatoBehandling(søknadsbarn),
+                                                            ),
+                                                        resultat = ResultatBeregning(BigDecimal.ZERO),
+                                                        grunnlagsreferanseListe = emptyList(),
+                                                    ),
+                                                ),
+                                        ),
+                                    )
+                                },
+                        )
+                    }
                 },
             )
         every { vedtakServiceBeregning.finnSisteVedtaksid(any()) } returns 1
@@ -432,7 +587,7 @@ class VedtakserviceBidragOmgjøringTest : CommonVedtakTilBehandlingTest() {
     }
 
     @Test
-    fun `revurderingsbarn far ENDRING naar bleFattetVedtakForRevurderingsbarn er true`() {
+    fun `Vedtak stønadsendring beslutningstype for revurderingsbarn blir ENDRING når bleFattetVedtakForRevurderingsbarn er true og det er full evne i alle perioder`() {
         stubPersonConsumer()
         val behandling =
             opprettOmgjøringsbehandlingMedRevurderingsbarn(
@@ -454,7 +609,7 @@ class VedtakserviceBidragOmgjøringTest : CommonVedtakTilBehandlingTest() {
     }
 
     @Test
-    fun `revurderingsbarn far AVVIST naar bleFattetVedtakForRevurderingsbarn er false`() {
+    fun `Vedtak stønadsendring for revurderingsbarn blir AVVIST når bleFattetVedtakForRevurderingsbarn er false og det er full evne i alle perioder`() {
         stubPersonConsumer()
         val behandling =
             opprettOmgjøringsbehandlingMedRevurderingsbarn(
@@ -476,7 +631,7 @@ class VedtakserviceBidragOmgjøringTest : CommonVedtakTilBehandlingTest() {
     }
 
     @Test
-    fun `Vedtak for revurderingsbarn blir fattet med beslutningstype AVVIST når bleFattetVedtakForRevurderingsbarn ikke er satt`() {
+    fun `Vedtak for revurderingsbarn blir fattet med beslutningstype ENDRING når bleFattetVedtakForRevurderingsbarn fra omgjort vedtak ikke er satt`() {
         stubPersonConsumer()
         val behandling = opprettOmgjøringsbehandlingMedRevurderingsbarn(fatteVedtakDetaljerRevurderingsbarn = null)
         val opprettVedtakSlot = mockVedtakFatteVedtak()
@@ -487,7 +642,7 @@ class VedtakserviceBidragOmgjøringTest : CommonVedtakTilBehandlingTest() {
         val endeligVedtak = opprettVedtakSlot.last()
         val revurderingsbarnStønadsendring =
             endeligVedtak.stønadsendringListe.find { it.kravhaver.verdi == testdataBarn2.ident }
-        revurderingsbarnStønadsendring?.beslutning shouldBe Beslutningstype.AVVIST
+        revurderingsbarnStønadsendring?.beslutning shouldBe Beslutningstype.ENDRING
     }
 
     @Test

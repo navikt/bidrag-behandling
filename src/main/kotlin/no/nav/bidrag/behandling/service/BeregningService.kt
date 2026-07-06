@@ -247,7 +247,7 @@ class BeregningService(
 
                         val erAvvistRevurdering =
                             (forholdsmessigFordelingDetaljer != null && forholdsmessigFordelingDetaljer.erRevurdering) &&
-                                perioderBarn.isEmpty()
+                                (perioderBarn.isEmpty() || resultatBarn.avvistRevurderingsbarn)
                         val grunnlagSøknadsbarn = resultat.grunnlagListe.hentPersonMedReferanse(resultatBarn.søknadsbarnreferanse)!!
                         val grunnlagBarn =
                             resultat.grunnlagListe.filter {
