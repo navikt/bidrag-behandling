@@ -391,8 +391,10 @@ class ForholdsmessigFordelingKlageService(
                     )
                 val tilknyttetSøknad =
                     tilknyttedeSøknaderOmgjortSøknad
-                        .filter { it.behandlingstema.tilStønadstype() == kravhaver.stønadstype }
-                        .find { it.parterVedtakFattet.finnBarn(kravhaver.kravhaver) != null }
+                        .filter {
+                            it.behandlingstema.tilStønadstype() == kravhaver.stønadstype &&
+                                it.behandlingstype.erForholdsmessigFordeling
+                        }.find { it.parterVedtakFattet.finnBarn(kravhaver.kravhaver) != null }
                 Triple(
                     kravhaver.saksnummer!!,
                     kravhaver.stønadstype,
