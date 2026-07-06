@@ -18,8 +18,6 @@ import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteSamværsnotat
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erBidrag
-import no.nav.bidrag.behandling.transformers.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato
-import no.nav.bidrag.behandling.transformers.finnesLøpendeForskuddForRolle
 import no.nav.bidrag.behandling.transformers.grunnlag.hentGrunnlagsreferanserForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.hentVersjonForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.inntektManglerSøknadsbarn
@@ -76,7 +74,6 @@ import no.nav.bidrag.transport.felles.toCompactString
 import no.nav.bidrag.transport.felles.toYearMonth
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
@@ -96,7 +93,7 @@ fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlags
 
 fun Behandling.byggGrunnlagGenerelt(
     søknadsbarn: List<Rolle> = this.søknadsbarn,
-    requestDto: FatteVedtakRequestDto? = null,
+    request: FatteVedtakRequestDto? = null,
 ): Set<GrunnlagDto> {
     val grunnlagListe = (byggGrunnlagNotater(søknadsbarn) + byggGrunnlagSøknad(søknadsbarn)).toMutableSet()
     grunnlagListe.addAll(byggGrunnlagBeløpshistorikkAlle())
@@ -110,7 +107,7 @@ fun Behandling.byggGrunnlagGenerelt(
         }
 
         TypeBehandling.BIDRAG -> {
-            grunnlagListe.addAll(byggGrunnlagBehandlingDetaljer(requestDto?.fatteVedtakRevurderingsbarn))
+            grunnlagListe.addAll(byggGrunnlagBehandlingDetaljer(request?.fatteVedtakRevurderingsbarn))
         }
 
         else -> {}

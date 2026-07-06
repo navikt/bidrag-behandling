@@ -846,7 +846,7 @@ class VedtakService(
             .run {
                 if (behandling.erAvslagForAlle) {
                     VedtakRequstDto(
-                        listOf(behandling.byggOpprettVedtakRequestAvslagForBidrag(request?.enhet)),
+                        listOf(behandling.byggOpprettVedtakRequestAvslagForBidrag(request)),
                         erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder = false,
                     )
                 } else {

@@ -1260,7 +1260,7 @@ internal fun List<GrunnlagDto>.hentAldersjusteringDetaljerForBarn(gjelderBarnRef
         .firstOrNull { gjelderBarnReferanse.isNullOrEmpty() || it.gjelderBarnReferanse == gjelderBarnReferanse }
         ?.innholdTilObjekt<AldersjusteringDetaljerGrunnlag>()
 
-internal fun List<GrunnlagDto>.hentBehandlingDetaljer(): BehandlingDetaljerGrunnlag? =
+fun List<GrunnlagDto>.hentBehandlingDetaljer(): BehandlingDetaljerGrunnlag? =
     filtrerOgKonverterBasertPåEgenReferanse<BehandlingDetaljerGrunnlag>(Grunnlagstype.BEHANDLING_DETALJER).firstOrNull()?.innhold
 
 internal fun List<GrunnlagDto>.hentSøknader(gjelderReferanse: String? = null): List<SøknadGrunnlag> =

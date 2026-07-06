@@ -746,17 +746,18 @@ class BehandlingTilVedtakMapping(
 
             grunnlagsliste.addAll(stønadsendringGrunnlag)
             stønadsendringGrunnlagListe.addAll(stønadsendringGrunnlag)
+            stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagBehandlingDetaljer(request?.fatteVedtakRevurderingsbarn))
 
             if (resultatVedtak.omgjøringsvedtak) {
                 if (søknadsbarn.erDirekteAvslag) {
-                    grunnlagsliste.addAll(behandling.byggGrunnlagGenereltAvslag())
+                    grunnlagsliste.addAll(behandling.byggGrunnlagGenereltAvslag(request))
                 } else {
                     grunnlagsliste.addAll(
                         behandling.byggGrunnlagForVedtak(
                             stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>,
                         ),
                     )
-                    stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagGenerelt(requestDto = request))
+                    stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagGenerelt(request = request))
                 }
             } else if (resultatVedtak.delvedtak) {
                 // Fjern eksisterende virkningstpunkt grunnlag før det legges på ny
@@ -863,144 +864,6 @@ class BehandlingTilVedtakMapping(
         }
     }
 
-    fun byggVedtakForKlageV2(
-        behandling: Behandling,
-        sak: BidragssakDto,
-        resultatVedtak: ResultatVedtak,
-        enhet: String?,
-        stønadsendringPerioder: List<StønadsendringPeriode> = emptyList(),
-        barn: ResultatRolle,
-        innkreving: Innkrevingstype = Innkrevingstype.MED_INNKREVING,
-        beslutningstype: Beslutningstype = Beslutningstype.ENDRING,
-    ): Pair<List<OpprettStønadsendringRequestDto>, List<OpprettGrunnlagRequestDto>> {
-        mapper.run {
-            val stønadsendringGrunnlag = stønadsendringPerioder.flatMap(StønadsendringPeriode::grunnlag)
-
-            val søknadsbarn = behandling.søknadsbarn.find { it.erSammeRolle(barn.ident!!.verdi, barn.stønadstype) }!!
-            val søknadsbarnReferanse = søknadsbarn.tilGrunnlagsreferanse()
-            val grunnlagListeVedtak =
-                if (søknadsbarn.erDirekteAvslag) {
-                    emptyList()
-                } else {
-                    behandling.byggGrunnlagForVedtak(
-                        stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>,
-                    )
-                }
-            val grunnlagsliste = mutableSetOf<GrunnlagDto>()
-            if (!resultatVedtak.endeligVedtak) {
-                grunnlagsliste.addAll(grunnlagListeVedtak)
-                grunnlagsliste.addAll(resultatVedtak.resultat.grunnlagListe)
-            }
-            val stønadsendringGrunnlagListe = mutableSetOf<GrunnlagDto>()
-
-            grunnlagsliste.addAll(stønadsendringGrunnlag)
-            stønadsendringGrunnlagListe.addAll(stønadsendringGrunnlag)
-
-            if (resultatVedtak.omgjøringsvedtak) {
-                if (søknadsbarn.erDirekteAvslag) {
-                    grunnlagsliste.addAll(behandling.byggGrunnlagGenereltAvslag())
-                } else {
-                    grunnlagsliste.addAll(
-                        behandling.byggGrunnlagForVedtak(
-                            stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>,
-                        ),
-                    )
-                    stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagGenerelt())
-                }
-            } else if (resultatVedtak.delvedtak) {
-                // Fjern eksisterende virkningstpunkt grunnlag før det legges på ny
-                stønadsendringGrunnlagListe.removeIf { it.type == Grunnlagstype.VIRKNINGSTIDSPUNKT }
-                stønadsendringGrunnlagListe.add(byggGrunnlagVirkningstidspunktResultatvedtak(resultatVedtak, søknadsbarnReferanse))
-            } else if (resultatVedtak.endeligVedtak) {
-                grunnlagsliste.addAll(behandling.tilPersonobjekter())
-            }
-
-            if (!resultatVedtak.delvedtak || resultatVedtak.omgjøringsvedtak) {
-                // Fjern eksisterende virkningstpunkt grunnlag før det legges på ny
-                grunnlagsliste.removeIf { it.type == Grunnlagstype.VIRKNINGSTIDSPUNKT }
-                stønadsendringGrunnlagListe.removeIf { it.type == Grunnlagstype.VIRKNINGSTIDSPUNKT }
-                val virkningstidspunktGrunnlag = behandling.byggGrunnlagVirkningsttidspunkt()
-                grunnlagsliste.addAll(virkningstidspunktGrunnlag)
-                virkningstidspunktGrunnlag.find { it.gjelderBarnReferanse == søknadsbarnReferanse }?.let {
-                    stønadsendringGrunnlagListe.add(it)
-                }
-                stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagSøknad())
-
-                val grunnlagManuelleVedtak =
-                    behandling
-                        .byggGrunnlagManuelleVedtak(grunnlagsliste.toList())
-                grunnlagsliste.addAll(grunnlagManuelleVedtak)
-                grunnlagManuelleVedtak.find { it.gjelderBarnReferanse == søknadsbarnReferanse }?.let {
-                    stønadsendringGrunnlagListe.add(it)
-                }
-
-                val etterfølgendeManuelleVedtak =
-                    behandling
-                        .byggGrunnlaggEtterfølgendeManuelleVedtak(grunnlagsliste.toList())
-                grunnlagsliste.addAll(etterfølgendeManuelleVedtak)
-                etterfølgendeManuelleVedtak.find { it.gjelderBarnReferanse == søknadsbarnReferanse }?.let {
-                    stønadsendringGrunnlagListe.add(it)
-                }
-            }
-
-            val referansePostfix =
-                when {
-                    resultatVedtak.omgjøringsvedtak && beslutningstype == Beslutningstype.ENDRING -> {
-                        "omgjøring"
-                    }
-
-                    resultatVedtak.delvedtak || resultatVedtak.omgjøringsvedtak -> {
-                        "Delvedtak_${resultatVedtak.vedtakstype}" +
-                            "_${resultatVedtak.beregnetFraDato.toCompactString()}"
-                    }
-
-                    else -> {
-                        "endeligvedtak"
-                    }
-                }
-            return stønadsendringPerioder.map { it ->
-                val sistePeriode = it.perioder.maxBy { it.periode.fom }
-                val søknadsbarnReferanse = it.barn.tilGrunnlagsreferanse()
-                OpprettStønadsendringRequestDto(
-                    innkreving = innkreving,
-                    skyldner = behandling.tilSkyldner(),
-                    omgjørVedtakId =
-                        when {
-                            resultatVedtak.endeligVedtak || resultatVedtak.omgjøringsvedtak -> {
-                                behandling.omgjøringsdetaljer?.omgjørVedtakId
-                            }
-
-                            else -> {
-                                null
-                            }
-                        },
-                    kravhaver =
-                        it.barn.tilNyestePersonident()
-                            ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!),
-                    mottaker =
-                        behandling.roller
-                            .reelMottakerEllerBidragsmottaker(
-                                sak.hentRolleMedFnr(it.barn.ident!!),
-                            ),
-                    sak = Saksnummer(behandling.saksnummer),
-                    type = behandling.stonadstype!!,
-                    beslutning = beslutningstype,
-                    grunnlagReferanseListe =
-                        stønadsendringGrunnlagListe.map(GrunnlagDto::referanse),
-                    periodeListe = it.perioder,
-                    førsteIndeksreguleringsår =
-                        grunnlagsliste.toList().finnIndeksår(
-                            søknadsbarnReferanse,
-                            sistePeriode.periode,
-                        ),
-                )
-            } to
-                (grunnlagsliste + stønadsendringGrunnlagListe).toSet().map(
-                    BaseGrunnlag::tilOpprettRequestDto,
-                )
-        }
-    }
-
     private fun Behandling.byggOpprettVedtakRequestBidrag(request: FatteVedtakRequestDto? = null): VedtakRequstDto {
         if (erIForholdsmessigFordeling && søknadsbarn.any { it.erRevurderingsbarn } && request?.fatteVedtakRevurderingsbarn == null) {
             ugyldigForespørsel("Mangler informasjon om det skal fattes vedtak for revurderingsbarn")
@@ -1100,7 +963,7 @@ class BehandlingTilVedtakMapping(
                         byggGrunnlagBegrunnelseVirkningstidspunkt() + byggGrunnlagSøknad(søknadsbarn) +
                             byggGrunnlagBehandlingDetaljer(request?.fatteVedtakRevurderingsbarn, true)
                     } else {
-                        byggGrunnlagGenerelt(requestDto = request)
+                        byggGrunnlagGenerelt(request = request)
                     }
 
                 val grunnlagListe =
@@ -1232,7 +1095,7 @@ class BehandlingTilVedtakMapping(
                     }.map { b -> b.barn }
             val grunnlagListeVedtak =
                 byggGrunnlagForVedtak(stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>)
-            val stønadsendringGrunnlagListe = byggGrunnlagGenerelt(requestDto = request)
+            val stønadsendringGrunnlagListe = byggGrunnlagGenerelt(request = request)
 
             val grunnlagListe =
                 (grunnlagListeVedtak + stønadsendringGrunnlag + stønadsendringGrunnlagListe).toSet()
@@ -1429,15 +1292,15 @@ class BehandlingTilVedtakMapping(
                 }
             }
 
-    fun Behandling.byggOpprettVedtakRequestAvslagForBidrag(enhet: String? = null): OpprettVedtakRequestDto =
+    fun Behandling.byggOpprettVedtakRequestAvslagForBidrag(request: FatteVedtakRequestDto? = null): OpprettVedtakRequestDto =
         mapper.run {
             val sak = sakConsumer.hentSak(saksnummer)
-            val grunnlagListe = byggGrunnlagGenereltAvslag()
+            val grunnlagListe = byggGrunnlagGenereltAvslag(request)
             val grunnlagslisteGebyr = byggGrunnlagForGebyr()
             val resultatEngangsbeløpGebyr = mapEngangsbeløpGebyr(grunnlagListe.toList() + grunnlagslisteGebyr)
             val grunnlagVirkningstidspunkt = byggGrunnlagVirkningsttidspunkt()
 
-            return byggOpprettVedtakRequestObjekt(enhet)
+            return byggOpprettVedtakRequestObjekt(request?.enhet)
                 .copy(
                     engangsbeløpListe = resultatEngangsbeløpGebyr.engangsbeløp,
                     stønadsendringListe =
@@ -1491,7 +1354,7 @@ class BehandlingTilVedtakMapping(
     fun Behandling.byggOpprettVedtakRequestAvslagForSærbidrag(enhet: String? = null): OpprettVedtakRequestDto {
         mapper.run {
             val sak = sakConsumer.hentSak(saksnummer)
-            val grunnlagListe = byggGrunnlagGenereltAvslag()
+            val grunnlagListe = byggGrunnlagGenereltAvslag(null)
             val barn = søknadsbarn.first()
 
             val kravhaver = barn.tilNyestePersonident() ?: rolleManglerIdent(Rolletype.BARN, id!!)
