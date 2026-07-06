@@ -734,7 +734,10 @@ class VedtakGrunnlagMapper(
         }
     }
 
-    fun Behandling.byggGrunnlagGenereltAvslag(request: FatteVedtakRequestDto? = null): Set<GrunnlagDto> {
+    fun Behandling.byggGrunnlagGenereltAvslag(
+        request: FatteVedtakRequestDto? = null,
+        bleFFTrukket: Boolean = false,
+    ): Set<GrunnlagDto> {
         val grunnlagListe = (byggGrunnlagNotaterDirekteAvslag() + byggGrunnlagSøknad()).toMutableSet()
         grunnlagListe.addAll(byggGrunnlagBeløpshistorikkAlle())
         when (tilType()) {
@@ -750,7 +753,7 @@ class VedtakGrunnlagMapper(
             }
 
             TypeBehandling.BIDRAG -> {
-                grunnlagListe.addAll(byggGrunnlagBehandlingDetaljer(request?.fatteVedtakRevurderingsbarn))
+                grunnlagListe.addAll(byggGrunnlagBehandlingDetaljer(request?.fatteVedtakRevurderingsbarn, bleFFTrukket))
             }
 
             else -> {}

@@ -94,6 +94,7 @@ fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlags
 fun Behandling.byggGrunnlagGenerelt(
     søknadsbarn: List<Rolle> = this.søknadsbarn,
     request: FatteVedtakRequestDto? = null,
+    bleFFTrukket: Boolean = false,
 ): Set<GrunnlagDto> {
     val grunnlagListe = (byggGrunnlagNotater(søknadsbarn) + byggGrunnlagSøknad(søknadsbarn)).toMutableSet()
     grunnlagListe.addAll(byggGrunnlagBeløpshistorikkAlle())
@@ -107,7 +108,7 @@ fun Behandling.byggGrunnlagGenerelt(
         }
 
         TypeBehandling.BIDRAG -> {
-            grunnlagListe.addAll(byggGrunnlagBehandlingDetaljer(request?.fatteVedtakRevurderingsbarn))
+            grunnlagListe.addAll(byggGrunnlagBehandlingDetaljer(request?.fatteVedtakRevurderingsbarn, bleFFTrukket))
         }
 
         else -> {}

@@ -473,6 +473,7 @@ class BehandlingTilVedtakMapping(
                     } else {
                         Beslutningstype.ENDRING
                     },
+                    bleFFTrukket = false,
                 )
             }
 
@@ -494,7 +495,7 @@ class BehandlingTilVedtakMapping(
      * Splits omgjøring vedtak requests by søknadsid when BP has full evne in all periods (forholdsmessig fordeling scenario).
      * This mirrors the logic in byggOpprettVedtakRequestSplittetFF but for omgjøring context.
      */
-    fun Behandling.byggOpprettVedtakRequestSplittetFFOmgjøring(
+    fun Behandling.byggOpprettVedtakRequestSplittetFFOmgjøringEtterFFBleTrukket(
         request: FatteVedtakRequestDto?,
         resultat: ResultatadBeregningOrkestrering,
     ): List<OpprettVedtakRequestDto> {
@@ -573,6 +574,7 @@ class BehandlingTilVedtakMapping(
                         } else {
                             Beslutningstype.ENDRING
                         },
+                        bleFFTrukket = true,
                     )
                 }
 
@@ -663,6 +665,7 @@ class BehandlingTilVedtakMapping(
                                 } else {
                                     Beslutningstype.DELVEDTAK
                                 },
+                                bleFFTrukket = false,
                             ),
                         resultat = resultatVedtak.resultat,
                         vedtakstidspunkt = null,
@@ -724,6 +727,7 @@ class BehandlingTilVedtakMapping(
         barn: ResultatRolle,
         innkreving: Innkrevingstype = Innkrevingstype.MED_INNKREVING,
         beslutningstype: Beslutningstype = Beslutningstype.ENDRING,
+        bleFFTrukket: Boolean,
     ): OpprettVedtakRequestDto {
         mapper.run {
             val stønadsendringGrunnlag = stønadsendringPerioder.flatMap(StønadsendringPeriode::grunnlag)
@@ -747,7 +751,9 @@ class BehandlingTilVedtakMapping(
 
             grunnlagsliste.addAll(stønadsendringGrunnlag)
             stønadsendringGrunnlagListe.addAll(stønadsendringGrunnlag)
-            stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagBehandlingDetaljer(request?.fatteVedtakRevurderingsbarn))
+            stønadsendringGrunnlagListe.addAll(
+                behandling.byggGrunnlagBehandlingDetaljer(request?.fatteVedtakRevurderingsbarn, bleFFTrukket),
+            )
 
             if (resultatVedtak.omgjøringsvedtak) {
                 if (søknadsbarn.erDirekteAvslag) {
@@ -962,9 +968,9 @@ class BehandlingTilVedtakMapping(
                 val stønadsendringGrunnlagListe =
                     if (erAvvistRevurdering) {
                         byggGrunnlagBegrunnelseVirkningstidspunkt() + byggGrunnlagSøknad(søknadsbarn) +
-                            byggGrunnlagBehandlingDetaljer(request?.fatteVedtakRevurderingsbarn, true)
+                            byggGrunnlagBehandlingDetaljer(request?.fatteVedtakRevurderingsbarn, bleFFTrukket = true)
                     } else {
-                        byggGrunnlagGenerelt(request = request)
+                        byggGrunnlagGenerelt(request = request, bleFFTrukket = false)
                     }
 
                 val grunnlagListe =
@@ -1096,7 +1102,7 @@ class BehandlingTilVedtakMapping(
                     }.map { b -> b.barn }
             val grunnlagListeVedtak =
                 byggGrunnlagForVedtak(stønadsendringGrunnlag.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>)
-            val stønadsendringGrunnlagListe = byggGrunnlagGenerelt(request = request)
+            val stønadsendringGrunnlagListe = byggGrunnlagGenerelt(request = request, bleFFTrukket = false)
 
             val grunnlagListe =
                 (grunnlagListeVedtak + stønadsendringGrunnlag + stønadsendringGrunnlagListe).toSet()
@@ -1296,7 +1302,7 @@ class BehandlingTilVedtakMapping(
     fun Behandling.byggOpprettVedtakRequestAvslagForBidrag(request: FatteVedtakRequestDto? = null): OpprettVedtakRequestDto =
         mapper.run {
             val sak = sakConsumer.hentSak(saksnummer)
-            val grunnlagListe = byggGrunnlagGenereltAvslag(request)
+            val grunnlagListe = byggGrunnlagGenereltAvslag(request, false)
             val grunnlagslisteGebyr = byggGrunnlagForGebyr()
             val resultatEngangsbeløpGebyr = mapEngangsbeløpGebyr(grunnlagListe.toList() + grunnlagslisteGebyr)
             val grunnlagVirkningstidspunkt = byggGrunnlagVirkningsttidspunkt()

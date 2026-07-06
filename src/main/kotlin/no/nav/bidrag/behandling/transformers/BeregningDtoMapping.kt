@@ -172,6 +172,7 @@ import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.Year
 import java.time.YearMonth
+import kotlin.compareTo
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatBeregning as ResultatBeregningBB
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode as ResultatPeriodeBB
 
@@ -1703,20 +1704,30 @@ internal fun List<GrunnlagDto>.hentSamvær(gjelderReferanse: String): List<Samv�
             it.gjelderBarnReferanse == gjelderReferanse || it.gjelderReferanse == gjelderReferanse
         }.map { it.innholdTilObjekt<SamværsperiodeGrunnlag>() }
 
-fun List<GrunnlagDto>.harOpprettetForholdsmessigFordeling(): Boolean =
-    hentBehandlingDetaljer()?.opprettetForholdsmessigFordeling == true ||
-        // Opprettet FF
+fun List<GrunnlagDto>.harOpprettetForholdsmessigFordeling(): Boolean {
+    val inneholderFFSøknader =
         hentSøknader().any {
             it.behandlingstype?.erForholdsmessigFordeling == true
-        } ||
-        // Opprett FF når alle barna er i samme søknad. Tilfelle hvor det er valgt ulik virkningstidspunkt for barna
+        }
+    // Flere søknader = Opprettet FF vanligvis
+    val inneholderFlereSøknad = hentSøknader().size > 1
+    // Opprett FF når alle barna er i samme søknad. Tilfelle hvor det er valgt ulik virkningstidspunkt for barna
+    val valgtUlikVirkningstidspunkt =
         filtrerOgKonverterBasertPåEgenReferanse<VirkningstidspunktGrunnlag>(Grunnlagstype.VIRKNINGSTIDSPUNKT).any {
             if (it.gjelderBarnReferanse == null) return@any false
             val minsteSamværsperiode = hentSamvær(it.gjelderBarnReferanse!!).minOfOrNull { it.periode.fom } ?: return@any false
             it.innhold.virkningstidspunkt < minsteSamværsperiode.toLocalDate()
-        } ||
-        // Flere søknader = Opprettet FF vanligvis
-        hentSøknader().size > 1
+        }
+    val behandlingDetaljer = hentBehandlingDetaljer()
+    val bpHarFullEvneIAlllePerioder = perioderSlåttUtTilFF().isEmpty()
+    if (behandlingDetaljer?.fatteVedtakRevurderingsbarn != null) {
+        return !behandlingDetaljer.fatteVedtakRevurderingsbarn!!.bleFFTrukket
+    }
+    if (bpHarFullEvneIAlllePerioder) return false
+
+    val opprettetFF = hentBehandlingDetaljer()?.opprettetForholdsmessigFordeling == true
+    return opprettetFF || inneholderFFSøknader || inneholderFlereSøknad || valgtUlikVirkningstidspunkt || bpHarFullEvneIAlllePerioder
+}
 
 fun List<GrunnlagDto>.løpendePeriodeSlåttUtTilFFForRevurderingsbarn(søknadsbarnReferanse: String? = null): Boolean =
     perioderSlåttUtTilFFForRevurderingsbarn(søknadsbarnReferanse).any { it.periode.til == null }

@@ -546,7 +546,7 @@ class VedtakService(
                 val endeligVedtakRequests =
                     if (erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder) {
                         behandlingTilVedtakMapping.run {
-                            behandling.byggOpprettVedtakRequestSplittetFFOmgjøring(
+                            behandling.byggOpprettVedtakRequestSplittetFFOmgjøringEtterFFBleTrukket(
                                 request,
                                 oppdatertDelvedtakOrkestrering,
                             )
