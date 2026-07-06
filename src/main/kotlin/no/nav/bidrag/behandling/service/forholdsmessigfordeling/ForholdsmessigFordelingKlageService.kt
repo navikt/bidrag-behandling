@@ -16,6 +16,7 @@ import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.erOverEllerLik18År
+import no.nav.bidrag.behandling.transformers.maxOfNullable
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
@@ -140,10 +141,12 @@ class ForholdsmessigFordelingKlageService(
 
         val gjenværendeKravhavere =
             relevanteKravhavere
+                .filter { rk -> søknadsbarnOrdinæreSøknader.none { it.first == rk.kravhaver && it.second == rk.stønadstype } }
                 .filter { rk ->
-                    erManuellOpprettelseEllerOppdateringAvFF || søknadsbarnOrdinæreSøknader.none {
-                        it.first == rk.kravhaver && it.second == rk.stønadstype
-                    } && behandling.søknadsbarn.any { s -> s.ident == rk.kravhaver && s.stønadstype == rk.stønadstype }
+                    erManuellOpprettelseEllerOppdateringAvFF || (
+                        // Bare opprett for revurderingsbarn som var del av opprinnelig vedtak. Resten inkluderes manuelt senere av SB
+                        behandling.søknadsbarn.any { s -> s.ident == rk.kravhaver && s.stønadstype == rk.stønadstype }
+                    )
                 }.toSet()
         opprettRevurderingssøknaderForGjenværendeKravhavere(
             behandling,
@@ -366,6 +369,8 @@ class ForholdsmessigFordelingKlageService(
         behandlerEnhet: String,
         request: OpprettFFRequest?,
     ) {
+        val eldsteSøktFomDato = behandling.eldsteSøktFomDatoSøknadsbarn
+
         val tilknyttedeSøknaderOmgjortSøknad =
             bbmConsumer
                 .finnSammenknytningerHovedsøknad(
@@ -391,7 +396,7 @@ class ForholdsmessigFordelingKlageService(
                 Triple(
                     kravhaver.saksnummer!!,
                     kravhaver.stønadstype,
-                    tilknyttetSøknad?.søknadFomDato ?: søktFomDato,
+                    maxOfNullable(eldsteSøktFomDato, tilknyttetSøknad?.søknadFomDato ?: søktFomDato)!!,
                 )
             }.forEach { (saksnummerLøpendeBidrag, løpendebidragssaker) ->
                 val saksnummer = saksnummerLøpendeBidrag.first

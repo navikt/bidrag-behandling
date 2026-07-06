@@ -279,6 +279,16 @@ open class Behandling(
         } else {
             listOf(saksnummer)
         }
+    val eldsteSøktFomDatoSøknadsbarn get() =
+        søknadsbarn
+            .filter { !it.erRevurderingsbarn }
+            .mapNotNull {
+                it.forholdsmessigFordeling
+                    ?.eldsteSøknad
+                    ?.søknadFomDato
+                    ?.withDayOfMonth(1)
+            }.minOrNull() ?: søktFomDato.withDayOfMonth(1)
+
     val eldsteSøktFomDato get() =
         if (erIForholdsmessigFordeling) {
             søknadsbarn
