@@ -479,15 +479,23 @@ internal fun List<GrunnlagDto>.mapRoller(
     opprinneligVirkningstidspunkt: LocalDate,
     sak: BidragssakDto? = null,
 ): MutableSet<Rolle> =
-    filter {
-        if (it.type == Grunnlagstype.PERSON_SØKNADSBARN && !lesemodus) {
-            vedtak.stønadsendringListe.any { s ->
-                it.personIdent == s.kravhaver.verdi && it.stønadstype == s.type
+    asSequence()
+        .filter { grunnlagstyperRolle.contains(it.type) }
+        .filter {
+            if (it.type == Grunnlagstype.PERSON_SØKNADSBARN && !lesemodus) {
+                if (vedtak.stønadsendringListe.isNotEmpty()) {
+                    vedtak.stønadsendringListe.any { s ->
+                        it.personIdent == s.kravhaver.verdi && (it.stønadstype == null || it.stønadstype == s.type)
+                    }
+                } else {
+                    vedtak.engangsbeløpListe.any { s ->
+                        it.personIdent == s.kravhaver.verdi
+                    }
+                }
+            } else {
+                true
             }
-        } else {
-            grunnlagstyperRolle.contains(it.type)
-        }
-    }.distinctBy { it.personIdent to it.stønadstype }
+        }.distinctBy { it.personIdent to it.stønadstype }
         .mapIndexed { i, rolle ->
             val stønadsendring =
                 vedtak.stønadsendringListe.find {

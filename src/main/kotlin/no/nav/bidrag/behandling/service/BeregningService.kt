@@ -296,6 +296,7 @@ class BeregningService(
                 inneholderBeregningForRevurderingsbarn =
                     resultatRevurderingsbarn.isNotEmpty() && resultatRevurderingsbarn.none { it.avvistRevurderingsbarn },
                 vedtakstype = behandling.vedtakstype,
+                fatteVedtakDetaljerFraOmgjortVedtak = behandling.omgjøringsdetaljer?.fatteVedtakDetaljerRevurderingsbarn,
             )
         } catch (e: Exception) {
             LOGGER.warn(e) { "Det skjedde en feil ved beregning av barnebidrag: ${e.message}" }

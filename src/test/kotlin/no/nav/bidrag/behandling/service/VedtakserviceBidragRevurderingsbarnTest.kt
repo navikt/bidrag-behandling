@@ -5,7 +5,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldContainKey
 import io.kotest.matchers.shouldBe
 import io.mockk.every
-import io.mockk.mockk
 import io.mockk.slot
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -47,11 +46,7 @@ class VedtakserviceBidragRevurderingsbarnTest : CommonVedtakTilBehandlingTest() 
     fun `skal sette beslutningstype AVVIST for revurderingsbarn nar skalFatteVedtakForRevurderingsbarn er false`() {
         val behandling = opprettBehandlingMedRevurderingsbarn()
         val fatteVedtakRevurderingsbarn =
-            mockk<FatteVedtakRevurderingsbarn> {
-                every { skalFatteVedtakForRevurderingsbarn } returns false
-                every { foreslåttFatteVedtak } returns false
-                every { manueltOverstyrtForslagBegrunnelse } returns "Manuell overstyring av forslag"
-            }
+            FatteVedtakRevurderingsbarn(foreslåttFatteVedtak = false)
         val request = FatteVedtakRequestDto(fatteVedtakRevurderingsbarn = fatteVedtakRevurderingsbarn)
 
         every { behandlingService.hentBehandlingById(behandling.id!!) } returns behandling
@@ -77,11 +72,7 @@ class VedtakserviceBidragRevurderingsbarnTest : CommonVedtakTilBehandlingTest() 
     fun `skal sette beslutningstype ENDRING for revurderingsbarn nar skalFatteVedtakForRevurderingsbarn er true`() {
         val behandling = opprettBehandlingMedRevurderingsbarn()
         val fatteVedtakRevurderingsbarn =
-            mockk<FatteVedtakRevurderingsbarn> {
-                every { skalFatteVedtakForRevurderingsbarn } returns true
-                every { foreslåttFatteVedtak } returns true
-                every { manueltOverstyrtForslagBegrunnelse } returns "Manuell overstyring av forslag"
-            }
+            FatteVedtakRevurderingsbarn(foreslåttFatteVedtak = true)
         val request = FatteVedtakRequestDto(fatteVedtakRevurderingsbarn = fatteVedtakRevurderingsbarn)
 
         every { behandlingService.hentBehandlingById(behandling.id!!) } returns behandling
@@ -103,11 +94,10 @@ class VedtakserviceBidragRevurderingsbarnTest : CommonVedtakTilBehandlingTest() 
         val behandling = opprettBehandlingMedRevurderingsbarn()
         val overstyringsbegrunnelse = "Manuell overstyring av forslag"
         val fatteVedtakRevurderingsbarn =
-            mockk<FatteVedtakRevurderingsbarn> {
-                every { skalFatteVedtakForRevurderingsbarn } returns true
-                every { foreslåttFatteVedtak } returns false
-                every { manueltOverstyrtForslagBegrunnelse } returns overstyringsbegrunnelse
-            }
+            FatteVedtakRevurderingsbarn(
+                foreslåttFatteVedtak = false,
+                manueltOverstyrtForslagBegrunnelse = overstyringsbegrunnelse,
+            )
         val request = FatteVedtakRequestDto(fatteVedtakRevurderingsbarn = fatteVedtakRevurderingsbarn)
 
         every { behandlingService.hentBehandlingById(behandling.id!!) } returns behandling
@@ -139,11 +129,10 @@ class VedtakserviceBidragRevurderingsbarnTest : CommonVedtakTilBehandlingTest() 
         val behandling = opprettBehandlingMedRevurderingsbarn()
         val overstyringsbegrunnelse = "Manuell overstyring av forslag"
         val fatteVedtakRevurderingsbarn =
-            mockk<FatteVedtakRevurderingsbarn> {
-                every { skalFatteVedtakForRevurderingsbarn } returns true
-                every { foreslåttFatteVedtak } returns true
-                every { manueltOverstyrtForslagBegrunnelse } returns overstyringsbegrunnelse
-            }
+            FatteVedtakRevurderingsbarn(
+                foreslåttFatteVedtak = true,
+                manueltOverstyrtForslagBegrunnelse = overstyringsbegrunnelse,
+            )
         val request = FatteVedtakRequestDto(fatteVedtakRevurderingsbarn = fatteVedtakRevurderingsbarn)
 
         every { behandlingService.hentBehandlingById(behandling.id!!) } returns behandling

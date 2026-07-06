@@ -2349,7 +2349,7 @@
         "sjablon_ØvreInntektsgrenseIkkeISkatteposisjonBeløp_202301"
       ],
       "gjelderReferanse": "person_PERSON_BIDRAGSPLIKTIG_19830916_286",
-      "gjelderBarnReferanse": null
+      "gjelderBarnReferanse": "person_PERSON_SØKNADSBARN_20130615_285"
     },
     {
       "referanse": "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_person_PERSON_BIDRAGSPLIKTIG_19830916_286_person_PERSON_SØKNADSBARN_20130615_285_202403",
@@ -2378,7 +2378,7 @@
         "sjablon_ØvreInntektsgrenseIkkeISkatteposisjonBeløp_202301"
       ],
       "gjelderReferanse": "person_PERSON_BIDRAGSPLIKTIG_19830916_286",
-      "gjelderBarnReferanse": null
+      "gjelderBarnReferanse": "person_PERSON_SØKNADSBARN_20130615_285_202403"
     },
     {
       "referanse": "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_person_PERSON_BIDRAGSPLIKTIG_19830916_286_person_PERSON_SØKNADSBARN_20130615_285_202406",
@@ -2407,7 +2407,7 @@
         "sjablon_ØvreInntektsgrenseIkkeISkatteposisjonBeløp_202301"
       ],
       "gjelderReferanse": "person_PERSON_BIDRAGSPLIKTIG_19830916_286",
-      "gjelderBarnReferanse": null
+      "gjelderBarnReferanse": "person_PERSON_SØKNADSBARN_20130615_285"
     },
     {
       "referanse": "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_person_PERSON_BIDRAGSPLIKTIG_19830916_286_person_PERSON_SØKNADSBARN_20130615_285_202407",
@@ -2436,7 +2436,7 @@
         "sjablon_ØvreInntektsgrenseIkkeISkatteposisjonBeløp_202301"
       ],
       "gjelderReferanse": "person_PERSON_BIDRAGSPLIKTIG_19830916_286",
-      "gjelderBarnReferanse": null
+      "gjelderBarnReferanse": "person_PERSON_SØKNADSBARN_20130615_285"
     },
     {
       "referanse": "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_person_PERSON_BIDRAGSPLIKTIG_19830916_286_person_PERSON_SØKNADSBARN_20130615_285_202408",
@@ -2465,7 +2465,7 @@
         "sjablon_ØvreInntektsgrenseIkkeISkatteposisjonBeløp_202301"
       ],
       "gjelderReferanse": "person_PERSON_BIDRAGSPLIKTIG_19830916_286",
-      "gjelderBarnReferanse": null
+      "gjelderBarnReferanse": "person_PERSON_SØKNADSBARN_20130615_285"
     },
     {
       "referanse": "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_person_PERSON_BIDRAGSPLIKTIG_19830916_286_person_PERSON_SØKNADSBARN_20130615_285_202409",
@@ -2494,7 +2494,7 @@
         "sjablon_ØvreInntektsgrenseIkkeISkatteposisjonBeløp_202301"
       ],
       "gjelderReferanse": "person_PERSON_BIDRAGSPLIKTIG_19830916_286",
-      "gjelderBarnReferanse": null
+      "gjelderBarnReferanse": "person_PERSON_SØKNADSBARN_20130615_285"
     },
     {
       "referanse": "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_person_PERSON_BIDRAGSPLIKTIG_19830916_286_person_PERSON_SØKNADSBARN_20130615_285_202410",
@@ -2523,7 +2523,7 @@
         "sjablon_ØvreInntektsgrenseIkkeISkatteposisjonBeløp_202301"
       ],
       "gjelderReferanse": "person_PERSON_BIDRAGSPLIKTIG_19830916_286",
-      "gjelderBarnReferanse": null
+      "gjelderBarnReferanse": "person_PERSON_SØKNADSBARN_20130615_285"
     },
     {
       "referanse": "delberegning_DELBEREGNING_BIDRAGSPLIKTIGES_ANDEL_person_PERSON_BIDRAGSPLIKTIG_19830916_286_person_PERSON_SØKNADSBARN_20130615_285_202411",
@@ -2552,7 +2552,7 @@
         "sjablon_ØvreInntektsgrenseIkkeISkatteposisjonBeløp_202301"
       ],
       "gjelderReferanse": "person_PERSON_BIDRAGSPLIKTIG_19830916_286",
-      "gjelderBarnReferanse": null
+      "gjelderBarnReferanse": "person_PERSON_SØKNADSBARN_20130615_285"
     },
     {
       "referanse": "delberegning_DELBEREGNING_BOFORHOLD_person_PERSON_BIDRAGSPLIKTIG_19830916_286_person_PERSON_SØKNADSBARN_20130615_285_202402",

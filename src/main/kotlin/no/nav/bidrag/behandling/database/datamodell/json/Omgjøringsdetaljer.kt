@@ -37,6 +37,9 @@ data class Omgjøringsdetaljer(
     val fatteVedtakDetaljerRevurderingsbarn: FatteVedtakDetaljerFraOmgjortVedtakForRevurderingsbarn? = null,
 ) {
     val minsteVedtakstidspunkt get() = omgjortVedtakstidspunktListe.minOrNull()
+    val overstyrtTilÅIkkeFatteVedtakForRevurderingsbarn: Boolean? get() =
+        fatteVedtakDetaljerRevurderingsbarn != null &&
+            fatteVedtakDetaljerRevurderingsbarn.bleFattetVedtakForRevurderingsbarn
 }
 
 data class FatteVedtakDetaljerFraOmgjortVedtakForRevurderingsbarn(

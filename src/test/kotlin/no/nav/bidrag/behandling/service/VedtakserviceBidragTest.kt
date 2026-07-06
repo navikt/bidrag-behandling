@@ -127,7 +127,11 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en bidrag aldersjustering behandling`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingAldersjustering(true)
-        behandling.virkningstidspunkt = YearMonth.now().withMonth(7).atDay(1)
+        behandling.virkningstidspunkt =
+            YearMonth
+                .now()
+                .withMonth(7)
+                .atDay(1)
         behandling.søknadsbarn.first().virkningstidspunkt = behandling.virkningstidspunkt
         behandling.søknadsbarn.first().årsak = behandling.årsak
 
@@ -1267,28 +1271,13 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
 
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
         behandling.virkningstidspunkt = LocalDate.parse("2024-01-01")
-        behandling.søknadsbarn.first().virkningstidspunkt = behandling.virkningstidspunkt
-        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
-        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), medId = true)
-        behandling.leggTilTillegsstønad(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(4), null), medId = true)
-        behandling.leggTilFaktiskTilsynsutgift(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), testdataHusstandsmedlem1, medId = true)
-        behandling.leggTilFaktiskTilsynsutgift(
-            ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null),
-            testdataBarnBm,
-            medId = true,
-        )
-        behandling.leggTilFaktiskTilsynsutgift(ÅrMånedsperiode(behandling.virkningstidspunkt!!, null), medId = true)
-        behandling.leggTilBarnetilsyn(ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(1), null), generateId = true)
-        behandling.leggTilBarnetilsyn(
-            ÅrMånedsperiode(behandling.virkningstidspunkt!!, behandling.virkningstidspunkt!!.plusMonths(1)),
-            generateId = true,
-            tilsynstype = Tilsynstype.HELTID,
-            under_skolealder = true,
-            kilde = Kilde.OFFENTLIG,
-        )
+        behandling.oppdaterVirkningstidspunktForAlle(LocalDate.parse("2024-01-01"))
+        behandling.søknadsbarn.first().opphørsdato = LocalDate.parse("2025-07-01")
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, null), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
+
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
         behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!, medId = true)
-        behandling.leggTilPrivatAvtale(testdataBarn1, YearMonth.parse("2023-01"), YearMonth.parse("2023-03"), BigDecimal(2500))
+
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
             NotatType.INNTEKT,

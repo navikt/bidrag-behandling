@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.dto.v1.beregning
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.GrunnlagFraVedtak
 import no.nav.bidrag.behandling.database.datamodell.grunnlagsinnhentingFeiletMap
+import no.nav.bidrag.behandling.database.datamodell.json.FatteVedtakDetaljerFraOmgjortVedtakForRevurderingsbarn
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.dto.v1.beregning.UgyldigBeregningDto.UgyldigResultatPeriode
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
@@ -204,6 +205,7 @@ data class ResultatBidragsberegning(
     val bpHarFullEvneIAllePerioder: Boolean = false,
     val vedtakstype: Vedtakstype,
     val ugyldigBeregning: UgyldigBeregningDto? = null,
+    val fatteVedtakDetaljerFraOmgjortVedtak: FatteVedtakDetaljerFraOmgjortVedtakForRevurderingsbarn? = null,
     val resultatBarn: List<ResultatBidragsberegningBarn> = emptyList(),
 ) {
     val grunnlagslisteList get() = grunnlagsliste.toList()
@@ -266,6 +268,7 @@ data class ResultatBidragberegningDto(
     val resultatBarn: List<ResultatBidragsberegningBarnDto> = emptyList(),
     val perioderSlåttUtTilFF: List<PeriodeSlåttUtTilFF>,
     val perioderSlåttUtTilFFRevurderingsbarn: List<PeriodeSlåttUtTilFF>,
+    val fatteVedtakDetaljerFraOmgjortVedtak: FatteVedtakDetaljerFraOmgjortVedtakForRevurderingsbarn? = null,
 )
 
 data class ResultatBidragsberegningBarnDto(

@@ -424,6 +424,7 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
         skalFatteVedtakForRevurderingsbarn = resultatBarn.any { it.barn.erRevurderingsbarn && it.fatteVedtakAnbefalt },
         kanFatteVedtakForRevurderingsbarn = !bpHarFullEvneIAllePerioder && inneholderBeregningForRevurderingsbarn,
         perioderSlåttUtTilFF = grunnlagslisteList.perioderSlåttUtTilFF(),
+        fatteVedtakDetaljerFraOmgjortVedtak = fatteVedtakDetaljerFraOmgjortVedtak,
         perioderSlåttUtTilFFRevurderingsbarn = grunnlagslisteList.perioderSlåttUtTilFFForRevurderingsbarn(),
         resultatBarn =
             resultatBarn
