@@ -21,6 +21,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
+import no.nav.bidrag.behandling.transformers.validering.virkningstidspunkt
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.opprettGrunnlagsreferanseVirkningstidspunkt
 import no.nav.bidrag.behandling.utils.harReferanseTilGrunnlag
 import no.nav.bidrag.behandling.utils.hentGrunnlagstype
@@ -1272,11 +1273,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
         behandling.virkningstidspunkt = LocalDate.parse("2024-01-01")
         behandling.oppdaterVirkningstidspunktForAlle(LocalDate.parse("2024-01-01"))
-        behandling.søknadsbarn.first().opphørsdato = LocalDate.parse("2025-07-01")
         behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, null), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
-
-        behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragsmottaker!!, medId = true)
-        behandling.leggTilBarnetillegg(testdataBarn1, behandling.bidragspliktig!!, medId = true)
 
         behandling.leggTilNotat(
             "Inntektsbegrunnelse kun i notat",
@@ -1326,15 +1323,16 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             listOf(
                 opprettStønadPeriodeDto(
                     ÅrMånedsperiode(YearMonth.parse("2023-04"), YearMonth.parse("2024-05")),
-                    beløp = BigDecimal("6800"),
+                    beløp = BigDecimal("4800"),
                 ),
                 opprettStønadPeriodeDto(
                     ÅrMånedsperiode(YearMonth.parse("2024-05"), null),
-                    beløp = BigDecimal("5600"),
+                    beløp = BigDecimal("4800"),
                 ),
             ),
             2024,
         )
+        virkningstidspunktService.oppdaterOpphørsdato(OppdaterOpphørsdatoRequestDto(idRolle = null, opphørsdato = LocalDate.parse("2024-07-01")), behandling)
         every { behandlingService.hentBehandlingById(any()) } returns behandling
         every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
 
@@ -1361,7 +1359,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             shouldHaveSize(1)
             val stønadsendring = opprettVedtakRequest.stønadsendringListe.first()
             stønadsendring.førsteIndeksreguleringsår shouldBe 2024
-            stønadsendring.periodeListe.forEach {
+            stønadsendring.periodeListe.subList(0, stønadsendring.periodeListe.size - 1).forEach {
                 it.resultatkode shouldBe Resultatkode.INGEN_ENDRING_UNDER_GRENSE.name
             }
         }
