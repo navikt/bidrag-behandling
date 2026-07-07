@@ -1720,13 +1720,13 @@ fun List<GrunnlagDto>.harOpprettetForholdsmessigFordeling(): Boolean {
         }
     val behandlingDetaljer = hentBehandlingDetaljer()
     val bpHarFullEvneIAlllePerioder = perioderSlåttUtTilFF().isEmpty()
+    if (bpHarFullEvneIAlllePerioder) return false
     if (behandlingDetaljer?.fatteVedtakRevurderingsbarn != null) {
         return !behandlingDetaljer.fatteVedtakRevurderingsbarn!!.bleFFTrukket
     }
-    if (bpHarFullEvneIAlllePerioder) return false
 
     val opprettetFF = hentBehandlingDetaljer()?.opprettetForholdsmessigFordeling == true
-    return opprettetFF || inneholderFFSøknader || inneholderFlereSøknad || valgtUlikVirkningstidspunkt || bpHarFullEvneIAlllePerioder
+    return opprettetFF || inneholderFFSøknader || inneholderFlereSøknad || valgtUlikVirkningstidspunkt
 }
 
 fun List<GrunnlagDto>.løpendePeriodeSlåttUtTilFFForRevurderingsbarn(søknadsbarnReferanse: String? = null): Boolean =

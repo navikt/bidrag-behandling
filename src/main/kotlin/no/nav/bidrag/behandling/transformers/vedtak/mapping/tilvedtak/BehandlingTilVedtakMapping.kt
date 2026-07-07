@@ -970,7 +970,7 @@ class BehandlingTilVedtakMapping(
                         byggGrunnlagBegrunnelseVirkningstidspunkt() + byggGrunnlagSøknad(søknadsbarn) +
                             byggGrunnlagBehandlingDetaljer(request?.fatteVedtakRevurderingsbarn, bleFFTrukket = true)
                     } else {
-                        byggGrunnlagGenerelt(request = request, bleFFTrukket = false)
+                        byggGrunnlagGenerelt(request = request, bleFFTrukket = true)
                     }
 
                 val grunnlagListe =
