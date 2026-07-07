@@ -248,32 +248,6 @@ fun Behandling.finnPeriodeLøperBidrag(rolle: Rolle): ÅrMånedsperiode? {
     }
 }
 
-fun Rolle.finnPeriodeLøperBidrag2(): ÅrMånedsperiode? {
-    val fraPeriodeLøperBidrag = behandling.finnPerioderHvorDetLøperBidrag(this).minByOrNull { it.fom }?.fom
-    val tilPeriodeLøperBidrag = behandling.finnPerioderHvorDetLøperBidrag(this).maxByOrNull { it.fom }?.til
-    val fraPeriodePrivatAvtale =
-        behandling.privatAvtale
-            .find {
-                it.gjelderPerson(ident!!, stønadstype)
-            }?.perioderInnkreving
-            ?.minByOrNull { it.fom }
-            ?.fom
-            ?.toYearMonth()
-    val tilPeriodePrivatAvtale =
-        behandling.privatAvtale
-            .find {
-                it.gjelderPerson(ident!!, stønadstype)
-            }?.perioderInnkreving
-            ?.maxByOrNull { it.fom }
-            ?.tom
-            ?.plusMonths(1)
-            ?.withDayOfMonth(1)
-            ?.toYearMonth()
-    return minOfNullable(fraPeriodeLøperBidrag, fraPeriodePrivatAvtale)?.let {
-        ÅrMånedsperiode(it, maxOfNullable(tilPeriodeLøperBidrag, tilPeriodePrivatAvtale))
-    }
-}
-
 fun Behandling.finnPerioderHvorDetLøperBidrag(rolle: Rolle): List<ÅrMånedsperiode> {
     val eksisterendeVedtak = hentGrunnlagBeløpshistorikkForRolle(rolle, erKlageEllerOmgjøring) ?: return emptyList()
     val stønad = eksisterendeVedtak.konverterTilStønadDto() ?: return emptyList()

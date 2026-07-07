@@ -273,7 +273,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
                         }
 
                 val resultatVedtakErEnestePeriode =
-                    perioder.isNullOrEmpty() && resultatPeriode.grunnlagsreferanseListe.isNotEmpty() &&
+                    perioder != null && perioder.isEmpty() && resultatPeriode.grunnlagsreferanseListe.isNotEmpty() &&
                         resultatPeriode.grunnlagsreferanseListe.all { gr ->
                             grunnlaglisterResultat.find { it.referanse == gr }?.type == Grunnlagstype.RESULTAT_FRA_VEDTAK
                         }

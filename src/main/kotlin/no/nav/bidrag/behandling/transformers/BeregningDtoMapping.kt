@@ -172,7 +172,6 @@ import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.Year
 import java.time.YearMonth
-import kotlin.compareTo
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatBeregning as ResultatBeregningBB
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode as ResultatPeriodeBB
 
@@ -475,7 +474,7 @@ fun ResultatBidragsberegning.tilDto(kanFatteVedtakBegrunnelse: String?): Resulta
                                                 it.grunnlagsreferanseListe,
                                             ),
                                             vedtakstype,
-                                            resultat.barn.ident!!,
+                                            resultat.barn,
                                         ).copy()
                                 }.toList()
                                 .sortedBy { it.periode.fom }
@@ -630,7 +629,7 @@ private fun opprettDelvedtak(resultat: ResultatBidragsberegningBarn): List<Delve
                                             p.grunnlagsreferanseListe,
                                         ),
                                         delvedtak?.vedtakstype ?: rv.vedtakstype,
-                                        resultat.barn.ident!!,
+                                        resultat.barn,
                                         erEndeligVedtak = erEndeligVedtak,
                                     ).copy(
                                         erDirekteAvslag = avslagskode?.erDirekteAvslag() == true,
@@ -832,9 +831,9 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
     ugyldigBeregning: UgyldigBeregningDto?,
     erResultatEndringUnderGrense: Boolean,
     vedtakstype: Vedtakstype,
-    barnIdent: Personident,
+    barnRolle: ResultatRolle,
     erEndeligVedtak: Boolean = false,
-    `løperBidrag`: Boolean = false,
+    løperBidrag: Boolean = false,
 ): ResultatBarnebidragsberegningPeriodeDto {
     if (vedtakstype == Vedtakstype.ALDERSJUSTERING && !erAldersjusteringBisysVedtak()) {
         return byggPeriodeBeregningDtoForAldersjustering(
@@ -871,19 +870,19 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
         val erinnkrevingsgrunnlag = finnSøknadGrunnlag() != null && finnSøknadGrunnlag()!!.innkrevingsgrunnlag
         if (!erinnkrevingsgrunnlag) {
             finnResultatFraAnnenVedtak(grunnlagsreferanseListe)?.let {
-                return byggPeriodeBeregningDtoForResultatFraAnnenVedtak(it, periode, barnIdent, vedtakstype)
+                return byggPeriodeBeregningDtoForResultatFraAnnenVedtak(it, periode, barnRolle, vedtakstype)
             }
         }
         return byggPeriodeBeregningDto(
             grunnlagsreferanseListe,
             vedtakstype,
             resultatkode,
-            barnIdent,
+            barnRolle.ident!!,
             periode,
             ugyldigBeregning,
             resultat,
             erResultatEndringUnderGrense,
-            `løperBidrag`,
+            løperBidrag,
         )
     }
 }
@@ -891,7 +890,7 @@ fun List<GrunnlagDto>.byggResultatBidragsberegning(
 private fun byggPeriodeBeregningDtoForResultatFraAnnenVedtak(
     grunnlag: ResultatFraVedtakGrunnlag,
     periode: ÅrMånedsperiode,
-    barnIdent: Personident?,
+    barnRolle: ResultatRolle,
     vedtakstype: Vedtakstype,
 ): ResultatBarnebidragsberegningPeriodeDto {
     var vedtakstype1 = vedtakstype
@@ -905,15 +904,16 @@ private fun byggPeriodeBeregningDtoForResultatFraAnnenVedtak(
         )
     }
     val vedtak = hentVedtak(grunnlag.vedtaksid)
-    val vedtakPeriode =
+    val vedtakStønadsendring =
         vedtak!!
             .stønadsendringListe
             .find {
-                it.kravhaver == barnIdent
+                it.kravhaver == barnRolle.ident && (barnRolle.stønadstype == null || barnRolle.stønadstype == it.type)
             }!!
-            .periodeListe
-            .find { it.periode.inneholder(periode) }!!
-    val barn = vedtak.grunnlagListe.hentPerson(barnIdent!!.verdi)
+    val vedtakPeriode =
+        vedtakStønadsendring.periodeListe.find { it.periode.inneholder(periode) }
+            ?: vedtakStønadsendring.periodeListe.find { it.periode.overlapperKunISluttenAv(periode) }!!
+    val barn = vedtak.grunnlagListe.hentPerson(barnRolle.ident!!.verdi, barnRolle.stønadstype)
     val vedtakstype = if (vedtakstype1 == Vedtakstype.INNKREVING) vedtakstype1 else vedtak.type
     return vedtak.grunnlagListe
         .byggResultatBidragsberegning(
@@ -924,7 +924,7 @@ private fun byggPeriodeBeregningDtoForResultatFraAnnenVedtak(
             null,
             barn?.let { vedtak.grunnlagListe.erResultatEndringUnderGrenseForPeriode(vedtakPeriode.periode, barn.referanse) } ?: false,
             vedtakstype,
-            barnIdent,
+            barnRolle,
         ).copy(
             klageOmgjøringDetaljer =
                 KlageOmgjøringDetaljer(
@@ -1001,7 +1001,7 @@ private fun List<GrunnlagDto>.byggPeriodeBeregningDto(
     ugyldigBeregning: UgyldigBeregningDto?,
     resultat: BigDecimal?,
     erResultatEndringUnderGrense: Boolean,
-    `løperBidrag`: Boolean = false,
+    løperBidrag: Boolean = false,
 ): ResultatBarnebidragsberegningPeriodeDto {
     val bpsAndel = finnDelberegningBidragspliktigesAndel(grunnlagsreferanseListe)
     val delberegningUnderholdskostnad = finnDelberegningUnderholdskostnad(grunnlagsreferanseListe)
@@ -1046,7 +1046,7 @@ private fun List<GrunnlagDto>.byggPeriodeBeregningDto(
             } else {
                 bpsAndel?.endeligAndelFaktor ?: BigDecimal.ZERO
             },
-        `løperBidrag` = `løperBidrag`,
+        `løperBidrag` = løperBidrag,
         bpsAndelBeløp = bpsAndel?.andelBeløp ?: BigDecimal.ZERO,
         erDirekteAvslag = resultatkode?.erDirekteAvslag() ?: false,
         erEndringUnderGrense = erResultatEndringUnderGrense,

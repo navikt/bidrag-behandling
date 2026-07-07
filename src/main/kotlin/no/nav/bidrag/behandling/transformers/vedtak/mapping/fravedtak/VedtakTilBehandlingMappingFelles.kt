@@ -96,6 +96,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrenseForPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.erRevurderingsbarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
@@ -284,14 +285,15 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                         )
                     }
                     val vedtak = hentVedtak(it.vedtaksid)
-                    val vedtakPeriode =
+                    val vedtakStønadsendring =
                         vedtak!!
                             .stønadsendringListe
                             .find {
-                                it.kravhaver == barnIdent
+                                it.kravhaver == stønadsendring.kravhaver && stønadsendring.type == it.type
                             }!!
-                            .periodeListe
-                            .find { it.periode.inneholder(periode.periode) } ?: run {
+                    val vedtakPeriode =
+                        vedtakStønadsendring.periodeListe.find { it.periode.inneholder(periode.periode) }
+                            ?: vedtakStønadsendring.periodeListe.find { it.periode.overlapperKunISluttenAv(periode.periode) } ?: run {
                             if (virkningstidspunkt != null && virkningstidspunkt.opphørsdato?.toYearMonth() == periode.periode.fom) {
                                 VedtakPeriodeDto(
                                     periode.periode,
@@ -305,6 +307,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                 return@mapNotNull null
                             }
                         }
+                    val søknadsbarn = grunnlagListe.hentPersonMedIdent(stønadsendring.kravhaver.verdi, stønadsendring.type)!!
                     DelvedtakDto(
                         type = vedtak.type,
                         omgjøringsvedtak = it.omgjøringsvedtak,
@@ -328,7 +331,14 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                         null,
                                         Resultatkode.fraKode(vedtakPeriode.resultatkode) == Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
                                         vedtak.type,
-                                        barnIdent = stønadsendring.kravhaver,
+                                        ResultatRolle(
+                                            ident = stønadsendring.kravhaver,
+                                            navn = søknadsbarn.personObjekt.navn ?: "",
+                                            referanse = søknadsbarn.referanse,
+                                            erRevurderingsbarn = søknadsbarn.erRevurderingsbarn,
+                                            fødselsdato = søknadsbarn.personObjekt.fødselsdato,
+                                            stønadstype = stønadsendring.type,
+                                        ),
                                     ).copy(
                                         klageOmgjøringDetaljer =
                                             KlageOmgjøringDetaljer(
@@ -452,8 +462,16 @@ internal fun VedtakDto.hentBeregningsperioder(stønadsendring: StønadsendringDt
                 null,
                 grunnlagListe.erResultatEndringUnderGrenseForPeriode(it.periode, søknadsbarn!!.referanse),
                 type,
-                barnIdent = stønadsendring.kravhaver,
-                `løperBidrag` = løpteBidragEllerForskuddFraVirkningstidspunkt(stønadsendring.tilStønadsid()),
+                barnRolle =
+                    ResultatRolle(
+                        ident = stønadsendring.kravhaver,
+                        navn = søknadsbarn.personObjekt.navn ?: "",
+                        referanse = søknadsbarn.referanse,
+                        erRevurderingsbarn = søknadsbarn.erRevurderingsbarn,
+                        fødselsdato = søknadsbarn.personObjekt.fødselsdato,
+                        stønadstype = stønadsendring.type,
+                    ),
+                løperBidrag = løpteBidragEllerForskuddFraVirkningstidspunkt(stønadsendring.tilStønadsid()),
             )
         }
     }
