@@ -272,8 +272,7 @@ class BehandlingTilGrunnlagMappingV2(
                 innhold =
                     POJONode(
                         InntektsrapporteringPeriode(
-                            // Simuler med 1 kr pga at hvis BP har 0kr inntekt så vil det ikke føre til FF
-                            beløp = BigDecimal.ONE,
+                            beløp = BigDecimal.ZERO,
                             versjon = null,
                             periode = ÅrMånedsperiode(eldsteVirkningstidspunkt, null),
                             opprinneligPeriode = null,

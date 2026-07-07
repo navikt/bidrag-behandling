@@ -943,7 +943,6 @@ class ForholdsmessigFordelingService(
                 } catch (e: Exception) {
                     ResultatBidragsberegning(vedtakstype = behandling.vedtakstype)
                 }
-            val resultatBarn = resultat.resultatBarn
             val lagretLøpendeBidrag = behandling.grunnlag.hentSisteGrunnlagLøpendeBidragFF(behandling) ?: emptyList()
             val grunnlagsliste = resultat.grunnlagsliste.toSet().toList()
 
