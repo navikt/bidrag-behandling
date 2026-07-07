@@ -589,6 +589,15 @@ class VedtakService(
             )
         }
         if (!simuler) {
+            request?.fatteVedtakRevurderingsbarn?.let {
+                behandling
+                    .hentEllerInitaliserMetadata()
+                    .lagreFatteVedtakRevurderingsbarnInformasjon(
+                        behandlingId = behandling.id!!,
+                        behandlingRepository = behandlingRepository!!,
+                        info = it,
+                    )
+            }
             behandlingService.oppdaterVedtakFattetStatus(
                 behandling.id!!,
                 vedtaksid = endeligVedtakOrkestrering.first.vedtaksid,
