@@ -38,7 +38,6 @@ import no.nav.bidrag.behandling.transformers.grunnlagsreferanseSimulert
 import no.nav.bidrag.behandling.transformers.harLøpendeBidragFørOpphørEllerLøpende
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.mapTilBeregnetBidragDto
-import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTil
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
@@ -166,7 +165,6 @@ class ForholdsmessigFordelingService(
                     behandling.soknadsid!!,
                     request,
                     nyesteLøpendeBidragGrunnlag,
-                    true,
                 )
                 return
             }
@@ -510,7 +508,7 @@ class ForholdsmessigFordelingService(
         oppdaterSøknadStatuserForAlleRoller(behandling)
         slettDuplikatForholdsmessigFordelingSøknader(behandling)
         if (behandling.erKlageEllerOmgjøring) {
-            opprettSøknaderForKlageEllerOmgjøring(behandling, behandling.soknadsid!!, erManuellOpprettelseEllerOppdateringAvFF = true)
+            opprettSøknaderForKlageEllerOmgjøring(behandling, behandling.soknadsid!!)
             søknadService.knyttSammenManglendeSøknadsknytningerIBehandling(behandling)
             behandling.oppdaterFFSistSynkronisert()
             return true
@@ -815,11 +813,9 @@ class ForholdsmessigFordelingService(
     fun opprettSøknaderForKlageEllerOmgjøring(
         behandling: Behandling,
         opprettetEllerOppdaterSøknadsid: Long,
-        erManuellOpprettelseEllerOppdateringAvFF: Boolean = false,
     ) = klageService.opprettSøknaderForKlageEllerOmgjøring(
         behandling,
         opprettetEllerOppdaterSøknadsid,
-        erManuellOpprettelseEllerOppdateringAvFF = erManuellOpprettelseEllerOppdateringAvFF,
     )
 
     @Transactional
