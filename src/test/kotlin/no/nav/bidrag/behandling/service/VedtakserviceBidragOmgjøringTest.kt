@@ -32,6 +32,8 @@ import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
 import no.nav.bidrag.beregn.barnebidrag.service.orkestrering.BidragsberegningOrkestrator
 import no.nav.bidrag.beregn.barnebidrag.utils.tilDto
+import no.nav.bidrag.domene.enums.behandling.Behandlingstema
+import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
@@ -106,6 +108,7 @@ class VedtakserviceBidragOmgjøringTest : CommonVedtakTilBehandlingTest() {
                 validerBehandlingService,
                 forsendelseService,
                 virkningstidspunktService,
+                behandlingRepository = behandlingRepository,
             )
     }
 
@@ -226,6 +229,24 @@ class VedtakserviceBidragOmgjøringTest : CommonVedtakTilBehandlingTest() {
             it.virkningstidspunkt = LocalDate.parse("2025-02-01")
             it.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
             it.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
+            it.forholdsmessigFordeling =
+                ForholdsmessigFordelingRolle(
+                    tilhørerSak = behandling.saksnummer,
+                    behandlerenhet = "",
+                    delAvOpprinneligBehandling = true,
+                    erRevurdering = false,
+                    bidragsmottaker = behandling.bidragsmottaker!!.ident,
+                    søknader =
+                        mutableSetOf(
+                            ForholdsmessigFordelingSøknadBarn(
+                                søknadsid = 123,
+                                mottattDato = LocalDate.parse("2025-01-01"),
+                                søktAvType = SøktAvType.BIDRAGSMOTTAKER,
+                                behandlingstype = Behandlingstype.ENDRING,
+                                behandlingstema = Behandlingstema.BIDRAG,
+                            ),
+                        ),
+                )
         }
         behandling.virkningstidspunkt = behandling.søknadsbarn.first().virkningstidspunkt
 
@@ -583,6 +604,7 @@ class VedtakserviceBidragOmgjøringTest : CommonVedtakTilBehandlingTest() {
             behandling.omgjøringsdetaljer!!.copy(
                 fatteVedtakDetaljerRevurderingsbarn = fatteVedtakDetaljerRevurderingsbarn,
             )
+        behandling.forholdsmessigFordeling = ForholdsmessigFordeling(erHovedbehandling = true)
         return behandling
     }
 

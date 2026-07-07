@@ -113,26 +113,26 @@ fun Behandling.byggGrunnlagLøpendeBidragForholdsmessigFordeling(grunnlagsliste:
 fun Behandling.byggGrunnlagBehandlingDetaljer(
     fatteVedtakRevurderingsbarn: FatteVedtakRevurderingsbarn? = null,
     bleFFTrukket: Boolean,
-) = if (erIForholdsmessigFordeling) {
-    setOf(
-        GrunnlagDto(
-            referanse = "behandling_detaljer",
-            type = Grunnlagstype.BEHANDLING_DETALJER,
-            innhold =
-                POJONode(
-                    BehandlingDetaljerGrunnlag(
-                        opprettetForholdsmessigFordeling = erIForholdsmessigFordeling,
-                        fatteVedtakRevurderingsbarn =
+) = setOf(
+    GrunnlagDto(
+        referanse = "behandling_detaljer",
+        type = Grunnlagstype.BEHANDLING_DETALJER,
+        innhold =
+            POJONode(
+                BehandlingDetaljerGrunnlag(
+                    opprettetForholdsmessigFordeling = erIForholdsmessigFordeling,
+                    fatteVedtakRevurderingsbarn =
+                        if (erIForholdsmessigFordeling) {
                             fatteVedtakRevurderingsbarn?.copy(
                                 bleFFTrukket = bleFFTrukket,
-                            ) ?: FatteVedtakRevurderingsbarn(bleFFTrukket = bleFFTrukket),
-                    ),
+                            ) ?: FatteVedtakRevurderingsbarn(bleFFTrukket = bleFFTrukket)
+                        } else {
+                            null
+                        },
                 ),
-        ),
-    )
-} else {
-    setOf()
-}
+            ),
+    ),
+)
 
 fun Behandling.byggGrunnlagSærbidragKategori() =
     setOf(
