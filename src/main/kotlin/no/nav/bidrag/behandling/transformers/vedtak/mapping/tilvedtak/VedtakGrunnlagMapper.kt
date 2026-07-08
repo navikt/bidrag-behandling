@@ -587,7 +587,7 @@ class VedtakGrunnlagMapper(
                         )
                     } else {
                         val bostatusBarn = tilGrunnlagBostatus(personobjekter)
-                        val inntekter = tilGrunnlagInntekt(personobjekter, søknadsbarn, false)
+                        val inntekter = tilGrunnlagInntekt(personobjekter, søknadsbarn, inkluderAlle = false)
                         val simulertGrunnlag =
                             if (simulerBeregning) {
                                 tilGrunnlagInntektSimulering(personobjekter) + tilGrunnlagSamværSimulering()
@@ -701,12 +701,12 @@ class VedtakGrunnlagMapper(
     ): Set<GrunnlagDto> {
         mapper.run {
             val personobjekter =
-                (tilPersonobjekter() + personobjekterFraBeregning).toSet()
+                (tilPersonobjekter(søknadsbarn = søknadsbarn) + personobjekterFraBeregning).toSet()
             val bostatus = tilGrunnlagBostatus(personobjekter)
             val personobjekterMedHusstandsmedlemmer =
                 (personobjekter + bostatus.husstandsmedlemmer()).toMutableSet()
-            val innhentetGrunnlagListe = byggInnhentetGrunnlag(personobjekterMedHusstandsmedlemmer)
-            val inntekter = tilGrunnlagInntekt(personobjekter)
+            val innhentetGrunnlagListe = byggInnhentetGrunnlag(personobjekterMedHusstandsmedlemmer, søknadsbarn)
+            val inntekter = tilGrunnlagInntekt(personobjekter, byggForSøknadsbarn = søknadsbarn)
 
             val grunnlagListe = (personobjekter + bostatus + inntekter + innhentetGrunnlagListe).toMutableSet()
             when (tilType()) {

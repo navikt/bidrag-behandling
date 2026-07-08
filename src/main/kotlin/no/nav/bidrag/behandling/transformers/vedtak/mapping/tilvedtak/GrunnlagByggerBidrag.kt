@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
@@ -165,8 +166,12 @@ fun List<GrunnlagDto>.fjernMidlertidligPersonobjekterBMsbarn() =
         return@mapNotNull grunnlag
     }
 
-fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List<GrunnlagDto> =
+fun Behandling.tilGrunnlagBarnetilsyn(
+    inkluderIkkeAngitt: Boolean = false,
+    byggForSøknadsbarn: List<Rolle> = this.søknadsbarn,
+): List<GrunnlagDto> =
     underholdskostnader
+        .filter { u -> u.rolle == null || (u.rolle?.rolletype == Rolletype.BARN && byggForSøknadsbarn.any { it.erSammeRolle(u.rolle!!) }) }
         .flatMap { u ->
             u.barnetilsyn
                 .filter { inkluderIkkeAngitt || (it.omfang != Tilsynstype.IKKE_ANGITT && it.under_skolealder != null) }

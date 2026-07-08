@@ -70,6 +70,7 @@ class BehandlingTilGrunnlagMappingV2(
 ) {
     fun Behandling.tilPersonobjekter(
         søknadsbarnRolle: Rolle? = null,
+        søknadsbarn: List<Rolle> = this.søknadsbarn,
         inkluderAlleSøknadsbarn: Boolean = false,
     ): MutableSet<GrunnlagDto> {
         val søknadsbarnListe =
@@ -119,8 +120,16 @@ class BehandlingTilGrunnlagMappingV2(
                 }.toSet()
         }
 
-    fun Behandling.byggInnhentetGrunnlag(personobjekter: MutableSet<GrunnlagDto>): Set<GrunnlagDto> {
-        val sortertGrunnlagsListe = grunnlag.hentSisteAktiv()
+    fun Behandling.byggInnhentetGrunnlag(
+        personobjekter: MutableSet<GrunnlagDto>,
+        byggForSøknadsbarn: List<Rolle> = this.søknadsbarn,
+    ): Set<GrunnlagDto> {
+        val sortertGrunnlagsListe =
+            grunnlag
+                .hentSisteAktiv()
+                .filter { inntekt ->
+                    inntekt.gjelderBarnRolle == null || byggForSøknadsbarn.any { it.erSammeRolle(inntekt.gjelderBarnRolle!!) }
+                }
         val sortertGrunnlagsListeBearbeidet = sortertGrunnlagsListe.filter { it.erBearbeidet }
         val sortertGrunnlagsListeIkkeBearbeidet = sortertGrunnlagsListe.filter { !it.erBearbeidet }
         val innhentetArbeidsforhold = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetArbeidsforhold(personobjekter)
@@ -341,9 +350,10 @@ class BehandlingTilGrunnlagMappingV2(
     fun Behandling.tilGrunnlagInntekt(
         personobjekter: Set<GrunnlagDto> = tilPersonobjekter(),
         søknadsbarn: GrunnlagDto? = null,
+        byggForSøknadsbarn: List<Rolle> = this.søknadsbarn,
         inkluderAlle: Boolean = true,
     ): Set<GrunnlagDto> {
-        val alleSøknadsbarnIdenter = this.søknadsbarn.mapNotNull { it.ident }
+        val alleSøknadsbarnIdenter = byggForSøknadsbarn.mapNotNull { it.ident }
         return inntekter
             .asSequence()
             .filter { personobjekter.hentPersonNyesteIdent(it.gjelderIdent) != null && (inkluderAlle || it.taMed) }

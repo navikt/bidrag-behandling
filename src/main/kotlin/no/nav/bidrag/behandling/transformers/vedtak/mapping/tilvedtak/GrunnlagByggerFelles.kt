@@ -471,10 +471,13 @@ fun Behandling.byggGrunnlagPrivatAvtale() =
             )
         }.filterNotNull()
 
-fun Behandling.byggGrunnlagNotatVurderingAvSkolegang() =
+fun Behandling.byggGrunnlagNotatVurderingAvSkolegang(byggForSøknadsbarn: List<Rolle> = this.søknadsbarn) =
     if (kanSkriveVurderingAvSkolegangAlle()) {
         roller
-            .flatMap { rolle ->
+            .filter {
+                it.rolletype != Rolletype.BARN ||
+                    byggForSøknadsbarn.any { sb -> sb.erSammeRolle(it) }
+            }.flatMap { rolle ->
                 listOf(
                     henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, rolle)
                         .takeIfNotNullOrEmpty { innhold ->
@@ -514,7 +517,7 @@ fun Behandling.byggGrunnlagNotaterInnkreving(): Set<GrunnlagDto> {
 }
 
 fun Behandling.byggGrunnlagNotater(søknadsbarn: List<Rolle> = this.søknadsbarn): Set<GrunnlagDto> {
-    val virkningstidspunktGrunnlag = byggGrunnlagBegrunnelseVirkningstidspunkt()
+    val virkningstidspunktGrunnlag = byggGrunnlagBegrunnelseVirkningstidspunkt(søknadsbarn)
     val notatGrunnlag =
         setOf(
             henteNotatinnhold(this, Notattype.BOFORHOLD).takeIfNotNullOrEmpty {
@@ -531,11 +534,14 @@ fun Behandling.byggGrunnlagNotater(søknadsbarn: List<Rolle> = this.søknadsbarn
             },
         ).filterNotNull()
 
-    val notatVurderingAvSkolegang = byggGrunnlagNotatVurderingAvSkolegang()
+    val notatVurderingAvSkolegang = byggGrunnlagNotatVurderingAvSkolegang(søknadsbarn)
 
     val notatUnderhold =
         roller
-            .flatMap { rolle ->
+            .filter {
+                it.rolletype != Rolletype.BARN ||
+                    søknadsbarn.any { sb -> sb.erSammeRolle(it) }
+            }.flatMap { rolle ->
                 listOf(
                     henteNotatinnhold(this, Notattype.UNDERHOLDSKOSTNAD, rolle).takeIfNotNullOrEmpty { innhold ->
                         opprettGrunnlagNotat(
@@ -584,7 +590,10 @@ fun Behandling.byggGrunnlagNotater(søknadsbarn: List<Rolle> = this.søknadsbarn
 
     val notatSamvær =
         roller
-            .flatMap { rolle ->
+            .filter {
+                it.rolletype != Rolletype.BARN ||
+                    søknadsbarn.any { sb -> sb.erSammeRolle(it) }
+            }.flatMap { rolle ->
                 listOf(
                     henteSamværsnotat(this, rolle)?.takeIfNotNullOrEmpty { innhold ->
                         opprettGrunnlagNotat(Notattype.SAMVÆR, false, innhold, gjelderBarnReferanse = rolle.tilGrunnlagsreferanse())
@@ -603,7 +612,10 @@ fun Behandling.byggGrunnlagNotater(søknadsbarn: List<Rolle> = this.søknadsbarn
 
     val notatGrunnlagInntekter =
         roller
-            .flatMap { rolle ->
+            .filter {
+                it.rolletype != Rolletype.BARN ||
+                    søknadsbarn.any { sb -> sb.erSammeRolle(it) }
+            }.flatMap { rolle ->
                 listOf(
                     henteInntektsnotat(this, rolle.id!!)?.takeIfNotNullOrEmpty {
                         opprettGrunnlagNotat(
