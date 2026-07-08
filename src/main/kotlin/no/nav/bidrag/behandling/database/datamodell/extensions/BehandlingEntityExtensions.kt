@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.transformers.toLocalDateTime
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
@@ -93,6 +94,7 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
                 commonObjectmapper.readValue<FatteVedtakRevurderingsbarn>(it)
             }
         } catch (e: Exception) {
+            secureLogger.warn(e) { "Feil ved henting av fatteVedtakRevurderingsbarnInformasjon" }
             null
         }
 
@@ -110,6 +112,7 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
                 jsonValue = jsonValue,
             )
         } catch (e: Exception) {
+            secureLogger.warn(e) { "Feil ved lagring av fatteVedtakRevurderingsbarnInformasjon" }
             // Handle exception if needed
         }
     }
