@@ -695,7 +695,10 @@ class VedtakGrunnlagMapper(
         }
     }
 
-    fun Behandling.byggGrunnlagForVedtak(personobjekterFraBeregning: MutableSet<GrunnlagDto> = mutableSetOf()): Set<GrunnlagDto> {
+    fun Behandling.byggGrunnlagForVedtak(
+        personobjekterFraBeregning: MutableSet<GrunnlagDto> = mutableSetOf(),
+        søknadsbarn: List<Rolle> = this.søknadsbarn,
+    ): Set<GrunnlagDto> {
         mapper.run {
             val personobjekter =
                 (tilPersonobjekter() + personobjekterFraBeregning).toSet()

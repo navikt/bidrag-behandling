@@ -388,7 +388,7 @@ fun Behandling.byggGrunnlagNotaterDirekteAvslag(): Set<GrunnlagDto> =
             },
         ).filterNotNull().toSet()
 
-fun Behandling.byggGrunnlagBegrunnelseVirkningstidspunkt() =
+fun Behandling.byggGrunnlagBegrunnelseVirkningstidspunkt(søknadsbarn: List<Rolle> = this.søknadsbarn) =
     if (erBidrag()) {
         søknadsbarn
             .flatMap { rolle ->

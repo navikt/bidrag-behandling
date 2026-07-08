@@ -967,10 +967,10 @@ class BehandlingTilVedtakMapping(
                     byggGrunnlagForVedtak(grunnlagslisteAlle.hentAllePersoner().toMutableSet() as MutableSet<GrunnlagDto>)
                 val stønadsendringGrunnlagListe =
                     if (erAvvistRevurdering) {
-                        byggGrunnlagBegrunnelseVirkningstidspunkt() + byggGrunnlagSøknad(søknadsbarn) +
+                        byggGrunnlagBegrunnelseVirkningstidspunkt(søknadsbarn) + byggGrunnlagSøknad(søknadsbarn) +
                             byggGrunnlagBehandlingDetaljer(request?.fatteVedtakRevurderingsbarn, bleFFTrukket = true)
                     } else {
-                        byggGrunnlagGenerelt(request = request, bleFFTrukket = true)
+                        byggGrunnlagGenerelt(request = request, bleFFTrukket = true, søknadsbarn = søknadsbarn)
                     }
 
                 val grunnlagListe =
