@@ -23,7 +23,6 @@ import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.BehandlingTilVedtakMapping
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDatoBehandling
-import no.nav.bidrag.behandling.utils.disableUnleashFeature
 import no.nav.bidrag.behandling.utils.enableUnleashFeature
 import no.nav.bidrag.behandling.utils.hentGrunnlagstyper
 import no.nav.bidrag.behandling.utils.hentNotat
@@ -81,10 +80,8 @@ import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetalj
 import no.nav.bidrag.transport.felles.toCompactString
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.test.context.junit.jupiter.SpringExtension
-import org.springframework.web.client.HttpClientErrorException
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
@@ -148,78 +145,6 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn: Rolle,
         endeligBeregning: Boolean = false,
     ) = vedtakGrunnlagMapper.byggGrunnlagForBeregning(behandling, søknadsbarn, endeligBeregning).beregnGrunnlag.grunnlagListe
-
-    @Test
-    fun `Skal ikke fatte vedtak for klage hvis feature skrudd av`() {
-        stubPersonConsumer()
-        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
-        val søknadsbarn = behandling.søknadsbarn.first()
-        behandling.vedtakstype = Vedtakstype.KLAGE
-        søknadsbarn.virkningstidspunkt = LocalDate.parse("2025-02-01")
-        søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
-        behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                klageMottattdato = LocalDate.parse("2025-01-10"),
-                omgjørVedtakId = 2,
-                opprinneligVedtakId = 3,
-                opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
-                omgjortVedtakstidspunktListe = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
-            )
-        initBehandlingTestdata(behandling)
-
-        behandling.leggTilGrunnlagManuelleVedtak(
-            behandling.søknadsbarn.first(),
-        )
-
-        val opprettVedtakSlot = mutableListOf<OpprettVedtakRequestDto>()
-        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
-            OpprettVedtakResponseDto(
-                1,
-                emptyList(),
-            )
-        every { bidragsberegningOrkestrator.utførBidragsberegningV2(any()) } returns
-            BidragsberegningOrkestratorResponseV2(
-                listOf(søknadsbarn.tilGrunnlagPerson()),
-                listOf(
-                    BidragsberegningResultatBarnV2(
-                        søknadsbarn.tilGrunnlagsreferanse(),
-                        listOf(
-                            ResultatVedtakV2(
-                                vedtakstype = Vedtakstype.KLAGE,
-                                omgjøringsvedtak = true,
-                                beregnet = true,
-                                periodeListe =
-                                    listOf(
-                                        ResultatPeriode(
-                                            periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
-                                            resultat = ResultatBeregning(BigDecimal.ZERO),
-                                            grunnlagsreferanseListe = emptyList(),
-                                        ),
-                                    ),
-                            ),
-                            ResultatVedtakV2(
-                                vedtakstype = Vedtakstype.KLAGE,
-                                omgjøringsvedtak = false,
-                                beregnet = true,
-                                periodeListe =
-                                    listOf(
-                                        ResultatPeriode(
-                                            periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
-                                            resultat = ResultatBeregning(BigDecimal.ZERO),
-                                            grunnlagsreferanseListe = emptyList(),
-                                        ),
-                                    ),
-                            ),
-                        ),
-                    ),
-                ),
-            )
-        every { vedtakServiceBeregning.finnSisteVedtaksid(any()) } returns 1
-
-        disableUnleashFeature(UnleashFeatures.FATTE_VEDTAK)
-        assertThrows<HttpClientErrorException> { vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = null)) }
-    }
 
     @Test
     fun `Skal fatte vedtak for klage`() {
@@ -784,6 +709,126 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
     }
 
     @Test
+    fun `Skal fatte vedtak for klage uten innkreving med opphørsperiode for gap i innkrevingsperioder`() {
+        stubPersonConsumer()
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        val søknadsbarn = behandling.søknadsbarn.first()
+        behandling.vedtakstype = Vedtakstype.KLAGE
+        behandling.innkrevingstype = Innkrevingstype.UTEN_INNKREVING
+        søknadsbarn.virkningstidspunkt = LocalDate.parse("2024-02-01")
+        søknadsbarn.beregnTil = BeregnTil.OPPRINNELIG_VEDTAKSTIDSPUNKT
+        behandling.virkningstidspunkt = søknadsbarn.virkningstidspunkt
+        søknadsbarn.opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01")
+        behandling.omgjøringsdetaljer =
+            Omgjøringsdetaljer(
+                klageMottattdato = LocalDate.parse("2025-01-10"),
+                omgjørVedtakId = 2,
+                opprinneligVedtakId = 3,
+                opprinneligVirkningstidspunkt = LocalDate.parse("2025-01-01"),
+                omgjortVedtakstidspunktListe = mutableSetOf(LocalDate.parse("2025-01-01").atStartOfDay()),
+            )
+        initBehandlingTestdata(behandling)
+
+        behandling.leggTilGrunnlagManuelleVedtak(
+            behandling.søknadsbarn.first(),
+        )
+
+        val vedtaksidKlage = 1
+        val vedtaksidinnkreving = 5
+        val opprettVedtakSlot = mutableListOf<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } answers {
+            val arg = args.last() as OpprettVedtakRequestDto
+            val vedtaksid =
+                when {
+                    arg.type == Vedtakstype.INNKREVING -> vedtaksidinnkreving
+                    arg.type == Vedtakstype.KLAGE -> vedtaksidKlage
+                    else -> -1
+                }
+            OpprettVedtakResponseDto(
+                vedtaksid,
+                emptyList(),
+            )
+        }
+        every { bidragsberegningOrkestrator.utførBidragsberegningV3(any()) } returns
+            BidragsberegningOrkestratorResponseV2(
+                listOf(søknadsbarn.tilGrunnlagPerson()),
+                listOf(
+                    BidragsberegningResultatBarnV2(
+                        søknadsbarn.tilGrunnlagsreferanse(),
+                        listOf(
+                            ResultatVedtakV2(
+                                vedtakstype = Vedtakstype.KLAGE,
+                                omgjøringsvedtak = true,
+                                beregnet = true,
+                                periodeListe =
+                                    listOf(
+                                        ResultatPeriode(
+                                            periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
+                                            resultat = ResultatBeregning(BigDecimal.ZERO),
+                                            grunnlagsreferanseListe = emptyList(),
+                                        ),
+                                    ),
+                            ),
+                            ResultatVedtakV2(
+                                vedtakstype = Vedtakstype.KLAGE,
+                                omgjøringsvedtak = false,
+                                beregnet = true,
+                                periodeListe =
+                                    listOf(
+                                        ResultatPeriode(
+                                            periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
+                                            resultat = ResultatBeregning(BigDecimal.ZERO),
+                                            grunnlagsreferanseListe = emptyList(),
+                                        ),
+                                    ),
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        behandling.leggTilGrunnlagBeløpshistorikk(
+            Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+            behandling.søknadsbarn.first(),
+            listOf(
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(2), behandling.virkningstidspunkt!!.plusMonths(4)),
+                    beløp = BigDecimal("2000"),
+                ),
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(behandling.virkningstidspunkt!!.plusMonths(6), null),
+                    beløp = BigDecimal("2000"),
+                ),
+            ),
+        )
+        every { vedtakServiceBeregning.finnSisteVedtaksid(any()) } returns 1
+
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = null))
+
+        opprettVedtakSlot shouldHaveSize 2
+        val innkrevingsVedtak = opprettVedtakSlot[1]
+        innkrevingsVedtak.type shouldBe Vedtakstype.INNKREVING
+        innkrevingsVedtak.stønadsendringListe shouldHaveSize 1
+        val periodeliste = innkrevingsVedtak.stønadsendringListe.first().periodeListe
+        periodeliste shouldHaveSize 3
+
+        periodeliste[0].periode.fom shouldBe behandling.virkningstidspunkt!!.toYearMonth().plusMonths(2)
+        periodeliste[0].periode.til shouldBe behandling.virkningstidspunkt!!.toYearMonth().plusMonths(4)
+
+        periodeliste[1].resultatkode shouldBe Resultatkode.OPPHØR.name
+        periodeliste[1].beløp.shouldBeNull()
+        periodeliste[1].periode.fom shouldBe behandling.virkningstidspunkt!!.toYearMonth().plusMonths(4)
+        periodeliste[1].periode.til shouldBe behandling.virkningstidspunkt!!.toYearMonth().plusMonths(6)
+
+        periodeliste[2].periode.fom shouldBe behandling.virkningstidspunkt!!.toYearMonth().plusMonths(6)
+        periodeliste[2].periode.til.shouldBeNull()
+
+        verify(exactly = 2) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
+    }
+
+    @Test
     fun `Skal fatte vedtak for klage med orkestrering`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
@@ -987,7 +1032,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[1]) {
             it.type shouldBe Vedtakstype.INDEKSREGULERING
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 14
+                it.grunnlagListe shouldHaveSize 15
             }
             val beregnetFraDato =
                 it.stønadsendringListe
@@ -1013,7 +1058,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[2]) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 11
+                it.grunnlagListe shouldHaveSize 12
             }
 
             opprettVedtakSlot[2].unikReferanse shouldBe
@@ -1343,7 +1388,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[1]) {
             it.type shouldBe Vedtakstype.INDEKSREGULERING
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 14
+                it.grunnlagListe shouldHaveSize 15
             }
             val beregnetFraDato =
                 it.stønadsendringListe
@@ -1369,7 +1414,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[2]) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 11
+                it.grunnlagListe shouldHaveSize 12
             }
 
             opprettVedtakSlot[2].unikReferanse shouldBe
@@ -1699,7 +1744,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[1]) {
             it.type shouldBe Vedtakstype.INDEKSREGULERING
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 14
+                it.grunnlagListe shouldHaveSize 15
             }
             val beregnetFraDato =
                 it.stønadsendringListe
@@ -1725,7 +1770,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[2]) {
             it.type shouldBe Vedtakstype.ENDRING
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 11
+                it.grunnlagListe shouldHaveSize 12
             }
 
             opprettVedtakSlot[2].unikReferanse shouldBe
@@ -2018,7 +2063,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[1]) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 9
+                it.grunnlagListe shouldHaveSize 10
             }
             val orkestreringsdetaljer = it.grunnlagListe.map { it.tilDto() }.finnOrkestreringDetaljer(it.stønadsendringListe.first().grunnlagReferanseListe)
             orkestreringsdetaljer.shouldNotBeNull()
@@ -2520,7 +2565,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[1]) {
             it.type shouldBe Vedtakstype.INDEKSREGULERING
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 13
+                it.grunnlagListe shouldHaveSize 14
             }
 //            request.unikReferanse shouldBe behandling.opprettUnikReferanse()
 
@@ -2536,7 +2581,7 @@ class VedtakserviceBidragKlageTest : CommonVedtakTilBehandlingTest() {
         assertSoftly(opprettVedtakSlot[2]) {
             it.type shouldBe Vedtakstype.KLAGE
             withClue("Grunnlagliste skal inneholde ${it.grunnlagListe.size} grunnlag") {
-                it.grunnlagListe shouldHaveSize 9
+                it.grunnlagListe shouldHaveSize 10
             }
 //            request.unikReferanse shouldBe behandling.opprettUnikReferanse()
 

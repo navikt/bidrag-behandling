@@ -15,10 +15,10 @@ import no.nav.bidrag.behandling.database.datamodell.Underholdskostnad
 import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.Utgiftspost
 import no.nav.bidrag.behandling.database.datamodell.extensions.BehandlingMetadataDo
+import no.nav.bidrag.behandling.database.datamodell.json.FatteVedtakDetaljerFraOmgjortVedtakForRevurderingsbarn
 import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
 import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
-import no.nav.bidrag.behandling.dto.v1.behandling.ManuellVedtakDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatSærbidragsberegningDto
 import no.nav.bidrag.behandling.dto.v2.behandling.LesemodusVedtak
 import no.nav.bidrag.behandling.dto.v2.behandling.UtgiftBeregningDto
@@ -58,7 +58,6 @@ import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakskilde
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.sak.Stønadsid
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
 import no.nav.bidrag.transport.behandling.beregning.samvær.SamværskalkulatorDetaljer
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
@@ -68,7 +67,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InnhentetAndreBarnTilBidragsmottaker
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
-import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlagV2
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtalePeriodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
@@ -77,7 +75,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenRe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåFremmedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe
-import no.nav.bidrag.transport.behandling.felles.grunnlag.finnOgKonverterGrunnlagSomErReferertFraGrunnlagsreferanseListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
@@ -91,11 +88,11 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftDirekteBetalt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftMaksGodkjentBeløp
 import no.nav.bidrag.transport.behandling.felles.grunnlag.utgiftsposter
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
-import no.nav.bidrag.transport.behandling.vedtak.response.VedtakPeriodeDto
 import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.response.finnStønadsendring
 import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
+import no.nav.bidrag.transport.behandling.vedtak.response.tilhørerRevurderingsbarn
 import no.nav.bidrag.transport.behandling.vedtak.response.typeBehandling
 import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.commonObjectmapper
@@ -157,6 +154,13 @@ class VedtakTilBehandlingMapping(
         // TODO: Hvordan håndteres dette når vi begynner med flere stønadsendringer i samme vedtak?
         val stønadsendringstype = stønadsendringListe.firstOrNull()?.type
         val omgjortVedtakVirkningstidspunkt = virkningstidspunkt ?: hentSøknad().søktFraDato
+        val forholdsmessigFordeling =
+            grunnlagListe.harOpprettetForholdsmessigFordeling().ifTrue {
+                ForholdsmessigFordeling(
+                    erHovedbehandling = true,
+                )
+            }
+        val inneholderBareRevurderingsbarn = stønadsendringListe.all { tilhørerRevurderingsbarn(it) }
         val behandling =
             Behandling(
                 id = if (lesemodus) 1 else null,
@@ -186,23 +190,33 @@ class VedtakTilBehandlingMapping(
                 kildeapplikasjon = if (lesemodus) kildeapplikasjon else TokenUtils.hentApplikasjonsnavn()!!,
                 saksnummer = saksnummer!!,
                 soknadsid = søknadId ?: this.søknadId,
-                forholdsmessigFordeling =
-                    grunnlagListe.harOpprettetForholdsmessigFordeling().ifTrue {
-                        ForholdsmessigFordeling(
-                            erHovedbehandling = true,
-                        )
-                    },
+                forholdsmessigFordeling = forholdsmessigFordeling,
             )
 
         val sak = hentSak(behandling.saksnummer)
-        behandling.roller = grunnlagListe.mapRoller(påklagetVedtak ?: this, behandling, lesemodus, omgjortVedtakVirkningstidspunkt, sak)
+        behandling.roller =
+            grunnlagListe.mapRoller(
+                påklagetVedtak ?: this,
+                behandling,
+                lesemodus,
+                omgjortVedtakVirkningstidspunkt,
+                sak,
+                inneholderBareRevurderingsbarn || forholdsmessigFordeling != null,
+            )
 
-        behandling.omgjøringsdetaljer =
-            if (!lesemodus || inkluderKlagedetaljer || opprinneligVedtak != omgjørVedtakId) {
+        val skalLagreOmgjøringsdetaljer = !lesemodus || inkluderKlagedetaljer || opprinneligVedtak != omgjørVedtakId
+        if (skalLagreOmgjøringsdetaljer) {
+            val stønadsendringerRevurderingsbarn =
+                stønadsendringListe.filter {
+                    val person = grunnlagListe.hentPerson(it.kravhaver.verdi, it.type)
+                    person != null && !person.personObjekt.delAvOpprinneligBehandling
+                }
+            behandling.omgjøringsdetaljer =
                 Omgjøringsdetaljer(
                     opprinneligVedtakstype = opprinneligVedtakstype,
                     opprinneligVedtakId = opprinneligVedtak,
                     innkrevingstype = innkrevingstype,
+                    erKlageEllerOmgjøring = opprinneligVedtak != omgjørVedtakId,
                     omgjørVedtakId = if (!lesemodus) omgjørVedtakId else null,
                     klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
                     soknadRefId = søknadRefId,
@@ -212,11 +226,21 @@ class VedtakTilBehandlingMapping(
                     sisteVedtakBeregnetUtNåværendeMåned = sisteVedtakBeregnetUtNåværendeMåned?.vedtaksid,
                     sisteVedtakstidspunktBeregnetUtNåværendeMåned = sisteVedtakBeregnetUtNåværendeMåned?.vedtakstidspunkt,
                     omgjortVedtakstidspunktListe = vedtakstidspunktListe.toMutableSet(),
+                    fatteVedtakDetaljerRevurderingsbarn =
+                        if (stønadsendringerRevurderingsbarn.isNotEmpty()) {
+                            val behandlingDetaljer = grunnlagListe.hentBehandlingDetaljer()
+                            FatteVedtakDetaljerFraOmgjortVedtakForRevurderingsbarn(
+                                bleFattetVedtakForRevurderingsbarn =
+                                    stønadsendringerRevurderingsbarn.any {
+                                        it.beslutning == Beslutningstype.ENDRING
+                                    },
+                                fatteVedtakRevurderingsbarn = behandlingDetaljer?.fatteVedtakRevurderingsbarn,
+                            )
+                        } else {
+                            null
+                        },
                 )
-            } else {
-                null
-            }
-
+        }
         if (!lesemodus) {
             behandlingRepository.save(behandling)
         }
@@ -227,6 +251,7 @@ class VedtakTilBehandlingMapping(
                     erAvvist = stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST },
                     opprettetAvBatch = kilde == Vedtakskilde.AUTOMATISK,
                     erOrkestrertVedtak = erOrkestrertVedtak,
+                    inneholderBareRevurderingsbarn = inneholderBareRevurderingsbarn,
                     fattetTidspunkt = this.vedtakstidspunkt ?: LocalDateTime.now(),
                 )
             behandling.grunnlagslisteFraVedtak = grunnlagListe
@@ -481,6 +506,7 @@ class VedtakTilBehandlingMapping(
     ): MutableSet<PrivatAvtale> =
         filtrerBasertPåEgenReferanse(Grunnlagstype.PRIVAT_AVTALE_PERIODE_GRUNNLAG)
             .groupBy { if (it.gjelderBarnReferanse.isNullOrEmpty()) it.gjelderReferanse else it.gjelderBarnReferanse }
+            .filterBarnIBehandling(this, behandling)
             .map {
                 val privatAvtaleGrunnlag =
                     filtrerOgKonverterBasertPåFremmedReferanse<PrivatAvtaleGrunnlagV2>(
@@ -882,6 +908,7 @@ class VedtakTilBehandlingMapping(
             filtrerBasertPåEgenReferanse(
                 Grunnlagstype.SAMVÆRSPERIODE,
             ).groupBy { it.gjelderBarnReferanse }
+                .filterBarnIBehandling(this, behandling)
                 .map { (gjelderReferanse, perioder) ->
                     val person = hentPersonMedReferanse(gjelderReferanse)!!
                     val samvær =

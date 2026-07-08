@@ -13,15 +13,15 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingResponse
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.service.BoforholdService.Companion.tilbakestilleTilOffentligSivilstandshistorikkBasertPåGrunnlag
-import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.InntektService
-import no.nav.bidrag.behandling.service.PrivatAvtaleService
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.VedtakService
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.diverse.Kilde
@@ -79,7 +79,7 @@ class AdminController(
         return beregningService.opprettGrunnlagBeregningBidragV2(behandling, true, false)
     }
 
-    @GetMapping("/admin/vedtak/input/{behandlingId}")
+    @PostMapping("/admin/vedtak/input/{behandlingId}")
     @Operation(
         description =
             "Opprett aldersjustering behandling for sak",
@@ -96,7 +96,8 @@ class AdminController(
     @Transactional
     fun opprettFatteVedtakRequest(
         @PathVariable behandlingId: Long,
-    ): List<OpprettVedtakRequestDto> = vedtakService.fatteVedtak(behandlingId, null, true).requests.map { it.second }
+        @RequestBody request: FatteVedtakRequestDto? = null,
+    ): List<OpprettVedtakRequestDto> = vedtakService.fatteVedtak(behandlingId, request, true).requests.map { it.second }
 
     @PostMapping("/admin/reset/fattevedtak/{behandlingId}")
     @Operation(

@@ -7,17 +7,21 @@ import no.nav.bidrag.behandling.KunneIkkeLeseMeldingFraHendelse
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
+import no.nav.bidrag.behandling.dto.grunnlag.PersonStønad
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.BehandlingService
-import no.nav.bidrag.behandling.service.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.ForsendelseService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.NotatOpplysningerService
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.transformers.erBidrag
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
 import no.nav.bidrag.behandling.transformers.vedtak.engangsbeløptype
+import no.nav.bidrag.behandling.transformers.vedtak.erOpphørEllerInnkreving
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.stønadstype
 import no.nav.bidrag.commons.util.secureLogger
+import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
@@ -29,6 +33,7 @@ import no.nav.bidrag.transport.behandling.vedtak.erFattetGjennomBidragBehandling
 import no.nav.bidrag.transport.behandling.vedtak.saksnummer
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
 import no.nav.bidrag.transport.felles.commonObjectmapper
+import no.nav.bidrag.transport.felles.toYearMonth
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
@@ -90,38 +95,54 @@ class VedtakHendelseListener(
     }
 
     private fun VedtakHendelse.oppdaterÅpenFFBehandlingHvisOpphørEllerInnkreving() {
-        if ((type != Vedtakstype.OPPHØR && type != Vedtakstype.INNKREVING) ||
-            !UnleashFeatures.FATTE_VEDTAK_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled
-        ) {
-            return
-        }
         val stønadsendringerBidrag =
             stønadsendringListe?.filter { it.type == Stønadstype.BIDRAG || it.type == Stønadstype.BIDRAG18AAR } ?: emptyList()
         if (stønadsendringerBidrag.isEmpty()) return
-        stønadsendringerBidrag.forEach { stønadsendring ->
+        stønadsendringerBidrag
+            .filter { it.innkreving == Innkrevingstype.MED_INNKREVING }
+            .forEach { stønadsendring ->
 
-            val bp = stønadsendring.skyldner
-            val behandlinger = behandlingRepository.finnÅpneBidragsbehandlingerForBpMedFF(bp.verdi)
-            behandlinger.forEach { behandling ->
-                behandleBehandlingHvisOpphorEllerInnkreving(stønadsendring, behandling)
+                val bp = stønadsendring.skyldner
+                val behandlinger = behandlingRepository.finnÅpneBidragsbehandlingerForBpMedFF(bp.verdi)
+                behandlinger
+                    .forEach { behandling ->
+                        behandleBehandlingHvisOpphorEllerInnkreving(stønadsendring, behandling)
+                    }
             }
-        }
     }
 
     private fun VedtakHendelse.behandleBehandlingHvisOpphorEllerInnkreving(
         stønadsendring: Stønadsendring,
         behandling: Behandling,
     ) {
+        // Vedtak uten innkreving har ingen effekt på beløpshistorikk og vil derfor ikke føre til noe endring i behandling FF
+        if (stønadsendring.innkreving != Innkrevingstype.MED_INNKREVING) return
+        // Ikke gjør endringer hvis vedtaket ikke er opphør/innkreving eller om behandling ikke er klage
+        if (!behandling.erKlageEllerOmgjøring && !erOpphørEllerInnkreving) {
+            grunnlagService.lagreBeløpshistorikkGrunnlag(behandling)
+            grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
+            return
+        }
+
         // Hent grunnlag beløpshistorikk slik at det er oppdatert
         grunnlagService.lagreBeløpshistorikkGrunnlag(behandling)
         grunnlagService.lagreBeløpshistorikkFraOpprinneligVedtakstidspunktGrunnlag(behandling)
-        if (type == Vedtakstype.OPPHØR) {
-            val opphørsperiode =
+        forholdsmessigFordelingService.oppdaterSøknadStatuserForAlleRoller(behandling)
+        val opphørsperiode =
+            stønadsendring.periodeListe
+                .filter { it.beløp == null }
+                .maxByOrNull {
+                    it.periode.fom
+                }
+        val erVedtakInnkreving =
+            stønadsendring.periodeListe.isNotEmpty() &&
                 stønadsendring.periodeListe
-                    .filter { it.beløp == null }
-                    .maxByOrNull {
-                        it.periode.fom
-                    } ?: return
+                    .filter {
+                        it.periode.fom.isBefore(behandling.finnBeregnTilDato().toYearMonth())
+                    }.maxBy { it.periode.fom }
+                    .beløp !=
+                null
+        if (opphørsperiode != null) {
             forholdsmessigFordelingService
                 .oppdaterBarnEtterOpphør(
                     behandling,
@@ -129,7 +150,8 @@ class VedtakHendelseListener(
                     stønadsendring.type,
                     opphørsperiode,
                 )
-        } else {
+        }
+        if (type != Vedtakstype.OPPHØR && erVedtakInnkreving) {
             if (behandling.søknadsbarn.none { it.erSammeRolle(stønadsendring.kravhaver.verdi, stønadsendring.type) }) {
                 // Henter og legger til barn som revurderingsbarn
                 behandling.privatAvtale.removeIf {
@@ -141,9 +163,11 @@ class VedtakHendelseListener(
             } else {
                 forholdsmessigFordelingService.oppdaterBarnEtterInnkrevingsvedtak(
                     behandling,
-                    stønadsendring.kravhaver,
+                    PersonStønad(stønadsendring.kravhaver, stønadsendring.type),
                 )
             }
+        } else {
+            forholdsmessigFordelingService.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
         }
     }
 
@@ -175,17 +199,17 @@ class VedtakHendelseListener(
                 forsendelseService.slettEllerOpprettForsendelse(
                     InitalizeForsendelseRequest(
                         saksnummer = sak,
-                        enhet = vedtak.enhetsnummer?.verdi ?: behandling.behandlerEnhet,
+                        enhet = opprettForSøknad.enhet,
                         behandlingInfo =
                             BehandlingInfoDto(
                                 soknadId = opprettForSøknad.søknadsid.toString(),
                                 vedtakId = vedtak.id.toString(),
                                 behandlingId = behandling.id!!.toString(),
                                 soknadFra = opprettForSøknad.søktAvType,
-                                stonadType = vedtak.stønadstype,
+                                stonadType = opprettForSøknad.behandlingstema?.tilStønadstype() ?: vedtak.stønadstype,
                                 engangsBelopType = if (vedtak.stønadstype == null) vedtak.engangsbeløptype else null,
                                 erFattetBeregnet = true,
-                                vedtakType = vedtak.type,
+                                vedtakType = opprettForSøknad.behandlingstype?.tilVedtakstype() ?: vedtak.type,
                             ),
                         roller = behandling.tilForsendelseRolleDto(sak, opprettForSøknad),
                     ),

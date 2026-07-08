@@ -29,7 +29,6 @@ import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.inntekt.Inntektsrapportering
-import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
 import no.nav.bidrag.domene.enums.vedtak.Engangsbeløptype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
@@ -40,8 +39,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.FaktiskUtgiftPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.InntektsrapporteringPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
-import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtalePeriodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SamværsperiodeGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SivilstandPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragsmottaker
@@ -70,6 +67,7 @@ class BehandlingTilGrunnlagMappingV2(
 ) {
     fun Behandling.tilPersonobjekter(
         søknadsbarnRolle: Rolle? = null,
+        søknadsbarn: List<Rolle> = this.søknadsbarn,
         inkluderAlleSøknadsbarn: Boolean = false,
     ): MutableSet<GrunnlagDto> {
         val søknadsbarnListe =
@@ -119,14 +117,22 @@ class BehandlingTilGrunnlagMappingV2(
                 }.toSet()
         }
 
-    fun Behandling.byggInnhentetGrunnlag(personobjekter: MutableSet<GrunnlagDto>): Set<GrunnlagDto> {
-        val sortertGrunnlagsListe = grunnlag.hentSisteAktiv()
+    fun Behandling.byggInnhentetGrunnlag(
+        personobjekter: MutableSet<GrunnlagDto>,
+        byggForSøknadsbarn: List<Rolle> = this.søknadsbarn,
+    ): Set<GrunnlagDto> {
+        val sortertGrunnlagsListe =
+            grunnlag
+                .hentSisteAktiv()
+                .filter { inntekt ->
+                    inntekt.gjelderBarnRolle == null || byggForSøknadsbarn.any { it.erSammeRolle(inntekt.gjelderBarnRolle!!) }
+                }
         val sortertGrunnlagsListeBearbeidet = sortertGrunnlagsListe.filter { it.erBearbeidet }
         val sortertGrunnlagsListeIkkeBearbeidet = sortertGrunnlagsListe.filter { !it.erBearbeidet }
         val innhentetArbeidsforhold = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetArbeidsforhold(personobjekter)
         val innhentetSivilstand = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetSivilstand(personobjekter)
         val innhentetHusstandsmedlemmer =
-            sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetHusstandsmedlemmer(personobjekter, this)
+            sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetHusstandsmedlemmer(personobjekter, this, byggForSøknadsbarn)
         val innhentetAndreBarnTilBM = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetAndreBarnTilBidragsmottaker(personobjekter)
         val beregnetInntekt = sortertGrunnlagsListeBearbeidet.tilBeregnetInntekt(personobjekter)
         val innhentetInntekter = sortertGrunnlagsListeIkkeBearbeidet.tilInnhentetGrunnlagInntekt(personobjekter)
@@ -272,8 +278,7 @@ class BehandlingTilGrunnlagMappingV2(
                 innhold =
                     POJONode(
                         InntektsrapporteringPeriode(
-                            // Simuler med 1 kr pga at hvis BP har 0kr inntekt så vil det ikke føre til FF
-                            beløp = BigDecimal.ONE,
+                            beløp = BigDecimal.ZERO,
                             versjon = null,
                             periode = ÅrMånedsperiode(eldsteVirkningstidspunkt, null),
                             opprinneligPeriode = null,
@@ -342,9 +347,10 @@ class BehandlingTilGrunnlagMappingV2(
     fun Behandling.tilGrunnlagInntekt(
         personobjekter: Set<GrunnlagDto> = tilPersonobjekter(),
         søknadsbarn: GrunnlagDto? = null,
+        byggForSøknadsbarn: List<Rolle> = this.søknadsbarn,
         inkluderAlle: Boolean = true,
     ): Set<GrunnlagDto> {
-        val alleSøknadsbarnIdenter = this.søknadsbarn.mapNotNull { it.ident }
+        val alleSøknadsbarnIdenter = byggForSøknadsbarn.mapNotNull { it.ident }
         return inntekter
             .asSequence()
             .filter { personobjekter.hentPersonNyesteIdent(it.gjelderIdent) != null && (inkluderAlle || it.taMed) }

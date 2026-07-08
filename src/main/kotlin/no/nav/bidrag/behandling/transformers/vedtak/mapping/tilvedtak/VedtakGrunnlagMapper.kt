@@ -3,6 +3,7 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Rolle
+import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.fantIkkeRolleISak
 import no.nav.bidrag.behandling.service.BarnebidragGrunnlagInnhenting
@@ -581,12 +582,12 @@ class VedtakGrunnlagMapper(
                             grunnlagListe =
                                 (
                                     personobjekter + byggGrunnlagSøknad() +
-                                        byggGrunnlagVirkningsttidspunkt(personobjekter.map { it.tilDto() })
+                                        byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning = personobjekter.map { it.tilDto() })
                                 ).toList(),
                         )
                     } else {
                         val bostatusBarn = tilGrunnlagBostatus(personobjekter)
-                        val inntekter = tilGrunnlagInntekt(personobjekter, søknadsbarn, false)
+                        val inntekter = tilGrunnlagInntekt(personobjekter, søknadsbarn, inkluderAlle = false)
                         val simulertGrunnlag =
                             if (simulerBeregning) {
                                 tilGrunnlagInntektSimulering(personobjekter) + tilGrunnlagSamværSimulering()
@@ -694,15 +695,18 @@ class VedtakGrunnlagMapper(
         }
     }
 
-    fun Behandling.byggGrunnlagForVedtak(personobjekterFraBeregning: MutableSet<GrunnlagDto> = mutableSetOf()): Set<GrunnlagDto> {
+    fun Behandling.byggGrunnlagForVedtak(
+        personobjekterFraBeregning: MutableSet<GrunnlagDto> = mutableSetOf(),
+        søknadsbarn: List<Rolle> = this.søknadsbarn,
+    ): Set<GrunnlagDto> {
         mapper.run {
             val personobjekter =
-                (tilPersonobjekter() + personobjekterFraBeregning).toSet()
+                (tilPersonobjekter(søknadsbarn = søknadsbarn) + personobjekterFraBeregning).toSet()
             val bostatus = tilGrunnlagBostatus(personobjekter)
             val personobjekterMedHusstandsmedlemmer =
                 (personobjekter + bostatus.husstandsmedlemmer()).toMutableSet()
-            val innhentetGrunnlagListe = byggInnhentetGrunnlag(personobjekterMedHusstandsmedlemmer)
-            val inntekter = tilGrunnlagInntekt(personobjekter)
+            val innhentetGrunnlagListe = byggInnhentetGrunnlag(personobjekterMedHusstandsmedlemmer, søknadsbarn)
+            val inntekter = tilGrunnlagInntekt(personobjekter, byggForSøknadsbarn = søknadsbarn)
 
             val grunnlagListe = (personobjekter + bostatus + inntekter + innhentetGrunnlagListe).toMutableSet()
             when (tilType()) {
@@ -733,7 +737,10 @@ class VedtakGrunnlagMapper(
         }
     }
 
-    fun Behandling.byggGrunnlagGenereltAvslag(): Set<GrunnlagDto> {
+    fun Behandling.byggGrunnlagGenereltAvslag(
+        request: FatteVedtakRequestDto? = null,
+        bleFFTrukket: Boolean = false,
+    ): Set<GrunnlagDto> {
         val grunnlagListe = (byggGrunnlagNotaterDirekteAvslag() + byggGrunnlagSøknad()).toMutableSet()
         grunnlagListe.addAll(byggGrunnlagBeløpshistorikkAlle())
         when (tilType()) {
@@ -746,6 +753,10 @@ class VedtakGrunnlagMapper(
                 if (validering.run { tilSærbidragAvslagskode() } == Resultatkode.ALLE_UTGIFTER_ER_FORELDET) {
                     grunnlagListe.addAll(byggGrunnlagUtgiftsposter() + byggGrunnlagUtgiftDirekteBetalt())
                 }
+            }
+
+            TypeBehandling.BIDRAG -> {
+                grunnlagListe.addAll(byggGrunnlagBehandlingDetaljer(request?.fatteVedtakRevurderingsbarn, bleFFTrukket))
             }
 
             else -> {}

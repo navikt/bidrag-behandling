@@ -12,6 +12,8 @@ import io.mockk.mockkObject
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
+import no.nav.bidrag.behandling.database.datamodell.json.ForholdsmessigFordeling
+import no.nav.bidrag.behandling.database.datamodell.minified.BehandlingSimple
 import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.KanBehandlesINyLøsningResponse
@@ -269,6 +271,34 @@ class ValiderBehandlingServiceTest {
             expection.validerInneholderMelding("Behandlingen mangler bidragspliktig")
         }
     }
+
+    @Nested
+    inner class BisysValidering {
+        @Test
+        fun `skal ikke kaste exception hvis behandling ikke er bidrag`() {
+            shouldNotThrow<HttpClientErrorException> {
+                validerBehandlingService.validerKanBehandlesIBisys(
+                    opprettBehandlingSimpleForBisysValidering(stønadstype = Stønadstype.FORSKUDD, forholdsmessigFordeling = ForholdsmessigFordeling()),
+                )
+            }
+        }
+
+        @Test
+        fun `skal kaste exception hvis forholdsmessig fordeling er opprettet i ny løsning`() {
+            val exception =
+                shouldThrow<HttpClientErrorException> {
+                    validerBehandlingService.validerKanBehandlesIBisys(
+                        opprettBehandlingSimpleForBisysValidering(
+                            stønadstype = Stønadstype.BIDRAG,
+                            forholdsmessigFordeling = ForholdsmessigFordeling(),
+                        ),
+                    )
+                }
+
+            exception.statusCode shouldBe HttpStatus.PRECONDITION_FAILED
+            exception.validerInneholderMelding("Forholdsmessig fordeling er opprettet i ny løsning")
+        }
+    }
 }
 
 private fun HttpClientErrorException.validerInneholderMelding(melding: String) {
@@ -331,3 +361,22 @@ private fun opprettBidragKanBehandlesINyLøsningRequest() =
             ),
         saksnummer = SAKSNUMMER,
     )
+
+private fun opprettBehandlingSimpleForBisysValidering(
+    stønadstype: Stønadstype,
+    forholdsmessigFordeling: ForholdsmessigFordeling? = null,
+) = BehandlingSimple(
+    id = 1,
+    virkningstidspunkt = LocalDate.parse("2024-01-01"),
+    søktFomDato = LocalDate.parse("2024-01-01"),
+    mottattdato = LocalDate.parse("2024-01-01"),
+    saksnummer = SAKSNUMMER,
+    harPrivatAvtaleAndreBarn = false,
+    vedtakstype = Vedtakstype.ALDERSJUSTERING,
+    søknadstype = Behandlingstype.REVURDERING,
+    omgjøringsdetaljer = null,
+    stønadstype = stønadstype,
+    engangsbeløptype = null,
+    forholdsmessigFordeling = forholdsmessigFordeling,
+    roller = emptyList(),
+)

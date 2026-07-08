@@ -5,6 +5,7 @@ import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.Grunnlag
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.hentAlleAktiv
 import no.nav.bidrag.behandling.database.datamodell.hentAlleIkkeAktiv
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
@@ -139,6 +140,7 @@ fun List<Grunnlag>.tilInnhentetAndreBarnTilBidragsmottaker(personobjekter: Set<G
 fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(
     personobjekter: Set<GrunnlagDto>,
     behandling: Behandling,
+    byggForSøknadsbarn: List<Rolle> = behandling.søknadsbarn,
 ): Set<GrunnlagDto> {
     val personobjekterInnhentetHusstandsmedlem = mutableSetOf<GrunnlagDto>()
 
@@ -224,12 +226,14 @@ fun List<Grunnlag>.tilInnhentetHusstandsmedlemmer(
             innhentetAndreVoksneIHusstandenGrunnlagListe +
             innhentetHusstandsmedlemBMGrunnlagListe
 
-    return innhentetGrunnlagsliste + behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(innhentetGrunnlagsliste, personobjekter)
+    return innhentetGrunnlagsliste +
+        behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(innhentetGrunnlagsliste, personobjekter, byggForSøknadsbarn)
 }
 
 fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
     grunnlagsliste: Set<GrunnlagDto>,
     personobjekter: Set<GrunnlagDto>,
+    byggForSøknadsbarn: List<Rolle>,
 ): List<GrunnlagDto> {
     val innhentesForRolle = Grunnlagsdatatype.BOFORHOLD.innhentesForRolle(this)!!
     val personobjektInnhentesForRolle = personobjekter.hentPersonNyesteIdent(innhentesForRolle.ident)!!
@@ -239,7 +243,7 @@ fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
                 it.gjelderReferanse == personobjektInnhentesForRolle.referanse
         }
     val søknadsbarnSomManglerInnhentetGrunnlag =
-        søknadsbarn
+        byggForSøknadsbarn
             .filter { sb ->
                 innhentetHusstandsmedlemGrunnlagsliste.filter { it.type == Grunnlagstype.INNHENTET_HUSSTANDSMEDLEM }.none {
                     val barnReferanse = it.innholdTilObjekt<InnhentetHusstandsmedlem>().grunnlag.gjelderPerson
@@ -280,7 +284,8 @@ fun Behandling.opprettInnhentetHusstandsmedlemGrunnlagHvisMangler(
                 ).tilGrunnlagsobjekt(
                     LocalDateTime.now().withSecond(0).withNano(0),
                     personobjektInnhentesForRolle.referanse,
-                    personobjekter.hentPersonNyesteIdent(it.ident)!!.referanse,
+                    personobjekter.hentPersonNyesteIdent(it.ident)?.referanse
+                        ?: søknadsbarn.find { r -> r.erSammeRolle(it.ident!!, null) }!!.tilGrunnlagsreferanse(),
                 )
             }
 

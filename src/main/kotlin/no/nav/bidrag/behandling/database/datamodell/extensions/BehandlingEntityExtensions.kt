@@ -8,12 +8,15 @@ import jakarta.persistence.Converter
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.database.datamodell.extensions.LasterGrunnlagDetaljer.Companion.lasterGrunnlag
 import no.nav.bidrag.behandling.database.datamodell.tilÅrsakstype
+import no.nav.bidrag.behandling.database.repository.BehandlingRepository
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterRollerRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.OpprettBehandlingRequest
 import no.nav.bidrag.behandling.transformers.toLocalDateTime
+import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
+import no.nav.bidrag.transport.behandling.felles.grunnlag.FatteVedtakRevurderingsbarn
 import no.nav.bidrag.transport.felles.commonObjectmapper
 import org.hibernate.engine.spi.SessionFactoryImplementor
 import org.hibernate.engine.spi.SharedSessionContractImplementor
@@ -47,6 +50,8 @@ enum class LasterGrunnlagAsyncStatus {
 
 class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
     companion object {
+        const val FATTE_VEDTAK_REVURDERINGSBARN_INFORMASJON = "fatte_vedtak_revurderingsbarn_informasjon"
+
         fun from(initValue: Map<String, String> = hashMapOf()): BehandlingMetadataDo {
             val dokmap = BehandlingMetadataDo()
             dokmap.putAll(initValue)
@@ -57,10 +62,12 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
     private val opprettelseEllerOppdateringAvFFFeilet = "opprettelseEllerOppdateringAvFFFeilet"
     private val oppdateringAvFFRollerFeilet = "oppdateringAvFFRollerFeilet"
     private val opprettelseAvFFBehandlingFeilet = "opprettelseAvFFBehandlingFeilet"
+    private val ffSistSynkronisert = "ffSistSynkronisert"
     private val følgerAutomatiskVedtak = "følger_automatisk_vedtak"
     private val klagePåBisysVedtak = "klage_på_bisys_vedtak"
     private val lasterGrunnlagAsync = "laster_grunnlag_async_tidspunkt"
     private val lasterGrunnlagAsyncStatus = "laster_grunnlag_async_status"
+    private val fatteVedtakRevurderingsbarnInformasjon = FATTE_VEDTAK_REVURDERINGSBARN_INFORMASJON
 
     fun bestillLastGrunnlagAsync() {
         update(lasterGrunnlagAsync, LocalDateTime.now().toString())
@@ -79,6 +86,35 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
             return
         }
         update(lasterGrunnlagAsyncStatus, LasterGrunnlagAsyncStatus.FERDIG.name)
+    }
+
+    fun hentFatteVedtakRevurderingsbarnInformasjon(): FatteVedtakRevurderingsbarn? =
+        try {
+            get(fatteVedtakRevurderingsbarnInformasjon)?.let {
+                commonObjectmapper.readValue<FatteVedtakRevurderingsbarn>(it)
+            }
+        } catch (e: Exception) {
+            secureLogger.warn(e) { "Feil ved henting av fatteVedtakRevurderingsbarnInformasjon" }
+            null
+        }
+
+    fun lagreFatteVedtakRevurderingsbarnInformasjon(
+        behandlingId: Long,
+        behandlingRepository: BehandlingRepository,
+        info: FatteVedtakRevurderingsbarn,
+    ) {
+        try {
+            val jsonValue = commonObjectmapper.writeValueAsString(info)
+            update(fatteVedtakRevurderingsbarnInformasjon, jsonValue)
+            behandlingRepository.lagreMetadataObjekt(
+                behandlingId = behandlingId,
+                metadataKey = fatteVedtakRevurderingsbarnInformasjon,
+                jsonValue = jsonValue,
+            )
+        } catch (e: Exception) {
+            secureLogger.warn(e) { "Feil ved lagring av fatteVedtakRevurderingsbarnInformasjon" }
+            // Handle exception if needed
+        }
     }
 
     fun lasterGrunnlagDetaljer(): LasterGrunnlagDetaljer {
@@ -114,6 +150,10 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
 
     fun setOpprettelseAvFFBehandlingFeilet(value: String) = set(opprettelseAvFFBehandlingFeilet, value)
 
+    fun setFFSistSynkronisert(value: LocalDateTime) = set(ffSistSynkronisert, value.toString())
+
+    fun getFFSistSynkronisert() = get(ffSistSynkronisert)?.let { LocalDateTime.parse(it) }
+
     fun setOppdateringAvFFRollerFeilet(value: String) = set(oppdateringAvFFRollerFeilet, value)
 
     fun getOppprettelseAvBehandlingFeilet(): MutableSet<OpprettBehandlingRequest> =
@@ -142,6 +182,8 @@ class BehandlingMetadataDo : MutableMap<String, String> by hashMapOf() {
     fun getFølgerAutomatiskVedtak(): Int? = get(følgerAutomatiskVedtak)?.toIntOrNull()
 
     fun getOpprettelseEllerOppdateringAvFFFeilet(): Boolean? = get(opprettelseEllerOppdateringAvFFFeilet)?.toBooleanStrictOrNull()
+
+    fun resetOpprettelseEllerOppdateringAvFFFeilet() = set(opprettelseEllerOppdateringAvFFFeilet, "false")
 
     private fun update(
         key: String,

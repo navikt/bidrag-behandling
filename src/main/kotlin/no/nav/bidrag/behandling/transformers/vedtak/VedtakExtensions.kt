@@ -1,9 +1,11 @@
 package no.nav.bidrag.behandling.transformers.vedtak
 
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
+import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.transport.behandling.vedtak.VedtakHendelse
 import no.nav.bidrag.transport.behandling.vedtak.response.VedtakDto
 
+val VedtakHendelse.erOpphørEllerInnkreving get() = listOf(Vedtakstype.OPPHØR, Vedtakstype.INNKREVING).contains(this.type)
 val VedtakHendelse.stønadstype get() = this.stønadsendringListe?.firstOrNull()?.type
 val VedtakHendelse.engangsbeløptype get() = this.engangsbeløpListe?.firstOrNull()?.type
 val VedtakDto.innkrevingstype get() =

@@ -11,14 +11,13 @@ import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderR
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.database.datamodell.tilNyestePersonident
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteInntektsnotat
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteNotatinnhold
 import no.nav.bidrag.behandling.service.NotatService.Companion.henteSamværsnotat
 import no.nav.bidrag.behandling.transformers.eksplisitteYtelser
 import no.nav.bidrag.behandling.transformers.erBidrag
-import no.nav.bidrag.behandling.transformers.finnSistePeriodeLøpendePeriodeInnenforSøktFomDato
-import no.nav.bidrag.behandling.transformers.finnesLøpendeForskuddForRolle
 import no.nav.bidrag.behandling.transformers.grunnlag.hentGrunnlagsreferanserForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.hentVersjonForInntekt
 import no.nav.bidrag.behandling.transformers.grunnlag.inntektManglerSøknadsbarn
@@ -75,7 +74,6 @@ import no.nav.bidrag.transport.felles.toCompactString
 import no.nav.bidrag.transport.felles.toYearMonth
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType as Notattype
@@ -93,7 +91,11 @@ fun opprettGrunnlagsreferanseVirkningstidspunkt(
 
 fun Collection<GrunnlagDto>.husstandsmedlemmer() = filter { it.type == Grunnlagstype.PERSON_HUSSTANDSMEDLEM }
 
-fun Behandling.byggGrunnlagGenerelt(søknadsbarn: List<Rolle> = this.søknadsbarn): Set<GrunnlagDto> {
+fun Behandling.byggGrunnlagGenerelt(
+    søknadsbarn: List<Rolle> = this.søknadsbarn,
+    request: FatteVedtakRequestDto? = null,
+    bleFFTrukket: Boolean = false,
+): Set<GrunnlagDto> {
     val grunnlagListe = (byggGrunnlagNotater(søknadsbarn) + byggGrunnlagSøknad(søknadsbarn)).toMutableSet()
     grunnlagListe.addAll(byggGrunnlagBeløpshistorikkAlle())
     when (tilType()) {
@@ -106,7 +108,7 @@ fun Behandling.byggGrunnlagGenerelt(søknadsbarn: List<Rolle> = this.søknadsbar
         }
 
         TypeBehandling.BIDRAG -> {
-            grunnlagListe.addAll(byggGrunnlagBehandlingDetaljer())
+            grunnlagListe.addAll(byggGrunnlagBehandlingDetaljer(request?.fatteVedtakRevurderingsbarn, bleFFTrukket))
         }
 
         else -> {}
@@ -335,46 +337,48 @@ fun byggGrunnlagVirkningstidspunktResultatvedtak(
             ),
     )
 
-fun Behandling.byggGrunnlagVirkningsttidspunkt(grunnlagFraBeregning: List<GrunnlagDto> = emptyList()) =
-    if (erBidrag()) {
-        søknadsbarn
-            .map { sb ->
-                val søknadsbarnGrunnlag = grunnlagFraBeregning.hentPerson(sb.ident) ?: sb.tilGrunnlagPerson()
-                val årsak = sb.årsak ?: årsak
-                val avslag = sb.avslag ?: avslag
-                GrunnlagDto(
-                    referanse = opprettGrunnlagsreferanseVirkningstidspunkt(sb),
-                    type = Grunnlagstype.VIRKNINGSTIDSPUNKT,
-                    gjelderBarnReferanse = søknadsbarnGrunnlag.referanse,
-                    innhold =
-                        POJONode(
-                            VirkningstidspunktGrunnlag(
-                                virkningstidspunkt = sb.virkningstidspunkt ?: virkningstidspunkt!!,
-                                opphørsdato = sb.opphørsdato,
-                                årsak = årsak,
-                                beregnTil = sb.beregnTil,
-                                beregnTilDato = finnBeregnTilDatoBehandling(sb).toYearMonth(),
-                                avslag = (årsak == null).ifTrue { avslag },
-                            ),
-                        ),
-                )
-            }.toSet()
-    } else {
-        setOf(
+fun Behandling.byggGrunnlagVirkningsttidspunkt(
+    søknadsbarn: List<Rolle> = this.søknadsbarn,
+    grunnlagFraBeregning: List<GrunnlagDto> = emptyList(),
+) = if (erBidrag()) {
+    søknadsbarn
+        .map { sb ->
+            val søknadsbarnGrunnlag = grunnlagFraBeregning.hentPerson(sb.ident) ?: sb.tilGrunnlagPerson()
+            val årsak = sb.årsak ?: årsak
+            val avslag = sb.avslag ?: avslag
             GrunnlagDto(
-                referanse = opprettGrunnlagsreferanseVirkningstidspunkt(),
+                referanse = opprettGrunnlagsreferanseVirkningstidspunkt(sb),
                 type = Grunnlagstype.VIRKNINGSTIDSPUNKT,
+                gjelderBarnReferanse = søknadsbarnGrunnlag.referanse,
                 innhold =
                     POJONode(
                         VirkningstidspunktGrunnlag(
-                            virkningstidspunkt = virkningstidspunkt!!,
+                            virkningstidspunkt = sb.virkningstidspunkt ?: virkningstidspunkt!!,
+                            opphørsdato = sb.opphørsdato,
                             årsak = årsak,
+                            beregnTil = sb.beregnTil,
+                            beregnTilDato = finnBeregnTilDatoBehandling(sb).toYearMonth(),
                             avslag = (årsak == null).ifTrue { avslag },
                         ),
                     ),
-            ),
-        )
-    }
+            )
+        }.toSet()
+} else {
+    setOf(
+        GrunnlagDto(
+            referanse = opprettGrunnlagsreferanseVirkningstidspunkt(),
+            type = Grunnlagstype.VIRKNINGSTIDSPUNKT,
+            innhold =
+                POJONode(
+                    VirkningstidspunktGrunnlag(
+                        virkningstidspunkt = virkningstidspunkt!!,
+                        årsak = årsak,
+                        avslag = (årsak == null).ifTrue { avslag },
+                    ),
+                ),
+        ),
+    )
+}
 
 fun Behandling.byggGrunnlagNotaterDirekteAvslag(): Set<GrunnlagDto> =
     byggGrunnlagBegrunnelseVirkningstidspunkt() +
@@ -384,7 +388,7 @@ fun Behandling.byggGrunnlagNotaterDirekteAvslag(): Set<GrunnlagDto> =
             },
         ).filterNotNull().toSet()
 
-fun Behandling.byggGrunnlagBegrunnelseVirkningstidspunkt() =
+fun Behandling.byggGrunnlagBegrunnelseVirkningstidspunkt(søknadsbarn: List<Rolle> = this.søknadsbarn) =
     if (erBidrag()) {
         søknadsbarn
             .flatMap { rolle ->
@@ -467,10 +471,13 @@ fun Behandling.byggGrunnlagPrivatAvtale() =
             )
         }.filterNotNull()
 
-fun Behandling.byggGrunnlagNotatVurderingAvSkolegang() =
+fun Behandling.byggGrunnlagNotatVurderingAvSkolegang(byggForSøknadsbarn: List<Rolle> = this.søknadsbarn) =
     if (kanSkriveVurderingAvSkolegangAlle()) {
         roller
-            .flatMap { rolle ->
+            .filter {
+                it.rolletype != Rolletype.BARN ||
+                    byggForSøknadsbarn.any { sb -> sb.erSammeRolle(it) }
+            }.flatMap { rolle ->
                 listOf(
                     henteNotatinnhold(this, Notattype.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG, rolle)
                         .takeIfNotNullOrEmpty { innhold ->
@@ -510,7 +517,7 @@ fun Behandling.byggGrunnlagNotaterInnkreving(): Set<GrunnlagDto> {
 }
 
 fun Behandling.byggGrunnlagNotater(søknadsbarn: List<Rolle> = this.søknadsbarn): Set<GrunnlagDto> {
-    val virkningstidspunktGrunnlag = byggGrunnlagBegrunnelseVirkningstidspunkt()
+    val virkningstidspunktGrunnlag = byggGrunnlagBegrunnelseVirkningstidspunkt(søknadsbarn)
     val notatGrunnlag =
         setOf(
             henteNotatinnhold(this, Notattype.BOFORHOLD).takeIfNotNullOrEmpty {
@@ -527,11 +534,14 @@ fun Behandling.byggGrunnlagNotater(søknadsbarn: List<Rolle> = this.søknadsbarn
             },
         ).filterNotNull()
 
-    val notatVurderingAvSkolegang = byggGrunnlagNotatVurderingAvSkolegang()
+    val notatVurderingAvSkolegang = byggGrunnlagNotatVurderingAvSkolegang(søknadsbarn)
 
     val notatUnderhold =
         roller
-            .flatMap { rolle ->
+            .filter {
+                it.rolletype != Rolletype.BARN ||
+                    søknadsbarn.any { sb -> sb.erSammeRolle(it) }
+            }.flatMap { rolle ->
                 listOf(
                     henteNotatinnhold(this, Notattype.UNDERHOLDSKOSTNAD, rolle).takeIfNotNullOrEmpty { innhold ->
                         opprettGrunnlagNotat(
@@ -580,7 +590,10 @@ fun Behandling.byggGrunnlagNotater(søknadsbarn: List<Rolle> = this.søknadsbarn
 
     val notatSamvær =
         roller
-            .flatMap { rolle ->
+            .filter {
+                it.rolletype != Rolletype.BARN ||
+                    søknadsbarn.any { sb -> sb.erSammeRolle(it) }
+            }.flatMap { rolle ->
                 listOf(
                     henteSamværsnotat(this, rolle)?.takeIfNotNullOrEmpty { innhold ->
                         opprettGrunnlagNotat(Notattype.SAMVÆR, false, innhold, gjelderBarnReferanse = rolle.tilGrunnlagsreferanse())
@@ -599,7 +612,10 @@ fun Behandling.byggGrunnlagNotater(søknadsbarn: List<Rolle> = this.søknadsbarn
 
     val notatGrunnlagInntekter =
         roller
-            .flatMap { rolle ->
+            .filter {
+                it.rolletype != Rolletype.BARN ||
+                    søknadsbarn.any { sb -> sb.erSammeRolle(it) }
+            }.flatMap { rolle ->
                 listOf(
                     henteInntektsnotat(this, rolle.id!!)?.takeIfNotNullOrEmpty {
                         opprettGrunnlagNotat(

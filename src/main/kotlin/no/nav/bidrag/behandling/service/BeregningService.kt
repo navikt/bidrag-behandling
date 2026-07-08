@@ -208,21 +208,6 @@ class BeregningService(
         } else {
             beregneBarnebidragV2FF(behandling, endeligBeregning, simulerBeregning)
         }
-
-//        else {
-//            val resultat = beregneBarnebidragV1(behandling, endeligBeregning)
-//            val grunnlagResultatVedtak =
-//                resultat
-//                    .filter {
-//                        it.resultatVedtak != null
-//                    }.flatMap { it.resultatVedtak!!.resultatVedtakListe.flatMap { it.resultat.grunnlagListe } }
-//            val grunnlagsliste = resultat.flatMap { it.resultat.grunnlagListe }
-//            ResultatBidragsberegning(
-//                grunnlagsliste = (grunnlagsliste + grunnlagResultatVedtak).toSet(),
-//                resultatBarn = resultat,
-//                vedtakstype = behandling.vedtakstype,
-//            )
-//        }
     }
 
     fun beregneBarnebidragV2FF(
@@ -231,76 +216,87 @@ class BeregningService(
         simulerBeregning: Boolean = false,
     ): ResultatBidragsberegning {
         val grunnlagBeregning = opprettGrunnlagBeregningBidragV2(behandling, endeligBeregning, simulerBeregning)
-        val grunnlagslisteAlle = mutableListOf<GrunnlagDto>()
+        val grunnlagslisteAlle = mutableSetOf<GrunnlagDto>()
+        grunnlagslisteAlle.addAll(grunnlagBeregning.grunnlagsliste)
         return try {
             val resultatBeregning = utførBeregningFF(grunnlagBeregning)
 
             val resultat = resultatBeregning.resultat
-            val perioderSlåttUtTilFF = resultat.grunnlagListe.perioderSlåttUtTilFF().map { it.periode }
+            val resultatRevurderingsbarn =
+                resultat.resultat.filter {
+                    val personobjekt = resultat.grunnlagListe.hentPersonMedReferanse(it.søknadsbarnreferanse) ?: return@filter false
+                    !personobjekt.personObjekt.delAvOpprinneligBehandling
+                }
+            val bpHarFullEvneIAllePerioder = resultat.grunnlagListe.perioderSlåttUtTilFF().isEmpty()
 
             val resultatBarn =
-                resultat.resultat.map { resultatBarn ->
-                    val søknadsbarn = behandling.søknadsbarn.find { resultatBarn.søknadsbarnreferanse == it.tilGrunnlagsreferanse() }!!
-                    val forholdsmessigFordelingDetaljer = søknadsbarn.forholdsmessigFordeling
-                    if (resultatBarn.beregningsfeil != null) {
-                        return@map håndterBeregningsfeil(
-                            søknadsbarn = søknadsbarn,
-                            beregning = grunnlagBeregning,
-                            feil = resultatBarn.beregningsfeil!!,
-                            behandling = behandling,
-                        )
-                    }
-                    val perioderBarn = resultatBarn.resultatVedtakListe.flatMap { it.periodeListe }.map { it.periode }
-                    val minstEnPeriodeSlåttUtTilFF = perioderBarn.any { pb -> perioderSlåttUtTilFF.any { it.overlapper(pb) } }
-                    val erOmgjøringMedPerioder = endeligBeregning && behandling.erKlageEllerOmgjøring && perioderBarn.isNotEmpty()
-                    val erAvvistRevurdering =
-                        forholdsmessigFordelingDetaljer != null && forholdsmessigFordelingDetaljer.erRevurdering &&
-                            !minstEnPeriodeSlåttUtTilFF && !erOmgjøringMedPerioder
-                    val grunnlagSøknadsbarn = resultat.grunnlagListe.hentPersonMedReferanse(resultatBarn.søknadsbarnreferanse)!!
-                    val grunnlagBarn =
-                        resultat.grunnlagListe.filter {
-                            val gjelderErBm =
-                                resultat.grunnlagListe.hentPersonMedReferanse(it.gjelderReferanse)?.type ==
-                                    Grunnlagstype.PERSON_BIDRAGSMOTTAKER
-                            it.gjelderBarnReferanse == null || !gjelderErBm ||
-                                grunnlagSøknadsbarn.personObjekt.bidragsmottaker == null ||
-                                it.gjelderReferanse == grunnlagSøknadsbarn.personObjekt.bidragsmottaker ||
-                                it.gjelderBarnReferanse == grunnlagSøknadsbarn.referanse ||
-                                it.type == Grunnlagstype.DELBEREGNING_BIDRAG_TIL_FORDELING
+                resultat.resultat
+                    .parallelStream()
+                    .map { resultatBarn ->
+                        val søknadsbarn = behandling.søknadsbarn.find { resultatBarn.søknadsbarnreferanse == it.tilGrunnlagsreferanse() }!!
+                        val forholdsmessigFordelingDetaljer = søknadsbarn.forholdsmessigFordeling
+                        if (resultatBarn.beregningsfeil != null) {
+                            return@map håndterBeregningsfeil(
+                                søknadsbarn = søknadsbarn,
+                                beregning = grunnlagBeregning,
+                                feil = resultatBarn.beregningsfeil!!,
+                                behandling = behandling,
+                            )
                         }
-                    val endeligResultat =
-                        resultatBarn.resultatVedtakListe.find {
-                            (behandling.erKlageEllerOmgjøring && it.omgjøringsvedtak) || !behandling.erKlageEllerOmgjøring
-                        }
-                    if (søknadsbarn.erAvvisning) {
-                        ResultatBidragsberegningBarn(
-                            ugyldigBeregning = behandling.tilBeregningFeilmelding(),
-                            barn = søknadsbarn.mapTilResultatBarn(),
-                            avslagskode = søknadsbarn.avslag,
-                            resultat = BeregnetBarnebidragResultat(),
-                            opphørsdato = null,
-                            `løperBidrag` = behandling.løperBidragEtterEldsteVirkning(søknadsbarn),
-                        )
-                    } else {
-                        mapTilBeregningresultatBarn(
-                            søknadsbarn,
-                            erAvvistRevurdering,
-                            resultatBarn,
-                            grunnlagBarn,
-                            grunnlagBeregning,
-                            behandling,
-                            endeligResultat,
-                        )
-                    }
-                }
+                        val perioderBarn = resultatBarn.resultatVedtakListe.flatMap { it.periodeListe }.map { it.periode }
 
-            grunnlagslisteAlle.addAll(resultat.grunnlagListe)
+                        val erAvvistRevurdering =
+                            (forholdsmessigFordelingDetaljer != null && forholdsmessigFordelingDetaljer.erRevurdering) &&
+                                (perioderBarn.isEmpty() || resultatBarn.avvistRevurderingsbarn)
+                        val grunnlagSøknadsbarn = resultat.grunnlagListe.hentPersonMedReferanse(resultatBarn.søknadsbarnreferanse)!!
+                        val grunnlagBarn =
+                            resultat.grunnlagListe.filter {
+                                val gjelderErBm =
+                                    resultat.grunnlagListe.hentPersonMedReferanse(it.gjelderReferanse)?.type ==
+                                        Grunnlagstype.PERSON_BIDRAGSMOTTAKER
+                                it.gjelderBarnReferanse == null || !gjelderErBm ||
+                                    grunnlagSøknadsbarn.personObjekt.bidragsmottaker == null ||
+                                    it.gjelderReferanse == grunnlagSøknadsbarn.personObjekt.bidragsmottaker ||
+                                    it.gjelderBarnReferanse == grunnlagSøknadsbarn.referanse ||
+                                    it.type == Grunnlagstype.DELBEREGNING_BIDRAG_TIL_FORDELING
+                            }
+                        val endeligResultat =
+                            resultatBarn.resultatVedtakListe.find {
+                                (behandling.erKlageEllerOmgjøring && it.omgjøringsvedtak) || !behandling.erKlageEllerOmgjøring
+                            }
+                        if (søknadsbarn.erAvvisning) {
+                            ResultatBidragsberegningBarn(
+                                ugyldigBeregning = behandling.tilBeregningFeilmelding(),
+                                barn = søknadsbarn.mapTilResultatBarn(),
+                                avslagskode = søknadsbarn.avslag,
+                                resultat = BeregnetBarnebidragResultat(),
+                                opphørsdato = null,
+                                løperBidrag = behandling.løperBidragEtterEldsteVirkning(søknadsbarn),
+                            )
+                        } else {
+                            mapTilBeregningresultatBarn(
+                                søknadsbarn,
+                                erAvvistRevurdering,
+                                resultatBarn,
+                                grunnlagBarn,
+                                grunnlagBeregning,
+                                behandling,
+                                endeligResultat,
+                            )
+                        }
+                    }.toList()
+
             ResultatBidragsberegning(
-                perioderSlåttUtTilFF = perioderSlåttUtTilFF,
-                grunnlagsliste = resultat.grunnlagListe.toSet(),
+                perioderSlåttUtTilFF = resultat.grunnlagListe.perioderSlåttUtTilFF().map { it.periode },
+                grunnlagsliste = grunnlagslisteAlle.toSet(),
                 ugyldigBeregning = resultatBeregning.tilBeregningFeilmelding(),
                 resultatBarn = resultatBarn,
+                minstEnPerioderHarSlåttUtTilFF = resultat.grunnlagListe.perioderSlåttUtTilFF().isNotEmpty(),
+                bpHarFullEvneIAllePerioder = bpHarFullEvneIAllePerioder,
+                inneholderBeregningForRevurderingsbarn =
+                    resultatRevurderingsbarn.isNotEmpty() && resultatRevurderingsbarn.none { it.avvistRevurderingsbarn },
                 vedtakstype = behandling.vedtakstype,
+                fatteVedtakDetaljerFraOmgjortVedtak = behandling.omgjøringsdetaljer?.fatteVedtakDetaljerRevurderingsbarn,
             )
         } catch (e: Exception) {
             LOGGER.warn(e) { "Det skjedde en feil ved beregning av barnebidrag: ${e.message}" }

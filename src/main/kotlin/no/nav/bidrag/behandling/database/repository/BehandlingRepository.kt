@@ -17,6 +17,18 @@ import java.util.Optional
 
 interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandlingRepository {
 
+    @Modifying(flushAutomatically = true)
+    @Query(
+        """update behandling b set metadata = coalesce(b.metadata, hstore('')) || hstore(:metadataKey, :jsonValue) where b.id = :behandlingId and b.deleted = false""",
+        nativeQuery = true,
+    )
+    fun lagreMetadataObjekt(
+        @Param("behandlingId") behandlingId: Long,
+        @Param("metadataKey") metadataKey: String,
+        @Param("jsonValue") jsonValue: String,
+    )
+
+
 
     @Modifying
     @Query("update behandling set metadata = coalesce(metadata, hstore('')) || hstore(array['laster_grunnlag_async_status', 'laster_grunnlag_async_tidspunkt'], array['BESTILT', now()::text]) where id = :id and deleted = false", nativeQuery = true)
@@ -173,7 +185,7 @@ interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandl
         JOIN rolle br ON br.behandling_id = b.id
         WHERE br.rolletype = 'BIDRAGSPLIKTIG'
           AND br.ident = :bpIdent
-          and (('KLAGE' = :vedtakstype  and b.vedtakstype = 'KLAGE' and b.klagedetaljer is not null) or b.vedtakstype != 'KLAGE')
+          and ((:opprinneligVedtakId is not null and b.klagedetaljer is not null) or (:opprinneligVedtakId is null and b.klagedetaljer is null))
           AND b.deleted = false
           AND b.vedtakstidspunkt IS NULL
           and (:opprinneligVedtakId is null or (b.klagedetaljer ->> 'opprinneligVedtakId') = (:opprinneligVedtakId)::text)
@@ -184,7 +196,6 @@ interface BehandlingRepository : CrudRepository<Behandling, Long>, CustomBehandl
     )
     fun finnHovedbehandlingForBpVedFF(
         @Param("bpIdent") bpIdent: String,
-        @Param("vedtakstype") vedtakstype: String? = null,
         @Param("opprinneligVedtakId") opprinneligVedtakId: Int? = null
     ): Behandling?
 

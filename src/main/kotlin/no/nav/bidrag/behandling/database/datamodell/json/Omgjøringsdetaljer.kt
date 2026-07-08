@@ -5,6 +5,7 @@ import jakarta.persistence.Converter
 import no.nav.bidrag.behandling.transformers.dto.PåklagetVedtak
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
+import no.nav.bidrag.transport.behandling.felles.grunnlag.FatteVedtakRevurderingsbarn
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -31,9 +32,20 @@ data class Omgjøringsdetaljer(
     var innkrevingstype: Innkrevingstype? = null,
     val fattetDelvedtak: List<FattetVedtak> = emptyList(),
     val paragraf35c: List<OpprettParagraf35C> = emptyList(),
+    // Brukes ved lesemodus for å finne ut om vedtak er klage eller omgjøring
+    val erKlageEllerOmgjøring: Boolean = true,
+    val fatteVedtakDetaljerRevurderingsbarn: FatteVedtakDetaljerFraOmgjortVedtakForRevurderingsbarn? = null,
 ) {
     val minsteVedtakstidspunkt get() = omgjortVedtakstidspunktListe.minOrNull()
+    val overstyrtTilÅIkkeFatteVedtakForRevurderingsbarn: Boolean? get() =
+        fatteVedtakDetaljerRevurderingsbarn != null &&
+            fatteVedtakDetaljerRevurderingsbarn.bleFattetVedtakForRevurderingsbarn
 }
+
+data class FatteVedtakDetaljerFraOmgjortVedtakForRevurderingsbarn(
+    val bleFattetVedtakForRevurderingsbarn: Boolean,
+    val fatteVedtakRevurderingsbarn: FatteVedtakRevurderingsbarn?,
+)
 
 data class OpprettParagraf35C(
     val rolleid: Long,

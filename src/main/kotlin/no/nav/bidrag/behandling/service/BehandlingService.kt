@@ -33,11 +33,13 @@ import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.ForholdsmessigFordelingService
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.OppdaterBarnFraFFRequest
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.behandlingstyperSomIkkeSkalInkluderesIFF
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.transformers.finnEksisterendeVedtakMedOpphør
-import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.OppdaterBarnFraFFRequest
 import no.nav.bidrag.behandling.transformers.kreverGrunnlag
 import no.nav.bidrag.behandling.transformers.opprettForsendelse
 import no.nav.bidrag.behandling.transformers.tilForsendelseRolleDto
@@ -111,11 +113,12 @@ class BehandlingService(
         søknadsid: Long? = null,
     ) {
         if (behandling.erIForholdsmessigFordeling && UnleashFeatures.BEHANDLE_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled) {
-            if (søknadsid == null) {
+            if (behandling.erKlageEllerOmgjøring) {
+                forholdsmessigFordelingService!!.slettEllerGjennopprettKlageSøknader(behandling, søknadsid ?: behandling.soknadsid!!)
+            } else if (søknadsid == null) {
                 forholdsmessigFordelingService!!.avsluttForholdsmessigFordeling(
                     behandling,
                     behandling.søknadsbarnForSøknad(behandling.soknadsid!!),
-                    behandling.soknadsid!!,
                 )
                 logiskSlettBehandling(behandling)
             } else {
@@ -126,6 +129,7 @@ class BehandlingService(
                     barnSomSkalSlettes,
                     behandling,
                     søknadsid,
+                    søknadBleSlettet = true,
                 )
                 behandling.bidragspliktig?.fjernGebyr(søknadsid)
             }
@@ -217,7 +221,7 @@ class BehandlingService(
             !behandlingstyperSomIkkeSkalInkluderesIFF.contains(opprettBehandling.behandlingstype)
         ) {
             val bp = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSPLIKTIG }
-            behandlingRepository.finnHovedbehandlingForBpVedFF(bp!!.ident!!.verdi, opprettBehandling.vedtakstype.name)?.let { behandling ->
+            behandlingRepository.finnHovedbehandlingForBpVedFF(bp!!.ident!!.verdi)?.let { behandling ->
                 val bm = opprettBehandling.roller.find { it.rolletype == Rolletype.BIDRAGSMOTTAKER }
                 val søknadsdetaljer =
                     ForholdsmessigFordelingSøknadBarn(
@@ -535,10 +539,11 @@ class BehandlingService(
     ): Behandling {
         val behandling = hentBehandlingById(behandlingsid)
         if (!ikkeHentGrunnlag) {
-//            if (behandling.erIForholdsmessigFordeling) {
-//                forholdsmessigFordelingService?.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling)
-//                behandlingRepository.save(behandling)
-//            }
+            if (behandling.erIForholdsmessigFordeling) {
+                forholdsmessigFordelingService?.synkroniserSøknadsbarnOgRevurderingsbarnForFFBehandling(behandling).ifTrue {
+                    behandlingRepository.save(behandling)
+                }
+            }
             grunnlagService.oppdaterGrunnlagForBehandlingAsync(behandling)
         }
         virkningstidspunktService.run {
@@ -584,6 +589,7 @@ class BehandlingService(
             .filter { it.stonadstype != null }
             .map { ÅpenBehandling(it.stonadstype!!, it.id!!, emptyList()) }
 
+    @Transactional(readOnly = true)
     fun hentBehandlingById(behandlingId: Long): Behandling {
         val behandling =
             behandlingRepository
@@ -629,7 +635,6 @@ class BehandlingService(
                 if (it.erIForholdsmessigFordeling && UnleashFeatures.BEHANDLE_BARNEBIDRAG_FLERE_BARN_LØPENDE_BIDRAG.isEnabled) {
                     behandlingRepository.finnHovedbehandlingForBpVedFF(
                         it.bidragspliktig!!.ident!!,
-                        it.vedtakstype.name,
                         it.omgjøringsdetaljer?.opprinneligVedtakId,
                     )!!
                 } else {

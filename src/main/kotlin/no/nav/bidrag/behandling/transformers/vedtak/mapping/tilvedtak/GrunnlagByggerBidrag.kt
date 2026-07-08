@@ -3,11 +3,11 @@ package no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak
 import com.fasterxml.jackson.databind.node.POJONode
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
+import no.nav.bidrag.behandling.database.datamodell.Rolle
 import no.nav.bidrag.behandling.database.datamodell.konvertereData
 import no.nav.bidrag.behandling.dto.grunnlag.LøpendeBidragGrunnlagForholdsmessigFordeling
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
-import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
 import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.hentNyesteIdent
@@ -20,7 +20,6 @@ import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.domene.enums.barnetilsyn.Skolealder
 import no.nav.bidrag.domene.enums.barnetilsyn.Tilsynstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
-import no.nav.bidrag.domene.enums.beregning.Samværsklasse
 import no.nav.bidrag.domene.enums.diverse.Kilde
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
@@ -30,17 +29,13 @@ import no.nav.bidrag.domene.enums.samhandler.Valutakode
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
-import no.nav.bidrag.domene.sak.Saksnummer
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
-import no.nav.bidrag.transport.behandling.belopshistorikk.response.LøpendeBidragssak
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
 import no.nav.bidrag.transport.behandling.beregning.barnebidrag.ResultatPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.BarnetilsynMedStønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
-import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidrag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragForholdsmessigFordeling
 import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragForholdsmessigFordelingGrunnlag
-import no.nav.bidrag.transport.behandling.felles.grunnlag.LøpendeBidragGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.Person
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtaleGrunnlagV2
 import no.nav.bidrag.transport.behandling.felles.grunnlag.PrivatAvtalePeriodeGrunnlag
@@ -48,7 +43,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.ResultatFraVedtakGrunn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.TilleggsstønadPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VedtakOrkestreringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.bidragspliktig
-import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrense
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrenseForPeriode
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanser
@@ -172,11 +166,15 @@ fun List<GrunnlagDto>.fjernMidlertidligPersonobjekterBMsbarn() =
         return@mapNotNull grunnlag
     }
 
-fun Behandling.tilGrunnlagBarnetilsyn(inkluderIkkeAngitt: Boolean = false): List<GrunnlagDto> =
+fun Behandling.tilGrunnlagBarnetilsyn(
+    inkluderIkkeAngitt: Boolean = false,
+    byggForSøknadsbarn: List<Rolle> = this.søknadsbarn,
+): List<GrunnlagDto> =
     underholdskostnader
+        .filter { u -> u.rolle == null || (u.rolle?.rolletype == Rolletype.BARN && byggForSøknadsbarn.any { it.erSammeRolle(u.rolle!!) }) }
         .flatMap { u ->
             u.barnetilsyn
-                .filter { inkluderIkkeAngitt || it.omfang != Tilsynstype.IKKE_ANGITT && it.under_skolealder != null }
+                .filter { inkluderIkkeAngitt || (it.omfang != Tilsynstype.IKKE_ANGITT && it.under_skolealder != null) }
                 .flatMap {
                     val underholdRolle =
                         u.rolle
@@ -259,6 +257,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
         behandling.søknadsbarn.find { it.erSammeRolle(søknadsbarn.ident!!.verdi, søknadsbarn.stønadstype) }
             ?: rolleManglerIdent(Rolletype.BARN, behandling.id!!)
 
+    val grunnlaglisterResultat = this.grunnlagListe
     val grunnlagListe = mutableSetOf<GrunnlagDto>()
 
     fun opprettPeriode(resultatPeriode: ResultatPeriode): OpprettPeriodeRequestDto? {
@@ -266,14 +265,24 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
             søknadsbarnRolle.opphørsdato != null && resultatPeriode.periode.fom == søknadsbarnRolle.opphørsdato?.toYearMonth()
         val vedtak =
             resultatDelvedtak.find { rv ->
-                (
+                val tilhørerBarn =
                     rv.request == null ||
-                        rv.request.stønadsendringListe
-                            .any { søknadsbarnRolle.erSammeRolle(it.kravhaver.verdi, it.type) }
-                ) && rv.resultatBarn(søknadsbarn)?.beregnetBarnebidragPeriodeListe?.any { vp ->
-                    (resultatPeriode.periode.fom == vp.periode.fom) ||
-                        (erOpphørsperiode && vp.periode.til == søknadsbarnRolle.opphørsdato?.toYearMonth())
-                } == true
+                        rv.request.stønadsendringListe.any { søknadsbarnRolle.erSammeRolle(it.kravhaver.verdi, it.type) }
+
+                val perioder = rv.resultatBarn(søknadsbarn)?.beregnetBarnebidragPeriodeListe
+                val matcherPeriode =
+                    perioder != null &&
+                        perioder.any { vp ->
+                            vp.periode.fom == resultatPeriode.periode.fom ||
+                                (erOpphørsperiode && vp.periode.til == søknadsbarnRolle.opphørsdato?.toYearMonth())
+                        }
+
+                val resultatVedtakErEnestePeriode =
+                    perioder != null && perioder.isEmpty() && resultatPeriode.grunnlagsreferanseListe.isNotEmpty() &&
+                        resultatPeriode.grunnlagsreferanseListe.all { gr ->
+                            grunnlaglisterResultat.find { it.referanse == gr }?.type == Grunnlagstype.RESULTAT_FRA_VEDTAK
+                        }
+                (tilhørerBarn && matcherPeriode) || resultatVedtakErEnestePeriode
             } ?: return null
         val resultatkode =
             if (vedtak.request != null && erOpphørsperiode) {
@@ -285,7 +294,11 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
                     ?.find { vp -> resultatPeriode.periode.fom == vp.periode.fom }
                     ?.resultatkode!!
             } else {
-                val periode = vedtak.resultat.beregnetBarnebidragPeriodeListe.find { vp -> resultatPeriode.periode.fom == vp.periode.fom }!!
+                val periode =
+                    vedtak.resultat.beregnetBarnebidragPeriodeListe.find { vp ->
+                        resultatPeriode.periode.fom == vp.periode.fom ||
+                            (erOpphørsperiode && vp.periode.til == søknadsbarnRolle.opphørsdato?.toYearMonth())
+                    }!!
                 if (periode.resultat.beløp == null) Resultatkode.OPPHØR.name else Resultatkode.BEREGNET_BIDRAG.name
             }
         val referanse = "resultatFraVedtak_${vedtak.vedtaksid ?: resultatPeriode.periode.fom.toCompactString()}"
@@ -367,6 +380,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForVedtak(
 
     val grunnlagListe = grunnlagListe.toSet()
     val periodeliste =
+
         beregnetBarnebidragPeriodeListe.map {
             val resultatSluttberegning = grunnlagListe.toList().resultatSluttberegning(it.grunnlagsreferanseListe)
             val ikkeOmsorgForBarnet = resultatSluttberegning == Resultatkode.IKKE_OMSORG

@@ -214,6 +214,13 @@ open class Behandling(
     @Transient
     var historiskeStønader: MutableSet<StønadDto> = mutableSetOf(),
 ) {
+    fun hentEllerInitaliserMetadata(): BehandlingMetadataDo {
+        if (metadata == null) {
+            metadata = BehandlingMetadataDo()
+        }
+        return metadata!!
+    }
+
     fun sammeBarnInkludertIBehandlingSom18ÅrOgOrdinærBidrag(ident: String): Boolean {
         val bidrag = roller.any { it.ident == ident && it.stønadstype == Stønadstype.BIDRAG }
         val bidrag18År = roller.any { it.ident == ident && it.stønadstype == Stønadstype.BIDRAG18AAR }
@@ -272,6 +279,16 @@ open class Behandling(
         } else {
             listOf(saksnummer)
         }
+    val eldsteSøktFomDatoSøknadsbarn get() =
+        søknadsbarn
+            .filter { !it.erRevurderingsbarn }
+            .mapNotNull {
+                it.forholdsmessigFordeling
+                    ?.eldsteSøknad
+                    ?.søknadFomDato
+                    ?.withDayOfMonth(1)
+            }.minOrNull() ?: søktFomDato.withDayOfMonth(1)
+
     val eldsteSøktFomDato get() =
         if (erIForholdsmessigFordeling) {
             søknadsbarn
@@ -317,7 +334,7 @@ open class Behandling(
         }
     val erVedtakFattet get() = vedtaksid != null
     val virkningstidspunktEllerSøktFomDato get() = virkningstidspunkt ?: søktFomDato
-    val erKlageEllerOmgjøring get() = vedtakstype == Vedtakstype.KLAGE || omgjøringsdetaljer?.opprinneligVedtakId != null
+    val erKlageEllerOmgjøring get() = vedtakstype == Vedtakstype.KLAGE || omgjøringsdetaljer?.erKlageEllerOmgjøring == true
     val erInnkreving get() = vedtakstype == Vedtakstype.INNKREVING
     val minstEnRolleHarBegrensetBeregnTilDato get() =
         søknadsbarn.any {

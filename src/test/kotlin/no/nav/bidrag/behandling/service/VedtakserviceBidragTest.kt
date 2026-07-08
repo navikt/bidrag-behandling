@@ -16,12 +16,12 @@ import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.Husstandsmedlem
 import no.nav.bidrag.behandling.database.datamodell.Inntekt
-import no.nav.bidrag.behandling.database.datamodell.json.Omgjøringsdetaljer
 import no.nav.bidrag.behandling.database.datamodell.opprettUnikReferanse
 import no.nav.bidrag.behandling.dto.v1.behandling.OppdaterOpphørsdatoRequestDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.vedtak.FatteVedtakRequestDto
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
+import no.nav.bidrag.behandling.transformers.validering.virkningstidspunkt
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.opprettGrunnlagsreferanseVirkningstidspunkt
 import no.nav.bidrag.behandling.utils.harReferanseTilGrunnlag
 import no.nav.bidrag.behandling.utils.hentGrunnlagstype
@@ -128,7 +128,11 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
     fun `Skal fatte vedtak og opprette grunnlagsstruktur for en bidrag aldersjustering behandling`() {
         stubPersonConsumer()
         val behandling = opprettGyldigBehandlingAldersjustering(true)
-        behandling.virkningstidspunkt = YearMonth.now().withMonth(7).atDay(1)
+        behandling.virkningstidspunkt =
+            YearMonth
+                .now()
+                .withMonth(7)
+                .atDay(1)
         behandling.søknadsbarn.first().virkningstidspunkt = behandling.virkningstidspunkt
         behandling.søknadsbarn.first().årsak = behandling.årsak
 
@@ -377,10 +381,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             behandling.søknadsbarn.first(),
             erDelAvBehandlingen = false,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -658,10 +659,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -755,10 +753,6 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -844,10 +838,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.avslag = Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG
         behandling.årsak = null
         søknadsbarn.årsak = null
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -874,7 +865,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             request.type shouldBe Vedtakstype.FASTSETTELSE
 
             it.innkrevingUtsattTilDato shouldBe LocalDate.now().plusDays(3)
-            request.grunnlagListe shouldHaveSize 13
+            request.grunnlagListe shouldHaveSize 14
             hentGrunnlagstyper(Grunnlagstype.MANUELT_OVERSTYRT_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 1
@@ -898,7 +889,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 it.skyldner shouldBe Personident(testdataBP.ident)
                 it.kravhaver shouldBe Personident(testdataBarn1.ident)
                 it.mottaker shouldBe Personident("REEL_MOTTAKER")
-                it.grunnlagReferanseListe shouldHaveSize 5
+                it.grunnlagReferanseListe shouldHaveSize 6
                 val vtGrunnlag = request.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(Grunnlagstype.VIRKNINGSTIDSPUNKT, it.grunnlagReferanseListe)
                 vtGrunnlag.size shouldBe 1
                 val virkningstidspunkt = vtGrunnlag.first().innholdTilObjekt<VirkningstidspunktGrunnlag>()
@@ -975,10 +966,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         søknadsbarn.avslag = Resultatkode.IKKE_DOKUMENTERT_SKOLEGANG
         behandling.årsak = null
         søknadsbarn.årsak = null
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1123,10 +1111,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.VIRKNINGSTIDSPUNKT_VURDERING_AV_SKOLEGANG,
             behandling.søknadsbarn.first(),
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 2,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1234,10 +1219,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.PRIVAT_AVTALE,
             behandling.søknadsbarn.first(),
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1274,6 +1256,110 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val stønadsendring = opprettVedtakRequest.stønadsendringListe.first()
             stønadsendring.førsteIndeksreguleringsår shouldBe if (YearMonth.now().month.value >= 7) YearMonth.now().plusYears(1).year else YearMonth.now().year
             stønadsendring.periodeListe.forEach {
+                it.resultatkode shouldBe Resultatkode.INGEN_ENDRING_UNDER_GRENSE.name
+            }
+        }
+
+        verify(exactly = 1) {
+            vedtakConsumer.fatteVedtak(any())
+        }
+        verify(exactly = 1) { notatOpplysningerService.opprettNotat(any()) }
+    }
+
+    @Test
+    fun `Skal fatte vedtak for bidrag med privat avtale og beløpshistorikk hvor resultat er ingen endring under grense`() {
+        stubPersonConsumer()
+
+        val behandling = opprettGyldigBehandlingForBeregningOgVedtak(true, typeBehandling = TypeBehandling.BIDRAG)
+        behandling.virkningstidspunkt = LocalDate.parse("2024-01-01")
+        behandling.oppdaterVirkningstidspunktForAlle(LocalDate.parse("2024-01-01"))
+        behandling.leggTilSamvær(ÅrMånedsperiode(behandling.virkningstidspunkt!!, null), samværsklasse = Samværsklasse.SAMVÆRSKLASSE_1, medId = true)
+
+        behandling.leggTilNotat(
+            "Inntektsbegrunnelse kun i notat",
+            NotatType.INNTEKT,
+            behandling.bidragsmottaker,
+        )
+        behandling.leggTilNotat(
+            "Virkningstidspunkt kun i notat",
+            NotatType.VIRKNINGSTIDSPUNKT,
+        )
+        behandling.leggTilNotat(
+            "Boforhold",
+            NotatType.BOFORHOLD,
+        )
+        behandling.leggTilNotat(
+            "Samvær",
+            NotatType.SAMVÆR,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Underhold barn",
+            NotatType.UNDERHOLDSKOSTNAD,
+            behandling.søknadsbarn.first(),
+        )
+        behandling.leggTilNotat(
+            "Underhold andre barn",
+            NotatType.UNDERHOLDSKOSTNAD,
+            behandling.bidragsmottaker,
+        )
+        behandling.leggTilNotat(
+            "Privat avtale kun i notat",
+            NotatType.PRIVAT_AVTALE,
+            behandling.søknadsbarn.first(),
+        )
+
+        behandling.grunnlag =
+            opprettAlleAktiveGrunnlagFraFil(
+                behandling,
+                erstattVariablerITestFil("grunnlagresponse_bp_bm"),
+                testdataBarn1.copy(
+                    fødselsdato = behandling.søknadsbarn.first().fødselsdato,
+                ),
+            )
+        behandling.leggTilGrunnlagBeløpshistorikk(
+            Grunnlagsdatatype.BELØPSHISTORIKK_BIDRAG,
+            behandling.søknadsbarn.first(),
+            listOf(
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(YearMonth.parse("2023-04"), YearMonth.parse("2024-05")),
+                    beløp = BigDecimal("4800"),
+                ),
+                opprettStønadPeriodeDto(
+                    ÅrMånedsperiode(YearMonth.parse("2024-05"), null),
+                    beløp = BigDecimal("4800"),
+                ),
+            ),
+            2024,
+        )
+        virkningstidspunktService.oppdaterOpphørsdato(OppdaterOpphørsdatoRequestDto(idRolle = null, opphørsdato = LocalDate.parse("2024-07-01")), behandling)
+        every { behandlingService.hentBehandlingById(any()) } returns behandling
+        every { behandlingRepository.findBehandlingById(any()) } returns Optional.of(behandling)
+
+        every { sakConsumer.hentSak(any()) } returns opprettSakForBehandling(behandling)
+
+        val opprettVedtakSlot = slot<OpprettVedtakRequestDto>()
+        every { vedtakConsumer.fatteVedtak(capture(opprettVedtakSlot)) } returns
+            OpprettVedtakResponseDto(
+                1,
+                emptyList(),
+            )
+
+        vedtakService.fatteVedtak(behandling.id!!, FatteVedtakRequestDto(innkrevingUtsattAntallDager = 3))
+
+        val opprettVedtakRequest = opprettVedtakSlot.captured
+
+        assertSoftly(opprettVedtakRequest) {
+            val request = opprettVedtakRequest
+            request.type shouldBe Vedtakstype.FASTSETTELSE
+            hentGrunnlagstyper(Grunnlagstype.BELØPSHISTORIKK_BIDRAG) shouldHaveSize 1
+        }
+
+        assertSoftly(opprettVedtakRequest.stønadsendringListe) {
+            shouldHaveSize(1)
+            val stønadsendring = opprettVedtakRequest.stønadsendringListe.first()
+            stønadsendring.førsteIndeksreguleringsår shouldBe 2024
+            stønadsendring.periodeListe.subList(0, stønadsendring.periodeListe.size - 1).forEach {
                 it.resultatkode shouldBe Resultatkode.INGEN_ENDRING_UNDER_GRENSE.name
             }
         }
@@ -1360,10 +1446,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1493,10 +1576,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1758,10 +1838,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             behandling.søknadsbarn.first(),
             erDelAvBehandlingen = false,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1843,10 +1920,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -1963,10 +2037,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -2037,10 +2108,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -2114,10 +2182,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.søknadsbarn.first().innbetaltBeløp = innbetaltBeløp
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
@@ -2205,10 +2270,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             NotatType.UNDERHOLDSKOSTNAD,
             behandling.bidragsmottaker,
         )
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.innkrevingstype = Innkrevingstype.UTEN_INNKREVING
         behandling.søknadsbarn.first().innbetaltBeløp = innbetaltBeløp
         behandling.grunnlag =
@@ -2272,10 +2334,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         søknadsbarn.årsak = null
         behandling.årsak = null
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -2301,7 +2360,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
             val request = opprettVedtakRequest
             request.type shouldBe Vedtakstype.FASTSETTELSE
 
-            request.grunnlagListe shouldHaveSize 12
+            request.grunnlagListe shouldHaveSize 13
             hentGrunnlagstyper(Grunnlagstype.MANUELT_OVERSTYRT_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SLUTTBEREGNING_GEBYR) shouldHaveSize 2
             hentGrunnlagstyper(Grunnlagstype.SJABLON_SJABLONTALL) shouldHaveSize 1
@@ -2325,7 +2384,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
                 it.skyldner shouldBe Personident(testdataBP.ident)
                 it.kravhaver shouldBe Personident(testdataBarn1.ident)
                 it.mottaker shouldBe Personident(testdataBM.ident)
-                it.grunnlagReferanseListe shouldHaveSize 4
+                it.grunnlagReferanseListe shouldHaveSize 5
                 val vtGrunnlag = request.grunnlagListe.finnGrunnlagSomErReferertFraGrunnlagsreferanseListe(Grunnlagstype.VIRKNINGSTIDSPUNKT, it.grunnlagReferanseListe)
                 vtGrunnlag.size shouldBe 1
                 val virkningstidspunkt = vtGrunnlag.first().innholdTilObjekt<VirkningstidspunktGrunnlag>()
@@ -2418,10 +2477,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         behandling.søknadsbarn.first().avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,
@@ -2504,10 +2560,7 @@ class VedtakserviceBidragTest : CommonVedtakTilBehandlingTest() {
         )
         behandling.avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
         behandling.søknadsbarn.first().avslag = Resultatkode.BIDRAGSPLIKTIG_ER_DØD
-        behandling.omgjøringsdetaljer =
-            Omgjøringsdetaljer(
-                omgjørVedtakId = 553,
-            )
+
         behandling.grunnlag =
             opprettAlleAktiveGrunnlagFraFil(
                 behandling,

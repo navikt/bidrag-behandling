@@ -1,7 +1,8 @@
-package no.nav.bidrag.behandling.transformers.forholdsmessigfordeling
+package no.nav.bidrag.behandling.service.forholdsmessigfordeling
 
 import no.nav.bidrag.behandling.database.datamodell.Barnetilsyn
 import no.nav.bidrag.behandling.database.datamodell.Behandling
+import no.nav.bidrag.behandling.database.datamodell.Bostatusperiode
 import no.nav.bidrag.behandling.database.datamodell.FaktiskTilsynsutgift
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolle
 import no.nav.bidrag.behandling.database.datamodell.GebyrRolleSøknad
@@ -25,11 +26,14 @@ import no.nav.bidrag.behandling.dto.v1.behandling.RolleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingBarnDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingPrivateAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.ForholdsmessigFordelingÅpenBehandlingDto
-import no.nav.bidrag.behandling.service.LøpendeBidragSakPeriode
-import no.nav.bidrag.behandling.service.SakKravhaver
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.OpprettFFRequest
+import no.nav.bidrag.behandling.service.hentPerson
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.transformers.behandling.finnRolle
+import no.nav.bidrag.behandling.transformers.boforhold.oppdaterePerioder
+import no.nav.bidrag.behandling.transformers.maxOfNullable
+import no.nav.bidrag.behandling.transformers.tilDato18årsBidrag
 import no.nav.bidrag.behandling.transformers.tilType
 import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
@@ -44,11 +48,12 @@ import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.enums.vedtak.VirkningstidspunktÅrsakstype
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.belopshistorikk.response.StønadPeriodeDto
 import no.nav.bidrag.transport.behandling.beregning.felles.HentSøknad
+import no.nav.bidrag.transport.behandling.beregning.felles.PartISøknad
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.felles.toLocalDate
-import no.nav.bidrag.transport.felles.toYearMonth
 import no.nav.bidrag.transport.sak.BidragssakDto
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -69,6 +74,23 @@ data class OppdaterBarnFraFFRequest(
     val gebyrGjelder18År: Boolean = false,
     val stønadstype: Stønadstype? = null,
 )
+
+val HentSøknad.parterUnderBehandling get() = partISøknadListe.filterBarnUnderBehandling()
+val HentSøknad.parterVedtakFattet get() = partISøknadListe.filterBarnVedtakFattet()
+
+fun List<PartISøknad>.filterBarnUnderBehandling() =
+    filter {
+        it.rolletype == Rolletype.BARN &&
+            it.behandlingstatus == Behandlingstatus.UNDER_BEHANDLING
+    }
+
+fun List<PartISøknad>.filterBarnVedtakFattet() =
+    filter {
+        it.rolletype == Rolletype.BARN &&
+            it.behandlingstatus == Behandlingstatus.VEDTAK_FATTET
+    }
+
+fun List<PartISøknad>.finnBarn(ident: String) = find { it.personident == ident }
 
 fun HentSøknad.tilIdentStønadstypeNøkkel(ident: String) = "${ident}_${behandlingstema.tilStønadstype()}"
 
@@ -108,9 +130,17 @@ fun Collection<SakKravhaver>.finnEldsteSøktFomDato(behandling: Behandling) =
         } + listOf(behandling.søktFomDato)
     ).min()
 
+fun StønadPeriodeDto.løperBidragEtterDato(fraDato: YearMonth) = periode.løperBidragEtterDato(fraDato)
+
+fun LøpendeBidragSakPeriode.løperBidragEtterDato(fraDato: YearMonth) = ÅrMånedsperiode(periodeFra, periodeTil).løperBidragEtterDato(fraDato)
+
 fun SakKravhaver.løperBidragEtterDato(fraDato: YearMonth) =
-    (løperBidragFra != null && løperBidragTil == null) ||
-        (løperBidragTil != null && løperBidragTil > fraDato)
+    løperBidragFra
+        ?.let {
+            ÅrMånedsperiode(it, løperBidragTil)
+        }.løperBidragEtterDato(fraDato)
+
+fun ÅrMånedsperiode?.løperBidragEtterDato(fraDato: YearMonth) = if (this == null) false else (til == null || til!! > fraDato)
 
 fun Collection<SakKravhaver>.finnSøktFomRevurderingSøknad(behandling: Behandling) =
     maxOf(finnEldsteSøktFomDato(behandling).withDayOfMonth(1), LocalDate.now().plusMonths(1).withDayOfMonth(1))
@@ -138,6 +168,41 @@ fun Behandling.tilFFDetaljerBP() =
         erRevurdering = false,
         bidragsmottaker = null,
     )
+
+fun OpprettFFRequest?.finnManueltOverstyrtRevurderingsdato(kravhaver: SakKravhaver): LocalDate? =
+    this
+        ?.detaljerBarn
+        ?.find {
+            kravhaver.erSammePerson(
+                it.ident,
+                it.stønadstype,
+            )
+        }?.manueltOverstyrtRevurderingFraDato
+
+fun finnSøktFomDatoForKravhaver(
+    alleKravhavere: Set<SakKravhaver>,
+    kravhaverSak: SakKravhaver,
+    behandling: Behandling,
+    request: OpprettFFRequest?,
+): LocalDate {
+    val barn = behandling.roller.find { it.erSammeRolle(kravhaverSak.kravhaver, kravhaverSak.stønadstype) }
+    val revurderingFraDatoDefault = alleKravhavere.finnSøktFomRevurderingSøknad(behandling)
+
+    val tidligstSøktFomDato =
+        if (kravhaverSak.stønadstype == Stønadstype.BIDRAG18AAR) {
+            val person = hentPerson(kravhaverSak.kravhaver)
+            person?.fødselsdato?.tilDato18årsBidrag()
+        } else {
+            behandling.eldsteSøktFomDato
+        }
+    val manueltOverstyrtDato =
+        request.finnManueltOverstyrtRevurderingsdato(kravhaverSak) ?: barn?.forholdsmessigFordeling?.revurderingsdatoVedOpprettelseAvFF
+    return if (manueltOverstyrtDato != null) {
+        maxOfNullable(tidligstSøktFomDato, manueltOverstyrtDato) ?: revurderingFraDatoDefault
+    } else {
+        revurderingFraDatoDefault
+    }
+}
 
 fun Behandling.tilFFDetaljerBM() =
     ForholdsmessigFordelingRolle(
@@ -183,7 +248,7 @@ fun HentSøknad.tilForholdsmessigFordelingSøknad() =
         saksnummer = saksnummer,
     )
 
-fun opprettRolle(
+fun opprettEllerOppdaterRolle(
     behandling: Behandling,
     rolletype: Rolletype,
     fødselsnummer: String,
@@ -205,7 +270,14 @@ fun opprettRolle(
                     it
                 }
         }
-        it.forholdsmessigFordeling = ffDetaljer
+        if (it.forholdsmessigFordeling == null) {
+            it.forholdsmessigFordeling = ffDetaljer
+        } else {
+            if (it.forholdsmessigFordeling!!.søknader.isEmpty()) {
+                it.forholdsmessigFordeling!!.revurderingsdatoVedOpprettelseAvFF = ffDetaljer.søknader.minOf { it.søknadFomDato!! }
+            }
+            it.forholdsmessigFordeling!!.søknader.addAll(ffDetaljer.søknader)
+        }
 
         return it
     }
@@ -248,7 +320,7 @@ fun opprettRolle(
                 } else {
                     null
                 },
-            opphørsdato = if (erBarn) opphørsdato?.toLocalDate() ?: behandling.globalOpphørsdato else null,
+            opphørsdato = if (erBarn) opphørsdato?.toLocalDate() else null,
             årsak =
                 if (erBarn && ffDetaljer.erRevurdering) {
                     VirkningstidspunktÅrsakstype.REVURDERING_MÅNEDEN_ETTER
@@ -513,7 +585,10 @@ fun kopierHusstandsmedlem(
     husstandsmedlemOverført: Husstandsmedlem,
 ) {
     if (hovedbehandling.husstandsmedlem
-            .any { it.rolle != null && husstandsmedlemOverført.rolle != null && it.rolle!!.erSammeRolle(husstandsmedlemOverført.rolle!!) }
+            .any {
+                (it.rolle != null && husstandsmedlemOverført.rolle != null && it.rolle!!.erSammeRolle(husstandsmedlemOverført.rolle!!)) ||
+                    it.ident == husstandsmedlemOverført.ident
+            }
     ) {
         // Ikke overfør hvis barnet er allerede lagt inn som husstandsmedlem
         return
@@ -533,6 +608,9 @@ fun kopierHusstandsmedlem(
                 val nyHM =
                     Husstandsmedlem(
                         rolle = rolleBarn,
+                        ident = rolleBarn.ident,
+                        navn = rolleBarn.navn,
+                        fødselsdato = rolleBarn.fødselsdato,
                         behandling = hovedbehandling,
                         kilde = Kilde.OFFENTLIG,
                     )
@@ -543,19 +621,20 @@ fun kopierHusstandsmedlem(
     husstandsmedlemNy.kilde = Kilde.OFFENTLIG
 
     // TODO: Skal perioder overføres?
-//    husstandsmedlemNy.perioder.clear()
-//    husstandsmedlemNy.perioder.addAll(
-//        husstandsmedlemOverført.perioder
-//            .map { p ->
-//                Bostatusperiode(
-//                    kilde = p.kilde,
-//                    datoFom = p.datoFom,
-//                    datoTom = p.datoTom,
-//                    bostatus = p.bostatus,
-//                    husstandsmedlem = husstandsmedlemNy,
-//                )
-//            }.toMutableSet(),
-//    )
+    husstandsmedlemNy.perioder.clear()
+    husstandsmedlemNy.perioder.addAll(
+        husstandsmedlemOverført.perioder
+            .map { p ->
+                Bostatusperiode(
+                    kilde = p.kilde,
+                    datoFom = p.datoFom,
+                    datoTom = p.datoTom,
+                    bostatus = p.bostatus,
+                    husstandsmedlem = husstandsmedlemNy,
+                )
+            }.toMutableSet(),
+    )
+    husstandsmedlemNy.oppdaterePerioder()
 }
 
 fun kopierSamvær(
@@ -672,21 +751,21 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
     sak: BidragssakDto?,
     behandling: Behandling,
     løpendeBidrag: Boolean = true,
-    erRevurdering: Boolean = true,
 ): ForholdsmessigFordelingBarnDto {
     val bmFødselsnummer = sak?.bidragsmottaker?.fødselsnummer?.verdi ?: bidragsmottaker
     val barnFødselsnummer = kravhaver
     val enhet = sak?.eierfogd?.verdi ?: eierfogd ?: "Ukjent"
 
-    val rolle = behandling.finnRolle(barnFødselsnummer)
+    val rolle = behandling.finnRolle(barnFødselsnummer, stønadstype)
     val åpneBehandlinger = åpneBehandlinger.map { it.tilFFBarnDto() } + åpneSøknader.map { it.tilFFBarnDto(sak, enhet) }
+    val erSøknadsbarn = åpneBehandlinger.isNotEmpty() || rolle != null
     return ForholdsmessigFordelingBarnDto(
         ident = barnFødselsnummer,
         navn = hentPersonVisningsnavn(barnFødselsnummer) ?: "Ukjent",
         fødselsdato = hentPersonFødselsdato(barnFødselsnummer),
         saksnr = saksnummer,
         sammeSakSomBehandling = behandling.saksnummer == saksnummer,
-        erRevurdering = erRevurdering,
+        erRevurdering = !erSøknadsbarn,
         harOpprettetForholdsmessigFordeling = rolle?.forholdsmessigFordeling != null,
         enhet = sak?.eierfogd?.verdi ?: eierfogd ?: "Ukjent",
         harLøpendeBidrag = løpendeBidrag,
@@ -717,7 +796,7 @@ fun SakKravhaver.mapSakKravhaverTilForholdsmessigFordelingDto(
                 navn = hentPersonVisningsnavn(bmFødselsnummer) ?: "Ukjent",
                 fødselsdato = hentPersonFødselsdato(bmFødselsnummer),
                 delAvOpprinneligBehandling = false,
-                erRevurdering = erRevurdering,
+                erRevurdering = !erSøknadsbarn,
                 stønadstype = null,
                 saksnummer = saksnummer ?: "",
             ),

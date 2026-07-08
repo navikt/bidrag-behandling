@@ -382,6 +382,10 @@ fun Behandling.finnPeriodeLøpendePeriodeInnenforSøktFomDato(rolle: Rolle): År
     )
 }
 
+fun Rolle.løperPeriodeEtterBeregnTil(periode: ÅrMånedsperiode) =
+    periode.til == null ||
+        periode.til!! > YearMonth.from(behandling.eldsteSøktFomDato)
+
 fun Rolle.løperPeriodeEtterSøktFomDato(periode: ÅrMånedsperiode) =
     periode.til == null ||
         periode.til!! > YearMonth.from(forholdsmessigFordeling?.eldsteSøknad?.søknadFomDato ?: behandling.eldsteSøktFomDato)
@@ -423,7 +427,7 @@ fun Rolle.harLøpendeBidragFørOpphørEllerLøpende() =
 
 fun Rolle.løperBidragFørOpphør() =
     opphørsdato != null && finnLøperBidragFra() != null &&
-        opphørsdato!! > behandling.eldsteVirkningstidspunkt &&
+        opphørsdato!! > behandling.eldsteSøktFomDato &&
         opphørsdato!!.toYearMonth() > finnLøperBidragFra()!!
 
 fun Rolle.erRevurderingsbarnUtenLøpendeBidrag() =

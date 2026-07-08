@@ -9,6 +9,7 @@ import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.beregning.ValiderBeregning
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.VedtakTilBehandlingMapping
@@ -68,6 +69,9 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
     lateinit var sakConsumer: BidragSakConsumer
 
     @MockK
+    lateinit var forholdsmessigFordelingService: ForholdsmessigFordelingService
+
+    @MockK
     lateinit var vedtakServiceBeregning: no.nav.bidrag.beregn.barnebidrag.service.external.VedtakService
 
     lateinit var beregningService: BeregningService
@@ -100,6 +104,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
         hentLøpendeBidragService = HentLøpendeBidragService(vedtakServiceBeregning)
         bidragsberegningOrkestrator = BidragsberegningOrkestrator(BeregnBarnebidragApi(), klageOrkestrator, klageOrkestratorV2, hentLøpendeBidragService, personConsumer, sakConsumer)
 
+        every { forholdsmessigFordelingService.fjernSammeknytningHovedsøknad(any()) } returns Unit
         validerBeregning = ValiderBeregning()
         personRepository = stubPersonRepository()
         personConsumer = stubPersonConsumer()
@@ -173,6 +178,7 @@ abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
                 validerBehandlingService,
                 forsendelseService,
                 virkningstidspunktService,
+                behandlingRepository = behandlingRepository,
             )
 
         unleash.enableAll()

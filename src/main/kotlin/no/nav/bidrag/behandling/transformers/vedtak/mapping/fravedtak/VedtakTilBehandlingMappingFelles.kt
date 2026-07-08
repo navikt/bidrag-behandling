@@ -24,6 +24,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragberegningDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarnDto
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.erForholdsmessigFordeling
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
@@ -43,12 +44,12 @@ import no.nav.bidrag.behandling.transformers.finnAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.behandling.transformers.finnAntallBarnIHusstanden
 import no.nav.bidrag.behandling.transformers.finnSivilstandForPeriode
 import no.nav.bidrag.behandling.transformers.finnTotalInntektForRolle
-import no.nav.bidrag.behandling.transformers.forholdsmessigfordeling.erForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.harOpprettetForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.harSlåttUtTilForholdsmessigFordeling
 import no.nav.bidrag.behandling.transformers.kanOpprette35C
 import no.nav.bidrag.behandling.transformers.opprettStønadDto
 import no.nav.bidrag.behandling.transformers.perioderSlåttUtTilFF
+import no.nav.bidrag.behandling.transformers.perioderSlåttUtTilFFForRevurderingsbarn
 import no.nav.bidrag.behandling.transformers.tilGrunnlagsdatatypeBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.tilGrunnlagstypeBeløpshistorikk
 import no.nav.bidrag.behandling.transformers.tilStønadsid
@@ -95,6 +96,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.SluttberegningGebyr
 import no.nav.bidrag.transport.behandling.felles.grunnlag.SøknadGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.VirkningstidspunktGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.erResultatEndringUnderGrenseForPeriode
+import no.nav.bidrag.transport.behandling.felles.grunnlag.erRevurderingsbarn
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerOgKonverterBasertPåEgenReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.finnGrunnlagSomErReferertAv
@@ -118,6 +120,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.finnOrkestreringDetalj
 import no.nav.bidrag.transport.behandling.vedtak.response.finnResultatFraAnnenVedtak
 import no.nav.bidrag.transport.behandling.vedtak.response.finnSistePeriode
 import no.nav.bidrag.transport.behandling.vedtak.response.finnStønadsendring
+import no.nav.bidrag.transport.behandling.vedtak.response.gjelderRevurderingsbarn
 import no.nav.bidrag.transport.behandling.vedtak.response.løpteBidragEllerForskuddFraVirkningstidspunkt
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
 import no.nav.bidrag.transport.felles.commonObjectmapper
@@ -126,6 +129,7 @@ import no.nav.bidrag.transport.sak.BidragssakDto
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlin.collections.component1
 import kotlin.collections.sortedBy
 
 val VedtakDto.erBisysVedtak get() = behandlingId == null && this.søknadId != null
@@ -184,6 +188,22 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
     ResultatBidragberegningDto(
         minstEnPeriodeHarSlåttUtTilFF = grunnlagListe.harSlåttUtTilForholdsmessigFordeling(),
         perioderSlåttUtTilFF = grunnlagListe.perioderSlåttUtTilFF(),
+        kanFatteVedtakForRevurderingsbarn =
+            stønadsendringListe.any {
+                val person = grunnlagListe.hentPerson(it.kravhaver.verdi, it.type) ?: return@any false
+                !person.personObjekt.delAvOpprinneligBehandling && it.beslutning == Beslutningstype.ENDRING
+            },
+        skalFatteVedtakForRevurderingsbarn =
+            grunnlagListe
+                .hentBehandlingDetaljer()
+                ?.fatteVedtakRevurderingsbarn
+                ?.foreslåttFatteVedtak ?: true,
+        perioderSlåttUtTilFFRevurderingsbarn = grunnlagListe.perioderSlåttUtTilFFForRevurderingsbarn(),
+        manueltOverstyrtFatteVedtakRevurderingsbarnBegrunnelse =
+            grunnlagListe
+                .hentBehandlingDetaljer()
+                ?.fatteVedtakRevurderingsbarn
+                ?.manueltOverstyrtForslagBegrunnelse,
         resultatBarn =
             stønadsendringListe
                 .parallelStream()
@@ -207,7 +227,10 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                                 referanse = barnGrunnlag?.referanse ?: "",
                                 erRevurderingsbarn = barn?.delAvOpprinneligBehandling != null && barn?.delAvOpprinneligBehandling == false,
                             ),
-                        erAvvistRevurdering = erVedtakAvvistRevurderingsøknad(),
+                        erAvvistRevurdering =
+                            gjelderRevurderingsbarn(
+                                stønadsendring,
+                            ) && stønadsendring.beslutning == Beslutningstype.AVVIST,
                         erAvvisning = stønadsendring.beslutning == Beslutningstype.AVVIST,
                         indeksår = stønadsendring.førsteIndeksreguleringsår,
                         delvedtak = hentDelvedtak(stønadsendring),
@@ -262,14 +285,15 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                         )
                     }
                     val vedtak = hentVedtak(it.vedtaksid)
-                    val vedtakPeriode =
+                    val vedtakStønadsendring =
                         vedtak!!
                             .stønadsendringListe
                             .find {
-                                it.kravhaver == barnIdent
+                                it.kravhaver == stønadsendring.kravhaver && stønadsendring.type == it.type
                             }!!
-                            .periodeListe
-                            .find { it.periode.inneholder(periode.periode) } ?: run {
+                    val vedtakPeriode =
+                        vedtakStønadsendring.periodeListe.find { it.periode.inneholder(periode.periode) }
+                            ?: vedtakStønadsendring.periodeListe.find { it.periode.overlapperKunISluttenAv(periode.periode) } ?: run {
                             if (virkningstidspunkt != null && virkningstidspunkt.opphørsdato?.toYearMonth() == periode.periode.fom) {
                                 VedtakPeriodeDto(
                                     periode.periode,
@@ -283,6 +307,7 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                 return@mapNotNull null
                             }
                         }
+                    val søknadsbarn = grunnlagListe.hentPersonMedIdent(stønadsendring.kravhaver.verdi, stønadsendring.type)!!
                     DelvedtakDto(
                         type = vedtak.type,
                         omgjøringsvedtak = it.omgjøringsvedtak,
@@ -306,7 +331,14 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
                                         null,
                                         Resultatkode.fraKode(vedtakPeriode.resultatkode) == Resultatkode.INGEN_ENDRING_UNDER_GRENSE,
                                         vedtak.type,
-                                        barnIdent = stønadsendring.kravhaver,
+                                        ResultatRolle(
+                                            ident = stønadsendring.kravhaver,
+                                            navn = søknadsbarn.personObjekt.navn ?: "",
+                                            referanse = søknadsbarn.referanse,
+                                            erRevurderingsbarn = søknadsbarn.erRevurderingsbarn,
+                                            fødselsdato = søknadsbarn.personObjekt.fødselsdato,
+                                            stønadstype = stønadsendring.type,
+                                        ),
                                     ).copy(
                                         klageOmgjøringDetaljer =
                                             KlageOmgjøringDetaljer(
@@ -430,8 +462,16 @@ internal fun VedtakDto.hentBeregningsperioder(stønadsendring: StønadsendringDt
                 null,
                 grunnlagListe.erResultatEndringUnderGrenseForPeriode(it.periode, søknadsbarn!!.referanse),
                 type,
-                barnIdent = stønadsendring.kravhaver,
-                `løperBidrag` = løpteBidragEllerForskuddFraVirkningstidspunkt(stønadsendring.tilStønadsid()),
+                barnRolle =
+                    ResultatRolle(
+                        ident = stønadsendring.kravhaver,
+                        navn = søknadsbarn.personObjekt.navn ?: "",
+                        referanse = søknadsbarn.referanse,
+                        erRevurderingsbarn = søknadsbarn.erRevurderingsbarn,
+                        fødselsdato = søknadsbarn.personObjekt.fødselsdato,
+                        stønadstype = stønadsendring.type,
+                    ),
+                løperBidrag = løpteBidragEllerForskuddFraVirkningstidspunkt(stønadsendring.tilStønadsid()),
             )
         }
     }
@@ -456,9 +496,26 @@ internal fun List<GrunnlagDto>.mapRoller(
     lesemodus: Boolean,
     opprinneligVirkningstidspunkt: LocalDate,
     sak: BidragssakDto? = null,
+    inkluderRevurderingsbarn: Boolean = true,
 ): MutableSet<Rolle> =
-    filter { grunnlagstyperRolle.contains(it.type) }
-        .distinctBy { it.personIdent to it.stønadstype }
+    asSequence()
+        .filter { grunnlagstyperRolle.contains(it.type) }
+        .filter { inkluderRevurderingsbarn || !it.erRevurderingsbarn }
+        .filter {
+            if (it.type == Grunnlagstype.PERSON_SØKNADSBARN && !lesemodus) {
+                if (vedtak.stønadsendringListe.isNotEmpty()) {
+                    vedtak.stønadsendringListe.any { s ->
+                        it.personIdent == s.kravhaver.verdi && (it.stønadstype == null || it.stønadstype == s.type)
+                    }
+                } else {
+                    vedtak.engangsbeløpListe.any { s ->
+                        it.personIdent == s.kravhaver.verdi
+                    }
+                }
+            } else {
+                true
+            }
+        }.distinctBy { it.personIdent to it.stønadstype }
         .mapIndexed { i, rolle ->
             val stønadsendring =
                 vedtak.stønadsendringListe.find {
@@ -732,6 +789,15 @@ fun List<GrunnlagDto>.innhentetTidspunkt(grunnlagstype: Grunnlagstype) =
             commonObjectmapper.treeToValue(it, LocalDateTime::class.java)
         } ?: LocalDateTime.now()
 
+fun <T> Map<String?, List<T>>.filterBarnIBehandling(
+    grunnlagListe: List<GrunnlagDto>,
+    behandling: Behandling,
+): Map<String?, List<T>> =
+    filter { (gjelderReferanse) ->
+        val person = grunnlagListe.hentPersonMedReferanse(gjelderReferanse)!!
+        behandling.roller.any { it.erSammeRolle(person.personIdent!!, person.stønadstype) }
+    }
+
 fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
     behandling: Behandling,
     lesemodus: Boolean,
@@ -755,6 +821,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
         },
     filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.MANUELLE_VEDTAK)
         .groupBy { it.gjelderBarnReferanse }
+        .filterBarnIBehandling(this, behandling)
         .map { (gjelderBarn, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
             val gjelderBarnGrunnlag = hentPersonMedReferanse(gjelderBarn)!!
@@ -772,6 +839,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
     if (behandling.erBidrag()) {
         filtrerBasertPåEgenReferanse(grunnlagType = Grunnlagstype.LØPENDE_BIDRAG)
             .groupBy { it.gjelderBarnReferanse }
+            .filterBarnIBehandling(this, behandling)
             .map { (gjelderBarn, grunnlagListe) ->
                 val grunnlag = grunnlagListe.first()
                 val gjelderBarnGrunnlag = hentPersonMedReferanse(gjelderBarn)!!
@@ -797,6 +865,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
                                 beregnetBidrag = beregning.beregnetBidrag,
                             )
                         },
+                    gjelderBarnRolle = behandling.finnRolle(gjelderBarnGrunnlag.personIdent!!, gjelderBarnGrunnlag.stønadstype),
                     gjelder = gjelderBarnGrunnlag.personIdent!!,
                     rolleIdent = gjelderGrunnlag.personIdent!!,
                     innhentetTidspunkt = LocalDateTime.now(),
@@ -810,6 +879,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
     filtrerBasertPåEgenReferanse
         (grunnlagType = Grunnlagstype.ETTERFØLGENDE_MANUELLE_VEDTAK)
         .groupBy { it.gjelderBarnReferanse }
+        .filterBarnIBehandling(this, behandling)
         .map { (gjelderBarn, grunnlagListe) ->
             val grunnlag = grunnlagListe.first()
             val gjelderBarnGrunnlag = hentPersonMedReferanse(gjelderBarn)!!
@@ -829,6 +899,7 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
             filtrerOgKonverterBasertPåEgenReferanse<BeløpshistorikkGrunnlag>(
                 grunnlagType = it.tilGrunnlagstypeBeløpshistorikk(),
             ).groupBy { it.gjelderBarnReferanse }
+                .filterBarnIBehandling(this, behandling)
                 .map { (gjelderBarnReferanse, grunnlagsliste) ->
                     val grunnlag = grunnlagsliste.firstOrNull()
                     val gjelderBarn = hentPersonMedReferanse(gjelderBarnReferanse)!!
@@ -1178,7 +1249,7 @@ internal fun VedtakDto.notatMedType(
 ) = grunnlagListe
     .filtrerBasertPåEgenReferanse(Grunnlagstype.NOTAT)
     .filter {
-        gjelderReferanse.isNullOrEmpty() || it.gjelderReferanse.isNullOrEmpty() && it.gjelderBarnReferanse.isNullOrEmpty() ||
+        gjelderReferanse.isNullOrEmpty() || (it.gjelderReferanse.isNullOrEmpty() && it.gjelderBarnReferanse.isNullOrEmpty()) ||
             it.gjelderReferanse == gjelderReferanse || it.gjelderBarnReferanse == gjelderReferanse
     }.map { it.innholdTilObjekt<NotatGrunnlag>() }
     .find { it.type == type && it.fraOmgjortVedtak == fraOmgjortVedtak }
@@ -1209,7 +1280,7 @@ internal fun List<GrunnlagDto>.hentAldersjusteringDetaljerForBarn(gjelderBarnRef
         .firstOrNull { gjelderBarnReferanse.isNullOrEmpty() || it.gjelderBarnReferanse == gjelderBarnReferanse }
         ?.innholdTilObjekt<AldersjusteringDetaljerGrunnlag>()
 
-internal fun List<GrunnlagDto>.hentBehandlingDetaljer(): BehandlingDetaljerGrunnlag? =
+fun List<GrunnlagDto>.hentBehandlingDetaljer(): BehandlingDetaljerGrunnlag? =
     filtrerOgKonverterBasertPåEgenReferanse<BehandlingDetaljerGrunnlag>(Grunnlagstype.BEHANDLING_DETALJER).firstOrNull()?.innhold
 
 internal fun List<GrunnlagDto>.hentSøknader(gjelderReferanse: String? = null): List<SøknadGrunnlag> =
