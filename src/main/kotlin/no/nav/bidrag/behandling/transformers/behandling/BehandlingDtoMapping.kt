@@ -556,7 +556,9 @@ fun Rolle.tilDto() =
         fødselsdato,
         harInnvilgetTilleggsstønad = this.harInnvilgetTilleggsstønad(),
         delAvOpprinneligBehandling = forholdsmessigFordeling?.delAvOpprinneligBehandling == true,
-        erRevurdering = forholdsmessigFordeling?.erRevurdering == true,
+        erRevurdering =
+            forholdsmessigFordeling?.erRevurdering == true ||
+                behandling.lesemodusVedtak?.inneholderBareRevurderingsbarn == true,
         stønadstype = if (rolletype == Rolletype.BARN) stønadstype ?: behandling.stonadstype else null,
         saksnummer = forholdsmessigFordeling?.tilhørerSak ?: behandling.saksnummer,
         beregnFraDato = finnBeregnFra(),

@@ -496,9 +496,11 @@ internal fun List<GrunnlagDto>.mapRoller(
     lesemodus: Boolean,
     opprinneligVirkningstidspunkt: LocalDate,
     sak: BidragssakDto? = null,
+    inkluderRevurderingsbarn: Boolean = true,
 ): MutableSet<Rolle> =
     asSequence()
         .filter { grunnlagstyperRolle.contains(it.type) }
+        .filter { inkluderRevurderingsbarn || !it.erRevurderingsbarn }
         .filter {
             if (it.type == Grunnlagstype.PERSON_SØKNADSBARN && !lesemodus) {
                 if (vedtak.stønadsendringListe.isNotEmpty()) {

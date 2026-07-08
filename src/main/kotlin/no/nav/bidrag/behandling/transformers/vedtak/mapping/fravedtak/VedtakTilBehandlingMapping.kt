@@ -92,6 +92,7 @@ import no.nav.bidrag.transport.behandling.vedtak.response.behandlingId
 import no.nav.bidrag.transport.behandling.vedtak.response.finnStønadsendring
 import no.nav.bidrag.transport.behandling.vedtak.response.saksnummer
 import no.nav.bidrag.transport.behandling.vedtak.response.søknadId
+import no.nav.bidrag.transport.behandling.vedtak.response.tilhørerRevurderingsbarn
 import no.nav.bidrag.transport.behandling.vedtak.response.typeBehandling
 import no.nav.bidrag.transport.behandling.vedtak.response.virkningstidspunkt
 import no.nav.bidrag.transport.felles.commonObjectmapper
@@ -153,6 +154,13 @@ class VedtakTilBehandlingMapping(
         // TODO: Hvordan håndteres dette når vi begynner med flere stønadsendringer i samme vedtak?
         val stønadsendringstype = stønadsendringListe.firstOrNull()?.type
         val omgjortVedtakVirkningstidspunkt = virkningstidspunkt ?: hentSøknad().søktFraDato
+        val forholdsmessigFordeling =
+            grunnlagListe.harOpprettetForholdsmessigFordeling().ifTrue {
+                ForholdsmessigFordeling(
+                    erHovedbehandling = true,
+                )
+            }
+        val inneholderBareRevurderingsbarn = stønadsendringListe.all { tilhørerRevurderingsbarn(it) }
         val behandling =
             Behandling(
                 id = if (lesemodus) 1 else null,
@@ -182,16 +190,19 @@ class VedtakTilBehandlingMapping(
                 kildeapplikasjon = if (lesemodus) kildeapplikasjon else TokenUtils.hentApplikasjonsnavn()!!,
                 saksnummer = saksnummer!!,
                 soknadsid = søknadId ?: this.søknadId,
-                forholdsmessigFordeling =
-                    grunnlagListe.harOpprettetForholdsmessigFordeling().ifTrue {
-                        ForholdsmessigFordeling(
-                            erHovedbehandling = true,
-                        )
-                    },
+                forholdsmessigFordeling = forholdsmessigFordeling,
             )
 
         val sak = hentSak(behandling.saksnummer)
-        behandling.roller = grunnlagListe.mapRoller(påklagetVedtak ?: this, behandling, lesemodus, omgjortVedtakVirkningstidspunkt, sak)
+        behandling.roller =
+            grunnlagListe.mapRoller(
+                påklagetVedtak ?: this,
+                behandling,
+                lesemodus,
+                omgjortVedtakVirkningstidspunkt,
+                sak,
+                inneholderBareRevurderingsbarn || forholdsmessigFordeling != null,
+            )
 
         val skalLagreOmgjøringsdetaljer = !lesemodus || inkluderKlagedetaljer || opprinneligVedtak != omgjørVedtakId
         if (skalLagreOmgjøringsdetaljer) {
@@ -240,6 +251,7 @@ class VedtakTilBehandlingMapping(
                     erAvvist = stønadsendringListe.all { it.beslutning == Beslutningstype.AVVIST },
                     opprettetAvBatch = kilde == Vedtakskilde.AUTOMATISK,
                     erOrkestrertVedtak = erOrkestrertVedtak,
+                    inneholderBareRevurderingsbarn = inneholderBareRevurderingsbarn,
                     fattetTidspunkt = this.vedtakstidspunkt ?: LocalDateTime.now(),
                 )
             behandling.grunnlagslisteFraVedtak = grunnlagListe

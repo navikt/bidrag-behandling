@@ -99,6 +99,7 @@ data class BehandlingDetaljerDtoV2(
 
 data class LesemodusVedtak(
     val erAvvist: Boolean,
+    val inneholderBareRevurderingsbarn: Boolean,
     val opprettetAvBatch: Boolean,
     val erOrkestrertVedtak: Boolean,
     val fattetTidspunkt: LocalDateTime,
