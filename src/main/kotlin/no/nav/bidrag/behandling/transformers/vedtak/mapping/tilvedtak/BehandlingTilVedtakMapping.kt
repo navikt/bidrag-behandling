@@ -540,7 +540,8 @@ class BehandlingTilVedtakMapping(
             if (beregningerForSøknad.isEmpty()) return@mapNotNull null
 
             val erRevurderingsbarn = beregningerForSøknad.all { it.skalBehandlesSomAvvistRevurderingsbarnIKlage(request) }
-            val byggGrunnlagForSøknadsbarn = if (erRevurderingsbarn) søknadsbarnFiltered else søknadsbarn.filter { !it.erRevurderingsbarn }
+            val byggGrunnlagForSøknadsbarn = søknadsbarn
+            // if (erRevurderingsbarn) søknadsbarnFiltered else søknadsbarn.filter { !it.erRevurderingsbarn }
             // Build vedtak request for this søknad's beregninger
             val beregninger =
                 beregningerForSøknad.map { beregningBarn ->
@@ -943,7 +944,8 @@ class BehandlingTilVedtakMapping(
             søknadsbarnSomDetHarBlittOpprettVedtakFor.addAll(søknadsbarnISøknad.mapNotNull { it.ident })
             val førsteSøknadsbarn = søknadsbarnISøknad.first()
             val erRevurderingsbarn = førsteSøknadsbarn.forholdsmessigFordeling?.erRevurdering == true
-            val byggGrunnlagForSøknadsbarn = if (erRevurderingsbarn) søknadsbarnISøknad else søknadsbarn.filter { !it.erRevurderingsbarn }
+            val byggGrunnlagForSøknadsbarn = søknadsbarn
+            // if (erRevurderingsbarn) søknadsbarnISøknad else søknadsbarn.filter { !it.erRevurderingsbarn }
             val sak = behandlingSaker.getValue(førsteSøknadsbarn.saksnummer)
 
             val innkreving =
