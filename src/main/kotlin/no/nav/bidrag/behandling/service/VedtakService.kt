@@ -476,6 +476,15 @@ class VedtakService(
 
         val beregning = behandlingTilVedtakMapping.hentBeregningBarnebidrag(behandling)
         beregning.validerManuelAldersjustering(behandling)
+        val fattetVedtakForRevurderingsbarn =
+            behandling.omgjøringsdetaljer?.fatteVedtakDetaljerRevurderingsbarn?.bleFattetVedtakForRevurderingsbarn == true
+
+        if (!beregning.bpHarFullEvneIAllePerioder &&
+            request?.fatteVedtakRevurderingsbarn?.skalFatteVedtakForRevurderingsbarn == false &&
+            fattetVedtakForRevurderingsbarn
+        ) {
+            ugyldigForespørsel("Må fatte vedtak for revurderingsbarn hvis det ble fattet vedtak i påklaget/omgjort vedtak")
+        }
 
         val vedtakRequestDtos: MutableList<Pair<Int, OpprettVedtakRequestDto>> = mutableListOf()
 
