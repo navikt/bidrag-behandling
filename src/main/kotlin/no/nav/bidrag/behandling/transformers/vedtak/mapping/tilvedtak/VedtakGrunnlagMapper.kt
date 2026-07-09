@@ -545,6 +545,7 @@ class VedtakGrunnlagMapper(
         endeligBeregning: Boolean = true,
         inkluderAlleSøknadsbarn: Boolean = true,
         simulerBeregning: Boolean = false,
+        skalFatteVedtakForRevurderingsbarn: Boolean? = null,
     ): BidragsberegningOrkestratorRequest {
         mapper.run {
             behandling.run {
@@ -658,6 +659,7 @@ class VedtakGrunnlagMapper(
                                     Behandlingstype.PARAGRAF_35_C,
                                     Behandlingstype.PARAGRAF_35_C_BEGRENSET_SATS,
                                 ).contains(behandling.søknadstype),
+                            skalFatteVedtakForRevurderingsbarn = skalFatteVedtakForRevurderingsbarn,
                             manuellAldersjustering =
                                 søknadsbarnRolle.grunnlagFraVedtakListe
                                     .filter { it.aldersjusteringForÅr != null && (it.vedtak != null || it.grunnlagFraOmgjøringsvedtak) }

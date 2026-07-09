@@ -76,7 +76,10 @@ class AdminController(
         @PathVariable behandlingId: Long,
     ): BidragsberegningOrkestratorRequestV2 {
         val behandling = behandlingRepository.findBehandlingById(behandlingId).get()
-        return beregningService.opprettGrunnlagBeregningBidragV2(behandling, true, false)
+        return beregningService.opprettGrunnlagBeregningBidragV2(
+            behandling,
+            skalFatteVedtakForRevurderingsbarn = true,
+        )
     }
 
     @PostMapping("/admin/vedtak/input/{behandlingId}")

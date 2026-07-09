@@ -226,9 +226,16 @@ class BehandlingTilVedtakMapping(
             byggOpprettVedtakRequestBidrag(request)
         }
 
-    fun hentBeregningBarnebidrag(behandling: Behandling): ResultatadBeregningOrkestrering {
+    fun hentBeregningBarnebidrag(
+        behandling: Behandling,
+        skalFatteVedtakForRevurderingsbarn: Boolean? = null,
+    ): ResultatadBeregningOrkestrering {
         val sak = sakConsumer.hentSak(behandling.saksnummer)
-        val beregning = beregningService.beregneBidrag(behandling.id!!)
+        val beregning =
+            beregningService.beregneBidrag(
+                behandling.id!!,
+                skalFatteVedtakForRevurderingsbarn = skalFatteVedtakForRevurderingsbarn,
+            )
         val resultatBarn = beregning.resultatBarn
 
         if (beregning.alleUgyldigBeregninger.isNotEmpty()) {
@@ -540,8 +547,7 @@ class BehandlingTilVedtakMapping(
             if (beregningerForSøknad.isEmpty()) return@mapNotNull null
 
             val erRevurderingsbarn = beregningerForSøknad.all { it.skalBehandlesSomAvvistRevurderingsbarnIKlage(request) }
-            val byggGrunnlagForSøknadsbarn = søknadsbarn
-            // if (erRevurderingsbarn) søknadsbarnFiltered else søknadsbarn.filter { !it.erRevurderingsbarn }
+            val byggGrunnlagForSøknadsbarn = if (erRevurderingsbarn) søknadsbarnFiltered else søknadsbarn.filter { !it.erRevurderingsbarn }
             // Build vedtak request for this søknad's beregninger
             val beregninger =
                 beregningerForSøknad.map { beregningBarn ->

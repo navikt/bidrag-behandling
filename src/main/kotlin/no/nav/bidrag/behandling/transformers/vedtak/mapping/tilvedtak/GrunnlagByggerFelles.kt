@@ -443,9 +443,12 @@ fun Behandling.byggGrunnlagBegrunnelseVirkningstidspunkt(søknadsbarn: List<Roll
         ).filterNotNull().toSet()
     }
 
-fun Behandling.byggGrunnlagPrivatAvtale() =
+fun Behandling.byggGrunnlagPrivatAvtale(søknadsbarn: List<Rolle> = this.søknadsbarn) =
     roller
-        .flatMap { rolle ->
+        .filter {
+            it.rolletype != Rolletype.BARN ||
+                søknadsbarn.any { sb -> sb.erSammeRolle(it) }
+        }.flatMap { rolle ->
             listOf(
                 henteNotatinnhold(
                     this,
@@ -586,7 +589,7 @@ fun Behandling.byggGrunnlagNotater(søknadsbarn: List<Rolle> = this.søknadsbarn
                 )
             }.filterNotNull()
 
-    val notatPrivatAvtale = byggGrunnlagPrivatAvtale()
+    val notatPrivatAvtale = byggGrunnlagPrivatAvtale(søknadsbarn)
 
     val notatSamvær =
         roller
