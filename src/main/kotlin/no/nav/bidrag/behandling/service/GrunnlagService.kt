@@ -1127,6 +1127,7 @@ class GrunnlagService(
     @Transactional
     fun oppdatereIkkeAktiveInntekterEtterEndretVirkningstidspunkt(behandling: Behandling) {
         behandling.roller.forEach { rolle ->
+            if (rolle.id == null) return@forEach
             var request = opprettHentGrunnlagDto()
             eksplisitteYtelserGrunnlagsdatatype.forEach { grunnlagsdatatype ->
                 val sisteGrunnlag =
