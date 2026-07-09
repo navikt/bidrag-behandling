@@ -2322,7 +2322,7 @@ class GrunnlagService(
                             .filter {
                                 val barn = it.gjelderBarnPersonId
                                 val søknadsbarnRolle = behandling.søknadsbarn.find { it.ident == barn }
-                                it.periode.fom < søknadsbarnRolle!!.finnBeregnTil()
+                                søknadsbarnRolle != null && it.periode.fom < søknadsbarnRolle.finnBeregnTil()
                             },
                 )
             }
@@ -2336,7 +2336,7 @@ class GrunnlagService(
                             .filter {
                                 val barn = it.gjelderBarnPersonId
                                 val søknadsbarnRolle = behandling.søknadsbarn.find { it.ident == barn }
-                                it.periode.fom < søknadsbarnRolle!!.finnBeregnTil()
+                                søknadsbarnRolle != null && it.periode.fom < søknadsbarnRolle.finnBeregnTil()
                             },
                 )
             }
