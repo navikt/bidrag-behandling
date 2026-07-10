@@ -215,8 +215,6 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                         stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode()?.resultatkode == "IV" ||
                             type == Vedtakstype.INNKREVING
                     val orkestreringDetaljer = grunnlagListe.finnOrkestreringDetaljer(stønadsendring.grunnlagReferanseListe)
-                    val behandlingDetaljer = grunnlagListe.hentBehandlingDetaljer()
-                    val erRevurderingsbarn = barnGrunnlag?.erRevurderingsbarn ?: false
                     ResultatBidragsberegningBarnDto(
                         resultatUtenBeregning = erResultatUtenBeregning,
                         barn =
@@ -238,11 +236,7 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                         delvedtak = hentDelvedtak(stønadsendring),
                         innkrevesFraDato = orkestreringDetaljer?.innkrevesFraDato,
                         perioder =
-                            if (erRevurderingsbarn &&
-                                behandlingDetaljer?.fatteVedtakRevurderingsbarn?.skalFatteVedtakForRevurderingsbarn == false
-                            ) {
-                                hentBeregningsperioder(stønadsendring)
-                            } else if (vedtakBeregning != null) {
+                            if (vedtakBeregning != null) {
                                 vedtakBeregning.finnStønadsendring(stønadsendring.tilStønadsid())?.let {
                                     vedtakBeregning.hentBeregningsperioder(it)
                                 } ?: emptyList()
@@ -269,10 +263,19 @@ internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<
     val søknadsbarnGrunnlag = grunnlagListe.hentPerson(stønadsendring.kravhaver.verdi)
     val virkningstidspunkt = søknadsbarnGrunnlag?.let { grunnlagListe.hentVirkningstidspunkt(it.referanse) }
     val orkestreringDetaljer = grunnlagListe.finnOrkestreringDetaljer(stønadsendring.grunnlagReferanseListe)
+    val behandlingDetaljer = grunnlagListe.hentBehandlingDetaljer()
+    val bleFattetVedtakForRevurderingsbarn =
+        søknadsbarnGrunnlag?.erRevurderingsbarn == true &&
+            behandlingDetaljer?.fatteVedtakRevurderingsbarn?.skalFatteVedtakForRevurderingsbarn == false
     val delvedtak =
         stønadsendring.periodeListe
             .mapNotNull { periode ->
-                grunnlagListe.finnResultatFraAnnenVedtak(periode.grunnlagReferanseListe)?.let {
+                val resultatFraAnnenVedtak =
+                    grunnlagListe
+                        .finnResultatFraAnnenVedtak(
+                            periode.grunnlagReferanseListe,
+                        )
+                resultatFraAnnenVedtak?.let {
                     if (it.vedtaksid == null) {
                         return@let DelvedtakDto(
                             type = Vedtakstype.OPPHØR,
@@ -435,6 +438,7 @@ internal fun VedtakDto.hentBeregningsperioder(stønadsendring: StønadsendringDt
     val erResultatUtenBeregning =
         stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode()?.resultatkode == "IV" ||
             type == Vedtakstype.INNKREVING
+
     return if (aldersjusteringDetaljer != null && !aldersjusteringDetaljer.aldersjustert) {
         listOf(
             ResultatBarnebidragsberegningPeriodeDto(
