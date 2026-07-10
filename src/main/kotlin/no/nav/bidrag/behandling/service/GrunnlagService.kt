@@ -244,7 +244,7 @@ class GrunnlagService(
         val scope = CoroutineScope(Dispatchers.IO + SecurityCoroutineContext() + RequestContextAsyncContext())
 
         try {
-            if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhenting.toLong())) {
+            if (true) {
                 sjekkOgOppdaterIdenter(behandling)
                 val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
 
@@ -2373,7 +2373,7 @@ class GrunnlagService(
 
     private fun opprett(
         behandling: Behandling,
-        idTilRolleInnhentetFor: Long,
+        rolleInnhentetFor: Rolle,
         grunnlagstype: Grunnlagstype,
         data: String,
         innhentet: LocalDateTime,
@@ -2393,7 +2393,7 @@ class GrunnlagService(
                 data = data,
                 innhentet = innhentet,
                 aktiv = aktiv,
-                rolle = behandling.roller.first { r -> r.id == idTilRolleInnhentetFor },
+                rolle = rolleInnhentetFor,
                 gjelder = gjelder?.verdi,
                 gjelderBarnRolle = gjelderBarnRolle,
             ),
@@ -2493,7 +2493,7 @@ class GrunnlagService(
                 grunnlagstype = grunnlagstype,
                 innhentet = LocalDateTime.now(),
                 aktiv = aktivert,
-                idTilRolleInnhentetFor = innhentetForRolle.id!!,
+                rolleInnhentetFor = innhentetForRolle,
                 gjelder = gjelderPerson,
                 gjelderBarnRolle = gjelderBarnRolle,
             )
@@ -2673,7 +2673,7 @@ class GrunnlagService(
                     } else {
                         LocalDateTime.now()
                     },
-                idTilRolleInnhentetFor = rolle.id!!,
+                rolleInnhentetFor = rolle,
             )
             if (grunnlagstype.erBearbeidet && aktiveringstidspunkt != null) {
                 aktivereSisteInnhentedeRådata(grunnlagstype.type, rolle, behandling)
