@@ -12,6 +12,7 @@ import no.nav.bidrag.behandling.fantIkkeFødselsdatoTilSøknadsbarn
 import no.nav.bidrag.behandling.rolleManglerIdent
 import no.nav.bidrag.behandling.service.hentNyesteIdent
 import no.nav.bidrag.behandling.service.hentPersonFødselsdato
+import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagPerson
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
 import no.nav.bidrag.behandling.transformers.grunnlag.valider
@@ -48,6 +49,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenRe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.filtrerBasertPåEgenReferanser
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAldersjusteringDetaljerGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
+import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettBarnetilsynGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.opprettInnhentetAnderBarnTilBidragsmottakerGrunnlagsreferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
@@ -263,6 +265,11 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
     fun opprettPeriode(resultatPeriode: ResultatPeriode): OpprettPeriodeRequestDto? {
         val erOpphørsperiode =
             søknadsbarnRolle.opphørsdato != null && resultatPeriode.periode.fom == søknadsbarnRolle.opphørsdato?.toYearMonth()
+        val periodeErResultatFraVedtak =
+            resultatPeriode.grunnlagsreferanseListe.isNotEmpty() &&
+                resultatPeriode.grunnlagsreferanseListe.all { gr ->
+                    grunnlaglisterResultat.find { it.referanse == gr }?.type == Grunnlagstype.RESULTAT_FRA_VEDTAK
+                }
         val vedtak =
             resultatDelvedtak.find { rv ->
                 val tilhørerBarn =
@@ -277,17 +284,22 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
                                 (erOpphørsperiode && vp.periode.til == søknadsbarnRolle.opphørsdato?.toYearMonth())
                         }
 
-                val resultatVedtakErEnestePeriode =
-                    perioder != null && perioder.isEmpty() && resultatPeriode.grunnlagsreferanseListe.isNotEmpty() &&
-                        resultatPeriode.grunnlagsreferanseListe.all { gr ->
-                            grunnlaglisterResultat.find { it.referanse == gr }?.type == Grunnlagstype.RESULTAT_FRA_VEDTAK
-                        }
-                (tilhørerBarn && matcherPeriode) || resultatVedtakErEnestePeriode
-            } ?: return null
+                (tilhørerBarn && matcherPeriode)
+            }
+
         val resultatkode =
-            if (vedtak.request != null && erOpphørsperiode) {
+            if (periodeErResultatFraVedtak) {
+                val referanse = resultatPeriode.grunnlagsreferanseListe.first()
+                val resultatFraGrunnlag = grunnlaglisterResultat.find { it.referanse == referanse }!!
+                val referertVedtak = hentVedtak(resultatFraGrunnlag.innholdTilObjekt<ResultatFraVedtakGrunnlag>().vedtaksid)!!
+                referertVedtak.stønadsendringListe
+                    .find { søknadsbarnRolle.erSammeRolle(it.kravhaver.verdi, it.type) }
+                    ?.periodeListe
+                    ?.find { vp -> resultatPeriode.periode.fom == vp.periode.fom }
+                    ?.resultatkode!!
+            } else if (vedtak?.request != null && erOpphørsperiode) {
                 Resultatkode.OPPHØR.name
-            } else if (vedtak.request != null) {
+            } else if (vedtak?.request != null) {
                 vedtak.request.stønadsendringListe
                     .find { søknadsbarnRolle.erSammeRolle(it.kravhaver.verdi, it.type) }
                     ?.periodeListe
@@ -295,34 +307,44 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
                     ?.resultatkode!!
             } else {
                 val periode =
-                    vedtak.resultat.beregnetBarnebidragPeriodeListe.find { vp ->
+                    vedtak?.resultat?.beregnetBarnebidragPeriodeListe?.find { vp ->
                         resultatPeriode.periode.fom == vp.periode.fom ||
                             (erOpphørsperiode && vp.periode.til == søknadsbarnRolle.opphørsdato?.toYearMonth())
                     }!!
                 if (periode.resultat.beløp == null) Resultatkode.OPPHØR.name else Resultatkode.BEREGNET_BIDRAG.name
             }
-        val referanse = "resultatFraVedtak_${vedtak.vedtaksid ?: resultatPeriode.periode.fom.toCompactString()}"
+
         val resultatFraGrunnlag =
-            GrunnlagDto(
-                referanse = referanse,
-                type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
-                innhold =
-                    POJONode(
-                        ResultatFraVedtakGrunnlag(
-                            vedtaksid = vedtak.vedtaksid,
-                            omgjøringsvedtak = vedtak.omgjøringsvedtak,
-                            beregnet = vedtak.beregnet,
-                            vedtakstype = vedtak.type,
-                            vedtakstidspunkt = vedtak.vedtakstidspunkt,
-                            opprettParagraf35c =
-                                behandling.omgjøringsdetaljer!!.paragraf35c.any {
-                                    it.vedtaksid == vedtak.vedtaksid &&
-                                        it.opprettParagraf35c
-                                },
-                        ),
-                    ),
-            )
-        grunnlagListe.add(resultatFraGrunnlag)
+            if (periodeErResultatFraVedtak) {
+                val referanse = resultatPeriode.grunnlagsreferanseListe.first()
+                val resultatFraGrunnlag = grunnlaglisterResultat.find { it.referanse == referanse }!!
+                grunnlagListe.add(resultatFraGrunnlag)
+                resultatFraGrunnlag
+            } else {
+                val referanse = "resultatFraVedtak_${vedtak!!.vedtaksid ?: resultatPeriode.periode.fom.toCompactString()}"
+                val resultatFraGrunnlag =
+                    GrunnlagDto(
+                        referanse = referanse,
+                        type = Grunnlagstype.RESULTAT_FRA_VEDTAK,
+                        innhold =
+                            POJONode(
+                                ResultatFraVedtakGrunnlag(
+                                    vedtaksid = vedtak.vedtaksid,
+                                    omgjøringsvedtak = vedtak.omgjøringsvedtak,
+                                    beregnet = vedtak.beregnet,
+                                    vedtakstype = vedtak.type,
+                                    vedtakstidspunkt = vedtak.vedtakstidspunkt,
+                                    opprettParagraf35c =
+                                        behandling.omgjøringsdetaljer!!.paragraf35c.any {
+                                            it.vedtaksid == vedtak.vedtaksid &&
+                                                it.opprettParagraf35c
+                                        },
+                                ),
+                            ),
+                    )
+                grunnlagListe.add(resultatFraGrunnlag)
+                resultatFraGrunnlag
+            }
         val klagevedtak =
             resultatDelvedtak
                 .find { it.omgjøringsvedtak }!!

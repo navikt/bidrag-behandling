@@ -215,6 +215,8 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                         stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode()?.resultatkode == "IV" ||
                             type == Vedtakstype.INNKREVING
                     val orkestreringDetaljer = grunnlagListe.finnOrkestreringDetaljer(stønadsendring.grunnlagReferanseListe)
+                    val behandlingDetaljer = grunnlagListe.hentBehandlingDetaljer()
+                    val erRevurderingsbarn = barnGrunnlag?.erRevurderingsbarn ?: false
                     ResultatBidragsberegningBarnDto(
                         resultatUtenBeregning = erResultatUtenBeregning,
                         barn =
@@ -236,11 +238,17 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                         delvedtak = hentDelvedtak(stønadsendring),
                         innkrevesFraDato = orkestreringDetaljer?.innkrevesFraDato,
                         perioder =
-                            vedtakBeregning?.let {
-                                val stønadsendringBeregning =
-                                    vedtakBeregning.finnStønadsendring(stønadsendring.tilStønadsid()) ?: return@let emptyList()
-                                it.hentBeregningsperioder(stønadsendringBeregning)
-                            } ?: hentBeregningsperioder(stønadsendring),
+                            if (erRevurderingsbarn &&
+                                behandlingDetaljer?.fatteVedtakRevurderingsbarn?.skalFatteVedtakForRevurderingsbarn == false
+                            ) {
+                                hentBeregningsperioder(stønadsendring)
+                            } else if (vedtakBeregning != null) {
+                                vedtakBeregning.finnStønadsendring(stønadsendring.tilStønadsid())?.let {
+                                    vedtakBeregning.hentBeregningsperioder(it)
+                                } ?: emptyList()
+                            } else {
+                                hentBeregningsperioder(stønadsendring)
+                            },
                     )
                 }.toList()
                 .sortedBy { it.barn.fødselsdatoSortering },
