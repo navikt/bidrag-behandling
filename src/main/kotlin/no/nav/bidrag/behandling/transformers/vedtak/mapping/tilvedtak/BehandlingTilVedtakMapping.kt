@@ -547,7 +547,8 @@ class BehandlingTilVedtakMapping(
             if (beregningerForSøknad.isEmpty()) return@mapNotNull null
 
             val erRevurderingsbarn = beregningerForSøknad.all { it.skalBehandlesSomAvvistRevurderingsbarnIKlage(request) }
-            val byggGrunnlagForSøknadsbarn = if (erRevurderingsbarn) søknadsbarnFiltered else søknadsbarn.filter { !it.erRevurderingsbarn }
+            val byggGrunnlagForSøknadsbarn = søknadsbarn
+            // if (erRevurderingsbarn) søknadsbarnFiltered else søknadsbarn.filter { !it.erRevurderingsbarn }
             // Build vedtak request for this søknad's beregninger
             val beregninger =
                 beregningerForSøknad.map { beregningBarn ->
@@ -609,9 +610,8 @@ class BehandlingTilVedtakMapping(
     private fun ResultatBidragsberegningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request: FatteVedtakRequestDto?): Boolean {
         val skalFatteVedtakForRevurderingsbarn =
             request?.fatteVedtakRevurderingsbarn == null || request?.fatteVedtakRevurderingsbarn?.skalFatteVedtakForRevurderingsbarn == true
-        if (omgjøringsdetaljer != null) {
-            return omgjøringsdetaljer.fatteVedtakDetaljerRevurderingsbarn?.bleFattetVedtakForRevurderingsbarn != null &&
-                !omgjøringsdetaljer.fatteVedtakDetaljerRevurderingsbarn.bleFattetVedtakForRevurderingsbarn
+        if (omgjøringsdetaljer?.fatteVedtakDetaljerRevurderingsbarn != null) {
+            return !omgjøringsdetaljer.fatteVedtakDetaljerRevurderingsbarn.bleFattetVedtakForRevurderingsbarn
         }
         return (erAvvistRevurdering || (barn.erRevurderingsbarn && !skalFatteVedtakForRevurderingsbarn))
     }
