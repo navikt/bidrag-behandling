@@ -1127,7 +1127,6 @@ class GrunnlagService(
     @Transactional
     fun oppdatereIkkeAktiveInntekterEtterEndretVirkningstidspunkt(behandling: Behandling) {
         behandling.roller.forEach { rolle ->
-            if (rolle.id == null) return@forEach
             var request = opprettHentGrunnlagDto()
             eksplisitteYtelserGrunnlagsdatatype.forEach { grunnlagsdatatype ->
                 val sisteGrunnlag =
@@ -2374,7 +2373,7 @@ class GrunnlagService(
 
     private fun opprett(
         behandling: Behandling,
-        idTilRolleInnhentetFor: Long,
+        rolleInnhentetFor: Rolle,
         grunnlagstype: Grunnlagstype,
         data: String,
         innhentet: LocalDateTime,
@@ -2394,7 +2393,7 @@ class GrunnlagService(
                 data = data,
                 innhentet = innhentet,
                 aktiv = aktiv,
-                rolle = behandling.roller.first { r -> r.id == idTilRolleInnhentetFor },
+                rolle = rolleInnhentetFor,
                 gjelder = gjelder?.verdi,
                 gjelderBarnRolle = gjelderBarnRolle,
             ),
@@ -2494,7 +2493,7 @@ class GrunnlagService(
                 grunnlagstype = grunnlagstype,
                 innhentet = LocalDateTime.now(),
                 aktiv = aktivert,
-                idTilRolleInnhentetFor = innhentetForRolle.id!!,
+                rolleInnhentetFor = innhentetForRolle,
                 gjelder = gjelderPerson,
                 gjelderBarnRolle = gjelderBarnRolle,
             )
@@ -2674,7 +2673,7 @@ class GrunnlagService(
                     } else {
                         LocalDateTime.now()
                     },
-                idTilRolleInnhentetFor = rolle.id!!,
+                rolleInnhentetFor = rolle,
             )
             if (grunnlagstype.erBearbeidet && aktiveringstidspunkt != null) {
                 aktivereSisteInnhentedeRådata(grunnlagstype.type, rolle, behandling)
