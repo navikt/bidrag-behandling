@@ -353,6 +353,7 @@ fun Grunnlag.kopierGrunnlag(hovedbehandling: Behandling): Grunnlag =
         type = type,
         data = data,
         gjelder = gjelder,
+        gjelderBarnRolle = gjelderBarnRolle?.let { hovedbehandling.roller.find { r -> r.erSammeRolle(it) } },
         aktiv = aktiv,
         innhentet = innhentet,
     )
@@ -426,16 +427,19 @@ fun kopierInntekt(
     // Ikke overfør manuell inntekt hvis det overlapper
     if (eksisterndeInntekt != null && (inntektOverført.datoTom == null || eksisterndeInntekt.datoTom == inntektOverført.datoTom)) return
 
+    val rolle = inntektOverført.rolle?.let { hovedbehandling.roller.find { r -> r.erSammeRolle(it) } }
+    val gjelderBarnRolle = inntektOverført.gjelderBarnRolle?.let { hovedbehandling.roller.find { r -> r.erSammeRolle(it) } }
+
     val inntekt =
         Inntekt(
             behandling = hovedbehandling,
             ident = inntektOverført.gjelderIdent,
-            rolle = inntektOverført.rolle,
+            rolle = rolle,
             kilde = inntektOverført.kilde,
             taMed = inntektOverført.taMed,
             type = inntektOverført.type,
             gjelderBarn = inntektOverført.gjelderBarnIdent,
-            gjelderBarnRolle = inntektOverført.gjelderBarnRolle,
+            gjelderBarnRolle = gjelderBarnRolle,
             opprinneligFom = inntektOverført.opprinneligFom,
             opprinneligTom = inntektOverført.opprinneligTom,
             belop = inntektOverført.belop,
@@ -454,11 +458,11 @@ fun kopierInntekt(
             )
         }
 
-    val rolleInntekt = hovedbehandling.roller.find { it.erSammeRolle(inntekt.rolle!!) }!!
-
     hovedbehandling.inntekter.add(inntekt)
 
-    kopierOverBegrunnelseForBehandling(rolleInntekt, inntektOverført.behandling!!, hovedbehandling, NotatGrunnlag.NotatType.INNTEKT)
+    if (rolle != null) {
+        kopierOverBegrunnelseForBehandling(rolle, inntektOverført.behandling!!, hovedbehandling, NotatGrunnlag.NotatType.INNTEKT)
+    }
 }
 
 fun kopierOverInntekterForRolleFraBehandling(

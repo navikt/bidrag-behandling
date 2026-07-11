@@ -227,6 +227,78 @@ class InntektService(
             }
     }
 
+    fun fiksInntektOgGrunnlagRollePekereForBehandling(behandling: Behandling): Map<String, Int> {
+        var inntektRollefikset = 0
+        var inntektGjelderBarnRollefikset = 0
+        var grunnlagRollefikset = 0
+        var grunnlagGjelderBarnRollefikset = 0
+
+        behandling.inntekter.forEach { inntekt ->
+            val rolleErFraAnnenBehandling = inntekt.rolle != null && inntekt.rolle!!.behandling?.id != behandling.id
+            if (rolleErFraAnnenBehandling) {
+                val korrektRolle = behandling.roller.find { it.erSammeRolle(inntekt.rolle!!) }
+                if (korrektRolle != null) {
+                    secureLogger.info {
+                        "Fiks inntekt id=${inntekt.id}: rolle peker til behandling ${inntekt.rolle!!.behandling?.id}, " +
+                            "retter til rolle id=${korrektRolle.id} i behandling ${behandling.id}"
+                    }
+                    inntekt.rolle = korrektRolle
+                    inntektRollefikset++
+                }
+            }
+
+            val gjelderBarnRolleErFraAnnenBehandling =
+                inntekt.gjelderBarnRolle != null && inntekt.gjelderBarnRolle!!.behandling?.id != behandling.id
+            if (gjelderBarnRolleErFraAnnenBehandling) {
+                val korrektBarnRolle = behandling.roller.find { it.erSammeRolle(inntekt.gjelderBarnRolle!!) }
+                if (korrektBarnRolle != null) {
+                    secureLogger.info {
+                        "Fiks inntekt id=${inntekt.id}: gjelderBarnRolle peker til behandling ${inntekt.gjelderBarnRolle!!.behandling?.id}, " +
+                            "retter til rolle id=${korrektBarnRolle.id} i behandling ${behandling.id}"
+                    }
+                    inntekt.gjelderBarnRolle = korrektBarnRolle
+                    inntektGjelderBarnRollefikset++
+                }
+            }
+        }
+
+        behandling.grunnlag.forEach { grunnlag ->
+            val rolleErFraAnnenBehandling = grunnlag.rolle.behandling.id != behandling.id
+            if (rolleErFraAnnenBehandling) {
+                val korrektRolle = behandling.roller.find { it.erSammeRolle(grunnlag.rolle) }
+                if (korrektRolle != null) {
+                    secureLogger.info {
+                        "Fiks grunnlag id=${grunnlag.id}: rolle peker til behandling ${grunnlag.rolle.behandling.id}, " +
+                            "retter til rolle id=${korrektRolle.id} i behandling ${behandling.id}"
+                    }
+                    grunnlag.rolle = korrektRolle
+                    grunnlagRollefikset++
+                }
+            }
+
+            val gjelderBarnRolleErFraAnnenBehandling =
+                grunnlag.gjelderBarnRolle != null && grunnlag.gjelderBarnRolle!!.behandling?.id != behandling.id
+            if (gjelderBarnRolleErFraAnnenBehandling) {
+                val korrektBarnRolle = behandling.roller.find { it.erSammeRolle(grunnlag.gjelderBarnRolle!!) }
+                if (korrektBarnRolle != null) {
+                    secureLogger.info {
+                        "Fiks grunnlag id=${grunnlag.id}: gjelderBarnRolle peker til behandling ${grunnlag.gjelderBarnRolle!!.behandling?.id}, " +
+                            "retter til rolle id=${korrektBarnRolle.id} i behandling ${behandling.id}"
+                    }
+                    grunnlag.gjelderBarnRolle = korrektBarnRolle
+                    grunnlagGjelderBarnRollefikset++
+                }
+            }
+        }
+
+        return mapOf(
+            "inntektRollefikset" to inntektRollefikset,
+            "inntektGjelderBarnRollefikset" to inntektGjelderBarnRollefikset,
+            "grunnlagRollefikset" to grunnlagRollefikset,
+            "grunnlagGjelderBarnRollefikset" to grunnlagGjelderBarnRollefikset,
+        )
+    }
+
     fun rekalkulerOffentligeInntektPerioder(behandling: Behandling) {
         secureLogger.info {
             "Oppdaterer status på offentlige inntekter (taMed, datoFom og datoTom) slik at de er i sync med offentlige perioder for behanlding ${behandling.id}"
