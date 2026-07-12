@@ -282,7 +282,8 @@ class InntektService(
                 val korrektBarnRolle = behandling.roller.find { it.erSammeRolle(grunnlag.gjelderBarnRolle!!) }
                 if (korrektBarnRolle != null) {
                     secureLogger.info {
-                        "Fiks grunnlag id=${grunnlag.id}: gjelderBarnRolle peker til behandling ${grunnlag.gjelderBarnRolle!!.behandling?.id}, " +
+                        "Fiks grunnlag id=${grunnlag.id}: " +
+                            "gjelderBarnRolle peker til behandling ${grunnlag.gjelderBarnRolle!!.behandling?.id}, " +
                             "retter til rolle id=${korrektBarnRolle.id} i behandling ${behandling.id}"
                     }
                     grunnlag.gjelderBarnRolle = korrektBarnRolle
