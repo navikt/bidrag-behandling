@@ -160,7 +160,7 @@ class VedtakTilBehandlingMapping(
                     erHovedbehandling = true,
                 )
             }
-        val inneholderBareRevurderingsbarn = stønadsendringListe.all { tilhørerRevurderingsbarn(it) }
+        val inneholderBareRevurderingsbarn = stønadsendringListe.isNotEmpty() && stønadsendringListe.all { tilhørerRevurderingsbarn(it) }
         val behandling =
             Behandling(
                 id = if (lesemodus) 1 else null,
