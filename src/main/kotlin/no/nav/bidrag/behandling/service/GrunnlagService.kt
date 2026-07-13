@@ -244,7 +244,7 @@ class GrunnlagService(
         val scope = CoroutineScope(Dispatchers.IO + SecurityCoroutineContext() + RequestContextAsyncContext())
 
         try {
-            if (true) {
+            if (foretaNyGrunnlagsinnhenting(behandling, grenseInnhenting.toLong())) {
                 sjekkOgOppdaterIdenter(behandling)
                 val feilrapporteringer = mutableMapOf<Grunnlagsdatatype, GrunnlagFeilDto?>()
 
