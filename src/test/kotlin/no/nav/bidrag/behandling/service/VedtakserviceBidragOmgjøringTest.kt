@@ -664,7 +664,7 @@ class VedtakserviceBidragOmgjøringTest : CommonVedtakTilBehandlingTest() {
         val endeligVedtak = opprettVedtakSlot.last()
         val revurderingsbarnStønadsendring =
             endeligVedtak.stønadsendringListe.find { it.kravhaver.verdi == testdataBarn2.ident }
-        revurderingsbarnStønadsendring?.beslutning shouldBe Beslutningstype.ENDRING
+        revurderingsbarnStønadsendring?.beslutning shouldBe Beslutningstype.AVVIST
     }
 
     @Test
