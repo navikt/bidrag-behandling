@@ -474,7 +474,11 @@ class BehandlingTilVedtakMapping(
                     request,
                     stønadsendringPerioder,
                     beregningBarn.barn,
-                    søknadsbarnRolle.innkrevingstype ?: behandling.innkrevingstype!!,
+                    if (beregningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request)) {
+                        Innkrevingstype.UTEN_INNKREVING
+                    } else {
+                        søknadsbarnRolle.innkrevingstype ?: behandling.innkrevingstype!!
+                    },
                     if (beregningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request)) {
                         Beslutningstype.AVVIST
                     } else {
@@ -573,12 +577,12 @@ class BehandlingTilVedtakMapping(
                         request,
                         stønadsendringPerioder,
                         beregningBarn.barn,
-                        if (beregningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request)) {
+                        if (erRevurderingsbarn && beregningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request)) {
                             Innkrevingstype.UTEN_INNKREVING
                         } else {
                             søknadsbarnRolle.innkrevingstype ?: behandling.innkrevingstype!!
                         },
-                        if (beregningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request)) {
+                        if (erRevurderingsbarn && beregningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request)) {
                             Beslutningstype.AVVIST
                         } else {
                             Beslutningstype.ENDRING
@@ -609,10 +613,12 @@ class BehandlingTilVedtakMapping(
     private fun ResultatBidragsberegningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request: FatteVedtakRequestDto?): Boolean {
         val skalFatteVedtakForRevurderingsbarn =
             request?.fatteVedtakRevurderingsbarn == null || request?.fatteVedtakRevurderingsbarn?.skalFatteVedtakForRevurderingsbarn == true
-        if (omgjøringsdetaljer?.fatteVedtakDetaljerRevurderingsbarn != null) {
+        val erRevurderingsbarnOgSkalAvviseVedtak = erAvvistRevurdering || (barn.erRevurderingsbarn && !skalFatteVedtakForRevurderingsbarn)
+        // Hvis det blir avvist og det ble fattet vedtak i påklaget vedtak så må systemt fatte vedtak igjen for å evt tilbakestille beløpshistorikk
+        if (erRevurderingsbarnOgSkalAvviseVedtak && omgjøringsdetaljer?.fatteVedtakDetaljerRevurderingsbarn != null) {
             return !omgjøringsdetaljer.fatteVedtakDetaljerRevurderingsbarn.bleFattetVedtakForRevurderingsbarn
         }
-        return (erAvvistRevurdering || (barn.erRevurderingsbarn && !skalFatteVedtakForRevurderingsbarn))
+        return erRevurderingsbarnOgSkalAvviseVedtak
     }
 
     fun opprettVedtakRequestDelvedtak(
