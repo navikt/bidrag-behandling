@@ -546,9 +546,8 @@ class BehandlingTilVedtakMapping(
 
             if (beregningerForSøknad.isEmpty()) return@mapNotNull null
 
-            val erRevurderingsbarn = beregningerForSøknad.all { it.skalBehandlesSomAvvistRevurderingsbarnIKlage(request) }
-            val byggGrunnlagForSøknadsbarn = søknadsbarn
-            // if (erRevurderingsbarn) søknadsbarnFiltered else søknadsbarn.filter { !it.erRevurderingsbarn }
+            val erRevurderingsbarn = beregningerForSøknad.all { it.barn.erRevurderingsbarn }
+            val byggGrunnlagForSøknadsbarn = if (erRevurderingsbarn) søknadsbarnFiltered else søknadsbarn.filter { !it.erRevurderingsbarn }
             // Build vedtak request for this søknad's beregninger
             val beregninger =
                 beregningerForSøknad.map { beregningBarn ->
@@ -830,7 +829,7 @@ class BehandlingTilVedtakMapping(
                         "endeligvedtak"
                     }
                 }
-            return behandling.byggOpprettVedtakRequestObjekt(request?.enhet).copy(
+            return behandling.byggOpprettVedtakRequestObjekt(request?.enhet, byggForSøknadsbarn).copy(
                 unikReferanse = behandling.opprettUnikReferanse(referansePostfix),
                 type = resultatVedtak.vedtakstype,
                 stønadsendringListe =
@@ -950,8 +949,7 @@ class BehandlingTilVedtakMapping(
             søknadsbarnSomDetHarBlittOpprettVedtakFor.addAll(søknadsbarnISøknad.mapNotNull { it.ident })
             val førsteSøknadsbarn = søknadsbarnISøknad.first()
             val erRevurderingsbarn = førsteSøknadsbarn.forholdsmessigFordeling?.erRevurdering == true
-            val byggGrunnlagForSøknadsbarn = søknadsbarn
-            // if (erRevurderingsbarn) søknadsbarnISøknad else søknadsbarn.filter { !it.erRevurderingsbarn }
+            val byggGrunnlagForSøknadsbarn = if (erRevurderingsbarn) søknadsbarnISøknad else søknadsbarn.filter { !it.erRevurderingsbarn }
             val sak = behandlingSaker.getValue(førsteSøknadsbarn.saksnummer)
 
             val innkreving =
@@ -1020,7 +1018,7 @@ class BehandlingTilVedtakMapping(
                     }.toSet()
                         .map(BaseGrunnlag::tilOpprettRequestDto)
 
-                byggOpprettVedtakRequestObjekt(request?.enhet, søknadsbarnISøknad).copy(
+                byggOpprettVedtakRequestObjekt(request?.enhet, byggGrunnlagForSøknadsbarn).copy(
                     unikReferanse = opprettUnikReferanse("søknad_$søknadsid"),
                     stønadsendringListe =
                         if (erRevurderingsbarn) {
