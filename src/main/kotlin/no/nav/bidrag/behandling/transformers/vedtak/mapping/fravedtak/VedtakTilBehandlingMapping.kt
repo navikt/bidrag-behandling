@@ -201,6 +201,7 @@ class VedtakTilBehandlingMapping(
                 lesemodus,
                 omgjortVedtakVirkningstidspunkt,
                 sak,
+                inneholderBareRevurderingsbarn,
                 inneholderBareRevurderingsbarn || forholdsmessigFordeling != null,
             )
 

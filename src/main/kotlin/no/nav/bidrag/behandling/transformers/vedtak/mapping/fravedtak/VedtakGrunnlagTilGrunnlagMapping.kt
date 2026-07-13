@@ -32,6 +32,7 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPersonMedReferanse
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.innholdTilObjektListe
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
+import no.nav.bidrag.transport.behandling.felles.grunnlag.stønadstype
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.AinntektspostDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.Ansettelsesdetaljer
@@ -376,11 +377,15 @@ fun List<GrunnlagDto>.hentInnntekterBearbeidet(
         mutableSetOf()
     } else {
         filtrerBasertPåEgenReferanse(Grunnlagstype.INNTEKT_RAPPORTERING_PERIODE)
+            .asSequence()
             .filter { !it.innholdTilObjekt<InntektsrapporteringPeriode>().manueltRegistrert }
             .groupBy {
                 hentPersonMedReferanse(it.gjelderReferanse) ?: manglerPersonGrunnlag(
                     it.gjelderReferanse,
                 )
+            }.filter { (gjelder) ->
+                val person = hentPersonMedReferanse(gjelder.referanse) ?: return@filter false
+                behandling.roller.any { it.erSammeRolle(person.personIdent!!, person.stønadstype) }
             }.flatMap { (gjelder, grunnlagListe) ->
                 val årsinntekter =
                     grunnlagListe.map {
