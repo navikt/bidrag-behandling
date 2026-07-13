@@ -941,7 +941,10 @@ fun List<GrunnlagDto>.hentGrunnlagIkkeInntekt(
     },
     hentGrunnlagArbeidsforhold()
         .groupBy { it.partPersonId }
-        .map { (gjelderIdent, grunnlag) ->
+        .filter { (gjelderReferanse) ->
+            val person = hentPersonMedReferanse(gjelderReferanse) ?: return@filter false
+            behandling.roller.any { it.erSammeRolle(person.personIdent!!, person.stønadstype) }
+        }.map { (gjelderIdent, grunnlag) ->
             behandling.opprettGrunnlag(
                 Grunnlagsdatatype.ARBEIDSFORHOLD,
                 grunnlag,
@@ -1163,19 +1166,27 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
         emptyList()
     } else {
         listOf(
-            hentBeregnetInntekt().entries.map { (gjelderIdent, grunnlag) ->
-                behandling.opprettGrunnlag(
-                    Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
-                    grunnlag,
-                    gjelderIdent,
-                    innhentetTidspunkt(Grunnlagstype.BEREGNET_INNTEKT),
-                    lesemodus,
-                    erBearbeidet = true,
-                )
-            },
+            hentBeregnetInntekt()
+                .entries
+                .filter { (gjelderIdent) ->
+                    val person = hentPersonMedIdent(gjelderIdent) ?: return@filter false
+                    behandling.roller.any { it.erSammeRolle(person.personIdent!!, person.stønadstype) }
+                }.map { (gjelderIdent, grunnlag) ->
+                    behandling.opprettGrunnlag(
+                        Grunnlagsdatatype.SUMMERTE_MÅNEDSINNTEKTER,
+                        grunnlag,
+                        gjelderIdent,
+                        innhentetTidspunkt(Grunnlagstype.BEREGNET_INNTEKT),
+                        lesemodus,
+                        erBearbeidet = true,
+                    )
+                },
             hentBarnetillegListe()
                 .groupBy { it.partPersonId }
-                .map { (gjelderIdent, grunnlag) ->
+                .filter { (gjelderIdent) ->
+                    val person = hentPersonMedIdent(gjelderIdent) ?: return@filter false
+                    behandling.roller.any { it.erSammeRolle(person.personIdent!!, person.stønadstype) }
+                }.map { (gjelderIdent, grunnlag) ->
                     behandling.opprettGrunnlag(
                         Grunnlagsdatatype.BARNETILLEGG,
                         grunnlag,
@@ -1186,7 +1197,10 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
                 },
             hentUtvidetbarnetrygdListe()
                 .groupBy { it.personId }
-                .map { (gjelderIdent, grunnlag) ->
+                .filter { (gjelderIdent) ->
+                    val person = hentPersonMedIdent(gjelderIdent) ?: return@filter false
+                    behandling.roller.any { it.erSammeRolle(person.personIdent!!, person.stønadstype) }
+                }.map { (gjelderIdent, grunnlag) ->
                     behandling.opprettGrunnlag(
                         Grunnlagsdatatype.UTVIDET_BARNETRYGD,
                         grunnlag,
@@ -1197,7 +1211,10 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
                 },
             hentSmåbarnstilleggListe()
                 .groupBy { it.personId }
-                .map { (gjelderIdent, grunnlag) ->
+                .filter { (gjelderIdent) ->
+                    val person = hentPersonMedIdent(gjelderIdent) ?: return@filter false
+                    behandling.roller.any { it.erSammeRolle(person.personIdent!!, person.stønadstype) }
+                }.map { (gjelderIdent, grunnlag) ->
                     behandling.opprettGrunnlag(
                         Grunnlagsdatatype.SMÅBARNSTILLEGG,
                         grunnlag,
@@ -1208,7 +1225,10 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
                 },
             hentKontantstøtteListe()
                 .groupBy { it.partPersonId }
-                .map { (gjelderIdent, grunnlag) ->
+                .filter { (gjelderIdent) ->
+                    val person = hentPersonMedIdent(gjelderIdent) ?: return@filter false
+                    behandling.roller.any { it.erSammeRolle(person.personIdent!!, person.stønadstype) }
+                }.map { (gjelderIdent, grunnlag) ->
                     behandling.opprettGrunnlag(
                         Grunnlagsdatatype.KONTANTSTØTTE,
                         grunnlag,
@@ -1218,7 +1238,10 @@ private fun List<GrunnlagDto>.hentGrunnlagInntekt(
                     )
                 },
             hentGrunnlagSkattepliktig()
-                .map { (gjelderIdent, grunnlag) ->
+                .filter { (gjelderIdent) ->
+                    val person = hentPersonMedIdent(gjelderIdent) ?: return@filter false
+                    behandling.roller.any { it.erSammeRolle(person.personIdent!!, person.stønadstype) }
+                }.map { (gjelderIdent, grunnlag) ->
                     behandling.opprettGrunnlag(
                         Grunnlagsdatatype.SKATTEPLIKTIGE_INNTEKTER,
                         grunnlag,

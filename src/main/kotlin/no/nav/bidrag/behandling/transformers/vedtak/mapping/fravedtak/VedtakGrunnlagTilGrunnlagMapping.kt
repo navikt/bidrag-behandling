@@ -383,6 +383,8 @@ fun List<GrunnlagDto>.hentInnntekterBearbeidet(
                 hentPersonMedReferanse(it.gjelderReferanse) ?: manglerPersonGrunnlag(
                     it.gjelderReferanse,
                 )
+            }.filter { (gjelder) ->
+                behandling.roller.any { it.erSammeRolle(gjelder.personIdent!!, gjelder.stønadstype) }
             }.flatMap { (gjelder, grunnlagListe) ->
                 val årsinntekter =
                     grunnlagListe.map {
