@@ -297,7 +297,7 @@ fun Behandling.henteNyesteIkkeAktiveGrunnlag(
     grunnlag
         .filter {
             it.type == grunnlagstype.type &&
-                it.rolle.id == rolleInnhentetFor.id &&
+                it.rolle.erSammeRolle(rolleInnhentetFor) &&
                 grunnlagstype.erBearbeidet == it.erBearbeidet &&
                 it.aktiv == null
         }.toSet()
@@ -309,7 +309,7 @@ fun Behandling.henteNyesteAktiveGrunnlag(
 ) = grunnlag
     .filter {
         it.type == grunnlagstype.type &&
-            it.rolle.id == rolleInnhentetFor.id &&
+            it.rolle.erSammeRolle(rolleInnhentetFor) &&
             grunnlagstype.erBearbeidet == it.erBearbeidet &&
             it.aktiv != null
     }.toSet()
