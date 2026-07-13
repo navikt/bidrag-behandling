@@ -295,7 +295,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
                 referertVedtak.stønadsendringListe
                     .find { søknadsbarnRolle.erSammeRolle(it.kravhaver.verdi, it.type) }
                     ?.periodeListe
-                    ?.find { vp -> resultatPeriode.periode.fom == vp.periode.fom }
+                    ?.find { vp -> resultatPeriode.periode.overlapper(vp.periode) }
                     ?.resultatkode!!
             } else if (vedtak?.request != null && erOpphørsperiode) {
                 Resultatkode.OPPHØR.name
@@ -303,7 +303,7 @@ fun BeregnetBarnebidragResultat.byggStønadsendringerForEndeligVedtak(
                 vedtak.request.stønadsendringListe
                     .find { søknadsbarnRolle.erSammeRolle(it.kravhaver.verdi, it.type) }
                     ?.periodeListe
-                    ?.find { vp -> resultatPeriode.periode.fom == vp.periode.fom }
+                    ?.find { vp -> resultatPeriode.periode.overlapper(vp.periode) }
                     ?.resultatkode!!
             } else {
                 val periode =
