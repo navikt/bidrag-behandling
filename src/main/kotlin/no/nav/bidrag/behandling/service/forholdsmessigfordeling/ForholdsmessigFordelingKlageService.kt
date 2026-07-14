@@ -14,6 +14,7 @@ import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
+import no.nav.bidrag.behandling.service.hentSak
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.erOverEllerLik18År
 import no.nav.bidrag.behandling.transformers.maxOfNullable
@@ -21,6 +22,7 @@ import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregn
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
 import no.nav.bidrag.commons.security.utils.TokenUtils
+import no.nav.bidrag.commons.service.forsendelse.bidragsmottaker
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.SøknadsknytningStatus
@@ -177,12 +179,15 @@ class ForholdsmessigFordelingKlageService(
                 it.saksnummer
             }.forEach { (saksnummer, roller) ->
                 val hovedsøknad = behandling.hentSøknad(hovedsøknadsid)!!
+                val søknad = roller.firstNotNullOfOrNull { it.forholdsmessigFordeling?.eldsteSøknad }
                 val barnUnder18År = roller.filter { !it.fødselsdato.erOverEllerLik18År() }
+                val bidragsmottaker =
+                    roller.firstNotNullOfOrNull { it.bidragsmottaker }?.ident ?: hentSak(saksnummer)?.bidragsmottaker?.fødselsnummer?.verdi
                 søknadService.opprettForsendelseForNySøknad(
                     saksnummer,
                     behandling,
-                    "",
-                    hovedsøknad,
+                    bidragsmottaker!!,
+                    søknad ?: hovedsøknad,
                     barn = barnUnder18År.map { SakKravhaver(saksnummer, kravhaver = it.ident!!, stønadstype = it.stønadstype) },
                 )
 
@@ -192,8 +197,8 @@ class ForholdsmessigFordelingKlageService(
                         søknadService.opprettForsendelseForNySøknad(
                             saksnummer,
                             behandling,
-                            "",
-                            hovedsøknad,
+                            bidragsmottaker!!,
+                            søknad ?: hovedsøknad,
                             barn = listOf(SakKravhaver(saksnummer, kravhaver = it.ident!!, stønadstype = it.stønadstype)),
                         )
                     }

@@ -14,7 +14,7 @@ data class InitalizeForsendelseRequest(
     val behandlingInfo: BehandlingInfoDto,
     val enhet: String? = null,
     val tema: JournalTema? = null,
-    val roller: List<ForsendelseRolleDto>,
+    val roller: List<ForsendelseRolleDto> = emptyList(),
     val behandlingStatus: BehandlingStatus? = null,
 )
 
