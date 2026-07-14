@@ -352,7 +352,7 @@ class ForholdsmessigFordelingKlageService(
     /** Fjerner søknader uten omgjøringsreferanse fra alle roller */
     private fun fjernSøknaderSomIkkeErDelAvKlagebehandlingen(behandling: Behandling) {
         behandling.roller.forEach {
-            it.forholdsmessigFordeling!!.søknader.removeIf { søknad -> søknad.omgjørSøknadsid == null }
+            it.forholdsmessigFordeling?.søknader?.removeIf { søknad -> søknad.omgjørSøknadsid == null }
         }
     }
 
