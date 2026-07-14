@@ -451,7 +451,17 @@ class ForholdsmessigFordelingSøknadService(
                             fødselsnummer = Personident(it.kravhaver),
                             type = Rolletype.BARN,
                         )
-                    },
+                    } +
+                        listOf(
+                            ForsendelseRolleDto(
+                                fødselsnummer = Personident(bmFødselsnummer),
+                                type = Rolletype.BIDRAGSMOTTAKER,
+                            ),
+                            ForsendelseRolleDto(
+                                fødselsnummer = Personident(behandling.bidragspliktig!!.ident!!),
+                                type = Rolletype.BIDRAGSPLIKTIG,
+                            ),
+                        ),
                 behandlingInfo =
                     BehandlingInfoDto(
                         behandlingId = behandling.id?.toString(),
