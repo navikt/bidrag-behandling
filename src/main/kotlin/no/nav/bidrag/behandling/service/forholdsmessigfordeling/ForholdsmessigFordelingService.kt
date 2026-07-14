@@ -892,6 +892,7 @@ class ForholdsmessigFordelingService(
         val relevanteKravhavere = kravhaverService.hentAlleRelevanteKravhavere(behandling)
         val relevanteKravhavereIkkeSøknadsbarn = relevanteKravhavere.filter { !eksisterendeSøknadsbarn.contains(it.distinctKey) }
         val alleRelevanteKravhavere = relevanteKravhavereIkkeSøknadsbarn + relevanteKravhavere
+        val åpneSøknaderRevurdering = kravhaverService.hentÅpneSøknaderRevurdering(behandling.bidragspliktig!!.ident!!)
         val bpsBarnMedLøpendeBidragEllerPrivatAvtale =
             if (relevanteKravhavereIkkeSøknadsbarn.isEmpty() && finnesLøpendeBidragSomOverlapperMedEldsteVirkning) {
                 relevanteKravhavere
@@ -908,6 +909,7 @@ class ForholdsmessigFordelingService(
                 }
         val resultat = sjekkBeregningKreverForholdsmessigFordeling(behandling)
         return SjekkForholdmessigFordelingResponse(
+            søknaderRevurdering = åpneSøknaderRevurdering,
             skalBehandlesAvEnhet = behandlesAvEnhet,
             kanOppretteForholdsmessigFordeling =
                 (

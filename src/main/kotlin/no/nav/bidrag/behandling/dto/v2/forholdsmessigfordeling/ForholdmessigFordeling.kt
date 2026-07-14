@@ -11,6 +11,7 @@ import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
+import no.nav.bidrag.transport.behandling.beregning.felles.HentSøknad
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -39,6 +40,7 @@ data class SjekkForholdmessigFordelingResponse(
     val eldsteSøktFraDato: LocalDate,
     val barn: List<ForholdsmessigFordelingBarnDto> = emptyList(),
     val løpendeBidragBarn: List<LøpendeBidragGrunnlagForholdsmessigFordeling> = emptyList(),
+    val søknaderRevurdering: List<HentSøknad> = emptyList(),
 )
 
 data class ForholdsmessigFordelingBarnDto(
