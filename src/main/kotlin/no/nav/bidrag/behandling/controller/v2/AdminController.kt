@@ -432,5 +432,30 @@ class AdminController(
         }
     }
 
+    @PostMapping("/admin/feilfiks/inntekt-grunnlag-rolle/{behandlingId}")
+    @Operation(
+        description =
+            "Fiks inntekt og grunnlag der rolle/gjelderBarnRolle peker til en rolle i en annen behandling. " +
+                "Typisk feil etter ForholdsmessigFordeling der kopierte roller ikke ble pekt til riktig behandling.",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Antall inntekter og grunnlag som ble fikset",
+            ),
+        ],
+    )
+    @Transactional
+    fun fiksInntektOgGrunnlagRollePekere(
+        @PathVariable behandlingId: Long,
+    ): Map<String, Int> {
+        val behandling = behandlingRepository.findBehandlingById(behandlingId).getOrNull() ?: behandlingNotFoundException(behandlingId)
+
+        log.info { "Fikser inntekt og grunnlag der rolle peker til annen behandling for behandling $behandlingId" }
+        return inntektService.fiksInntektOgGrunnlagRollePekereForBehandling(behandling)
+    }
+
     fun getAge(birthDate: LocalDate): Int = Period.between(birthDate.withMonth(1).withDayOfMonth(1), LocalDate.now()).years
 }

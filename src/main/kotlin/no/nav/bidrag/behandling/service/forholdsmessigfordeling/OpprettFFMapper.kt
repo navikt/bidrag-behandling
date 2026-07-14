@@ -353,6 +353,7 @@ fun Grunnlag.kopierGrunnlag(hovedbehandling: Behandling): Grunnlag =
         type = type,
         data = data,
         gjelder = gjelder,
+        gjelderBarnRolle = gjelderBarnRolle?.let { hovedbehandling.roller.find { r -> r.erSammeRolle(it) } },
         aktiv = aktiv,
         innhentet = innhentet,
     )
@@ -426,16 +427,19 @@ fun kopierInntekt(
     // Ikke overfør manuell inntekt hvis det overlapper
     if (eksisterndeInntekt != null && (inntektOverført.datoTom == null || eksisterndeInntekt.datoTom == inntektOverført.datoTom)) return
 
+    val rolle = inntektOverført.rolle?.let { hovedbehandling.roller.find { r -> r.erSammeRolle(it) } }
+    val gjelderBarnRolle = inntektOverført.gjelderBarnRolle?.let { hovedbehandling.roller.find { r -> r.erSammeRolle(it) } }
+
     val inntekt =
         Inntekt(
             behandling = hovedbehandling,
             ident = inntektOverført.gjelderIdent,
-            rolle = inntektOverført.rolle,
+            rolle = rolle,
             kilde = inntektOverført.kilde,
             taMed = inntektOverført.taMed,
             type = inntektOverført.type,
             gjelderBarn = inntektOverført.gjelderBarnIdent,
-            gjelderBarnRolle = inntektOverført.gjelderBarnRolle,
+            gjelderBarnRolle = gjelderBarnRolle,
             opprinneligFom = inntektOverført.opprinneligFom,
             opprinneligTom = inntektOverført.opprinneligTom,
             belop = inntektOverført.belop,
@@ -454,11 +458,11 @@ fun kopierInntekt(
             )
         }
 
-    val rolleInntekt = hovedbehandling.roller.find { it.erSammeRolle(inntekt.rolle!!) }!!
-
     hovedbehandling.inntekter.add(inntekt)
 
-    kopierOverBegrunnelseForBehandling(rolleInntekt, inntektOverført.behandling!!, hovedbehandling, NotatGrunnlag.NotatType.INNTEKT)
+    if (rolle != null) {
+        kopierOverBegrunnelseForBehandling(rolle, inntektOverført.behandling!!, hovedbehandling, NotatGrunnlag.NotatType.INNTEKT)
+    }
 }
 
 fun kopierOverInntekterForRolleFraBehandling(
@@ -498,7 +502,7 @@ fun kopierOverBegrunnelseForBehandling(
     tilBehandling: Behandling,
     notatType: NotatGrunnlag.NotatType,
 ) {
-    val rolleHovedbehandling = tilBehandling.roller.find { it.erSammeRolle(rolle) }!!
+    val rolleHovedbehandling = tilBehandling.roller.find { it.erSammeRolle(rolle) } ?: return
     val begrunnelseOverført =
         fraBehandling
             .notater
@@ -641,7 +645,7 @@ fun kopierSamvær(
     hovedbehandling: Behandling,
     samværOverført: Samvær,
 ) {
-    val rolle = hovedbehandling.roller.find { it.erSammeRolle(samværOverført.rolle) }!!
+    val rolle = hovedbehandling.roller.find { it.erSammeRolle(samværOverført.rolle) } ?: return
     val samvær =
         Samvær(
             rolle = rolle,
@@ -652,20 +656,14 @@ fun kopierSamvær(
             .map { s ->
                 Samværsperiode(fom = s.fom, tom = s.tom, samværsklasse = s.samværsklasse, samvær = samvær)
             }.toMutableSet()
-    val notatSamvær =
-        samværOverført.rolle.notat
-            .find { it.type == NotatGrunnlag.NotatType.SAMVÆR }
-            ?.innhold ?: ""
     hovedbehandling.samvær.add(samvær)
-    hovedbehandling.notater.add(
-        Notat(behandling = hovedbehandling, innhold = notatSamvær, rolle = rolle, type = NotatGrunnlag.NotatType.SAMVÆR),
-    )
+    kopierOverBegrunnelseForBehandling(samværOverført.rolle, samværOverført.behandling, hovedbehandling, NotatGrunnlag.NotatType.SAMVÆR)
 }
 
 fun Underholdskostnad.kopierUnderholdskostnad(hovedbehandling: Behandling) {
     val rolle = hovedbehandling.roller.find { rolle != null && it.erSammeRolle(rolle!!) }
-    val bmFraOverførtBehandling = behandling.bidragsmottaker
-    val bmFraHovedbehandling = hovedbehandling.roller.find { r -> r.erSammeRolle(bmFraOverførtBehandling!!) }!!
+    val bmFraOverførtBehandling = behandling.bidragsmottaker ?: return
+    val bmFraHovedbehandling = hovedbehandling.roller.find { r -> r.erSammeRolle(bmFraOverførtBehandling) } ?: return
     val nyUnderholdskostnad =
         Underholdskostnad(
             rolle = rolle,
@@ -709,21 +707,16 @@ fun Underholdskostnad.kopierUnderholdskostnad(hovedbehandling: Behandling) {
                     beløpstype = it.beløpstype,
                 )
             }.toMutableSet()
-    val rolleNotat = if (nyUnderholdskostnad.gjelderAndreBarn) bmFraOverførtBehandling else this.rolle
-    val notatUnderhold =
-        rolleNotat!!
-            .notat
-            .find { it.type == NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD }
-            ?.innhold ?: ""
+    val rolleForNotat = if (nyUnderholdskostnad.gjelderAndreBarn) bmFraOverførtBehandling else this.rolle
     hovedbehandling.underholdskostnader.add(nyUnderholdskostnad)
-    hovedbehandling.notater.add(
-        Notat(
-            behandling = hovedbehandling,
-            innhold = notatUnderhold,
-            rolle = rolle ?: bmFraHovedbehandling,
-            type = NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
-        ),
-    )
+    if (rolleForNotat != null) {
+        kopierOverBegrunnelseForBehandling(
+            rolleForNotat,
+            behandling,
+            hovedbehandling,
+            NotatGrunnlag.NotatType.UNDERHOLDSKOSTNAD,
+        )
+    }
 }
 
 fun Collection<LøpendeBidragSakPeriode>.hentBidragSakForKravhaver(

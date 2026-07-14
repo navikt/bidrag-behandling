@@ -427,6 +427,22 @@ class ForholdsmessigFordelingOverføringService(
             .filter {
                 it.rolle.ident != bidragspliktigFnr &&
                     behandling.roller.any { r -> r.erSammeRolle(it.rolle) }
+            }.filter { grunnlagOverført ->
+                behandling.grunnlag.none { eksisterende ->
+                    val gjelderSammeBarn =
+                        if (eksisterende.gjelderBarnRolle != null &&
+                            grunnlagOverført.gjelderBarnRolle != null
+                        ) {
+                            eksisterende.gjelderBarnRolle!!.erSammeRolle(grunnlagOverført.gjelderBarnRolle!!)
+                        } else {
+                            eksisterende.gjelder == grunnlagOverført.gjelder
+                        }
+                    eksisterende.type == grunnlagOverført.type &&
+                        eksisterende.erBearbeidet == grunnlagOverført.erBearbeidet &&
+                        eksisterende.rolle.erSammeRolle(grunnlagOverført.rolle) &&
+                        gjelderSammeBarn &&
+                        eksisterende.innhentet.toLocalDate() == grunnlagOverført.innhentet.toLocalDate()
+                }
             }.forEach {
                 behandling.grunnlag.add(
                     it.kopierGrunnlag(behandling),
