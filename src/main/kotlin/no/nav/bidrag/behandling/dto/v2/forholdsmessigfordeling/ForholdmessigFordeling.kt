@@ -40,7 +40,13 @@ data class SjekkForholdmessigFordelingResponse(
     val eldsteSøktFraDato: LocalDate,
     val barn: List<ForholdsmessigFordelingBarnDto> = emptyList(),
     val løpendeBidragBarn: List<LøpendeBidragGrunnlagForholdsmessigFordeling> = emptyList(),
-    val søknaderRevurdering: List<HentSøknad> = emptyList(),
+    val søknaderRevurdering: List<SøknadRevurdering> = emptyList(),
+)
+
+data class SøknadRevurdering(
+    val søknad: HentSøknad,
+    val hovedsøknadsid: Long? = null,
+    val erDelAvFF: Boolean,
 )
 
 data class ForholdsmessigFordelingBarnDto(

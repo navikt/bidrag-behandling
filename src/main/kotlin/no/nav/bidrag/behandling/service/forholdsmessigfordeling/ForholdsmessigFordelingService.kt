@@ -23,6 +23,7 @@ import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegning
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.OpprettFFRequest
 import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SjekkForholdmessigFordelingResponse
+import no.nav.bidrag.behandling.dto.v2.forholdsmessigfordeling.SøknadRevurdering
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.BeregningService
 import no.nav.bidrag.behandling.service.ForsendelseService
@@ -892,7 +893,6 @@ class ForholdsmessigFordelingService(
         val relevanteKravhavere = kravhaverService.hentAlleRelevanteKravhavere(behandling)
         val relevanteKravhavereIkkeSøknadsbarn = relevanteKravhavere.filter { !eksisterendeSøknadsbarn.contains(it.distinctKey) }
         val alleRelevanteKravhavere = relevanteKravhavereIkkeSøknadsbarn + relevanteKravhavere
-        val åpneSøknaderRevurdering = kravhaverService.hentÅpneSøknaderRevurdering(behandling.bidragspliktig!!.ident!!)
         val bpsBarnMedLøpendeBidragEllerPrivatAvtale =
             if (relevanteKravhavereIkkeSøknadsbarn.isEmpty() && finnesLøpendeBidragSomOverlapperMedEldsteVirkning) {
                 relevanteKravhavere
@@ -909,7 +909,7 @@ class ForholdsmessigFordelingService(
                 }
         val resultat = sjekkBeregningKreverForholdsmessigFordeling(behandling)
         return SjekkForholdmessigFordelingResponse(
-            søknaderRevurdering = åpneSøknaderRevurdering,
+            søknaderRevurdering = hentÅpneSøknaderRevurdering(behandling.bidragspliktig!!.ident!!),
             skalBehandlesAvEnhet = behandlesAvEnhet,
             kanOppretteForholdsmessigFordeling =
                 (
@@ -923,6 +923,18 @@ class ForholdsmessigFordelingService(
             barn = bpsBarnMedLøpendeBidragEllerPrivatAvtale,
             løpendeBidragBarn = resultat.løpendeBidragBarn,
         )
+    }
+
+    private fun hentÅpneSøknaderRevurdering(bidragspliktig: String): List<SøknadRevurdering> {
+        val åpneSøknaderRevurdering = kravhaverService.hentÅpneSøknaderRevurdering(bidragspliktig)
+        return åpneSøknaderRevurdering.map {
+            val sammenknytninger = bbmConsumer.finnSammenknytningerHovedsøknad(it.søknadsid)
+            SøknadRevurdering(
+                it,
+                erDelAvFF = sammenknytninger.søknader.isNotEmpty(),
+                hovedsøknadsid = sammenknytninger.søknader.firstOrNull()?.søknadsid,
+            )
+        }
     }
 
     @Transactional
