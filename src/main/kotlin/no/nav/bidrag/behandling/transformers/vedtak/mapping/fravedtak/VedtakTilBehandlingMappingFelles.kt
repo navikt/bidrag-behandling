@@ -259,15 +259,9 @@ fun VedtakDto.erVedtakUtenBeregning() =
             }
 
 internal fun VedtakDto.hentDelvedtak(stønadsendring: StønadsendringDto): List<DelvedtakDto> {
-    val barnIdent = stønadsendring.kravhaver
-
     val søknadsbarnGrunnlag = grunnlagListe.hentPerson(stønadsendring.kravhaver.verdi)
     val virkningstidspunkt = søknadsbarnGrunnlag?.let { grunnlagListe.hentVirkningstidspunkt(it.referanse) }
     val orkestreringDetaljer = grunnlagListe.finnOrkestreringDetaljer(stønadsendring.grunnlagReferanseListe)
-    val behandlingDetaljer = grunnlagListe.hentBehandlingDetaljer()
-    val bleFattetVedtakForRevurderingsbarn =
-        søknadsbarnGrunnlag?.erRevurderingsbarn == true &&
-            behandlingDetaljer?.fatteVedtakRevurderingsbarn?.skalFatteVedtakForRevurderingsbarn == false
     val delvedtak =
         stønadsendring.periodeListe
             .mapNotNull { periode ->
