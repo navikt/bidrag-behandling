@@ -294,9 +294,10 @@ class VedtakService(
         lesemodus: Boolean = false,
         inkluderKlagedetaljer: Boolean = false,
     ): Behandling? {
+        val påklagetVedtak = vedtakConsumer.hentVedtak(omgjørVedtakId)
         // TODO: Sjekk tilganger
         val vedtak =
-            vedtakConsumer.hentVedtak(omgjørVedtakId)?.let {
+            påklagetVedtak?.let {
                 if (it.erOrkestrertVedtak) {
                     vedtakConsumer.hentVedtak(it.referertVedtaksid!!)
                 } else {
@@ -328,6 +329,7 @@ class VedtakService(
                 erBisysVedtak = vedtak.kildeapplikasjon == "bisys",
                 omgjørVedtaksliste = omgjørVedtakListe,
                 innkrevingstype = vedtak.innkrevingstype,
+                påklagetVedtak = påklagetVedtak,
             )
         }
     }
