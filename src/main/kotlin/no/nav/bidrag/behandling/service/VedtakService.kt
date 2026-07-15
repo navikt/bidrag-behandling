@@ -328,7 +328,7 @@ class VedtakService(
                 søknadstype = request.søknadstype,
                 erBisysVedtak = vedtak.kildeapplikasjon == "bisys",
                 omgjørVedtaksliste = omgjørVedtakListe,
-                innkrevingstype = vedtak.innkrevingstype,
+                innkrevingstype = påklagetVedtak.innkrevingstype,
                 påklagetVedtak = påklagetVedtak,
             )
         }
