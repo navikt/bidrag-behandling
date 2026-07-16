@@ -154,6 +154,21 @@ class BehandlingService(
     fun logiskSlettBehandling(behandling: Behandling) {
         log.debug { "Logisk sletter behandling ${behandling.id}" }
         behandlingRepository.logiskSlett(behandling.id!!)
+        behandling.søknadsbarn
+            .map { it.søknader to it.saksnummer }
+            .forEach { (søknader, saksnummer) ->
+                søknader.forEach {
+                    forsendelseService.slettForsendelse(
+                        InitalizeForsendelseRequest(
+                            saksnummer = saksnummer,
+                            behandlingInfo =
+                                BehandlingInfoDto(
+                                    soknadId = it.søknadsid?.toString(),
+                                ),
+                        ),
+                    )
+                }
+            }
         if (behandling.erIForholdsmessigFordeling) {
             val søknaderToUpdate =
                 behandling.roller
@@ -738,21 +753,6 @@ class BehandlingService(
         if (behandling.søknadsbarn.isEmpty()) {
             log.debug { "Alle barn i behandling $behandlingId er slettet. Sletter behandling" }
             logiskSlettBehandling(behandling)
-            behandling.søknadsbarn
-                .map { it.søknader to it.saksnummer }
-                .forEach { (søknader, saksnummer) ->
-                    søknader.forEach {
-                        forsendelseService.slettForsendelse(
-                            InitalizeForsendelseRequest(
-                                saksnummer = saksnummer,
-                                behandlingInfo =
-                                    BehandlingInfoDto(
-                                        soknadId = it.søknadsid?.toString(),
-                                    ),
-                            ),
-                        )
-                    }
-                }
             return OppdaterRollerResponse(OppdaterRollerStatus.BEHANDLING_SLETTET)
         }
 
