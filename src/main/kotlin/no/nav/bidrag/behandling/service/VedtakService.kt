@@ -294,9 +294,10 @@ class VedtakService(
         lesemodus: Boolean = false,
         inkluderKlagedetaljer: Boolean = false,
     ): Behandling? {
+        val påklagetVedtak = vedtakConsumer.hentVedtak(omgjørVedtakId)
         // TODO: Sjekk tilganger
         val vedtak =
-            vedtakConsumer.hentVedtak(omgjørVedtakId)?.let {
+            påklagetVedtak?.let {
                 if (it.erOrkestrertVedtak) {
                     vedtakConsumer.hentVedtak(it.referertVedtaksid!!)
                 } else {
@@ -327,7 +328,8 @@ class VedtakService(
                 søknadstype = request.søknadstype,
                 erBisysVedtak = vedtak.kildeapplikasjon == "bisys",
                 omgjørVedtaksliste = omgjørVedtakListe,
-                innkrevingstype = vedtak.innkrevingstype,
+                innkrevingstype = påklagetVedtak.innkrevingstype,
+                påklagetVedtak = påklagetVedtak,
             )
         }
     }
@@ -474,7 +476,8 @@ class VedtakService(
         vedtakValiderBehandlingService.validerKanBehandlesINyLøsning(behandling.tilKanBehandlesINyLøsningRequest())
         validering.run { behandling.validerForBeregningBidrag() }
 
-        val beregning = behandlingTilVedtakMapping.hentBeregningBarnebidrag(behandling)
+        val skalFatteVedtakRevurderingsbarn = request?.fatteVedtakRevurderingsbarn?.skalFatteVedtakForRevurderingsbarn
+        val beregning = behandlingTilVedtakMapping.hentBeregningBarnebidrag(behandling, skalFatteVedtakRevurderingsbarn)
         beregning.validerManuelAldersjustering(behandling)
 
         val vedtakRequestDtos: MutableList<Pair<Int, OpprettVedtakRequestDto>> = mutableListOf()

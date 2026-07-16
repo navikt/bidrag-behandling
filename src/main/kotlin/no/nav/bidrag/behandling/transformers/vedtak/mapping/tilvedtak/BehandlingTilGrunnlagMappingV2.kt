@@ -124,8 +124,10 @@ class BehandlingTilGrunnlagMappingV2(
         val sortertGrunnlagsListe =
             grunnlag
                 .hentSisteAktiv()
-                .filter { inntekt ->
-                    inntekt.gjelderBarnRolle == null || byggForSøknadsbarn.any { it.erSammeRolle(inntekt.gjelderBarnRolle!!) }
+                .filter { grunnlag ->
+                    grunnlag.gjelderBarnRolle == null || byggForSøknadsbarn.any { it.erSammeRolle(grunnlag.gjelderBarnRolle!!) }
+                }.filter { grunnlag ->
+                    grunnlag.rolle.rolletype != Rolletype.BARN || byggForSøknadsbarn.any { it.erSammeRolle(grunnlag.rolle) }
                 }
         val sortertGrunnlagsListeBearbeidet = sortertGrunnlagsListe.filter { it.erBearbeidet }
         val sortertGrunnlagsListeIkkeBearbeidet = sortertGrunnlagsListe.filter { !it.erBearbeidet }

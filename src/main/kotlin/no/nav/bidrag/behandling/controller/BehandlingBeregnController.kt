@@ -175,6 +175,7 @@ class BehandlingBeregnController(
     fun beregnBarnebidrag(
         @PathVariable behandlingsid: Long,
         @RequestParam("endeligBeregning") endeligBeregning: Boolean = true,
+        @RequestParam("skalFatteVedtakForRevurderingsbarn") skalFatteVedtakForRevurderingsbarn: Boolean? = null,
     ): ResultatBidragberegningDto {
         LOGGER.debug { "Beregner barnebidrag for behandling med id $behandlingsid, endeligBeregning=$endeligBeregning" }
 
@@ -187,7 +188,12 @@ class BehandlingBeregnController(
             )
         }
 
-        return beregningService.beregneBidrag(behandling, endeligBeregning).tilDto(behandling.kanFatteVedtakBegrunnelse(false))
+        return beregningService
+            .beregneBidrag(
+                behandling,
+                endeligBeregning,
+                skalFatteVedtakForRevurderingsbarn,
+            ).tilDto(behandling.kanFatteVedtakBegrunnelse(false))
     }
 
     @Suppress("unused")

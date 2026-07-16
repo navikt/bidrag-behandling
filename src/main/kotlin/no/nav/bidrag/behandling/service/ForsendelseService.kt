@@ -59,7 +59,7 @@ class ForsendelseService(
         return opprettForsendelse(request)
     }
 
-    private fun slettForsendelse(request: InitalizeForsendelseRequest): List<String> =
+    fun slettForsendelse(request: InitalizeForsendelseRequest): List<String> =
         slettVarselbrevUnderOpprettelse(
             request.saksnummer,
             request.behandlingInfo.soknadId!!.toLong(),

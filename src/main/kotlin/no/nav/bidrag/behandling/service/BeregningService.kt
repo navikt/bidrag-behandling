@@ -193,6 +193,7 @@ class BeregningService(
     fun beregneBidrag(
         behandling: Behandling,
         endeligBeregning: Boolean = true,
+        skalFatteVedtakForRevurderingsbarn: Boolean? = null,
         simulerBeregning: Boolean = false,
     ): ResultatBidragsberegning {
         if (!simulerBeregning) {
@@ -206,16 +207,18 @@ class BeregningService(
         } else if (behandling.vedtakstype == Vedtakstype.ALDERSJUSTERING) {
             beregnBidragAldersjustering(behandling)
         } else {
-            beregneBarnebidragV2FF(behandling, endeligBeregning, simulerBeregning)
+            beregneBarnebidragV2FF(behandling, endeligBeregning, skalFatteVedtakForRevurderingsbarn, simulerBeregning)
         }
     }
 
     fun beregneBarnebidragV2FF(
         behandling: Behandling,
         endeligBeregning: Boolean = true,
+        skalFatteVedtakForRevurderingsbarn: Boolean? = null,
         simulerBeregning: Boolean = false,
     ): ResultatBidragsberegning {
-        val grunnlagBeregning = opprettGrunnlagBeregningBidragV2(behandling, endeligBeregning, simulerBeregning)
+        val grunnlagBeregning =
+            opprettGrunnlagBeregningBidragV2(behandling, endeligBeregning, simulerBeregning, skalFatteVedtakForRevurderingsbarn)
         val grunnlagslisteAlle = mutableSetOf<GrunnlagDto>()
         grunnlagslisteAlle.addAll(grunnlagBeregning.grunnlagsliste)
         return try {
@@ -308,11 +311,18 @@ class BeregningService(
         behandling: Behandling,
         endeligBeregning: Boolean = true,
         simulerBeregning: Boolean = false,
+        skalFatteVedtakForRevurderingsbarn: Boolean? = null,
     ): BidragsberegningOrkestratorRequestV2 {
         val grunnlagslisteBarn =
             behandling.søknadsbarn
                 .map { søknasdbarn ->
-                    mapper.byggGrunnlagForBeregning(behandling, søknasdbarn, endeligBeregning, simulerBeregning = simulerBeregning)
+                    mapper.byggGrunnlagForBeregning(
+                        behandling,
+                        søknasdbarn,
+                        endeligBeregning,
+                        simulerBeregning = simulerBeregning,
+                        skalFatteVedtakForRevurderingsbarn = skalFatteVedtakForRevurderingsbarn,
+                    )
                 }
         val beregnFraDato = behandling.eldsteVirkningstidspunkt
         val beregningTilDato = behandling.finnBeregnTilDato()
@@ -895,9 +905,10 @@ class BeregningService(
     fun beregneBidrag(
         behandlingsid: Long,
         endeligBeregning: Boolean = true,
+        skalFatteVedtakForRevurderingsbarn: Boolean? = null,
     ): ResultatBidragsberegning {
         val behandling = behandlingService.hentBehandlingById(behandlingsid)
-        return beregneBidrag(behandling, endeligBeregning)
+        return beregneBidrag(behandling, endeligBeregning, skalFatteVedtakForRevurderingsbarn)
     }
 
     private fun Behandling.tilResultatAvslagBidrag(barn: Rolle): ResultatBidragsberegningBarn {

@@ -21,6 +21,7 @@ import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.samhandler.Valutakode
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
@@ -270,6 +271,12 @@ class ForholdsmessigFordelingKravhaverService(
                 it.søknadFomDato == søktFomDato &&
                 it.behandlingstema.tilStønadstype() == stønadstype
         }
+
+    fun hentÅpneSøknaderRevurdering(bidragspliktigFnr: String): List<HentSøknad> =
+        bbmConsumer
+            .hentÅpneSøknaderForBp(bidragspliktigFnr)
+            .åpneSøknader
+            .filter { it.behandlingstype == Behandlingstype.REVURDERING && it.søktAvType == SøktAvType.NAV_BIDRAG }
 
     fun hentÅpneSøknader(
         bidragspliktigFnr: String,

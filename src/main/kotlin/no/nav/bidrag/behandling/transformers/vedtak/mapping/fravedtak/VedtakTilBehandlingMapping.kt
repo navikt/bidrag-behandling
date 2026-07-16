@@ -160,7 +160,7 @@ class VedtakTilBehandlingMapping(
                     erHovedbehandling = true,
                 )
             }
-        val inneholderBareRevurderingsbarn = stønadsendringListe.all { tilhørerRevurderingsbarn(it) }
+        val inneholderBareRevurderingsbarn = stønadsendringListe.isNotEmpty() && stønadsendringListe.all { tilhørerRevurderingsbarn(it) }
         val behandling =
             Behandling(
                 id = if (lesemodus) 1 else null,
@@ -201,10 +201,11 @@ class VedtakTilBehandlingMapping(
                 lesemodus,
                 omgjortVedtakVirkningstidspunkt,
                 sak,
+                inneholderBareRevurderingsbarn,
                 inneholderBareRevurderingsbarn || forholdsmessigFordeling != null,
             )
 
-        val skalLagreOmgjøringsdetaljer = !lesemodus || inkluderKlagedetaljer || opprinneligVedtak != omgjørVedtakId
+        val skalLagreOmgjøringsdetaljer = !lesemodus || inkluderKlagedetaljer
         if (skalLagreOmgjøringsdetaljer) {
             val stønadsendringerRevurderingsbarn =
                 stønadsendringListe.filter {
@@ -216,7 +217,7 @@ class VedtakTilBehandlingMapping(
                     opprinneligVedtakstype = opprinneligVedtakstype,
                     opprinneligVedtakId = opprinneligVedtak,
                     innkrevingstype = innkrevingstype,
-                    erKlageEllerOmgjøring = opprinneligVedtak != omgjørVedtakId,
+                    erKlageEllerOmgjøring = if (lesemodus) opprinneligVedtak != omgjørVedtakId else true,
                     omgjørVedtakId = if (!lesemodus) omgjørVedtakId else null,
                     klageMottattdato = if (!lesemodus) mottattdato else hentSøknad().klageMottattDato,
                     soknadRefId = søknadRefId,

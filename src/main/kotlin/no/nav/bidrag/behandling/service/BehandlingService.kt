@@ -29,6 +29,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.erBidrag
 import no.nav.bidrag.behandling.dto.v1.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.tilType
+import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
 import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
@@ -153,6 +154,21 @@ class BehandlingService(
     fun logiskSlettBehandling(behandling: Behandling) {
         log.debug { "Logisk sletter behandling ${behandling.id}" }
         behandlingRepository.logiskSlett(behandling.id!!)
+        behandling.søknadsbarn
+            .map { it.søknader to it.saksnummer }
+            .forEach { (søknader, saksnummer) ->
+                søknader.forEach {
+                    forsendelseService.slettForsendelse(
+                        InitalizeForsendelseRequest(
+                            saksnummer = saksnummer,
+                            behandlingInfo =
+                                BehandlingInfoDto(
+                                    soknadId = it.søknadsid?.toString(),
+                                ),
+                        ),
+                    )
+                }
+            }
         if (behandling.erIForholdsmessigFordeling) {
             val søknaderToUpdate =
                 behandling.roller

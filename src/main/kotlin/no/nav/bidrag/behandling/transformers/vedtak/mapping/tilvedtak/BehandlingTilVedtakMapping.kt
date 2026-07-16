@@ -226,9 +226,16 @@ class BehandlingTilVedtakMapping(
             byggOpprettVedtakRequestBidrag(request)
         }
 
-    fun hentBeregningBarnebidrag(behandling: Behandling): ResultatadBeregningOrkestrering {
+    fun hentBeregningBarnebidrag(
+        behandling: Behandling,
+        skalFatteVedtakForRevurderingsbarn: Boolean? = null,
+    ): ResultatadBeregningOrkestrering {
         val sak = sakConsumer.hentSak(behandling.saksnummer)
-        val beregning = beregningService.beregneBidrag(behandling.id!!)
+        val beregning =
+            beregningService.beregneBidrag(
+                behandling.id!!,
+                skalFatteVedtakForRevurderingsbarn = skalFatteVedtakForRevurderingsbarn,
+            )
         val resultatBarn = beregning.resultatBarn
 
         if (beregning.alleUgyldigBeregninger.isNotEmpty()) {
@@ -467,7 +474,11 @@ class BehandlingTilVedtakMapping(
                     request,
                     stønadsendringPerioder,
                     beregningBarn.barn,
-                    søknadsbarnRolle.innkrevingstype ?: behandling.innkrevingstype!!,
+                    if (beregningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request)) {
+                        Innkrevingstype.UTEN_INNKREVING
+                    } else {
+                        søknadsbarnRolle.innkrevingstype ?: behandling.innkrevingstype!!
+                    },
                     if (beregningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request)) {
                         Beslutningstype.AVVIST
                     } else {
@@ -539,9 +550,8 @@ class BehandlingTilVedtakMapping(
 
             if (beregningerForSøknad.isEmpty()) return@mapNotNull null
 
-            val erRevurderingsbarn = beregningerForSøknad.all { it.skalBehandlesSomAvvistRevurderingsbarnIKlage(request) }
-            val byggGrunnlagForSøknadsbarn = søknadsbarn
-            // if (erRevurderingsbarn) søknadsbarnFiltered else søknadsbarn.filter { !it.erRevurderingsbarn }
+            val erRevurderingsbarn = beregningerForSøknad.all { it.barn.erRevurderingsbarn }
+            val byggGrunnlagForSøknadsbarn = if (erRevurderingsbarn) søknadsbarnFiltered else søknadsbarn.filter { !it.erRevurderingsbarn }
             // Build vedtak request for this søknad's beregninger
             val beregninger =
                 beregningerForSøknad.map { beregningBarn ->
@@ -567,12 +577,12 @@ class BehandlingTilVedtakMapping(
                         request,
                         stønadsendringPerioder,
                         beregningBarn.barn,
-                        if (beregningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request)) {
+                        if (erRevurderingsbarn && beregningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request)) {
                             Innkrevingstype.UTEN_INNKREVING
                         } else {
                             søknadsbarnRolle.innkrevingstype ?: behandling.innkrevingstype!!
                         },
-                        if (beregningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request)) {
+                        if (erRevurderingsbarn && beregningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request)) {
                             Beslutningstype.AVVIST
                         } else {
                             Beslutningstype.ENDRING
@@ -603,11 +613,12 @@ class BehandlingTilVedtakMapping(
     private fun ResultatBidragsberegningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request: FatteVedtakRequestDto?): Boolean {
         val skalFatteVedtakForRevurderingsbarn =
             request?.fatteVedtakRevurderingsbarn == null || request?.fatteVedtakRevurderingsbarn?.skalFatteVedtakForRevurderingsbarn == true
-        if (erAvvistRevurdering && omgjøringsdetaljer != null) {
-            return omgjøringsdetaljer.fatteVedtakDetaljerRevurderingsbarn?.bleFattetVedtakForRevurderingsbarn != null &&
-                !omgjøringsdetaljer.fatteVedtakDetaljerRevurderingsbarn.bleFattetVedtakForRevurderingsbarn
+        val erRevurderingsbarnOgSkalAvviseVedtak = erAvvistRevurdering || (barn.erRevurderingsbarn && !skalFatteVedtakForRevurderingsbarn)
+        // Hvis det blir avvist og det ble fattet vedtak i påklaget vedtak så må systemt fatte vedtak igjen for å evt tilbakestille beløpshistorikk
+        if (erRevurderingsbarnOgSkalAvviseVedtak && omgjøringsdetaljer?.fatteVedtakDetaljerRevurderingsbarn != null) {
+            return !omgjøringsdetaljer.fatteVedtakDetaljerRevurderingsbarn.bleFattetVedtakForRevurderingsbarn
         }
-        return (erAvvistRevurdering || (barn.erRevurderingsbarn && !skalFatteVedtakForRevurderingsbarn))
+        return erRevurderingsbarnOgSkalAvviseVedtak
     }
 
     fun opprettVedtakRequestDelvedtak(
@@ -824,7 +835,7 @@ class BehandlingTilVedtakMapping(
                         "endeligvedtak"
                     }
                 }
-            return behandling.byggOpprettVedtakRequestObjekt(request?.enhet).copy(
+            return behandling.byggOpprettVedtakRequestObjekt(request?.enhet, byggForSøknadsbarn).copy(
                 unikReferanse = behandling.opprettUnikReferanse(referansePostfix),
                 type = resultatVedtak.vedtakstype,
                 stønadsendringListe =
@@ -944,8 +955,7 @@ class BehandlingTilVedtakMapping(
             søknadsbarnSomDetHarBlittOpprettVedtakFor.addAll(søknadsbarnISøknad.mapNotNull { it.ident })
             val førsteSøknadsbarn = søknadsbarnISøknad.first()
             val erRevurderingsbarn = førsteSøknadsbarn.forholdsmessigFordeling?.erRevurdering == true
-            val byggGrunnlagForSøknadsbarn = søknadsbarn
-            // if (erRevurderingsbarn) søknadsbarnISøknad else søknadsbarn.filter { !it.erRevurderingsbarn }
+            val byggGrunnlagForSøknadsbarn = if (erRevurderingsbarn) søknadsbarnISøknad else søknadsbarn.filter { !it.erRevurderingsbarn }
             val sak = behandlingSaker.getValue(førsteSøknadsbarn.saksnummer)
 
             val innkreving =
@@ -1014,7 +1024,7 @@ class BehandlingTilVedtakMapping(
                     }.toSet()
                         .map(BaseGrunnlag::tilOpprettRequestDto)
 
-                byggOpprettVedtakRequestObjekt(request?.enhet, søknadsbarnISøknad).copy(
+                byggOpprettVedtakRequestObjekt(request?.enhet, byggGrunnlagForSøknadsbarn).copy(
                     unikReferanse = opprettUnikReferanse("søknad_$søknadsid"),
                     stønadsendringListe =
                         if (erRevurderingsbarn) {
