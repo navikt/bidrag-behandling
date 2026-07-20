@@ -52,6 +52,7 @@ import no.nav.bidrag.commons.service.organisasjon.EnhetProvider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -830,6 +831,7 @@ class BehandlingService(
         saksnummer: String,
         oppdaterRollerListe: List<OpprettRolleDto>,
     ) {
+        val gjelder18ÅrSøknad = oppdaterRollerListe.any { it.harGebyrsøknad && it.rolletype == Rolletype.BARN && it.behandlingstema?.tilStønadstype() == Stønadstype.BIDRAG18AAR }
         oppdaterRollerListe
             .filter { !it.erSlettet }
             .filter { roller.any { br -> br.erSammeRolle(it.ident!!.verdi, it.stønadstype) } }
@@ -841,6 +843,9 @@ class BehandlingService(
                     if (it.harGebyrsøknad || !it.referanseGebyr.isNullOrEmpty()) {
                         val gebyrDetaljer = eksisterendeRolle.hentEllerOpprettGebyr()
                         val gebyr = gebyrDetaljer.finnEllerOpprettGebyrForSøknad(søknadsid, saksnummer)
+                            .copy(
+                                gjelder18ÅrSøknad = gjelder18ÅrSøknad
+                            )
                         gebyr.referanse = it.referanseGebyr ?: gebyr.referanse
                         gebyrDetaljer.leggTilGebyr(gebyr)
                     }

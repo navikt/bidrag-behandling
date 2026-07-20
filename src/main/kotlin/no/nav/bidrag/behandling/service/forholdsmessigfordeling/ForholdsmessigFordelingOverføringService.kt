@@ -332,16 +332,16 @@ class ForholdsmessigFordelingOverføringService(
                             )
                         }
                     }
-                behandling.roller.add(
-                    rolle.kopierRolle(
-                        behandling,
-                        bm,
-                        innkrevesFra,
-                        innkrevesTil,
-                        behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
-                        behandlingerRolle,
-                    ),
+                val nyRolle = rolle.kopierRolle(
+                    behandling,
+                    bm,
+                    innkrevesFra,
+                    innkrevesTil,
+                    behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                    behandlingerRolle,
                 )
+                behandling.roller.add(nyRolle)
+                nyRolle.leggTilGebyr(rolle)
             } else if (eksisterendeRolle.harGebyrsøknad || eksisterendeRolle.gebyr != null) {
                 eksisterendeRolle.leggTilGebyr(rolle)
             }
