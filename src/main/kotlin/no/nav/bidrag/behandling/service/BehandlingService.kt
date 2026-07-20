@@ -66,6 +66,7 @@ import no.nav.bidrag.transport.behandling.behandling.ÅpenBehandlingBarn
 import no.nav.bidrag.transport.behandling.behandling.ÅpenBehandlingBarnSøknad
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelseType
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.tilJsonString
 import org.springframework.context.annotation.Lazy
@@ -99,6 +100,7 @@ class BehandlingService(
         behandlingId: Long,
         søknadsid: Long? = null,
     ) {
+        secureLogger.info { "Sletter behandling $behandlingId og søknad $søknadsid" }
         val behandling = hentBehandlingById(behandlingId)
         if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
@@ -633,6 +635,7 @@ class BehandlingService(
         behandlingId: Long,
         request: OppdaterRollerRequest,
     ) {
+        secureLogger.info { "Bestiller oppdatering av roller for behandling $behandlingId med request ${commonObjectmapper.writeValueAsString(request)}" }
         bestillAsyncJobService!!.bestillOppdateringAvRoller(
             BehandlingOppdateringBestilling(
                 behandlingId = behandlingId,
