@@ -831,7 +831,11 @@ class BehandlingService(
         saksnummer: String,
         oppdaterRollerListe: List<OpprettRolleDto>,
     ) {
-        val gjelder18ÅrSøknad = oppdaterRollerListe.any { it.harGebyrsøknad && it.rolletype == Rolletype.BARN && it.behandlingstema?.tilStønadstype() == Stønadstype.BIDRAG18AAR }
+        val gjelder18ÅrSøknad =
+            oppdaterRollerListe.any {
+                it.harGebyrsøknad && it.rolletype == Rolletype.BARN &&
+                    it.behandlingstema?.tilStønadstype() == Stønadstype.BIDRAG18AAR
+            }
         oppdaterRollerListe
             .filter { !it.erSlettet }
             .filter { roller.any { br -> br.erSammeRolle(it.ident!!.verdi, it.stønadstype) } }
@@ -842,10 +846,12 @@ class BehandlingService(
                     eksisterendeRolle.harGebyrsøknad = if (eksisterendeRolle.harGebyrsøknad) true else it.harGebyrsøknad
                     if (it.harGebyrsøknad || !it.referanseGebyr.isNullOrEmpty()) {
                         val gebyrDetaljer = eksisterendeRolle.hentEllerOpprettGebyr()
-                        val gebyr = gebyrDetaljer.finnEllerOpprettGebyrForSøknad(søknadsid, saksnummer)
-                            .copy(
-                                gjelder18ÅrSøknad = gjelder18ÅrSøknad
-                            )
+                        val gebyr =
+                            gebyrDetaljer
+                                .finnEllerOpprettGebyrForSøknad(søknadsid, saksnummer)
+                                .copy(
+                                    gjelder18ÅrSøknad = gjelder18ÅrSøknad,
+                                )
                         gebyr.referanse = it.referanseGebyr ?: gebyr.referanse
                         gebyrDetaljer.leggTilGebyr(gebyr)
                     }

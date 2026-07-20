@@ -246,7 +246,7 @@ open class Rolle(
         val søknadsiderSomBleOppdatert = gebyrSøknaderForSak.map { it.søknadsid }
         gebyr
             .finnAlleGebyrForSak(saksnummer)
-            .filter { !søknadsiderSomBleOppdatert.contains(it.søknadsid) && !it.gjelder18ÅrSøknad}
+            .filter { !søknadsiderSomBleOppdatert.contains(it.søknadsid) && !it.gjelder18ÅrSøknad }
             .forEach {
                 it.manueltOverstyrtGebyr =
                     RolleManueltOverstyrtGebyr(

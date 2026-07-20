@@ -307,7 +307,7 @@ class ForholdsmessigFordelingOverføringService(
     ) {
         behandlingOverført.bidragsmottaker?.let { overførtRolle ->
             val eksisterendeRolle = behandling.roller.find { rolleBehandling -> rolleBehandling.erSammeRolle(overførtRolle) }
-            if (eksisterendeRolle != null){
+            if (eksisterendeRolle != null) {
                 // Skal være sann hvis har gebyrsøknad i overført eller eksisterende behandling
                 eksisterendeRolle.harGebyrsøknad = overførtRolle.harGebyrsøknad || eksisterendeRolle.harGebyrsøknad
             }
@@ -322,8 +322,11 @@ class ForholdsmessigFordelingOverføringService(
         }
         val bm = behandlingOverført.bidragsmottaker?.ident
         behandlingOverført.søknadsbarn.forEach { overførtRolle ->
-            val eksisterendeRolle = behandling.søknadsbarn.find { barn -> barn.erSammeRolle(overførtRolle.ident!!, overførtRolle.stønadstype) }
-            if (eksisterendeRolle != null){
+            val eksisterendeRolle =
+                behandling.søknadsbarn.find { barn ->
+                    barn.erSammeRolle(overførtRolle.ident!!, overførtRolle.stønadstype)
+                }
+            if (eksisterendeRolle != null) {
                 // Skal være sann hvis har gebyrsøknad i overført eller eksisterende behandling
                 eksisterendeRolle.harGebyrsøknad = overførtRolle.harGebyrsøknad || eksisterendeRolle.harGebyrsøknad
             }
@@ -340,14 +343,15 @@ class ForholdsmessigFordelingOverføringService(
                             )
                         }
                     }
-                val nyRolle = overførtRolle.kopierRolle(
-                    behandling,
-                    bm,
-                    innkrevesFra,
-                    innkrevesTil,
-                    behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
-                    behandlingerRolle,
-                )
+                val nyRolle =
+                    overførtRolle.kopierRolle(
+                        behandling,
+                        bm,
+                        innkrevesFra,
+                        innkrevesTil,
+                        behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
+                        behandlingerRolle,
+                    )
                 behandling.roller.add(nyRolle)
                 nyRolle.leggTilGebyr(overførtRolle)
             } else if (eksisterendeRolle.harGebyrsøknad || eksisterendeRolle.gebyr != null) {
