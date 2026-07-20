@@ -5,6 +5,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.ForsendelseService
+import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 
@@ -25,4 +27,21 @@ class ForsendelseController(
         @RequestBody(required = true)
         request: InitalizeForsendelseRequest,
     ): List<String> = forsendelseService.slettEllerOpprettForsendelse(request)
+
+    @Suppress("unused")
+    @PostMapping("/forsendelse/slett/{saksnummer}/{søknadsid}")
+    @Operation(
+        description = "Sletter forsendelser under opprettelse som tilhører sak og søknadsid",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    fun slettForsendelseForSøknad(
+        @PathVariable saksnummer: String,
+        @PathVariable søknadsid: Long,
+    ): List<String> = forsendelseService.slettForsendelse(InitalizeForsendelseRequest(
+        saksnummer = saksnummer,
+        behandlingInfo =
+            BehandlingInfoDto(
+                soknadId = søknadsid.toString(),
+            ),
+    ),)
 }
