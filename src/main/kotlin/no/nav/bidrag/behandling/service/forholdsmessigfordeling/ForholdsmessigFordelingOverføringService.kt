@@ -305,34 +305,42 @@ class ForholdsmessigFordelingOverføringService(
         åpneBehandlinger: List<Behandling>,
         løpendeBidraggsakerBP: List<LøpendeBidragSakPeriode>,
     ) {
-        behandlingOverført.bidragsmottaker?.let { rolle ->
-            val eksisterendeRolle = behandling.roller.find { rolleBehandling -> rolleBehandling.erSammeRolle(rolle) }
+        behandlingOverført.bidragsmottaker?.let { overførtRolle ->
+            val eksisterendeRolle = behandling.roller.find { rolleBehandling -> rolleBehandling.erSammeRolle(overførtRolle) }
+            if (eksisterendeRolle != null){
+                // Skal være sann hvis har gebyrsøknad i overført eller eksisterende behandling
+                eksisterendeRolle.harGebyrsøknad = overførtRolle.harGebyrsøknad || eksisterendeRolle.harGebyrsøknad
+            }
             if (eksisterendeRolle == null) {
-                val behandlingerRolle = åpneBehandlinger.filter { it.søknadsbarn.any { it.erSammeRolle(rolle) } }
+                val behandlingerRolle = åpneBehandlinger.filter { it.søknadsbarn.any { it.erSammeRolle(overførtRolle) } }
                 behandling.roller.add(
-                    rolle.kopierRolle(behandling, null, åpneBehandlinger = behandlingerRolle),
+                    overførtRolle.kopierRolle(behandling, null, åpneBehandlinger = behandlingerRolle),
                 )
             } else if (eksisterendeRolle.harGebyrsøknad || eksisterendeRolle.gebyr != null) {
-                eksisterendeRolle.leggTilGebyr(rolle)
+                eksisterendeRolle.leggTilGebyr(overførtRolle)
             }
         }
         val bm = behandlingOverført.bidragsmottaker?.ident
-        behandlingOverført.søknadsbarn.forEach { rolle ->
-            val eksisterendeRolle = behandling.søknadsbarn.find { barn -> barn.erSammeRolle(rolle.ident!!, rolle.stønadstype) }
+        behandlingOverført.søknadsbarn.forEach { overførtRolle ->
+            val eksisterendeRolle = behandling.søknadsbarn.find { barn -> barn.erSammeRolle(overførtRolle.ident!!, overførtRolle.stønadstype) }
+            if (eksisterendeRolle != null){
+                // Skal være sann hvis har gebyrsøknad i overført eller eksisterende behandling
+                eksisterendeRolle.harGebyrsøknad = overførtRolle.harGebyrsøknad || eksisterendeRolle.harGebyrsøknad
+            }
             if (eksisterendeRolle == null) {
-                val løpendeBidrag = løpendeBidraggsakerBP.find { rolle.erSammeRolle(it.kravhaver.verdi, it.type) }
+                val løpendeBidrag = løpendeBidraggsakerBP.find { overførtRolle.erSammeRolle(it.kravhaver.verdi, it.type) }
                 val innkrevesFra = if (behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING) løpendeBidrag?.periodeFra else null
                 val innkrevesTil = if (behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING) løpendeBidrag?.periodeTil else null
                 val behandlingerRolle =
                     åpneBehandlinger.filter {
                         it.søknadsbarn.any {
                             it.erSammeRolle(
-                                rolle.ident!!,
-                                rolle.stønadstype,
+                                overførtRolle.ident!!,
+                                overførtRolle.stønadstype,
                             )
                         }
                     }
-                val nyRolle = rolle.kopierRolle(
+                val nyRolle = overførtRolle.kopierRolle(
                     behandling,
                     bm,
                     innkrevesFra,
@@ -341,9 +349,9 @@ class ForholdsmessigFordelingOverføringService(
                     behandlingerRolle,
                 )
                 behandling.roller.add(nyRolle)
-                nyRolle.leggTilGebyr(rolle)
+                nyRolle.leggTilGebyr(overførtRolle)
             } else if (eksisterendeRolle.harGebyrsøknad || eksisterendeRolle.gebyr != null) {
-                eksisterendeRolle.leggTilGebyr(rolle)
+                eksisterendeRolle.leggTilGebyr(overførtRolle)
             }
         }
     }
