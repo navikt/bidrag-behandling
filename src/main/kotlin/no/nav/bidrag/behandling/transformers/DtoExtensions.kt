@@ -86,7 +86,7 @@ fun OpprettRolleDto.toRolle(
                 null
             },
         innbetaltBeløp = innbetaltBeløp,
-        harGebyrsøknad = harGebyrsøknad,
+        harGebyrsøknadColumn = harGebyrsøknad,
         gebyr =
             GebyrRolle(
                 gebyrSøknader =
