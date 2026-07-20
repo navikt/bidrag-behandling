@@ -240,14 +240,13 @@ open class Rolle(
         val gebyrSøknaderForSak = gebyr.finnGebyrForSak(saksnummer, søknadsid)
         gebyrSøknaderForSak.forEach {
             it.manueltOverstyrtGebyr = manueltOverstyrtGebyr
-//            it.gjelder18ÅrSøknad = behandling.roller.any { it.harGebyrsøknad && it.rolletype == Rolletype.BARN }
         }
         // Det skal vurderes gebyr bare en gang per sak så lenge det ikke er 18 års søknad. Det skal vurderes gebyr for alle 18 års søknader
         // Fjern derfor vurdering av gebyr for andre søknader tilhørende samme sak
         val søknadsiderSomBleOppdatert = gebyrSøknaderForSak.map { it.søknadsid }
         gebyr
             .finnAlleGebyrForSak(saksnummer)
-            .filter { !søknadsiderSomBleOppdatert.contains(it.søknadsid) }
+            .filter { !søknadsiderSomBleOppdatert.contains(it.søknadsid) && !it.gjelder18ÅrSøknad}
             .forEach {
                 it.manueltOverstyrtGebyr =
                     RolleManueltOverstyrtGebyr(
