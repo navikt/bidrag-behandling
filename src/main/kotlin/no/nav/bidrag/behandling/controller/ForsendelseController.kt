@@ -6,6 +6,7 @@ import jakarta.validation.Valid
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.service.ForsendelseService
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -29,7 +30,7 @@ class ForsendelseController(
     ): List<String> = forsendelseService.slettEllerOpprettForsendelse(request)
 
     @Suppress("unused")
-    @PostMapping("/forsendelse/slett/{saksnummer}/{søknadsid}")
+    @DeleteMapping("/forsendelse/slett/{saksnummer}/{søknadsid}")
     @Operation(
         description = "Sletter forsendelser under opprettelse som tilhører sak og søknadsid",
         security = [SecurityRequirement(name = "bearer-key")],
