@@ -484,6 +484,10 @@ class VedtakService(
         val erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder =
             behandling.erIForholdsmessigFordeling && beregning.bpHarFullEvneIAllePerioder
 
+        if (!simuler && erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder){
+            forholdsmessigFordelingService!!.fjernSammeknytningHovedsøknad(behandling)
+        }
+
         val klagevedtakErEnesteVedtak = beregning.klagevedtakErEnesteVedtak && !erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder
         val requestDelvedtak =
             beregning.copy(
@@ -549,9 +553,6 @@ class VedtakService(
 
                 val endeligVedtakRequests =
                     if (erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder) {
-                        if (!simuler){
-                            forholdsmessigFordelingService!!.fjernSammeknytningHovedsøknad(behandling)
-                        }
                         behandlingTilVedtakMapping.run {
                             behandling.byggOpprettVedtakRequestSplittetFFOmgjøringEtterFFBleTrukket(
                                 request,
