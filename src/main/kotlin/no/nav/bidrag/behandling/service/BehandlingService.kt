@@ -6,6 +6,7 @@ import no.nav.bidrag.behandling.async.dto.BehandlingHendelseBestilling
 import no.nav.bidrag.behandling.async.dto.BehandlingOppdateringBestilling
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.config.UnleashFeatures
+import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -29,6 +30,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.erBidrag
 import no.nav.bidrag.behandling.dto.v1.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.tilType
+import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
@@ -36,7 +38,11 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.service.forholdsmessigfordeling.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.forholdsmessigfordeling.OppdaterBarnFraFFRequest
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.barn
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.barnAlle
 import no.nav.bidrag.behandling.service.forholdsmessigfordeling.behandlingstyperSomIkkeSkalInkluderesIFF
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.bidragsmottaker
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.bidragspliktig
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
@@ -91,6 +97,7 @@ class BehandlingService(
     private val mapper: Dtomapper,
     private val validerBehandlingService: ValiderBehandlingService,
     private val underholdService: UnderholdService,
+    private val bbmConsumer: BidragBBMConsumer,
     private val bestillAsyncJobService: BestillAsyncJobService? = null,
     @Lazy
     private val forholdsmessigFordelingService: ForholdsmessigFordelingService? = null,
@@ -110,6 +117,80 @@ class BehandlingService(
         }
 
         slettBehandling(behandling, søknadsid)
+        if (!behandling.erIForholdsmessigFordeling && søknadsid != null) {
+            behandleEtterSøknadSlettet(søknadsid, behandlingId)
+        }
+    }
+
+    fun behandleEtterSøknadSlettet(
+        søknadsid: Long,
+        behandlingsid: Long?,
+    ) {
+        val søknad = bbmConsumer.hentSøknad(søknadsid)?.søknad ?: return
+        val saksnummer = søknad.saksnummer
+        val erFeilregistrert =
+            søknad.barnAlle.all {
+                listOf(
+                    Behandlingstatus.FEILREGISTRERT,
+                    Behandlingstatus.AVVIST,
+                    Behandlingstatus.DØMT_AVSLUTTET,
+                    Behandlingstatus.ERKJENT_AVSLUTTET,
+                    Behandlingstatus.SENDT_UTLANDET_LUKKET,
+                    Behandlingstatus.G4,
+                ).contains(it.behandlingstatus)
+            }
+
+        val erTrukket = søknad.barnAlle.all { it.behandlingstatus == Behandlingstatus.TRUKKET }
+        if (erFeilregistrert) {
+            forsendelseService.slettForsendelse(
+                InitalizeForsendelseRequest(
+                    saksnummer = saksnummer,
+                    behandlingInfo =
+                        BehandlingInfoDto(
+                            soknadId = søknadsid.toString(),
+                        ),
+                ),
+            )
+        } else if (erTrukket) {
+            forsendelseService.slettEllerOpprettForsendelse(
+                InitalizeForsendelseRequest(
+                    saksnummer = saksnummer,
+                    enhet = søknad.behandlerenhet,
+                    roller =
+                        søknad.barnAlle.map {
+                            ForsendelseRolleDto(
+                                fødselsnummer = Personident(it.personident!!),
+                                type = Rolletype.BARN,
+                            )
+                        } +
+                            listOfNotNull(
+                                søknad.bidragsmottaker?.let {
+                                    ForsendelseRolleDto(
+                                        fødselsnummer = Personident(it.personident!!),
+                                        type = Rolletype.BIDRAGSMOTTAKER,
+                                    )
+                                },
+                                søknad.bidragspliktig?.let {
+                                    ForsendelseRolleDto(
+                                        fødselsnummer = Personident(it.personident!!),
+                                        type = Rolletype.BIDRAGSPLIKTIG,
+                                    )
+                                },
+                            ),
+                    behandlingInfo =
+                        BehandlingInfoDto(
+                            behandlingId = behandlingsid?.toString(),
+                            soknadId = søknad.søknadsid.toString(),
+                            soknadFra = søknad.søktAvType,
+                            behandlingType = søknad.behandlingstema.name,
+                            soknadType = søknad.behandlingstype.name,
+                            stonadType = søknad.behandlingstema.tilStønadstype(),
+                            engangsBelopType = null,
+                            vedtakType = søknad.behandlingstype.tilVedtakstype(),
+                        ),
+                ),
+            )
+        }
     }
 
     fun slettBehandling(
@@ -635,7 +716,9 @@ class BehandlingService(
         behandlingId: Long,
         request: OppdaterRollerRequest,
     ) {
-        secureLogger.info { "Bestiller oppdatering av roller for behandling $behandlingId med request ${commonObjectmapper.writeValueAsString(request)}" }
+        secureLogger.info {
+            "Bestiller oppdatering av roller for behandling $behandlingId med request ${commonObjectmapper.writeValueAsString(request)}"
+        }
         bestillAsyncJobService!!.bestillOppdateringAvRoller(
             BehandlingOppdateringBestilling(
                 behandlingId = behandlingId,

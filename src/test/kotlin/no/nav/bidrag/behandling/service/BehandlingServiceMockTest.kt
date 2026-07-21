@@ -23,6 +23,7 @@ class BehandlingServiceMockTest : CommonMockServiceTest() {
                 dtomapper,
                 validerBehandlingService,
                 underholdService,
+                bbmConsumer,
             )
     }
 

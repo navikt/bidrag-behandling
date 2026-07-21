@@ -28,21 +28,4 @@ class ForsendelseController(
         @RequestBody(required = true)
         request: InitalizeForsendelseRequest,
     ): List<String> = forsendelseService.slettEllerOpprettForsendelse(request)
-
-    @Suppress("unused")
-    @DeleteMapping("/forsendelse/slett/{saksnummer}/{søknadsid}")
-    @Operation(
-        description = "Sletter forsendelser under opprettelse som tilhører sak og søknadsid",
-        security = [SecurityRequirement(name = "bearer-key")],
-    )
-    fun slettForsendelseForSøknad(
-        @PathVariable saksnummer: String,
-        @PathVariable søknadsid: Long,
-    ): List<String> = forsendelseService.slettForsendelse(InitalizeForsendelseRequest(
-        saksnummer = saksnummer,
-        behandlingInfo =
-            BehandlingInfoDto(
-                soknadId = søknadsid.toString(),
-            ),
-    ),)
 }

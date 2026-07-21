@@ -6,7 +6,6 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import no.nav.bidrag.behandling.async.BestillAsyncJobService
 import no.nav.bidrag.behandling.config.UnleashFeatures
-import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragBeløpshistorikkConsumer
 import no.nav.bidrag.behandling.consumer.BidragSakConsumer
 import no.nav.bidrag.behandling.service.forholdsmessigfordeling.ForholdsmessigFordelingService
@@ -55,9 +54,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 abstract class CommonVedtakTilBehandlingTest : CommonMockServiceTest() {
     @MockK
     lateinit var bidragStønadConsumer: BidragBeløpshistorikkConsumer
-
-    @MockK
-    lateinit var bbmConsumer: BidragBBMConsumer
 
     @MockK
     lateinit var notatOpplysningerService: NotatOpplysningerService
