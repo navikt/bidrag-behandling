@@ -28,6 +28,7 @@ import no.nav.bidrag.domene.enums.behandling.Behandlingstype
 import no.nav.bidrag.domene.enums.behandling.SøknadsknytningStatus
 import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.rolle.Rolletype
+import no.nav.bidrag.domene.enums.rolle.SøktAvType
 import no.nav.bidrag.domene.enums.vedtak.Innkrevingstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.ident.Personident
@@ -420,6 +421,7 @@ class ForholdsmessigFordelingKlageService(
         åpneSøknaderForVedtaksid: List<HentSøknad>,
         hovedsøknadsid: Long?,
     ): Long {
+        val hovedsøknad = hovedsøknadsid?.let { bbmConsumer.hentSøknad(it)?.søknad }
         val behandlingstype =
             if (originalSøknad.behandlingstype.erForholdsmessigFordeling) {
                 Behandlingstype.FORHOLDSMESSIG_FORDELING_KLAGE
@@ -461,7 +463,7 @@ class ForholdsmessigFordelingKlageService(
                         behandlingstype = behandlingstype,
                         behandlerenhet = originalSøknad.behandlerenhet ?: behandling.behandlerEnhet,
                         hovedsøknadsid = hovedsøknadsid,
-                        søktAv = originalSøknad.søktAvType,
+                        søktAv = if (hovedsøknad?.søktAvType == SøktAvType.NAV_BIDRAG) SøktAvType.NAV_BIDRAG else originalSøknad.søktAvType,
                         søknadMottattDato = behandling.mottattdato,
                         behandlingstema = originalSøknad.behandlingstema,
                         søknadFomDato = originalSøknad.søknadFomDato!!,
