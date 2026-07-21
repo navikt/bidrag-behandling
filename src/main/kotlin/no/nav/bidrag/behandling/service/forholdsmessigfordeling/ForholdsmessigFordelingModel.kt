@@ -105,6 +105,8 @@ val HentSøknad.barn get() =
         it.rolletype == Rolletype.BARN &&
             it.behandlingstatus?.lukketStatus == false
     }
+val HentSøknad.barnAlle get() =
+    partISøknadListe.filter { it.rolletype == Rolletype.BARN }
 
 fun HentSøknad.parterForRolle(rolletype: Rolletype) = partISøknadListe.filter { it.rolletype == rolletype }
 

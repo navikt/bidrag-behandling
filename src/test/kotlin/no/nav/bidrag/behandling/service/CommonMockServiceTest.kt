@@ -6,6 +6,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockkClass
 import io.mockk.mockkObject
+import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.consumer.BidragGrunnlagConsumer
 import no.nav.bidrag.behandling.consumer.BidragPersonConsumer
 import no.nav.bidrag.behandling.consumer.BidragVedtakConsumer
@@ -63,6 +64,9 @@ abstract class CommonMockServiceTest {
 
     @MockK
     lateinit var behandlingRepository: BehandlingRepository
+
+    @MockK
+    lateinit var bbmConsumer: BidragBBMConsumer
 
     @MockK
     lateinit var inntektService: InntektService

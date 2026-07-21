@@ -284,7 +284,7 @@ fun opprettEllerOppdaterRolle(
     val erBarn = rolletype == Rolletype.BARN
     val rolle =
         Rolle(
-            harGebyrsøknad = harGebyrSøknad != null,
+            harGebyrsøknadColumn = harGebyrSøknad != null,
             gebyr =
                 GebyrRolle(
                     overstyrGebyr = false,
@@ -386,7 +386,7 @@ fun Rolle.kopierRolle(
     grunnlagFraVedtakListe = grunnlagFraVedtakListe,
     opphørsdato = opphørsdato ?: hovedbehandling.globalOpphørsdato,
     gebyr = hentEllerOpprettGebyr(),
-    harGebyrsøknad = harGebyrsøknad,
+    harGebyrsøknadColumn = harGebyrsøknad,
     opprinneligVirkningstidspunkt = opprinneligVirkningstidspunkt,
     beregnTil = beregnTil,
     fødselsdato = fødselsdato,

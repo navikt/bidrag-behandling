@@ -78,6 +78,7 @@ class VedtakserviceBidragOmgjøringTest : CommonVedtakTilBehandlingTest() {
                 dtomapper,
                 validerBehandlingService,
                 underholdService,
+                bbmConsumer,
                 bestillAsyncJobService = bestillAsyncJobService,
             )
         beregningService =
@@ -109,6 +110,7 @@ class VedtakserviceBidragOmgjøringTest : CommonVedtakTilBehandlingTest() {
                 forsendelseService,
                 virkningstidspunktService,
                 behandlingRepository = behandlingRepository,
+                forholdsmessigFordelingService = forholdsmessigFordelingService,
             )
     }
 

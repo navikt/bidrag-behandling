@@ -478,6 +478,22 @@ class BehandlingControllerV2(
     ) = behandlingService.slettBehandling(behandlingsid)
 
     @Suppress("unused")
+    @DeleteMapping("/soknad/{søknadsid}")
+    @Operation(
+        description = "Opprett eller slett forsendelser etter søknad er slettet",
+        security = [SecurityRequirement(name = "bearer-key")],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Slettet behandling"),
+            ApiResponse(responseCode = "400", description = "Kan ikke slette behandling"),
+        ],
+    )
+    fun slettSøknad(
+        @PathVariable søknadsid: Long,
+    ) = behandlingService.behandleEtterSøknadSlettetAsync(søknadsid, null)
+
+    @Suppress("unused")
     @DeleteMapping("/behandling/{behandlingsid}/{søknadsid}")
     @Operation(
         description = "Logisk slett en behandling",

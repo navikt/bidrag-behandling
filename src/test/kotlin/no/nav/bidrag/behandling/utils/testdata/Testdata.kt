@@ -445,7 +445,7 @@ fun oppretteBehandlingRoller(
                 behandling = behandling,
                 fødselsdato = testdataBM.fødselsdato,
                 id = if (generateId) (1).toLong() else null,
-                harGebyrsøknad = typeBehandling == TypeBehandling.BIDRAG,
+                harGebyrsøknadColumn = typeBehandling == TypeBehandling.BIDRAG,
             ),
             Rolle(
                 ident = testdataBarn1.ident,
@@ -475,7 +475,7 @@ fun oppretteBehandlingRoller(
                 behandling = behandling,
                 fødselsdato = testdataBP.fødselsdato,
                 id = if (generateId) (4).toLong() else null,
-                harGebyrsøknad = typeBehandling == TypeBehandling.BIDRAG,
+                harGebyrsøknadColumn = typeBehandling == TypeBehandling.BIDRAG,
             ),
         )
     }
@@ -544,7 +544,7 @@ fun opprettGyldigBehandlingAldersjustering(generateId: Boolean): Behandling {
                 behandling = behandling,
                 fødselsdato = testdataBM.fødselsdato,
                 id = if (generateId) (1).toLong() else null,
-                harGebyrsøknad = false,
+                harGebyrsøknadColumn = false,
             ),
             Rolle(
                 ident = testdataBP.ident,
@@ -552,7 +552,7 @@ fun opprettGyldigBehandlingAldersjustering(generateId: Boolean): Behandling {
                 behandling = behandling,
                 fødselsdato = testdataBP.fødselsdato,
                 id = if (generateId) (2).toLong() else null,
-                harGebyrsøknad = false,
+                harGebyrsøknadColumn = false,
             ),
             Rolle(
                 ident = testdataBarn1.ident,

@@ -4,6 +4,7 @@ import no.nav.bidrag.behandling.async.dto.BehandlingHendelseBestilling
 import no.nav.bidrag.behandling.async.dto.BehandlingOppdateringBestilling
 import no.nav.bidrag.behandling.async.dto.GrunnlagInnhentingBestilling
 import no.nav.bidrag.behandling.async.dto.OpprettForsendelseBestilling
+import no.nav.bidrag.behandling.async.dto.SøknadSlettetBestilling
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Component
@@ -38,6 +39,11 @@ class BestillAsyncJobService(
     }
 
     fun bestillHendelse(bestilling: BehandlingHendelseBestilling) {
+        applicationEventPublisher.publishEvent(bestilling)
+    }
+
+    @Async
+    fun bestillBehandleEtterSøknadSlettet(bestilling: SøknadSlettetBestilling) {
         applicationEventPublisher.publishEvent(bestilling)
     }
 }

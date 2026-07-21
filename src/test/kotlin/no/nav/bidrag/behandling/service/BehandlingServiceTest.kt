@@ -1450,7 +1450,7 @@ class BehandlingServiceTest : TestContainerRunner() {
                         ident = testdataBM.ident,
                         rolletype = Rolletype.BIDRAGSMOTTAKER,
                         fødselsdato = LocalDate.parse("2021-01-01"),
-                        harGebyrsøknad = true,
+                        harGebyrsøknadColumn = true,
                     ),
                     Rolle(
                         behandling,

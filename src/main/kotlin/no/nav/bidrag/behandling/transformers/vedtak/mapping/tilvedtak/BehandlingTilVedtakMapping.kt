@@ -611,9 +611,19 @@ class BehandlingTilVedtakMapping(
     }
 
     private fun ResultatBidragsberegningBarn.skalBehandlesSomAvvistRevurderingsbarnIKlage(request: FatteVedtakRequestDto?): Boolean {
+        val resultatUtenPerioder =
+            resultatVedtak != null &&
+                (
+                    resultatVedtak.resultatVedtakListe.isEmpty() ||
+                        resultatVedtak.resultatVedtakListe.all { it.resultat.beregnetBarnebidragPeriodeListe.isEmpty() }
+                )
+        if (resultatUtenPerioder) {
+            return true
+        }
         val skalFatteVedtakForRevurderingsbarn =
             request?.fatteVedtakRevurderingsbarn == null || request?.fatteVedtakRevurderingsbarn?.skalFatteVedtakForRevurderingsbarn == true
         val erRevurderingsbarnOgSkalAvviseVedtak = erAvvistRevurdering || (barn.erRevurderingsbarn && !skalFatteVedtakForRevurderingsbarn)
+
         // Hvis det blir avvist og det ble fattet vedtak i påklaget vedtak så må systemt fatte vedtak igjen for å evt tilbakestille beløpshistorikk
         if (erRevurderingsbarnOgSkalAvviseVedtak && omgjøringsdetaljer?.fatteVedtakDetaljerRevurderingsbarn != null) {
             return !omgjøringsdetaljer.fatteVedtakDetaljerRevurderingsbarn.bleFattetVedtakForRevurderingsbarn

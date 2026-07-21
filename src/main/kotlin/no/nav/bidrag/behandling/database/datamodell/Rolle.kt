@@ -68,7 +68,8 @@ open class Rolle(
     open var id: Long? = null,
     open val navn: String? = null,
     open var deleted: Boolean = false,
-    open var harGebyrsøknad: Boolean = false,
+    @Column(name = "har_gebyrsøknad")
+    open var harGebyrsøknadColumn: Boolean = false,
     @Column(columnDefinition = "jsonb", name = "manuelt_overstyrt_gebyr")
     @ColumnTransformer(write = "?::jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
@@ -128,6 +129,12 @@ open class Rolle(
     @Column(columnDefinition = "jsonb", name = "forholdsmessig_fordeling")
     open var forholdsmessigFordeling: ForholdsmessigFordelingRolle? = null,
 ) {
+    var harGebyrsøknad
+        get() = harGebyrsøknadColumn || gebyr?.gebyrSøknader?.isNotEmpty() == true
+        set(value) {
+            harGebyrsøknadColumn = value
+        }
+
     fun erSammeRolle(gjelder: PersonStønad) =
         (gjelder.rolleId != null && this.id == gjelder.rolleId) ||
             (gjelder.rolleId == null && erSammeRolle(gjelder.personident!!.verdi, gjelder.stønadstype))
@@ -239,7 +246,7 @@ open class Rolle(
         val søknadsiderSomBleOppdatert = gebyrSøknaderForSak.map { it.søknadsid }
         gebyr
             .finnAlleGebyrForSak(saksnummer)
-            .filter { !søknadsiderSomBleOppdatert.contains(it.søknadsid) }
+            .filter { !søknadsiderSomBleOppdatert.contains(it.søknadsid) && !it.gjelder18ÅrSøknad }
             .forEach {
                 it.manueltOverstyrtGebyr =
                     RolleManueltOverstyrtGebyr(
@@ -342,7 +349,7 @@ open class Rolle(
             id = null, // Reset ID for new entity
             navn = this.navn,
             deleted = this.deleted,
-            harGebyrsøknad = this.harGebyrsøknad,
+            harGebyrsøknadColumn = this.harGebyrsøknad,
             gebyr = this.gebyr?.copy(gebyrSøknader = this.gebyr!!.gebyrSøknader.toMutableSet()),
             innbetaltBeløp = this.innbetaltBeløp,
             forrigeSivilstandshistorikk = this.forrigeSivilstandshistorikk,
@@ -443,7 +450,7 @@ data class GebyrRolleSøknad(
     val søknadsid: Long,
     // Hvis det gjelder 18 års søknad så skal det ilegges gebyr til BP selv om det finnes andre gebyrsøknader
     // Det vil si at BP kan både få gebyr på søknad under 18 år og søknad over 18 år (søkt av 18 åring) i samme vedtak
-    val gjelder18ÅrSøknad: Boolean = false,
+    var gjelder18ÅrSøknad: Boolean = false,
     var referanse: String? = null,
     val behandlingid: Long? = null,
     var manueltOverstyrtGebyr: RolleManueltOverstyrtGebyr? = null,

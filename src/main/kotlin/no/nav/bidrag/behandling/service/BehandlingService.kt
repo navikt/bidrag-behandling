@@ -4,8 +4,10 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.async.BestillAsyncJobService
 import no.nav.bidrag.behandling.async.dto.BehandlingHendelseBestilling
 import no.nav.bidrag.behandling.async.dto.BehandlingOppdateringBestilling
+import no.nav.bidrag.behandling.async.dto.SøknadSlettetBestilling
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.config.UnleashFeatures
+import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
 import no.nav.bidrag.behandling.database.datamodell.Behandling
 import no.nav.bidrag.behandling.database.datamodell.PrivatAvtale
 import no.nav.bidrag.behandling.database.datamodell.Rolle
@@ -29,6 +31,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.OpprettRolleDto
 import no.nav.bidrag.behandling.dto.v1.behandling.erBidrag
 import no.nav.bidrag.behandling.dto.v1.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.dto.v1.behandling.tilType
+import no.nav.bidrag.behandling.dto.v1.forsendelse.ForsendelseRolleDto
 import no.nav.bidrag.behandling.dto.v1.forsendelse.InitalizeForsendelseRequest
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagRequestV2
 import no.nav.bidrag.behandling.dto.v2.behandling.AktivereGrunnlagResponseV2
@@ -36,7 +39,11 @@ import no.nav.bidrag.behandling.dto.v2.behandling.BehandlingDetaljerDtoV2
 import no.nav.bidrag.behandling.dto.v2.underhold.BarnDto
 import no.nav.bidrag.behandling.service.forholdsmessigfordeling.ForholdsmessigFordelingService
 import no.nav.bidrag.behandling.service.forholdsmessigfordeling.OppdaterBarnFraFFRequest
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.barn
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.barnAlle
 import no.nav.bidrag.behandling.service.forholdsmessigfordeling.behandlingstyperSomIkkeSkalInkluderesIFF
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.bidragsmottaker
+import no.nav.bidrag.behandling.service.forholdsmessigfordeling.bidragspliktig
 import no.nav.bidrag.behandling.transformers.Dtomapper
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.behandling.tilBehandlingDetaljerDtoV2
@@ -52,6 +59,7 @@ import no.nav.bidrag.commons.service.organisasjon.EnhetProvider
 import no.nav.bidrag.commons.util.secureLogger
 import no.nav.bidrag.domene.enums.behandling.Behandlingstatus
 import no.nav.bidrag.domene.enums.behandling.TypeBehandling
+import no.nav.bidrag.domene.enums.behandling.tilStønadstype
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
 import no.nav.bidrag.domene.enums.privatavtale.PrivatAvtaleType
 import no.nav.bidrag.domene.enums.rolle.Rolletype
@@ -65,6 +73,7 @@ import no.nav.bidrag.transport.behandling.behandling.ÅpenBehandlingBarn
 import no.nav.bidrag.transport.behandling.behandling.ÅpenBehandlingBarnSøknad
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingHendelseType
 import no.nav.bidrag.transport.dokument.forsendelse.BehandlingInfoDto
+import no.nav.bidrag.transport.felles.commonObjectmapper
 import no.nav.bidrag.transport.felles.ifTrue
 import no.nav.bidrag.transport.felles.tilJsonString
 import org.springframework.context.annotation.Lazy
@@ -89,6 +98,7 @@ class BehandlingService(
     private val mapper: Dtomapper,
     private val validerBehandlingService: ValiderBehandlingService,
     private val underholdService: UnderholdService,
+    private val bbmConsumer: BidragBBMConsumer,
     private val bestillAsyncJobService: BestillAsyncJobService? = null,
     @Lazy
     private val forholdsmessigFordelingService: ForholdsmessigFordelingService? = null,
@@ -98,6 +108,7 @@ class BehandlingService(
         behandlingId: Long,
         søknadsid: Long? = null,
     ) {
+        secureLogger.info { "Sletter behandling $behandlingId og søknad $søknadsid" }
         val behandling = hentBehandlingById(behandlingId)
         if (behandling.erVedtakFattet) {
             throw HttpClientErrorException(
@@ -107,6 +118,93 @@ class BehandlingService(
         }
 
         slettBehandling(behandling, søknadsid)
+        if (!behandling.erIForholdsmessigFordeling && søknadsid != null) {
+            behandleEtterSøknadSlettet(søknadsid, behandlingId)
+        }
+    }
+
+    fun behandleEtterSøknadSlettetAsync(
+        søknadsid: Long,
+        behandlingsid: Long?,
+    ) {
+        secureLogger.info { "Bestiller behandling etter søknad slettet for søknadsid $søknadsid" }
+        bestillAsyncJobService!!.bestillBehandleEtterSøknadSlettet(
+            SøknadSlettetBestilling(
+                søknadsid = søknadsid,
+                behandlingsid = behandlingsid,
+            ),
+        )
+    }
+
+    fun behandleEtterSøknadSlettet(
+        søknadsid: Long,
+        behandlingsid: Long?,
+    ) {
+        val søknad = bbmConsumer.hentSøknad(søknadsid)?.søknad ?: return
+        val saksnummer = søknad.saksnummer
+        val erFeilregistrert =
+            søknad.barnAlle.all {
+                listOf(
+                    Behandlingstatus.FEILREGISTRERT,
+                    Behandlingstatus.AVVIST,
+                    Behandlingstatus.DØMT_AVSLUTTET,
+                    Behandlingstatus.ERKJENT_AVSLUTTET,
+                    Behandlingstatus.SENDT_UTLANDET_LUKKET,
+                    Behandlingstatus.G4,
+                    Behandlingstatus.TRUKKET,
+                ).contains(it.behandlingstatus)
+            }
+        val erTrukket = søknad.barnAlle.all { it.behandlingstatus == Behandlingstatus.TRUKKET }
+        if (erTrukket) {
+            forsendelseService.slettEllerOpprettForsendelse(
+                InitalizeForsendelseRequest(
+                    saksnummer = saksnummer,
+                    enhet = søknad.behandlerenhet,
+                    roller =
+                        søknad.barnAlle.map {
+                            ForsendelseRolleDto(
+                                fødselsnummer = Personident(it.personident!!),
+                                type = Rolletype.BARN,
+                            )
+                        } +
+                            listOfNotNull(
+                                søknad.bidragsmottaker?.let {
+                                    ForsendelseRolleDto(
+                                        fødselsnummer = Personident(it.personident!!),
+                                        type = Rolletype.BIDRAGSMOTTAKER,
+                                    )
+                                },
+                                søknad.bidragspliktig?.let {
+                                    ForsendelseRolleDto(
+                                        fødselsnummer = Personident(it.personident!!),
+                                        type = Rolletype.BIDRAGSPLIKTIG,
+                                    )
+                                },
+                            ),
+                    behandlingInfo =
+                        BehandlingInfoDto(
+                            behandlingId = behandlingsid?.toString(),
+                            soknadId = søknad.søknadsid.toString(),
+                            soknadFra = søknad.søktAvType,
+                            behandlingType = søknad.behandlingstema.name,
+                            soknadType = søknad.behandlingstype.name,
+                            stonadType = søknad.behandlingstema.tilStønadstype(),
+                            engangsBelopType = null,
+                            vedtakType = søknad.behandlingstype.tilVedtakstype(),
+                        ),
+                ),
+            )
+        } else if (erFeilregistrert) {
+            forsendelseService.slettForsendelse(
+                InitalizeForsendelseRequest(
+                    saksnummer = saksnummer,
+                    behandlingInfo =
+                        BehandlingInfoDto(
+                            soknadId = søknadsid.toString(),
+                        ),
+                ),
+            )
+        }
     }
 
     fun slettBehandling(
@@ -632,6 +730,9 @@ class BehandlingService(
         behandlingId: Long,
         request: OppdaterRollerRequest,
     ) {
+        secureLogger.info {
+            "Bestiller oppdatering av roller for behandling $behandlingId med request ${commonObjectmapper.writeValueAsString(request)}"
+        }
         bestillAsyncJobService!!.bestillOppdateringAvRoller(
             BehandlingOppdateringBestilling(
                 behandlingId = behandlingId,
@@ -830,6 +931,11 @@ class BehandlingService(
         saksnummer: String,
         oppdaterRollerListe: List<OpprettRolleDto>,
     ) {
+        val gjelder18ÅrSøknad =
+            oppdaterRollerListe.any {
+                it.harGebyrsøknad && it.rolletype == Rolletype.BARN &&
+                    it.behandlingstema?.tilStønadstype() == Stønadstype.BIDRAG18AAR
+            }
         oppdaterRollerListe
             .filter { !it.erSlettet }
             .filter { roller.any { br -> br.erSammeRolle(it.ident!!.verdi, it.stønadstype) } }
@@ -840,7 +946,12 @@ class BehandlingService(
                     eksisterendeRolle.harGebyrsøknad = if (eksisterendeRolle.harGebyrsøknad) true else it.harGebyrsøknad
                     if (it.harGebyrsøknad || !it.referanseGebyr.isNullOrEmpty()) {
                         val gebyrDetaljer = eksisterendeRolle.hentEllerOpprettGebyr()
-                        val gebyr = gebyrDetaljer.finnEllerOpprettGebyrForSøknad(søknadsid, saksnummer)
+                        val gebyr =
+                            gebyrDetaljer
+                                .finnEllerOpprettGebyrForSøknad(søknadsid, saksnummer)
+                                .copy(
+                                    gjelder18ÅrSøknad = gjelder18ÅrSøknad,
+                                )
                         gebyr.referanse = it.referanseGebyr ?: gebyr.referanse
                         gebyrDetaljer.leggTilGebyr(gebyr)
                     }

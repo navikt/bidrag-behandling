@@ -5,6 +5,7 @@ import jakarta.transaction.Transactional
 import no.nav.bidrag.behandling.async.dto.BehandlingOppdateringBestilling
 import no.nav.bidrag.behandling.async.dto.GrunnlagInnhentingBestilling
 import no.nav.bidrag.behandling.async.dto.OpprettForsendelseBestilling
+import no.nav.bidrag.behandling.async.dto.SøknadSlettetBestilling
 import no.nav.bidrag.behandling.service.BehandlingService
 import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.transport.felles.tilJsonString
@@ -41,5 +42,12 @@ class BestillAsyncJobListener(
         if (bestilling.waitForCommit) return
         log.info { "Async: Oppretter forsendelse for behandling ${bestilling.behandlingId}" }
         behandlingService.opprettForsendelseForBehandling(bestilling.behandlingId)
+    }
+
+    @EventListener
+    @Async
+    fun behandleBestillingEtterSøknadSlettet(bestilling: SøknadSlettetBestilling) {
+        log.info { "Async: Behandler etter søknad slettet for søknadsid ${bestilling.søknadsid}" }
+        behandlingService.behandleEtterSøknadSlettet(bestilling.søknadsid, bestilling.behandlingsid)
     }
 }
