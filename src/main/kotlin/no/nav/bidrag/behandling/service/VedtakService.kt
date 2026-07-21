@@ -484,7 +484,7 @@ class VedtakService(
         val erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder =
             behandling.erIForholdsmessigFordeling && beregning.bpHarFullEvneIAllePerioder
 
-        if (!simuler && erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder){
+        if (!simuler && erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder) {
             forholdsmessigFordelingService!!.fjernSammeknytningHovedsøknad(behandling)
         }
 
