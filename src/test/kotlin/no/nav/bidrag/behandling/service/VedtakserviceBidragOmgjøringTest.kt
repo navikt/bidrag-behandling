@@ -110,7 +110,7 @@ class VedtakserviceBidragOmgjøringTest : CommonVedtakTilBehandlingTest() {
                 forsendelseService,
                 virkningstidspunktService,
                 behandlingRepository = behandlingRepository,
-                forholdsmessigFordelingService = forholdsmessigFordelingService
+                forholdsmessigFordelingService = forholdsmessigFordelingService,
             )
     }
 
