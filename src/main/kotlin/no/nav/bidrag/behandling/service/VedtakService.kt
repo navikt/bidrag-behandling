@@ -481,7 +481,10 @@ class VedtakService(
         beregning.validerManuelAldersjustering(behandling)
 
         val vedtakRequestDtos: MutableList<Pair<Int, OpprettVedtakRequestDto>> = mutableListOf()
+        val erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder =
+            behandling.erIForholdsmessigFordeling && beregning.bpHarFullEvneIAllePerioder
 
+        val klagevedtakErEnesteVedtak = beregning.klagevedtakErEnesteVedtak && !erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder
         val requestDelvedtak =
             beregning.copy(
                 delvedtak =
@@ -490,12 +493,12 @@ class VedtakService(
                         beregning.sak,
                         request,
                         beregning.beregning,
-                        beregning.klagevedtakErEnesteVedtak,
+                        klagevedtakErEnesteVedtak,
                     ),
             )
 
         val endeligVedtakOrkestrering =
-            if (beregning.klagevedtakErEnesteVedtak) {
+            if (klagevedtakErEnesteVedtak) {
                 val klagevedtak = requestDelvedtak.delvedtak.find { it.omgjøringsvedtak }!!
                 secureLogger.info {
                     "Klagevedtak er eneste vedtak i orkestrering. Fatter bare vedtak for klagevedtak ${klagevedtak.request}"
@@ -543,11 +546,12 @@ class VedtakService(
                     }
 
                 val oppdatertDelvedtakOrkestrering = requestDelvedtak.copy(delvedtak = oppdatertDelvedtak)
-                val erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder =
-                    behandling.erIForholdsmessigFordeling && beregning.bpHarFullEvneIAllePerioder
 
                 val endeligVedtakRequests =
                     if (erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder) {
+                        if (!simuler){
+                            forholdsmessigFordelingService!!.fjernSammeknytningHovedsøknad(behandling)
+                        }
                         behandlingTilVedtakMapping.run {
                             behandling.byggOpprettVedtakRequestSplittetFFOmgjøringEtterFFBleTrukket(
                                 request,
