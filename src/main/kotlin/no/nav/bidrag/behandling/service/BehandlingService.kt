@@ -137,21 +137,11 @@ class BehandlingService(
                     Behandlingstatus.ERKJENT_AVSLUTTET,
                     Behandlingstatus.SENDT_UTLANDET_LUKKET,
                     Behandlingstatus.G4,
+                    Behandlingstatus.TRUKKET,
                 ).contains(it.behandlingstatus)
             }
-
         val erTrukket = søknad.barnAlle.all { it.behandlingstatus == Behandlingstatus.TRUKKET }
-        if (erFeilregistrert) {
-            forsendelseService.slettForsendelse(
-                InitalizeForsendelseRequest(
-                    saksnummer = saksnummer,
-                    behandlingInfo =
-                        BehandlingInfoDto(
-                            soknadId = søknadsid.toString(),
-                        ),
-                ),
-            )
-        } else if (erTrukket) {
+         if (erTrukket) {
             forsendelseService.slettEllerOpprettForsendelse(
                 InitalizeForsendelseRequest(
                     saksnummer = saksnummer,
@@ -187,6 +177,16 @@ class BehandlingService(
                             stonadType = søknad.behandlingstema.tilStønadstype(),
                             engangsBelopType = null,
                             vedtakType = søknad.behandlingstype.tilVedtakstype(),
+                        ),
+                ),
+            )
+        } else if (erFeilregistrert) {
+            forsendelseService.slettForsendelse(
+                InitalizeForsendelseRequest(
+                    saksnummer = saksnummer,
+                    behandlingInfo =
+                        BehandlingInfoDto(
+                            soknadId = søknadsid.toString(),
                         ),
                 ),
             )
