@@ -282,6 +282,7 @@ class ForholdsmessigFordelingKlageService(
                         mottattDato = opprettetSøknad.søknadMottattDato,
                         søktAvType = opprettetSøknad.søktAvType,
                         søknadFomDato = opprettetSøknad.søknadFomDato,
+                        enhet = opprettetSøknad.behandlerenhet ?: behandling.behandlerEnhet,
                     ),
                 )
             }

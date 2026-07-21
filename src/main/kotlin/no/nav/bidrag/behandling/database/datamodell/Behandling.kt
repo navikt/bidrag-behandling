@@ -246,6 +246,7 @@ open class Behandling(
                 behandlingstype = søknadstype,
                 søknadsid = soknadsid,
                 saksnummer = saksnummer,
+                enhet = behandlerEnhet,
             )
         } else {
             null
