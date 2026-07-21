@@ -4,6 +4,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.bidrag.behandling.async.BestillAsyncJobService
 import no.nav.bidrag.behandling.async.dto.BehandlingHendelseBestilling
 import no.nav.bidrag.behandling.async.dto.BehandlingOppdateringBestilling
+import no.nav.bidrag.behandling.async.dto.SøknadSlettetBestilling
 import no.nav.bidrag.behandling.behandlingNotFoundException
 import no.nav.bidrag.behandling.config.UnleashFeatures
 import no.nav.bidrag.behandling.consumer.BidragBBMConsumer
@@ -120,6 +121,19 @@ class BehandlingService(
         if (!behandling.erIForholdsmessigFordeling && søknadsid != null) {
             behandleEtterSøknadSlettet(søknadsid, behandlingId)
         }
+    }
+
+    fun behandleEtterSøknadSlettetAsync(
+        søknadsid: Long,
+        behandlingsid: Long?,
+    ) {
+        secureLogger.info { "Bestiller behandling etter søknad slettet for søknadsid $søknadsid" }
+        bestillAsyncJobService!!.bestillBehandleEtterSøknadSlettet(
+            SøknadSlettetBestilling(
+                søknadsid = søknadsid,
+                behandlingsid = behandlingsid,
+            ),
+        )
     }
 
     fun behandleEtterSøknadSlettet(

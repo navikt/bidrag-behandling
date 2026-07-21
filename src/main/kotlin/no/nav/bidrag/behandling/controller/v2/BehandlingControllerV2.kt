@@ -491,7 +491,7 @@ class BehandlingControllerV2(
     )
     fun slettSøknad(
         @PathVariable søknadsid: Long,
-    ) = behandlingService.behandleEtterSøknadSlettet(søknadsid, null)
+    ) = behandlingService.behandleEtterSøknadSlettetAsync(søknadsid, null)
 
     @Suppress("unused")
     @DeleteMapping("/behandling/{behandlingsid}/{søknadsid}")
