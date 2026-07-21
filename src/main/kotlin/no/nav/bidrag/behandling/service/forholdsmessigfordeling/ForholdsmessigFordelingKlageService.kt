@@ -15,9 +15,12 @@ import no.nav.bidrag.behandling.service.GrunnlagService
 import no.nav.bidrag.behandling.service.UnderholdService
 import no.nav.bidrag.behandling.service.VirkningstidspunktService
 import no.nav.bidrag.behandling.service.hentSak
+import no.nav.bidrag.behandling.service.hentVedtak
 import no.nav.bidrag.behandling.transformers.behandling.oppdaterBehandlingEtterOppdatertRoller
 import no.nav.bidrag.behandling.transformers.erOverEllerLik18År
 import no.nav.bidrag.behandling.transformers.maxOfNullable
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.hentSøknad
+import no.nav.bidrag.behandling.transformers.vedtak.mapping.fravedtak.hentSøknader
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregnTilDato
 import no.nav.bidrag.behandling.transformers.vedtak.mapping.tilvedtak.finnBeregningsperiode
 import no.nav.bidrag.behandling.ugyldigForespørsel
@@ -36,6 +39,7 @@ import no.nav.bidrag.transport.behandling.beregning.felles.Barn
 import no.nav.bidrag.transport.behandling.beregning.felles.FeilregistrerSøknadRequest
 import no.nav.bidrag.transport.behandling.beregning.felles.HentSøknad
 import no.nav.bidrag.transport.behandling.beregning.felles.OpprettSøknadRequest
+import no.nav.bidrag.transport.behandling.felles.grunnlag.hentSøknadForPerson
 import no.nav.bidrag.transport.behandling.hendelse.BehandlingStatusType
 import no.nav.bidrag.transport.felles.toYearMonth
 
@@ -299,14 +303,31 @@ class ForholdsmessigFordelingKlageService(
         åpneSøknaderForVedtaksid: List<HentSøknad>,
         hovedsøknadsid: Long,
     ): List<Pair<String?, Stønadstype?>> {
+        val vedtak = behandling.omgjøringsdetaljer!!.omgjørVedtakId?.let { hentVedtak(it) }
+        val søknaderOpprinneligVedtak =
+            vedtak?.stønadsendringListe?.mapNotNull {
+                vedtak.grunnlagListe.hentSøknadForPerson(it.kravhaver, it.type)
+            } ?: emptyList()
         val tilknyttedeSøknaderOmgjortSøknad =
             bbmConsumer.finnSammenknytningerHovedsøknad(
                 behandling.omgjøringsdetaljer!!.soknadRefId!!,
                 SøknadsknytningStatus.Deaktiv,
             )
 
+        val tilknyttedeSøknaderOmgjortSøknadFiltrert =
+            if (søknaderOpprinneligVedtak.isNotEmpty()) {
+                tilknyttedeSøknaderOmgjortSøknad.copy(
+                    søknader =
+                        tilknyttedeSøknaderOmgjortSøknad.søknader.filter { tilknyttetSøknad ->
+                            søknaderOpprinneligVedtak.any { it.søknadsid == tilknyttetSøknad.søknadsid }
+                        },
+                )
+            } else {
+                tilknyttedeSøknaderOmgjortSøknad
+            }
+
         val tilknyttetSøknaderIkkeHovedsøknad =
-            filtrerTilknyttedeSøknaderForKlage(tilknyttedeSøknaderOmgjortSøknad, relevanteKravhavere, behandling.søknadsbarn)
+            filtrerTilknyttedeSøknaderForKlage(tilknyttedeSøknaderOmgjortSøknadFiltrert, relevanteKravhavere, behandling.søknadsbarn)
 
         val søknadsbarnOpprettetSøknad =
             opprettetSøknad.parterUnderBehandling.map {
