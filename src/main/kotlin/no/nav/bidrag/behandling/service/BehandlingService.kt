@@ -141,7 +141,7 @@ class BehandlingService(
                 ).contains(it.behandlingstatus)
             }
         val erTrukket = søknad.barnAlle.all { it.behandlingstatus == Behandlingstatus.TRUKKET }
-         if (erTrukket) {
+        if (erTrukket) {
             forsendelseService.slettEllerOpprettForsendelse(
                 InitalizeForsendelseRequest(
                     saksnummer = saksnummer,
