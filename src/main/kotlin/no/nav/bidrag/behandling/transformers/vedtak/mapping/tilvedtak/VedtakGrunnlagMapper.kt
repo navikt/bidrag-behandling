@@ -649,6 +649,7 @@ class VedtakGrunnlagMapper(
                                 (innkrevesFraPeriode != null && innkrevesFraPeriode.overlapper(beregningsperiode))
                         OmgjøringOrkestratorGrunnlag(
                             stønad = behandling.tilStønadsid(søknadsbarnRolle),
+                            påklagetVedtakId = behandling.omgjøringsdetaljer?.omgjørVedtakId!!,
                             omgjørVedtakId = behandling.omgjøringsdetaljer?.opprinneligVedtakId!!,
                             gjelderKlage = behandling.vedtakstype == Vedtakstype.KLAGE,
                             skalInnkreves = skalInnkreves,
