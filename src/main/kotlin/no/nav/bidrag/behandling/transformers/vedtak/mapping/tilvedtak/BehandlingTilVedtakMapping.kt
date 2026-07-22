@@ -792,7 +792,7 @@ class BehandlingTilVedtakMapping(
                             søknadsbarn = byggForSøknadsbarn,
                         ),
                     )
-                    stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagGenerelt(byggForSøknadsbarn, request = request))
+                    stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagGenerelt(listOfNotNull(søknadsbarn), request = request))
                 }
             } else if (resultatVedtak.delvedtak) {
                 // Fjern eksisterende virkningstpunkt grunnlag før det legges på ny
