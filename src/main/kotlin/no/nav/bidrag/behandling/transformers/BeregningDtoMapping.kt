@@ -329,9 +329,11 @@ fun Behandling.tilInntektberegningDto(rolle: Rolle): BeregnValgteInntekterGrunnl
                     InntektsgrunnlagPeriode(
                         periode =
                             if (it.kilde == Kilde.OFFENTLIG && eksplisitteYtelser.contains(it.type)) {
+                                val datoFom = maxOf(it.opprinneligFom!!, virkningstidspunktEllerSøktFomDato)
+                                val datoTil = it.bestemDatoTomForOffentligInntekt()?.plusDays(1)
                                 ÅrMånedsperiode(
-                                    maxOf(it.opprinneligFom!!, virkningstidspunktEllerSøktFomDato),
-                                    it.bestemDatoTomForOffentligInntekt()?.plusDays(1),
+                                    if (datoTil != null && datoFom > datoTil) it.opprinneligFom!! else datoFom,
+                                    datoTil,
                                 )
                             } else {
                                 ÅrMånedsperiode(it.datoFom!!, it.datoTom?.plusDays(1))
