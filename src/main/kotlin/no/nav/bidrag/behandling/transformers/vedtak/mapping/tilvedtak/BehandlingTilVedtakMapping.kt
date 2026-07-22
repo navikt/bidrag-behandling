@@ -811,7 +811,7 @@ class BehandlingTilVedtakMapping(
                 virkningstidspunktGrunnlag.find { it.gjelderBarnReferanse == søknadsbarnReferanse }?.let {
                     stønadsendringGrunnlagListe.add(it)
                 }
-                stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagSøknad(byggForSøknadsbarn))
+                stønadsendringGrunnlagListe.addAll(behandling.byggGrunnlagSøknad(listOfNotNull(søknadsbarn)))
 
                 val grunnlagManuelleVedtak =
                     behandling
