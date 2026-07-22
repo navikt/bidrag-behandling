@@ -364,7 +364,7 @@ class ForholdsmessigFordelingKravhaverService(
                     val stønaderMedÅpenBehandling =
                         søknadsbarnIdentStønadstypeMap
                             .filter {
-                                it.first == rollePA.ident
+                                it.first == rollePA.ident && (it.second == null || it.second == rollePA.stønadstype)
                             }.map { it.second }
                             .distinct()
 
