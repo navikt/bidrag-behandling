@@ -356,7 +356,11 @@ class ForholdsmessigFordelingKravhaverService(
             behandling.privatAvtale
                 .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode(beregningsperiode)
                 .filter {
-                    it.rolle != null && kravhavereSomHarÅpenBehandling.none { kravhaver -> kravhaver.kravhaver == it.personIdent && kravhaver.stønadstype == it.stønadstype }
+                    it.rolle != null &&
+                        kravhavereSomHarÅpenBehandling.none { kravhaver ->
+                            kravhaver.kravhaver == it.personIdent &&
+                                kravhaver.stønadstype == it.stønadstype
+                        }
                 }.mapNotNull { privatAvtale ->
                     val rollePA = privatAvtale.rolle!!
                     val sak = sakerBp.find { it.roller.any { rolle -> rolle.fødselsnummer!!.verdi == rollePA.ident } }!!

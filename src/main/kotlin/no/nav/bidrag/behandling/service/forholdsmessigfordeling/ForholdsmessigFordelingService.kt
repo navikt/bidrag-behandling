@@ -522,8 +522,8 @@ class ForholdsmessigFordelingService(
         }
 
         behandling.privatAvtale.filter { it.rolle == null }.forEach {
-            val eksisterendeRolle = behandling.roller.find { r-> r.erSammeRolle(it.personIdent!!, it.stønadstype) }
-            if (eksisterendeRolle != null){
+            val eksisterendeRolle = behandling.roller.find { r -> r.erSammeRolle(it.personIdent!!, it.stønadstype) }
+            if (eksisterendeRolle != null) {
                 it.rolle = eksisterendeRolle
                 it.person = null
             }
