@@ -55,6 +55,9 @@ class UtgiftService(
         }
         if (request.oppdatereBegrunnelse == null) {
             behandling.avslag = request.avslag
+            behandling.søknadsbarn.forEach {
+                it.avslag = request.avslag
+            }
         }
         if (request.nyEllerEndretUtgift != null) {
             utgift.lagreHistorikk()

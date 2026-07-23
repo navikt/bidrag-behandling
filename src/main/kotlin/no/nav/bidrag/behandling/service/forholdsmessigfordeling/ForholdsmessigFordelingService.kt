@@ -521,6 +521,7 @@ class ForholdsmessigFordelingService(
             sjekkOgSynkroniserSøknadsstatusForBarn(rolle, behandling, løpendeBidraggsakerBP, alleSøknaderRelevantForBehandling)
         }
 
+        // Feilhåndtering, lagre rolle på PA hvis det er opprettet rolle. Bør ikke kunne opprette "midlertidlig" PA for en barn som er i behandlingen
         behandling.privatAvtale.filter { it.rolle == null }.forEach {
             val eksisterendeRolle = behandling.roller.find { r -> r.erSammeRolle(it.personIdent!!, it.stønadstype) }
             if (eksisterendeRolle != null) {
