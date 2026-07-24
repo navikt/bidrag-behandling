@@ -176,16 +176,6 @@ class VedtakHendelseListener(
         return behandling.innkrevingstype == Innkrevingstype.UTEN_INNKREVING && behandling.erKlageEllerOmgjøring && behandling.erBidrag()
     }
 
-    private fun opprettNotat(behandling: Behandling) {
-        try {
-            notatOpplysningerService.opprettNotat(behandling.id!!)
-        } catch (e: Exception) {
-            log.error(
-                e,
-            ) { "Det skjedde en feil ved opprettelse av notat for behandling ${behandling.id} og vedtaksid ${behandling.vedtaksid}" }
-        }
-    }
-
     private fun opprettForsendelse(
         vedtak: VedtakHendelse,
         behandling: Behandling,

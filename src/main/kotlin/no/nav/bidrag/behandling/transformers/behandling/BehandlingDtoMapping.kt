@@ -1401,7 +1401,8 @@ fun Behandling.hentBeregnetInntekterForRolle(rolle: Rolle) =
             }, { it.inntektGjelderBarn?.identifikator }),
         )
 
-fun Behandling.tilReferanseId() = "bidrag_behandling_${id}_${opprettetTidspunkt.toEpochSecond(ZoneOffset.UTC)}"
+fun Behandling.tilReferanseId(saksnummer: String? = null) =
+    "bidrag_behandling_${id}_${opprettetTidspunkt.toEpochSecond(ZoneOffset.UTC)}${saksnummer?.let { "_$it" } ?: ""}"
 
 fun Behandling.tilNotat(
     notattype: Notattype,

@@ -172,10 +172,11 @@ class NotatOpplysningerService(
     fun opprettNotat(
         behandlingId: Long,
         oppdaterDatoDokument: Boolean = false,
+        saksnummer: String? = null,
     ): String {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
-        val notatDto = hentNotatOpplysninger(behandlingId)
-        secureLogger.info { "Oppretter notat med opplysninger $notatDto" }
+        val notatDto = hentNotatOpplysninger(behandlingId, saksnummer)
+        secureLogger.info { "Oppretter notat med opplysninger $notatDto og saksnummer $saksnummer" }
         val notatPdf = bidragDokumentProduksjonConsumer.opprettNotat(notatDto)
         log.info { "Oppretter notat for behandling $behandlingId i sak ${behandling.saksnummer}" }
         val vedtakDetaljer = behandling.vedtakDetaljer
@@ -185,14 +186,14 @@ class NotatOpplysningerService(
                 datoDokument = oppdaterDatoDokument.ifTrue { behandling.vedtakstidspunkt },
                 journalposttype = JournalpostType.NOTAT,
                 journalførendeEnhet = vedtakDetaljer?.vedtakFattetAvEnhet ?: behandling.vedtakFattetAvEnhet ?: behandling.behandlerEnhet,
-                tilknyttSaker = behandling.saker,
+                tilknyttSaker = saksnummer?.let { listOf(it) } ?: behandling.saker,
                 gjelderIdent =
                     if (behandling.erForskudd()) {
                         behandling.bidragsmottaker!!.ident
                     } else {
                         behandling.bidragspliktig!!.ident
                     },
-                referanseId = behandling.tilReferanseId(),
+                referanseId = behandling.tilReferanseId(saksnummer),
                 saksbehandlerIdent = vedtakDetaljer?.vedtakFattetAv ?: behandling.vedtakFattetAv ?: TokenUtils.hentSaksbehandlerIdent(),
                 dokumenter =
                     listOf(
@@ -223,13 +224,43 @@ class NotatOpplysningerService(
         behandling.notatJournalpostId = journalpostId
     }
 
-    fun hentNotatOpplysninger(behandlingId: Long): VedtakNotatDto {
+    fun hentNotatOpplysninger(
+        behandlingId: Long,
+        saksnummer: String? = null,
+    ): VedtakNotatDto {
         val behandling = behandlingService.hentBehandlingById(behandlingId)
 
-        return hentNotatOpplysningerForBehandling(behandling)
+        return hentNotatOpplysningerForBehandling(behandling, saksnummer)
     }
 
-    fun hentNotatOpplysningerForBehandling(behandling: Behandling): VedtakNotatDto {
+    /**
+     * Henter notatopplysninger for [behandling].
+     *
+     * Hvis [saksnummer] er satt filtreres opplysningene slik at kun BM/bidragspliktig og søknadsbarn som
+     * tilhører det aktuelle saksnummeret (jf. [Rolle.saksnummer]) tas med. Dette er relevant for behandlinger med
+     * forholdsmessig fordeling, der en behandling kan omfatte flere BM-er/saker med hvert sitt sett søknadsbarn.
+     * Boforhold (husstandsmedlemmer) er alltid det samme uavhengig av saksnummer, men boforhold for BM
+     * (`boforholdBMSøknadsbarn`) filtreres på søknadsbarna som tilhører [saksnummer].
+     *
+     * Hvis [saksnummer] er null (default) tas alle opplysninger med, uavhengig av saksnummer.
+     */
+    fun hentNotatOpplysningerForBehandling(
+        behandling: Behandling,
+        saksnummer: String? = null,
+    ): VedtakNotatDto {
+        val rollerForNotat =
+            if (saksnummer == null) {
+                behandling.roller
+            } else {
+                behandling.roller.filter { it.rolletype == Rolletype.BIDRAGSPLIKTIG || it.saksnummer == saksnummer }
+            }
+        val søknadsbarnForNotat = rollerForNotat.filter { it.rolletype == Rolletype.BARN }
+        val søknadsbarnIdForNotat = søknadsbarnForNotat.mapNotNull { it.id }.toSet()
+
+        // Inkluderer alt hvis saksnummer ikke er satt. Hvis id ikke er satt (f.eks. andre barn som ikke er søknadsbarn)
+        // inkluderes det uansett, siden dette ikke kan knyttes til et bestemt saksnummer.
+        fun erKnyttetTilSaksnummer(id: Long?) = saksnummer == null || id == null || søknadsbarnIdForNotat.contains(id)
+
         val opplysningerBoforholdBM =
             behandling.grunnlag
                 .hentSisteAktiv()
@@ -259,8 +290,9 @@ class NotatOpplysningerService(
                     r.konvertereData<List<ArbeidsforholdGrunnlagDto>>() ?: emptyList()
                 }
 
+        val førsteRolleForNotat = søknadsbarnForNotat.firstOrNull()
         return VedtakNotatDto(
-            saksnummer = behandling.saksnummer,
+            saksnummer = saksnummer ?: behandling.saksnummer,
             stønadstype = behandling.stonadstype,
             medInnkreving = behandling.innkrevingstype == Innkrevingstype.MED_INNKREVING,
             type =
@@ -280,182 +312,207 @@ class NotatOpplysningerService(
                     erVirkningstidspunktLikForAlle = behandling.erVirkningstidspunktLiktForAlle,
                     erAvslagForAlle = behandling.erAvslagForAlle,
                     eldsteVirkningstidspunkt = behandling.eldsteVirkningstidspunkt.toYearMonth(),
-                    barn = behandling.tilVirkningstidspunktBarn(),
+                    barn = behandling.tilVirkningstidspunktBarn(søknadsbarnForNotat),
                 ),
             utgift = mapper.run { behandling.tilUtgiftDto()?.tilNotatUtgiftDto(behandling) },
-            samvær = mapper.run { behandling.tilSamværDto() }?.tilNotatSamværDto(behandling) ?: emptyList(),
+            samvær =
+                mapper
+                    .run { behandling.tilSamværDto() }
+                    ?.filter { erKnyttetTilSaksnummer(it.barn.id) }
+                    ?.tilNotatSamværDto(behandling) ?: emptyList(),
             samværV2 =
                 NotatSamværDto(
                     erSammeForAlle = behandling.sammeSamværForAlle,
-                    barn = mapper.run { behandling.tilSamværDto() }?.tilNotatSamværDto(behandling) ?: emptyList(),
+                    barn =
+                        mapper
+                            .run { behandling.tilSamværDto() }
+                            ?.filter { erKnyttetTilSaksnummer(it.barn.id) }
+                            ?.tilNotatSamværDto(behandling) ?: emptyList(),
                 ),
             underholdskostnader =
                 NotatUnderholdDto(
                     offentligeOpplysninger = behandling.tilUnderholdOpplysning(),
                     offentligeOpplysningerV2 = behandling.tilUnderholdOpplysningV2(),
                     underholdskostnaderBarn =
-                        mapper.run { behandling.underholdskostnader.tilDtos() }.sortedBy { it.gjelderBarn.fødselsdato }.map {
-                            NotatUnderholdBarnDto(
-                                gjelderBarn = it.gjelderBarn.tilNotatRolle(behandling),
-                                harTilsynsordning = it.harTilsynsordning,
-                                begrunnelse = NotatBegrunnelseDto(it.begrunnelse, it.begrunnelseFraOpprinneligVedtak),
-                                stønadTilBarnetilsyn =
-                                    it.stønadTilBarnetilsyn.map {
-                                        NotatUnderholdBarnDto.NotatStønadTilBarnetilsynDto(
-                                            periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
-                                            skolealder = it.skolealder ?: Skolealder.IKKE_ANGITT,
-                                            tilsynstype = it.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
-                                            kilde = it.kilde,
-                                        )
-                                    },
-                                tilleggsstønad =
-                                    it.tilleggsstønad.map {
-                                        NotatTilleggsstønadDto(
-                                            periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
-                                            dagsats = it.dagsats,
-                                            beløp = it.beløp,
-                                            beløpstype = it.beløpstype,
-                                            total = it.total,
-                                        )
-                                    },
-                                underholdskostnad =
-                                    it.underholdskostnad.map {
-                                        NotatUnderholdBarnDto.NotatUnderholdskostnadBeregningDto(
-                                            periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
-                                            forbruk = it.forbruk,
-                                            boutgifter = it.boutgifter,
-                                            stønadTilBarnetilsyn = it.stønadTilBarnetilsyn,
-                                            tilsynsutgifter = it.tilsynsutgifter,
-                                            barnetrygd = it.barnetrygd,
-                                            total = it.total,
-                                            beregningsdetaljer =
-                                                it.beregningsdetaljer?.let {
-                                                    NotatUnderholdBarnDto.NotatUnderholdskostnadPeriodeBeregningsdetaljer(
-                                                        tilsynsutgifterBarn =
-                                                            it.tilsynsutgifterBarn.map {
-                                                                NotatUnderholdBarnDto.NotatTilsynsutgiftBarn(
-                                                                    gjelderBarn = it.gjelderBarn.tilNotatRolle(behandling),
-                                                                    totalTilsynsutgift = it.totalTilsynsutgift,
-                                                                    beløp = it.beløp,
-                                                                    kostpenger = it.kostpenger,
-                                                                    tilleggsstønad = it.tilleggsstønad,
-                                                                    beløpstype = it.beløpstype,
-                                                                    tilleggsstønadBeløp = it.tilleggsstønadBeløp,
-                                                                    tilleggsstønadDagsats = it.tilleggsstønadDagsats,
-                                                                    faktiskUtgiftBeregnet = it.faktiskUtgiftBeregnet,
-                                                                )
-                                                            },
-                                                        justertBruttoTilsynsutgift = it.justertBruttoTilsynsutgift,
-                                                        erBegrensetAvMaksTilsyn = it.erBegrensetAvMaksTilsyn,
-                                                        bruttoTilsynsutgift = it.bruttoTilsynsutgift,
-                                                        fordelingFaktor = it.fordelingFaktor,
-                                                        maksfradragAndel = BigDecimal.ZERO,
-                                                        skattefradrag = it.skattefradrag,
-                                                        skattefradragMaksFradrag = it.skattefradragMaksFradrag,
-                                                        skattefradragPerBarn = it.skattefradragPerBarn,
-                                                        skattefradragTotalTilsynsutgift = it.skattefradragTotalTilsynsutgift,
-                                                        skattesatsFaktor = it.skattesatsFaktor,
-                                                        sumTilsynsutgifter = it.sumTilsynsutgifter,
-                                                        totalTilsynsutgift = it.totalTilsynsutgift,
-                                                        antallBarnBMUnderTolvÅr = it.antallBarnBMUnderTolvÅr,
-                                                        antallBarnMedTilsynsutgifter = it.antallBarnMedTilsynsutgifter,
-                                                        antallBarnBMBeregnet = it.antallBarnBMBeregnet,
-                                                        nettoTilsynsutgift = it.nettoTilsynsutgift,
-                                                        sjablonMaksFradrag = it.sjablonMaksFradrag,
-                                                        sjablonMaksTilsynsutgift = it.sjablonMaksTilsynsutgift,
-                                                    )
-                                                },
-                                        )
-                                    },
-                                faktiskTilsynsutgift =
-                                    it.faktiskTilsynsutgift
-                                        .map {
-                                            NotatFaktiskTilsynsutgiftDto(
+                        mapper
+                            .run { behandling.underholdskostnader.tilDtos() }
+                            .filter { erKnyttetTilSaksnummer(it.gjelderBarn.id) }
+                            .sortedBy { it.gjelderBarn.fødselsdato }
+                            .map {
+                                NotatUnderholdBarnDto(
+                                    gjelderBarn = it.gjelderBarn.tilNotatRolle(behandling),
+                                    harTilsynsordning = it.harTilsynsordning,
+                                    begrunnelse = NotatBegrunnelseDto(it.begrunnelse, it.begrunnelseFraOpprinneligVedtak),
+                                    stønadTilBarnetilsyn =
+                                        it.stønadTilBarnetilsyn.map {
+                                            NotatUnderholdBarnDto.NotatStønadTilBarnetilsynDto(
                                                 periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
-                                                utgift = it.utgift,
-                                                total = it.total,
-                                                kostpenger = it.kostpenger,
-                                                kommentar = it.kommentar,
+                                                skolealder = it.skolealder ?: Skolealder.IKKE_ANGITT,
+                                                tilsynstype = it.tilsynstype ?: Tilsynstype.IKKE_ANGITT,
+                                                kilde = it.kilde,
                                             )
                                         },
-                            )
-                        },
+                                    tilleggsstønad =
+                                        it.tilleggsstønad.map {
+                                            NotatTilleggsstønadDto(
+                                                periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
+                                                dagsats = it.dagsats,
+                                                beløp = it.beløp,
+                                                beløpstype = it.beløpstype,
+                                                total = it.total,
+                                            )
+                                        },
+                                    underholdskostnad =
+                                        it.underholdskostnad.map {
+                                            NotatUnderholdBarnDto.NotatUnderholdskostnadBeregningDto(
+                                                periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
+                                                forbruk = it.forbruk,
+                                                boutgifter = it.boutgifter,
+                                                stønadTilBarnetilsyn = it.stønadTilBarnetilsyn,
+                                                tilsynsutgifter = it.tilsynsutgifter,
+                                                barnetrygd = it.barnetrygd,
+                                                total = it.total,
+                                                beregningsdetaljer =
+                                                    it.beregningsdetaljer?.let {
+                                                        NotatUnderholdBarnDto.NotatUnderholdskostnadPeriodeBeregningsdetaljer(
+                                                            tilsynsutgifterBarn =
+                                                                it.tilsynsutgifterBarn.map {
+                                                                    NotatUnderholdBarnDto.NotatTilsynsutgiftBarn(
+                                                                        gjelderBarn = it.gjelderBarn.tilNotatRolle(behandling),
+                                                                        totalTilsynsutgift = it.totalTilsynsutgift,
+                                                                        beløp = it.beløp,
+                                                                        kostpenger = it.kostpenger,
+                                                                        tilleggsstønad = it.tilleggsstønad,
+                                                                        beløpstype = it.beløpstype,
+                                                                        tilleggsstønadBeløp = it.tilleggsstønadBeløp,
+                                                                        tilleggsstønadDagsats = it.tilleggsstønadDagsats,
+                                                                        faktiskUtgiftBeregnet = it.faktiskUtgiftBeregnet,
+                                                                    )
+                                                                },
+                                                            justertBruttoTilsynsutgift = it.justertBruttoTilsynsutgift,
+                                                            erBegrensetAvMaksTilsyn = it.erBegrensetAvMaksTilsyn,
+                                                            bruttoTilsynsutgift = it.bruttoTilsynsutgift,
+                                                            fordelingFaktor = it.fordelingFaktor,
+                                                            maksfradragAndel = BigDecimal.ZERO,
+                                                            skattefradrag = it.skattefradrag,
+                                                            skattefradragMaksFradrag = it.skattefradragMaksFradrag,
+                                                            skattefradragPerBarn = it.skattefradragPerBarn,
+                                                            skattefradragTotalTilsynsutgift = it.skattefradragTotalTilsynsutgift,
+                                                            skattesatsFaktor = it.skattesatsFaktor,
+                                                            sumTilsynsutgifter = it.sumTilsynsutgifter,
+                                                            totalTilsynsutgift = it.totalTilsynsutgift,
+                                                            antallBarnBMUnderTolvÅr = it.antallBarnBMUnderTolvÅr,
+                                                            antallBarnMedTilsynsutgifter = it.antallBarnMedTilsynsutgifter,
+                                                            antallBarnBMBeregnet = it.antallBarnBMBeregnet,
+                                                            nettoTilsynsutgift = it.nettoTilsynsutgift,
+                                                            sjablonMaksFradrag = it.sjablonMaksFradrag,
+                                                            sjablonMaksTilsynsutgift = it.sjablonMaksTilsynsutgift,
+                                                        )
+                                                    },
+                                            )
+                                        },
+                                    faktiskTilsynsutgift =
+                                        it.faktiskTilsynsutgift
+                                            .map {
+                                                NotatFaktiskTilsynsutgiftDto(
+                                                    periode = DatoperiodeDto(it.periode.fom, it.periode.tom),
+                                                    utgift = it.utgift,
+                                                    total = it.total,
+                                                    kostpenger = it.kostpenger,
+                                                    kommentar = it.kommentar,
+                                                )
+                                            },
+                                )
+                            },
                 ),
             gebyrV3 =
                 NotatGebyrV3Dto(
                     saker =
-                        mapper.run { behandling.mapGebyrV3() }.saker.map { sak ->
-                            NotatGebyrSakDto(
-                                saksnummer = sak.saksnummer,
-                                gebyrRoller =
-                                    sak.gebyrRoller.map {
-                                        it.mapTilNotatGebyrRolleV2Dto()
-                                    },
-                                gebyr18År =
-                                    sak.gebyr18År.map {
-                                        it.mapTilNotatGebyrRolleV2Dto()
-                                    },
-                            )
-                        },
+                        mapper
+                            .run { behandling.mapGebyrV3() }
+                            .saker
+                            .filter { saksnummer == null || it.saksnummer == saksnummer }
+                            .map { sak ->
+                                NotatGebyrSakDto(
+                                    saksnummer = sak.saksnummer,
+                                    gebyrRoller =
+                                        sak.gebyrRoller.map {
+                                            it.mapTilNotatGebyrRolleV2Dto()
+                                        },
+                                    gebyr18År =
+                                        sak.gebyr18År.map {
+                                            it.mapTilNotatGebyrRolleV2Dto()
+                                        },
+                                )
+                            },
                 ),
             gebyrV2 =
                 NotatGebyrV2Dto(
                     gebyrRoller =
-                        mapper.run { behandling.mapGebyrV2() }.gebyrRoller.sortedBy { it.rolle.fødselsdato }.map { rolle ->
-                            NotatGebyrRolleV2Dto(
-                                rolle = rolle.rolle.tilNotatRolle(),
-                                gebyrDetaljer =
-                                    rolle.gebyrDetaljer.map {
-                                        NotatGebyrDetaljerDto(
-                                            søknad =
-                                                it.søknad?.let {
-                                                    NotatGebyrDetaljerDto.NotatGebyrSøknadDetaljerDto(
-                                                        søknadsid = it.søknadsid,
-                                                        mottattDato = it.mottattDato,
-                                                        saksnummer = it.saksnummer,
-                                                        søktAvType = it.søktAvType,
-                                                        søknadFomDato = it.søktFomDato,
-                                                        behandlingstype = it.behandlingstype,
-                                                        behandlingstema = it.behandlingstema,
-                                                    )
-                                                },
-                                            inntekt =
-                                                NotatGebyrInntektDto(
-                                                    skattepliktigInntekt = it.inntekt.skattepliktigInntekt,
-                                                    maksBarnetillegg = it.inntekt.maksBarnetillegg,
-                                                ),
-                                            beregnetIlagtGebyr = it.beregnetIlagtGebyr,
-                                            beløpGebyrsats = it.beløpGebyrsats,
-                                            endeligIlagtGebyr = it.endeligIlagtGebyr,
-                                            begrunnelse = it.begrunnelse,
-                                            rolle = rolle.rolle.tilNotatRolle(),
-                                        )
-                                    },
-                            )
-                        },
+                        mapper
+                            .run { behandling.mapGebyrV2() }
+                            .gebyrRoller
+                            .sortedBy { it.rolle.fødselsdato }
+                            .filter { saksnummer == null || it.rolle?.saksnummer == saksnummer }
+                            .map { rolle ->
+                                NotatGebyrRolleV2Dto(
+                                    rolle = rolle.rolle.tilNotatRolle(),
+                                    gebyrDetaljer =
+                                        rolle.gebyrDetaljer.map {
+                                            NotatGebyrDetaljerDto(
+                                                søknad =
+                                                    it.søknad?.let {
+                                                        NotatGebyrDetaljerDto.NotatGebyrSøknadDetaljerDto(
+                                                            søknadsid = it.søknadsid,
+                                                            mottattDato = it.mottattDato,
+                                                            saksnummer = it.saksnummer,
+                                                            søktAvType = it.søktAvType,
+                                                            søknadFomDato = it.søktFomDato,
+                                                            behandlingstype = it.behandlingstype,
+                                                            behandlingstema = it.behandlingstema,
+                                                        )
+                                                    },
+                                                inntekt =
+                                                    NotatGebyrInntektDto(
+                                                        skattepliktigInntekt = it.inntekt.skattepliktigInntekt,
+                                                        maksBarnetillegg = it.inntekt.maksBarnetillegg,
+                                                    ),
+                                                beregnetIlagtGebyr = it.beregnetIlagtGebyr,
+                                                beløpGebyrsats = it.beløpGebyrsats,
+                                                endeligIlagtGebyr = it.endeligIlagtGebyr,
+                                                begrunnelse = it.begrunnelse,
+                                                rolle = rolle.rolle.tilNotatRolle(),
+                                            )
+                                        },
+                                )
+                            },
                 ),
             gebyr =
-                mapper.run { behandling.mapGebyr() }.gebyrRoller?.map {
-                    NotatGebyrDetaljerDto(
-                        rolle = it.rolle.tilNotatRolle(),
-                        inntekt =
-                            NotatGebyrInntektDto(
-                                skattepliktigInntekt = it.inntekt.skattepliktigInntekt,
-                                maksBarnetillegg = it.inntekt.maksBarnetillegg,
-                            ),
-                        beregnetIlagtGebyr = it.beregnetIlagtGebyr,
-                        beløpGebyrsats = it.beløpGebyrsats,
-                        endeligIlagtGebyr = it.endeligIlagtGebyr,
-                        begrunnelse = it.begrunnelse,
-                    )
-                },
+                mapper
+                    .run { behandling.mapGebyr() }
+                    .gebyrRoller
+                    .filter { saksnummer == null || it.rolle?.saksnummer == saksnummer }
+                    .map {
+                        NotatGebyrDetaljerDto(
+                            rolle = it.rolle.tilNotatRolle(),
+                            inntekt =
+                                NotatGebyrInntektDto(
+                                    skattepliktigInntekt = it.inntekt.skattepliktigInntekt,
+                                    maksBarnetillegg = it.inntekt.maksBarnetillegg,
+                                ),
+                            beregnetIlagtGebyr = it.beregnetIlagtGebyr,
+                            beløpGebyrsats = it.beløpGebyrsats,
+                            endeligIlagtGebyr = it.endeligIlagtGebyr,
+                            begrunnelse = it.begrunnelse,
+                        )
+                    },
             boforhold =
                 NotatBoforholdDto(
                     begrunnelse = behandling.tilNotatBoforhold(),
                     sivilstand = behandling.tilSivilstand(opplysningerSivilstand),
                     boforholdBMSøknadsbarn =
                         opplysningerBoforholdBM.groupBy { it.gjelderPersonId }.mapNotNull { (gjelderBarnIdent, perioder) ->
-                            val gjelderBarn = behandling.søknadsbarn.find { it.ident == gjelderBarnIdent } ?: return@mapNotNull null
+                            val gjelderBarn = søknadsbarnForNotat.find { it.ident == gjelderBarnIdent } ?: return@mapNotNull null
                             NotatBoforholdTilBMMedSøknadsbarn(
                                 gjelderBarn = gjelderBarn.tilNotatRolle(),
                                 perioder =
@@ -479,18 +536,21 @@ class NotatOpplysningerService(
                             .sortert()
                             .map { mapper.tilBoforholdBarn(it, opplysningerBoforhold) },
                 ),
-            personer = behandling.roller.sortedBy { it.fødselsdato }.map(Rolle::tilNotatRolle),
+            personer = rollerForNotat.sortedBy { it.fødselsdato }.map(Rolle::tilNotatRolle),
             inntekter =
                 NotatInntekterDto(
-                    notat = behandling.tilNotatInntekt(behandling.bidragsmottaker!!),
+                    notat =
+                        behandling.tilNotatInntekt(
+                            saksnummer?.let { behandling.bidragsmottakerForSak(it) } ?: behandling.bidragsmottaker!!,
+                        ),
                     notatPerRolle =
-                        behandling.roller
+                        rollerForNotat
                             .filter { it.rolletype != Rolletype.BARN || it.avslag == null }
                             .map { r ->
                                 behandling.tilNotatInntekt(r)
                             }.toSet(),
                     inntekterPerRolle =
-                        behandling.roller
+                        rollerForNotat
                             .filter { it.rolletype != Rolletype.BARN || it.avslag == null }
                             .sortedBy { it.fødselsdato }
                             .map { rolle ->
@@ -502,7 +562,7 @@ class NotatOpplysningerService(
                                 )
                             },
                     offentligeInntekterPerRolle =
-                        behandling.roller
+                        rollerForNotat
                             .filter { it.rolletype != Rolletype.BARN || it.avslag == null }
                             .sortedBy { it.fødselsdato }
                             .map { rolle ->
@@ -522,6 +582,7 @@ class NotatOpplysningerService(
                         behandling
                             .tilPrivatAvtaleDtoV3()
                             .søknadsbarn
+                            .filter { erKnyttetTilSaksnummer(it.gjelderBarn.id) }
                             .sortedBy { it.gjelderBarn.fødselsdato }
                             .filter { it.privatAvtale != null }
                             .map {
@@ -1221,8 +1282,8 @@ private fun Behandling.tilNotatBehandlingDetaljer() =
         kategori = tilSærbidragKategoriDto().tilNotatSærbidragKategoriDto(),
     )
 
-private fun Behandling.tilVirkningstidspunktBarn() =
-    søknadsbarn.sortedBy { it.fødselsdato }.map {
+private fun Behandling.tilVirkningstidspunktBarn(søknadsbarnForNotat: List<Rolle> = søknadsbarn) =
+    søknadsbarnForNotat.sortedBy { it.fødselsdato }.map {
         val innkrevingstype = it.innkrevingstype ?: innkrevingstype
         val eldsteSøknad = it.forholdsmessigFordeling?.eldsteSøknad
         NotatVirkningstidspunktBarnDto(

@@ -612,7 +612,13 @@ class VedtakService(
                 request?.enhet ?: behandling.behandlerEnhet,
             )
 
-            opprettNotat(behandling)
+            if (erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder) {
+                behandling.saker.forEach {
+                    opprettNotat(behandling, it)
+                }
+            } else {
+                opprettNotat(behandling)
+            }
 
             LOGGER.info {
                 "Fattet vedtak for behandling ${behandling.id} med ${
@@ -807,7 +813,13 @@ class VedtakService(
                         behandling.vedtaksid = response.vedtaksid
                         forsendelseService.opprettForsendelseForAldersjustering(behandling)
                     } else if (vedtakRequest.type != Vedtakstype.ALDERSJUSTERING) {
-                        opprettNotat(behandling)
+                        if (erForholdsmessigFordelingHvorBPHarFullEvneIAllePerioder) {
+                            behandling.saker.forEach {
+                                opprettNotat(behandling, it)
+                            }
+                        } else {
+                            opprettNotat(behandling)
+                        }
                     }
                 }
 
@@ -917,9 +929,12 @@ class VedtakService(
         }
     }
 
-    private fun opprettNotat(behandling: Behandling) {
+    private fun opprettNotat(
+        behandling: Behandling,
+        saksnummer: String? = null,
+    ) {
         try {
-            notatOpplysningerService.opprettNotat(behandling.id!!)
+            notatOpplysningerService.opprettNotat(behandling.id!!, saksnummer = saksnummer)
         } catch (e: Exception) {
             LOGGER.error(
                 e,
