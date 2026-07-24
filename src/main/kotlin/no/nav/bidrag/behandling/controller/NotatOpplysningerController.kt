@@ -25,6 +25,12 @@ class NotatOpplysningerController(
         @PathVariable behandlingId: Long,
     ): VedtakNotatDto = notatOpplysningerService.hentNotatOpplysninger(behandlingId)
 
+    @GetMapping("/notat/{behandlingId}/{saksnummer}")
+    fun hentNotatOpplysningerSaksnummer(
+        @PathVariable behandlingId: Long,
+        @PathVariable saksnummer: String,
+    ): VedtakNotatDto = notatOpplysningerService.hentNotatOpplysninger(behandlingId, saksnummer)
+
     @GetMapping("/notat/vedtak/{vedtaksid}")
     fun hentNotatOpplysningerForVedtak(
         @PathVariable vedtaksid: Int,

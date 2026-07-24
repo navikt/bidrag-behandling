@@ -216,6 +216,7 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                         stønadsendring.periodeListe.isEmpty() || stønadsendring.finnSistePeriode()?.resultatkode == "IV" ||
                             type == Vedtakstype.INNKREVING
                     val orkestreringDetaljer = grunnlagListe.finnOrkestreringDetaljer(stønadsendring.grunnlagReferanseListe)
+                    val fatteVedtakRevurderingsbarn = grunnlagListe.hentBehandlingDetaljer()?.fatteVedtakRevurderingsbarn
                     ResultatBidragsberegningBarnDto(
                         resultatUtenBeregning = erResultatUtenBeregning,
                         barn =
@@ -231,7 +232,12 @@ fun VedtakDto.tilBeregningResultatBidrag(vedtakBeregning: VedtakDto?): ResultatB
                         erAvvistRevurdering =
                             gjelderRevurderingsbarn(
                                 stønadsendring,
-                            ) && stønadsendring.beslutning == Beslutningstype.AVVIST,
+                            ) &&
+                                (
+                                    stønadsendring.beslutning == Beslutningstype.AVVIST ||
+                                        fatteVedtakRevurderingsbarn?.skalFatteVedtakForRevurderingsbarn == false ||
+                                        fatteVedtakRevurderingsbarn?.bleFFTrukket == true
+                                ),
                         erAvvisning = stønadsendring.beslutning == Beslutningstype.AVVIST,
                         indeksår = stønadsendring.førsteIndeksreguleringsår,
                         delvedtak = hentDelvedtak(stønadsendring),
@@ -1587,7 +1593,7 @@ private fun GrunnlagDto.tilRolle(
                                     søktAvType = søknadGrunnlag.søktAv,
                                     behandlingstype = søknadGrunnlag.behandlingstype,
                                     behandlingstema = stønadsendring?.type?.tilBehandlingstema() ?: søknadGrunnlag.behandlingstema,
-                                    enhet = behandling.behandlerEnhet,
+                                    enhet = søknadGrunnlag.behandlerenhet ?: behandling.behandlerEnhet,
                                 )
                             }.toMutableSet(),
                 )

@@ -77,7 +77,7 @@ data class OppdatereBegrunnelseRequest(
                 "Bidragsmottaker må være satt for andre barn hvis det finnes flere BMer",
     )
     val underholdsid: Long? = null,
-    val bidragsmottakerIdent: String? = null,
+    val bidragsmottakerId: Long? = null,
     val begrunnelse: String,
 )
 

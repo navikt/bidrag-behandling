@@ -13,6 +13,7 @@ import no.nav.bidrag.behandling.dto.v1.behandling.SivilstandDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GrunnlagInntektEndringstype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagstype
+import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagBMDto
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktivInntektDto
 import no.nav.bidrag.behandling.dto.v2.behandling.InntektspostEndringDto
@@ -196,6 +197,36 @@ fun List<Grunnlag>.henteEndringerIBarnetilsyn(
         )
     }
     return null
+}
+
+fun List<Grunnlag>.henteEndringerIBoforholdBMSøknadsbarnV2(
+    aktiveGrunnlag: List<Grunnlag>,
+    behandling: Behandling,
+): Set<HusstandsmedlemGrunnlagBMDto> {
+    val virkniningstidspunkt = behandling.virkningstidspunktEllerSøktFomDato
+
+    val aktiveBoforholdsdata =
+        aktiveGrunnlag.hentAlleBearbeidaBoforholdTilBMSøknadsbarn(virkniningstidspunkt).toSet()
+    // Hent første for å finne innhentet tidspunkt
+    val nyeBoforholdsgrunnlagGruppert =
+        filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN && it.erBearbeidet }.groupBy { it.rolle }
+
+    return nyeBoforholdsgrunnlagGruppert
+        .mapNotNull { (rolle, nyeBoforholdsgrunnlag) ->
+            val nyeBoforholdsgrunnlagSiste =
+                nyeBoforholdsgrunnlag.maxByOrNull { it.innhentet }
+                    ?: return@mapNotNull HusstandsmedlemGrunnlagBMDto(rolle.tilDto(), emptySet())
+            val nyeBoforholdsdata = hentAlleBearbeidaBoforholdTilBMSøknadsbarn(virkniningstidspunkt).toSet()
+
+            HusstandsmedlemGrunnlagBMDto(
+                rolle.tilDto(),
+                nyeBoforholdsdata.finnEndringerBoforhold(
+                    virkniningstidspunkt,
+                    aktiveBoforholdsdata,
+                    nyeBoforholdsgrunnlagSiste.innhentet ?: LocalDateTime.now(),
+                ),
+            )
+        }.toSet()
 }
 
 fun List<Grunnlag>.henteEndringerIBoforholdBMSøknadsbarn(

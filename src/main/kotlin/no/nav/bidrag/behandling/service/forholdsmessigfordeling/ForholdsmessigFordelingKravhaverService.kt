@@ -355,18 +355,24 @@ class ForholdsmessigFordelingKravhaverService(
         val privatAvtalerBarnIBehandling =
             behandling.privatAvtale
                 .filtrerUtPrivatAvtalerSomIkkeErInnenforBeregningsperiode(beregningsperiode)
+                .filter { it.rolle != null }
                 .filter {
-                    it.rolle != null && !kravhavereSomHarÅpenBehandling.map { kravhaver -> kravhaver.kravhaver }.contains(it.personIdent!!)
+                    kravhavereSomHarÅpenBehandling.none { kravhaver ->
+                        kravhaver.kravhaver == it.personIdent && kravhaver.stønadstype == it.stønadstype
+                    }
                 }.mapNotNull { privatAvtale ->
                     val rollePA = privatAvtale.rolle!!
                     val sak = sakerBp.find { it.roller.any { rolle -> rolle.fødselsnummer!!.verdi == rollePA.ident } }!!
 
                     val stønaderMedÅpenBehandling =
                         søknadsbarnIdentStønadstypeMap
-                            .filter {
-                                it.first == rollePA.ident
-                            }.map { it.second }
+                            .asSequence()
+                            .filter { it.first == rollePA.ident }
+                            .filter { it.second != null }
+                            .filter { it.second == rollePA.stønadstype }
+                            .map { it.second }
                             .distinct()
+                            .toList()
 
                     val løpendeBidrag =
                         kravhavereSomHarÅpenBehandling.find { lb ->

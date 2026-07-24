@@ -197,6 +197,7 @@ fun Behandling.byggGrunnlagSøknad(søknadsbarn: List<Rolle> = this.søknadsbarn
                                 mottattDato = søknad.mottattDato,
                                 søktFraDato = søknad.søknadFomDato ?: søktFomDato,
                                 søktAv = søknad.søktAvType,
+                                behandlerenhet = søknad.enhet,
                                 begrensetRevurdering = søknad.behandlingstype?.erBegrensetRevurdering() == true,
                                 innkrevingsgrunnlag = erInnkreving,
                                 saksnummer = søknad.saksnummer ?: it.saksnummer,
@@ -232,6 +233,7 @@ fun Behandling.byggGrunnlagSøknad(søknadsbarn: List<Rolle> = this.søknadsbarn
                         SøknadGrunnlag(
                             klageMottattDato = omgjøringsdetaljer?.klageMottattdato,
                             mottattDato = mottattdato,
+                            behandlerenhet = behandlerEnhet,
                             søktFraDato = søktFomDato,
                             søktAv = soknadFra,
                             begrensetRevurdering = søknadstype?.erBegrensetRevurdering() == true,

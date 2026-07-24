@@ -81,12 +81,12 @@ class UnderholdService(
             }
 
         val rolleBm =
-            request.bidragsmottakerIdent?.let { bmIdent ->
-                val bm = behandling.alleBidragsmottakere.find { it.ident == bmIdent }
+            request.bidragsmottakerId?.let { bmId ->
+                val bm = behandling.alleBidragsmottakere.find { it.id == bmId }
                 if (behandling.alleBidragsmottakere.size > 1 && bm == null) {
                     throw HttpClientErrorException(
                         HttpStatus.BAD_REQUEST,
-                        "Bidragsmottaker ident må settes hvis det finnes flere BMer i saken",
+                        "Bidragsmottaker id må settes hvis det finnes flere BMer i saken",
                     )
                 }
                 bm
@@ -159,7 +159,6 @@ class UnderholdService(
                         hentPersonFødselsdato(gjelderRolle.ident.verdi)
                             ?: fantIkkeFødselsdatoTilPerson(behandling.id!!),
                 )
-            eksisterendeUnderholdskostnad.rolle = behandling.bidragsmottaker!!
             eksisterendeUnderholdskostnad.person = person
             eksisterendeUnderholdskostnad.barnetilsyn.clear()
             eksisterendeUnderholdskostnad.tilleggsstønad.clear()

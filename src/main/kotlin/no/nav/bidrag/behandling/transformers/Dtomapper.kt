@@ -17,7 +17,6 @@ import no.nav.bidrag.behandling.database.datamodell.Utgift
 import no.nav.bidrag.behandling.database.datamodell.barn
 import no.nav.bidrag.behandling.database.datamodell.bpsBarnUtenLøpendeBidrag
 import no.nav.bidrag.behandling.database.datamodell.hentSisteAktiv
-import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagBpsBarnUtenBidragsak
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagLøpendeBidragFF
 import no.nav.bidrag.behandling.database.datamodell.hentSisteGrunnlagSomGjelderBarn
 import no.nav.bidrag.behandling.database.datamodell.hentSisteIkkeAktiv
@@ -43,6 +42,7 @@ import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleDto
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrRolleV2Dto
 import no.nav.bidrag.behandling.dto.v2.behandling.GebyrSakDto
 import no.nav.bidrag.behandling.dto.v2.behandling.Grunnlagsdatatype
+import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagBMDto
 import no.nav.bidrag.behandling.dto.v2.behandling.HusstandsmedlemGrunnlagDto
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveGrunnlagsdata
 import no.nav.bidrag.behandling.dto.v2.behandling.IkkeAktiveInntekter
@@ -60,7 +60,6 @@ import no.nav.bidrag.behandling.dto.v2.gebyr.GebyrValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.gebyr.validerGebyr
 import no.nav.bidrag.behandling.dto.v2.inntekt.BeregnetInntekterDto
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoRolle
-import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV2
 import no.nav.bidrag.behandling.dto.v2.inntekt.InntekterDtoV3
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtaleDto
 import no.nav.bidrag.behandling.dto.v2.privatavtale.BeregnetPrivatAvtalePeriodeDto
@@ -79,7 +78,6 @@ import no.nav.bidrag.behandling.dto.v2.underhold.TilleggsstønadDto
 import no.nav.bidrag.behandling.dto.v2.underhold.UnderholdDto
 import no.nav.bidrag.behandling.dto.v2.utgift.OppdatereUtgiftResponse
 import no.nav.bidrag.behandling.dto.v2.validering.GrunnlagFeilDto
-import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilDto
 import no.nav.bidrag.behandling.dto.v2.validering.InntektValideringsfeilV2Dto
 import no.nav.bidrag.behandling.objectmapper
 import no.nav.bidrag.behandling.service.BeregningService
@@ -89,7 +87,6 @@ import no.nav.bidrag.behandling.service.TilgangskontrollService
 import no.nav.bidrag.behandling.service.ValiderBehandlingService
 import no.nav.bidrag.behandling.service.hentPersonVisningsnavn
 import no.nav.bidrag.behandling.service.hentVedtak
-import no.nav.bidrag.behandling.transformers.behandling.RoleInntekterCache
 import no.nav.bidrag.behandling.transformers.behandling.buildRoleInntekterCache
 import no.nav.bidrag.behandling.transformers.behandling.erLik
 import no.nav.bidrag.behandling.transformers.behandling.finnOpphørsdatoBoforhold
@@ -104,13 +101,13 @@ import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIArbeidsfo
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBarnetilsyn
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforhold
 import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforholdBMSøknadsbarn
+import no.nav.bidrag.behandling.transformers.behandling.henteEndringerIBoforholdBMSøknadsbarnV2
 import no.nav.bidrag.behandling.transformers.behandling.henteRolleForNotat
 import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtak
 import no.nav.bidrag.behandling.transformers.behandling.kanFatteVedtakBegrunnelse
 import no.nav.bidrag.behandling.transformers.behandling.tilBarnetilsynAktiveGrunnlagDto
 import no.nav.bidrag.behandling.transformers.behandling.tilDto
 import no.nav.bidrag.behandling.transformers.behandling.tilGrunnlagsinnhentingsfeil
-import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV2
 import no.nav.bidrag.behandling.transformers.behandling.tilInntektDtoV3
 import no.nav.bidrag.behandling.transformers.behandling.tilKanBehandlesINyLøsningRequest
 import no.nav.bidrag.behandling.transformers.behandling.tilMånedsinntekterPerRolle
@@ -158,7 +155,6 @@ import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
 import no.nav.bidrag.transport.behandling.felles.grunnlag.ManuellVedtakGrunnlag
 import no.nav.bidrag.transport.behandling.felles.grunnlag.NotatGrunnlag.NotatType
 import no.nav.bidrag.transport.behandling.felles.grunnlag.hentAllePersoner
-import no.nav.bidrag.transport.behandling.felles.grunnlag.hentPerson
 import no.nav.bidrag.transport.behandling.felles.grunnlag.personIdent
 import no.nav.bidrag.transport.behandling.grunnlag.response.ArbeidsforholdGrunnlagDto
 import no.nav.bidrag.transport.behandling.grunnlag.response.RelatertPersonGrunnlagDto
@@ -177,6 +173,7 @@ import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlin.collections.filter
 import kotlin.collections.sortedBy
 
 private val log = KotlinLogging.logger {}
@@ -253,7 +250,7 @@ class Dtomapper(
         return AktivereGrunnlagResponseV2(
             boforhold = behandling.tilBoforholdV2(),
             inntekterV2 = behandling.mapInntekterV2(sisteAktiv),
-            aktiveGrunnlagsdata = sisteAktiv.tilAktiveGrunnlagsdata(),
+            aktiveGrunnlagsdata = sisteAktiv.tilAktiveGrunnlagsdata(behandling),
             ikkeAktiverteEndringerIGrunnlagsdata = behandling.ikkeAktiveGrunnlagsdata(sisteAktiv),
         )
     }
@@ -317,7 +314,8 @@ class Dtomapper(
         return UnderholdDto(
             id = this.id!!,
             harTilsynsordning = this.harTilsynsordning,
-            gjelderBarn = rolleSøknadsbarn?.tilPersoninfoDto() ?: this.person?.tilPersoninfoDto(rolleSøknadsbarn, kilde)!!,
+            gjelderBarn =
+                rolleSøknadsbarn?.tilPersoninfoDto() ?: this.person?.tilPersoninfoDto(rolleSøknadsbarn, kilde, rolleBidragsmottaker)!!,
             faktiskTilsynsutgift = this.faktiskeTilsynsutgifter.tilFaktiskeTilsynsutgiftDtos(),
             stønadTilBarnetilsyn = this.barnetilsyn.tilStønadTilBarnetilsynDtos(),
             tilleggsstønad = this.tilleggsstønad.tilTilleggsstønadDtos(),
@@ -427,12 +425,14 @@ class Dtomapper(
             medIBehandlingen = ident != null,
             erRevurderingsbarn = erRevurderingsbarn,
             stønadstype = stønadstype,
+            bidragsmottakerId = bidragsmottaker?.id,
         )
     }
 
     private fun Person.tilPersoninfoDto(
         rolle: Rolle? = null,
         kilde: Kilde? = null,
+        rolleBidragsmottaker: Rolle? = null,
     ): PersoninfoDto {
         val personinfo =
             this.ident?.let { vedtakGrunnlagMapper.mapper.personService.hentPerson(it) }
@@ -446,6 +446,7 @@ class Dtomapper(
             kilde = kilde,
             erRevurderingsbarn = false,
             medIBehandlingen = rolle?.ident != null,
+            bidragsmottakerId = rolleBidragsmottaker?.id,
         )
     }
 
@@ -750,6 +751,7 @@ class Dtomapper(
                 ),
             arbeidsforhold = sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIArbeidsforhold(aktiveGrunnlag),
             husstandsmedlemBM = sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBoforholdBMSøknadsbarn(aktiveGrunnlag, behandling),
+            husstandsmedlemBMV2 = sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBoforholdBMSøknadsbarnV2(aktiveGrunnlag, behandling),
             husstandsmedlem =
                 sisteInnhentedeIkkeAktiveGrunnlag.henteEndringerIBoforhold(aktiveGrunnlag, behandling),
             andreVoksneIHusstanden =
@@ -979,7 +981,7 @@ class Dtomapper(
         val boforhold = tilBoforholdV2()
         val inntekterV2 = mapInntekterV2(sisteAktivGrunnlag)
         val underholdskostnader = tilUnderholdskostnadDto(this, aldersjusteringBeregning, lesemodus)
-        val aktiveGrunnlagsdata = sisteAktivGrunnlag.tilAktiveGrunnlagsdata()
+        val aktiveGrunnlagsdata = sisteAktivGrunnlag.tilAktiveGrunnlagsdata(this)
         val utgift = tilUtgiftDto()
         val samværV2 =
             SamværDtoV2(
@@ -1741,7 +1743,7 @@ class Dtomapper(
         erAktivert: Boolean = true,
     ): List<AndreVoksneIHusstandenDetaljerDto> = hentAlleAndreVoksneHusstandForPeriode(periode, erAktivert).begrensAntallPersoner()
 
-    private fun List<Grunnlag>.tilAktiveGrunnlagsdata() =
+    private fun List<Grunnlag>.tilAktiveGrunnlagsdata(behandling: Behandling) =
         AktiveGrunnlagsdata(
             arbeidsforhold =
                 filter { it.type == Grunnlagsdatatype.ARBEIDSFORHOLD && !it.erBearbeidet }
@@ -1754,11 +1756,27 @@ class Dtomapper(
             sivilstand =
                 find { it.type == Grunnlagsdatatype.SIVILSTAND && !it.erBearbeidet }.toSivilstand(),
             husstandsmedlemBM = filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN && it.erBearbeidet }.tilHusstandsmedlem(),
+            husstandsmedlemBMV2 = mapHusstandsmedlemBM(behandling),
             stønadTilBarnetilsyn =
                 filter { it.type == Grunnlagsdatatype.BARNETILSYN && it.erBearbeidet }
                     .toSet()
                     .tilBarnetilsynAktiveGrunnlagDto(),
         )
+
+    private fun List<Grunnlag>.mapHusstandsmedlemBM(behandling: Behandling): Set<HusstandsmedlemGrunnlagBMDto> {
+        val boforholdBM =
+            filter { it.type == Grunnlagsdatatype.BOFORHOLD_BM_SØKNADSBARN && it.erBearbeidet }
+                .groupBy { it.rolle }
+
+        return behandling.alleBidragsmottakere
+            .map { bm ->
+                val boforholdForBM = boforholdBM.get(bm)
+                HusstandsmedlemGrunnlagBMDto(
+                    gjelderBM = bm.tilDto(),
+                    husstandsmedlem = boforholdForBM?.tilHusstandsmedlem() ?: emptySet(),
+                )
+            }.toSet()
+    }
 
     private fun List<Grunnlag>.tilAndreVoksneIHusstanden(erAktivert: Boolean) =
         AndreVoksneIHusstandenGrunnlagDto(

@@ -256,6 +256,7 @@ data class PersoninfoDto(
     val medIBehandlingen: Boolean? = null,
     val erRevurderingsbarn: Boolean,
     val stønadstype: Stønadstype? = null,
+    val bidragsmottakerId: Long? = null,
 ) {
     val fødselsdatoSortering get() =
         if (erRevurderingsbarn) {
@@ -355,6 +356,7 @@ data class UtgiftspostDto(
 data class AktiveGrunnlagsdata(
     val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto> = emptySet(),
     val husstandsmedlemBM: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
+    val husstandsmedlemBMV2: Set<HusstandsmedlemGrunnlagBMDto> = emptySet(),
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
     val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
     val sivilstand: SivilstandAktivGrunnlagDto? = null,
@@ -368,6 +370,7 @@ data class AktiveGrunnlagsdata(
 data class IkkeAktiveGrunnlagsdata(
     val inntekter: IkkeAktiveInntekter = IkkeAktiveInntekter(),
     val husstandsmedlemBM: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
+    val husstandsmedlemBMV2: Set<HusstandsmedlemGrunnlagBMDto> = emptySet(),
     val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
     val arbeidsforhold: Set<ArbeidsforholdGrunnlagDto> = emptySet(),
     val andreVoksneIHusstanden: AndreVoksneIHusstandenGrunnlagDto? = null,
@@ -460,6 +463,11 @@ data class StønadTilBarnetilsynIkkeAktiveGrunnlagDto(
     val stønadTilBarnetilsyn: Map<Personident, Set<StønadTilBarnetilsynDto>> = emptyMap(),
     val grunnlag: Map<Personident, Set<BarnetilsynGrunnlagDto>> = emptyMap(),
     val innhentetTidspunkt: LocalDateTime = LocalDateTime.now(),
+)
+
+data class HusstandsmedlemGrunnlagBMDto(
+    val gjelderBM: RolleDto,
+    val husstandsmedlem: Set<HusstandsmedlemGrunnlagDto> = emptySet(),
 )
 
 data class HusstandsmedlemGrunnlagDto(
