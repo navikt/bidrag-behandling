@@ -37,6 +37,7 @@ data class OpprettRolleDto(
     val referanseGebyr: String? = null,
     val behandlingstatus: Behandlingstatus? = null,
     val behandlingstema: Behandlingstema? = null,
+    val bidragsmottakerId: Long? = null,
     // Brukes bare intern når det opprettes klage
     @JsonIgnore
     val opprinneligVirkningstidspunkt: LocalDate? = null,

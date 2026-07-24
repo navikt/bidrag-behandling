@@ -3,24 +3,35 @@ package no.nav.bidrag.behandling.transformers
 import com.fasterxml.jackson.databind.node.POJONode
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBarnebidragsberegningPeriodeDto
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegning
+import no.nav.bidrag.behandling.dto.v1.beregning.ResultatBidragsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatForskuddsberegningBarn
 import no.nav.bidrag.behandling.dto.v1.beregning.ResultatRolle
 import no.nav.bidrag.behandling.transformers.grunnlag.tilGrunnlagsreferanse
+import no.nav.bidrag.behandling.transformers.utgift.tilBeregningDto
 import no.nav.bidrag.behandling.utils.testdata.TestDataPerson
+import no.nav.bidrag.behandling.utils.testdata.oppretteTestbehandling
+import no.nav.bidrag.behandling.utils.testdata.oppretteUtgift
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn1
 import no.nav.bidrag.behandling.utils.testdata.testdataBarn2
+import no.nav.bidrag.domene.enums.behandling.TypeBehandling
 import no.nav.bidrag.domene.enums.beregning.Resultatkode
+import no.nav.bidrag.domene.enums.beregning.Resultatkode.Companion.erAvvisning
 import no.nav.bidrag.domene.enums.grunnlag.Grunnlagstype
 import no.nav.bidrag.domene.enums.person.Sivilstandskode
+import no.nav.bidrag.domene.enums.særbidrag.Utgiftstype
 import no.nav.bidrag.domene.enums.vedtak.Stønadstype
 import no.nav.bidrag.domene.enums.vedtak.Vedtakstype
 import no.nav.bidrag.domene.ident.Personident
 import no.nav.bidrag.domene.tid.ÅrMånedsperiode
+import no.nav.bidrag.transport.behandling.beregning.barnebidrag.BeregnetBarnebidragResultat
 import no.nav.bidrag.transport.behandling.beregning.forskudd.BeregnetForskuddResultat
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatBeregning
 import no.nav.bidrag.transport.behandling.beregning.forskudd.ResultatPeriode
+import no.nav.bidrag.transport.behandling.beregning.særbidrag.BeregnetSærbidragResultat
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningBarnIHusstand
 import no.nav.bidrag.transport.behandling.felles.grunnlag.DelberegningSumInntekt
 import no.nav.bidrag.transport.behandling.felles.grunnlag.GrunnlagDto
@@ -211,6 +222,162 @@ class BeregningDtoMappingTest {
             }
         }
     }
+
+    @Test
+    fun `skal mappe ResultatBidragsberegning til DTO uten barn`() {
+        val resultat =
+            ResultatBidragsberegning(
+                vedtakstype = Vedtakstype.ENDRING,
+                bpHarFullEvneIAllePerioder = true,
+                inneholderBeregningForRevurderingsbarn = false,
+                resultatBarn = emptyList(),
+            )
+
+        val dto = resultat.tilDto(kanFatteVedtakBegrunnelse = null)
+
+        assertSoftly(dto) {
+            kanFatteVedtak shouldBe true
+            kanFatteVedtakBegrunnelse.shouldBeNull()
+            resultatBarn shouldHaveSize 0
+            skalFatteVedtakForRevurderingsbarn shouldBe false
+            kanFatteVedtakForRevurderingsbarn shouldBe false
+        }
+    }
+
+    @Test
+    fun `skal sette kanFatteVedtak til false nar begrunnelse er satt`() {
+        val resultat =
+            ResultatBidragsberegning(
+                vedtakstype = Vedtakstype.ENDRING,
+                resultatBarn = emptyList(),
+            )
+
+        val dto = resultat.tilDto(kanFatteVedtakBegrunnelse = "Mangler grunnlag")
+
+        assertSoftly(dto) {
+            kanFatteVedtak shouldBe false
+            kanFatteVedtakBegrunnelse shouldBe "Mangler grunnlag"
+        }
+    }
+
+    @Test
+    fun `skal mappe ResultatBidragsberegning med barn og sortere resultatBarn etter fodselsdato`() {
+        val søknadsbarn =
+            opprettResultatBidragsberegningBarn(
+                testDataPerson = testdataBarn2,
+                referanse = "barn2",
+                erRevurderingsbarn = false,
+            )
+        val yngreBarn =
+            opprettResultatBidragsberegningBarn(
+                testDataPerson = testdataBarn1,
+                referanse = "barn1",
+                erRevurderingsbarn = false,
+            )
+
+        val resultat =
+            ResultatBidragsberegning(
+                vedtakstype = Vedtakstype.INNKREVING,
+                resultatBarn = listOf(søknadsbarn, yngreBarn),
+            )
+
+        val dto = resultat.tilDto(kanFatteVedtakBegrunnelse = null)
+
+        assertSoftly(dto) {
+            resultatBarn shouldHaveSize 2
+            // Yngste barnet (senere fødselsdato) skal komme sist
+            resultatBarn.last().barn.fødselsdatoSortering shouldBe
+                resultatBarn.maxOf { it.barn.fødselsdatoSortering }
+            resultatBarn.forEach {
+                it.perioder shouldHaveSize 0
+                it.resultatUtenBeregning shouldBe true
+                it.medInnkreving shouldBe true
+                it.erAvvisning shouldBe false
+            }
+        }
+    }
+
+    @Test
+    fun `skal markere erAvvisning nar avslagskode er en avvisningskode`() {
+        val avvisningskode = Resultatkode.entries.first { it.erAvvisning() }
+        val barn =
+            opprettResultatBidragsberegningBarn(
+                testDataPerson = testdataBarn1,
+                referanse = "barn1",
+                erRevurderingsbarn = false,
+                avslagskode = avvisningskode,
+            )
+
+        val resultat =
+            ResultatBidragsberegning(
+                vedtakstype = Vedtakstype.ENDRING,
+                resultatBarn = listOf(barn),
+            )
+
+        val dto = resultat.tilDto(kanFatteVedtakBegrunnelse = null)
+
+        assertSoftly(dto.resultatBarn.single()) {
+            erAvvisning shouldBe true
+        }
+    }
+
+    @Test
+    fun `skal mappe BeregnetSaerbidragResultat til DTO`() {
+        val behandling = oppretteTestbehandling(behandlingstype = TypeBehandling.SÆRBIDRAG, inkludereBoforhold = false, inkludereSivilstand = false)
+        behandling.utgift = oppretteUtgift(behandling, Utgiftstype.KLÆR.name, medId = true)
+
+        val beregnetResultat =
+            BeregnetSærbidragResultat(
+                beregnetSærbidragPeriodeListe =
+                    listOf(
+                        no.nav.bidrag.transport.behandling.beregning.særbidrag.ResultatPeriode(
+                            periode = ÅrMånedsperiode(behandling.virkningstidspunkt!!, null),
+                            resultat =
+                                no.nav.bidrag.transport.behandling.beregning.særbidrag.ResultatBeregning(
+                                    beløp = BigDecimal(2500),
+                                    resultatkode = Resultatkode.SÆRBIDRAG_INNVILGET,
+                                ),
+                            grunnlagsreferanseListe = emptyList(),
+                        ),
+                    ),
+                grunnlagListe = emptyList(),
+            )
+
+        val dto = beregnetResultat.tilDto(behandling)
+
+        assertSoftly(dto) {
+            resultat shouldBe BigDecimal(2500)
+            resultatKode shouldBe Resultatkode.SÆRBIDRAG_INNVILGET
+            periode.fom shouldBe YearMonth.from(behandling.virkningstidspunkt!!)
+            utgiftsposter shouldHaveSize 1
+            beregning shouldBe behandling.utgift?.tilBeregningDto()
+        }
+    }
+
+    private fun opprettResultatBidragsberegningBarn(
+        testDataPerson: TestDataPerson,
+        referanse: String,
+        erRevurderingsbarn: Boolean,
+        avslagskode: Resultatkode? = null,
+    ) = ResultatBidragsberegningBarn(
+        barn =
+            ResultatRolle(
+                ident = Personident(testDataPerson.ident),
+                navn = testDataPerson.navn,
+                fødselsdato = testDataPerson.fødselsdato,
+                referanse = referanse,
+                stønadstype = Stønadstype.BIDRAG,
+                erRevurderingsbarn = erRevurderingsbarn,
+            ),
+        resultat =
+            BeregnetBarnebidragResultat(
+                beregnetBarnebidragPeriodeListe = emptyList(),
+                grunnlagListe = emptyList(),
+            ),
+        avslagskode = avslagskode,
+        opphørsdato = null,
+        `løperBidrag` = true,
+    )
 
     private fun opprettGyldigBeregning(testDataPerson: TestDataPerson) =
         ResultatForskuddsberegningBarn(
